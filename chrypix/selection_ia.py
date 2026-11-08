@@ -6,7 +6,7 @@ from __future__ import annotations
 import threading
 
 import numpy as np
-from PySide6.QtCore import QObject, QPointF, QRectF, Qt
+from PySide6.QtCore import QObject, QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication, QMessageBox
 
@@ -193,7 +193,15 @@ class SelectionAuto(QObject):
             self._en_attente = d
             return
         self._occupe = True
+        self._numero = getattr(self, "_numero", 0) + 1
+        numero = self._numero
         self.f.statusBar().showMessage(tr("L'IA cherche l'objet…"))
+
+        def lent():                              # autre calcul en cours (Effacer, Remplir…) : on attend son tour
+            if self._occupe and self._numero == numero:
+                self.f.statusBar().showMessage(tr("Le moteur IA finit un autre calcul (Effacer, Remplir…) : la "
+                                                  "sélection arrivera juste après."))
+        QTimer.singleShot(4000, lent)
         QApplication.setOverrideCursor(Qt.BusyCursor)
         doc = d["doc"]
         w, h = doc.taille()
