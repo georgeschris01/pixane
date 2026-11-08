@@ -10,6 +10,7 @@ from chrypix.fenetre import Fenetre
 from chrypix.moteur import Moteur
 
 Moteur.demarrer = lambda self, signaler=None: (_ for _ in ()).throw(Exception("moteur désactivé pour l'essai"))
+Fenetre._moteur_en_echec = lambda self, *a: None   # pas de message bloquant pendant l'essai
 app = QApplication(sys.argv)
 f = Fenetre()
 f.resize(1440, 920)
@@ -17,6 +18,7 @@ f.show()
 f.charger(sys.argv[1])
 app.processEvents()
 c = f.canevas
+c.definir_outil(sys.argv[3] if len(sys.argv) > 3 else "pinceau")
 f.ia_agrandir()
 app.processEvents()
 

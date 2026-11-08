@@ -297,12 +297,12 @@ class Fenetre(QMainWindow):
         lay = QVBoxLayout(w)
         lay.setContentsMargins(10, 4, 10, 10)
         lay.setSpacing(8)
-        aide = QLabel("Entoure la zone avec le pinceau ou le lasso, puis choisis une action.")
+        aide = QLabel("Peins sur l'objet avec le pinceau (ou entoure-le au lasso), puis choisis une action.")
         aide.setObjectName("discret")
         aide.setWordWrap(True)
         lay.addWidget(aide)
-        self.b_effacer = Carte("Effacer", "Enlève l'objet entouré")
-        self.b_remplir = Carte("Remplir", "Remplace la zone entourée")
+        self.b_effacer = Carte("Effacer", "Enlève ce qui est peint")
+        self.b_remplir = Carte("Remplir", "Redessine ce qui est peint")
         self.texte_remplir = QLineEdit()
         self.texte_remplir.setPlaceholderText("Texte facultatif (laisser vide)")
         self.b_agrandir = Carte("Agrandir l'image", "Étend la photo au-delà des bords")
@@ -547,7 +547,7 @@ class Fenetre(QMainWindow):
     # ================================================================ IA
     def _verifier_selection(self) -> bool:
         if self.doc.selection_vide():
-            QMessageBox.information(self, NOM, "Entoure d'abord la zone avec le pinceau, le lasso ou le rectangle.")
+            QMessageBox.information(self, NOM, "Peins d'abord sur l'objet avec le pinceau (ou entoure-le au lasso ou au rectangle).")
             return False
         return True
 

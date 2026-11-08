@@ -230,7 +230,7 @@ class Canevas(QWidget):
         elif cotes:
             self.setCursor(Qt.SizeHorCursor)
         else:
-            self.setCursor(Qt.ArrowCursor)
+            self.setCursor(Qt.OpenHandCursor if self.outil == MAIN else Qt.ArrowCursor)
 
     def _tirer_cadre(self, pos: QPointF, symetrique: bool):
         pt = self.vers_image(pos)
@@ -328,6 +328,10 @@ class Canevas(QWidget):
         if not self.doc:
             return
         pos = e.position()
+        if self.cadre is not None and e.button() == Qt.LeftButton:   # Agrandir : les poignées d'abord
+            self._poignee = self._poignee_sous(pos) or None
+            if self._poignee:
+                return
         if e.button() == Qt.MiddleButton or (e.button() == Qt.LeftButton and (self.outil == MAIN or self._espace)):
             self._glisse = pos
             self.setCursor(Qt.ClosedHandCursor)
@@ -335,7 +339,6 @@ class Canevas(QWidget):
         if e.button() != Qt.LeftButton:
             return
         if self.cadre is not None:
-            self._poignee = self._poignee_sous(pos) or None
             return
         self._soustraire = self.mode_retirer != bool(e.modifiers() & Qt.AltModifier)
         self._avant = self.doc.etat()
