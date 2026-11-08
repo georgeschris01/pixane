@@ -18,6 +18,8 @@ from PIL import Image, ImageOps
 from PySide6.QtCore import QObject, QPoint, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QPainter
 
+from .langue import tr
+
 COULEUR_SELECTION = QColor(255, 40, 40)
 FORMAT_IMAGE = QImage.Format_RGBA8888
 FORMAT_SELECTION = QImage.Format_ARGB32_Premultiplied
@@ -121,7 +123,7 @@ class Document(QObject):
                  icc: bytes | None = None, calques: list[Calque] | None = None):
         super().__init__()
         if calques is None:
-            calques = [Calque.depuis("Arrière-plan", image)]
+            calques = [Calque.depuis(tr("Arrière-plan"), image)]
         self.calques: tuple[Calque, ...] = tuple(calques)
         self.actif = len(self.calques) - 1
         w, h = self.taille()
@@ -202,7 +204,7 @@ class Document(QObject):
         elif ext == ".bmp":
             im = im.convert("RGB")
         else:
-            raise ValueError(f"Format non pris en charge : {ext}")
+            raise ValueError(tr("Format non pris en charge : {ext}", ext=ext))
         im.save(chemin, **options)
         self.chemin = chemin
         self.modifie = False
@@ -287,14 +289,14 @@ class Document(QObject):
 
     def etat_nouveau_calque(self):
         w, h = self.taille()
-        c = Calque(self.nom_libre("Calque"), image_vide(w, h))
+        c = Calque(self.nom_libre(tr("Calque")), image_vide(w, h))
         calques = list(self.calques)
         calques.insert(self.actif + 1, c)
         return self.etat_avec(calques, self.actif + 1)
 
     def etat_dupliquer(self):
         c = self.calque_actif
-        copie = replace(c, nom=f"{c.nom} (copie)", image=QImage(c.image))
+        copie = replace(c, nom=tr("{nom} (copie)", nom=c.nom), image=QImage(c.image))
         calques = list(self.calques)
         calques.insert(self.actif + 1, copie)
         return self.etat_avec(calques, self.actif + 1)
@@ -330,7 +332,7 @@ class Document(QObject):
         if len(self.calques) <= 1 or any(c.verrou for c in self.calques):
             return None
         w, h = self.taille()
-        return self.etat_avec([Calque("Arrière-plan", fusionner(self.calques, w, h))], 0)
+        return self.etat_avec([Calque(tr("Arrière-plan"), fusionner(self.calques, w, h))], 0)
 
     # ---------------------------------------------------------- sélection
     def selection_vide(self) -> bool:
@@ -410,10 +412,10 @@ def lire_ora(chemin: Path) -> list[Calque]:
             p = QPainter(img)
             p.drawImage(QPoint(int(float(couche.get("x", 0))), int(float(couche.get("y", 0)))), morceau)
             p.end()
-            calques.append(Calque(couche.get("name") or "Calque", img,
+            calques.append(Calque(couche.get("name") or tr("Calque"), img,
                                   visible=couche.get("visibility", "visible") != "hidden",
                                   opacite=float(couche.get("opacity", 1)),
                                   verrou=couche.get("edit-locked", "false") == "true"))
     if not calques:
-        raise ValueError("Ce fichier .ora ne contient aucun calque.")
+        raise ValueError(tr("Ce fichier .ora ne contient aucun calque."))
     return list(reversed(calques))

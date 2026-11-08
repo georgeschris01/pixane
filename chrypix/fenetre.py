@@ -2,17 +2,19 @@
 from __future__ import annotations
 
 import os
+import sys
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QSettings, QSize, Qt, QTimer, Signal
+from PySide6.QtCore import QObject, QProcess, QSettings, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QIcon, QImage, QKeySequence, QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QDockWidget, QFileDialog, QHBoxLayout, QLabel, QLineEdit,
                                QMainWindow, QMessageBox, QPushButton, QSizePolicy, QSlider, QToolBar, QVBoxLayout,
                                QWidget)
 
-from . import recettes, theme
+from . import langue, recettes, theme
 from .icones import icone
+from .langue import tr
 from .calques import PanneauCalques
 from .canevas import GOMME, GOMME_CALQUE, LASSO, MAIN, PINCEAU, RECTANGLE, Canevas
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
@@ -21,6 +23,11 @@ from .moteur import Annule, ErreurMoteur, Moteur
 from .raccord import finaliser, lisere_auto, preparer
 
 NOM = "Chrypix"
+
+
+def reglages() -> QSettings:
+    """Réglages de l'utilisateur ; les essais automatiques ont les leurs (variable CHRYPIX_REGLAGES)."""
+    return QSettings("Chrypix", os.environ.get("CHRYPIX_REGLAGES", "Chrypix"))
 
 
 class Tache(QObject):
@@ -98,7 +105,7 @@ class Fenetre(QMainWindow):
         self.resize(1440, 920)
         self.setAcceptDrops(True)
         # les essais automatiques utilisent leurs propres réglages (variable CHRYPIX_REGLAGES)
-        self.reglages = QSettings("Chrypix", os.environ.get("CHRYPIX_REGLAGES", "Chrypix"))
+        self.reglages = reglages()
         self.doc: Document | None = None
         self.historique = QUndoStack(self)
         self.historique.setUndoLimit(30)
@@ -107,7 +114,7 @@ class Fenetre(QMainWindow):
         self._icones = []            # (objet, nom d'icône) à redessiner quand le thème change
         self.mode_theme = self.reglages.value("theme", theme.AUTO)
         self.couleurs = theme.appliquer(QApplication.instance(), self.mode_theme)
-        self.texte_moteur = "démarrage…"
+        self.texte_moteur = tr("démarrage…")
 
         self.canevas = Canevas()
         self.canevas.selection_modifiee.connect(self._selection_modifiee)
@@ -156,57 +163,66 @@ class Fenetre(QMainWindow):
         return a
 
     def _menus(self):
-        m = self.menuBar().addMenu("&Fichier")
-        self._action(m, "Ouvrir…", QKeySequence.Open, self.ouvrir, "a_ouvrir", "ouvrir")
-        self._action(m, "Enregistrer", QKeySequence.Save, self.enregistrer, "a_enregistrer", "enregistrer")
-        self._action(m, "Enregistrer sous…", "Ctrl+Shift+S", self.enregistrer_sous, "a_enregistrer_sous")
+        m = self.menuBar().addMenu(tr("&Fichier"))
+        self._action(m, tr("Ouvrir…"), QKeySequence.Open, self.ouvrir, "a_ouvrir", "ouvrir")
+        self._action(m, tr("Enregistrer"), QKeySequence.Save, self.enregistrer, "a_enregistrer", "enregistrer")
+        self._action(m, tr("Enregistrer sous…"), "Ctrl+Shift+S", self.enregistrer_sous, "a_enregistrer_sous")
         m.addSeparator()
-        self._action(m, "Quitter", "Ctrl+Q", self.close)
+        self._action(m, tr("Quitter"), "Ctrl+Q", self.close)
 
-        m = self.menuBar().addMenu("&Édition")
-        self.a_annuler = self.historique.createUndoAction(self, "Annuler")
+        m = self.menuBar().addMenu(tr("&Édition"))
+        self.a_annuler = self.historique.createUndoAction(self, tr("Annuler|édition"))
         self.a_annuler.setShortcut(QKeySequence.Undo)
-        self.a_retablir = self.historique.createRedoAction(self, "Rétablir")
+        self.a_retablir = self.historique.createRedoAction(self, tr("Rétablir|édition"))
         self.a_retablir.setShortcuts([QKeySequence("Ctrl+Y"), QKeySequence("Ctrl+Shift+Z")])
         self._icone(self.a_annuler, "annuler")
         self._icone(self.a_retablir, "retablir")
         m.addAction(self.a_annuler)
         m.addAction(self.a_retablir)
 
-        m = self.menuBar().addMenu("&Sélection")
-        self._action(m, "Tout sélectionner", "Ctrl+A", lambda: self._modifier_selection("tout"), "a_tout")
-        self._action(m, "Désélectionner", "Ctrl+D", lambda: self._modifier_selection("rien"), "a_rien")
-        self._action(m, "Inverser la sélection", "Ctrl+Shift+I", lambda: self._modifier_selection("inverser"),
+        m = self.menuBar().addMenu(tr("&Sélection"))
+        self._action(m, tr("Tout sélectionner"), "Ctrl+A", lambda: self._modifier_selection("tout"), "a_tout")
+        self._action(m, tr("Désélectionner"), "Ctrl+D", lambda: self._modifier_selection("rien"), "a_rien")
+        self._action(m, tr("Inverser la sélection"), "Ctrl+Shift+I", lambda: self._modifier_selection("inverser"),
                      "a_inverser")
 
-        m = self.menuBar().addMenu("&Affichage")
-        self._action(m, "Zoom avant", "Ctrl++", lambda: self.canevas.zoomer(1.25), "a_zoom_plus", "zoom_plus")
-        self._action(m, "Zoom arrière", "Ctrl+-", lambda: self.canevas.zoomer(0.8), "a_zoom_moins", "zoom_moins")
-        self._action(m, "Ajuster à la fenêtre", "Ctrl+0", self.canevas.ajuster, "a_ajuster", "ajuster")
-        self._action(m, "Taille réelle (100 %)", "Ctrl+1", self.canevas.zoom_100)
+        m = self.menuBar().addMenu(tr("&Affichage"))
+        self._action(m, tr("Zoom avant"), "Ctrl++", lambda: self.canevas.zoomer(1.25), "a_zoom_plus", "zoom_plus")
+        self._action(m, tr("Zoom arrière"), "Ctrl+-", lambda: self.canevas.zoomer(0.8), "a_zoom_moins", "zoom_moins")
+        self._action(m, tr("Ajuster à la fenêtre"), "Ctrl+0", self.canevas.ajuster, "a_ajuster", "ajuster")
+        self._action(m, tr("Taille réelle (100 %)"), "Ctrl+1", self.canevas.zoom_100)
         m.addSeparator()
-        sous = m.addMenu("Thème")
+        sous = m.addMenu(tr("Thème"))
         groupe = QActionGroup(self)
-        for mode, texte in ((theme.AUTO, "Comme Windows"), (theme.CLAIR, "Clair"), (theme.SOMBRE, "Sombre")):
+        for mode, texte in ((theme.AUTO, tr("Comme Windows")), (theme.CLAIR, tr("Clair")), (theme.SOMBRE, tr("Sombre"))):
             a = QAction(texte, self, checkable=True)
             a.setChecked(mode == self.mode_theme)
             a.triggered.connect(lambda _=False, md=mode: self.changer_theme(md))
             groupe.addAction(a)
             sous.addAction(a)
         self._actions_theme = groupe
+        sous = m.addMenu(tr("Langue"))
+        groupe = QActionGroup(self)
+        actuel = self.reglages.value("langue", langue.AUTO)
+        for code, texte in [(langue.AUTO, tr("Comme Windows"))] + list(langue.LANGUES.items()):
+            a = QAction(texte, self, checkable=True)
+            a.setChecked(code == actuel)
+            a.triggered.connect(lambda _=False, c=code: self.changer_langue(c))
+            groupe.addAction(a)
+            sous.addAction(a)
 
-        m = self.menuBar().addMenu("&IA")
-        self._action(m, "Effacer", "Shift+E", self.ia_effacer, "a_effacer", "effacer")
-        self._action(m, "Remplir", "Shift+R", self.ia_remplir, "a_remplir", "remplir")
-        self._action(m, "Agrandir l'image…", "Shift+A", self.ia_agrandir, "a_agrandir", "agrandir")
-        self._action(m, "Upscale…", "Shift+U", self.ia_upscale, "a_upscale", "upscale")
+        m = self.menuBar().addMenu(tr("&IA"))
+        self._action(m, tr("Effacer"), "Shift+E", self.ia_effacer, "a_effacer", "effacer")
+        self._action(m, tr("Remplir"), "Shift+R", self.ia_remplir, "a_remplir", "remplir")
+        self._action(m, tr("Agrandir l'image…"), "Shift+A", self.ia_agrandir, "a_agrandir", "agrandir")
+        self._action(m, tr("Upscale…"), "Shift+U", self.ia_upscale, "a_upscale", "upscale")
 
-        m = self.menuBar().addMenu("&Aide")
-        self._action(m, "Raccourcis", "F1", self._aide)
+        m = self.menuBar().addMenu(tr("&Aide"))
+        self._action(m, tr("Raccourcis"), "F1", self._aide)
 
     def _barre_commandes(self):
         """Barre du haut : fichiers, annuler, options de l'outil, zoom, thème."""
-        b = QToolBar("Commandes")
+        b = QToolBar(tr("Commandes"))
         b.setMovable(False)
         b.setIconSize(QSize(20, 20))
         self.addToolBar(Qt.TopToolBarArea, b)
@@ -222,7 +238,7 @@ class Fenetre(QMainWindow):
         lay = QHBoxLayout(self.options)
         lay.setContentsMargins(6, 0, 6, 0)
         lay.setSpacing(8)
-        lay.addWidget(QLabel("Taille"))
+        lay.addWidget(QLabel(tr("Taille")))
         self.curseur_taille = QSlider(Qt.Horizontal)
         self.curseur_taille.setRange(2, 600)
         self.curseur_taille.setFixedWidth(160)
@@ -234,14 +250,14 @@ class Fenetre(QMainWindow):
         lay.addWidget(self.curseur_taille)
         lay.addWidget(self.valeur_taille)
         lay.addSpacing(10)
-        self.p_ajouter = QPushButton("Ajouter")
-        self.p_retirer = QPushButton("Retirer")
+        self.p_ajouter = QPushButton(tr("Ajouter"))
+        self.p_retirer = QPushButton(tr("Retirer"))
         groupe = QButtonGroup(self)
         for p_, retirer in ((self.p_ajouter, False), (self.p_retirer, True)):
             p_.setObjectName("pastille")
             p_.setCheckable(True)
             p_.setCursor(Qt.PointingHandCursor)
-            p_.setToolTip("Mode de sélection (Alt inverse le mode pendant le tracé)")
+            p_.setToolTip(tr("Mode de sélection (Alt inverse le mode pendant le tracé)"))
             p_.clicked.connect(lambda _=False, r=retirer: self.canevas.definir_mode_retirer(r))
             groupe.addButton(p_)
             lay.addWidget(p_)
@@ -259,23 +275,23 @@ class Fenetre(QMainWindow):
         b.addAction(self.a_zoom_plus)
         b.addAction(self.a_ajuster)
         b.addSeparator()
-        self.a_theme = QAction("Thème clair / sombre", self)
+        self.a_theme = QAction(tr("Thème clair / sombre"), self)
         self.a_theme.triggered.connect(self._basculer_theme)
         b.addAction(self.a_theme)
 
     def _outils(self):
-        barre = QToolBar("Outils")
+        barre = QToolBar(tr("Outils"))
         barre.setMovable(False)
         barre.setIconSize(QSize(22, 22))
         barre.setToolButtonStyle(Qt.ToolButtonIconOnly)
         self.addToolBar(Qt.LeftToolBarArea, barre)
         groupe = QActionGroup(self)
-        for outil, texte, touche, nom in ((MAIN, "Main : déplacer la vue", "H", "main"),
-                                          (RECTANGLE, "Sélection rectangle", "M", "rectangle"),
-                                          (LASSO, "Lasso", "L", "lasso"),
-                                          (PINCEAU, "Pinceau de sélection", "B", "pinceau"),
-                                          (GOMME, "Gomme de sélection", "E", "gomme"),
-                                          (GOMME_CALQUE, "Gomme de calque : efface les pixels du calque choisi",
+        for outil, texte, touche, nom in ((MAIN, tr("Main : déplacer la vue"), "H", "main"),
+                                          (RECTANGLE, tr("Sélection rectangle"), "M", "rectangle"),
+                                          (LASSO, tr("Lasso"), "L", "lasso"),
+                                          (PINCEAU, tr("Pinceau de sélection"), "B", "pinceau"),
+                                          (GOMME, tr("Gomme de sélection"), "E", "gomme"),
+                                          (GOMME_CALQUE, tr("Gomme de calque : efface les pixels du calque choisi"),
                                            "G", "gomme_calque")):
             a = QAction(texte, self, checkable=True)
             a.setShortcut(touche)
@@ -298,22 +314,22 @@ class Fenetre(QMainWindow):
         self.valeur_taille.setText(f"{v} px")
 
     def _panneau_ia(self):
-        dock = QDockWidget("INTELLIGENCE ARTIFICIELLE", self)
+        dock = QDockWidget(tr("INTELLIGENCE ARTIFICIELLE"), self)
         dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
         w = QWidget()
         lay = QVBoxLayout(w)
         lay.setContentsMargins(10, 4, 10, 10)
         lay.setSpacing(8)
-        aide = QLabel("Peins sur l'objet avec le pinceau (ou entoure-le au lasso), puis choisis une action.")
+        aide = QLabel(tr("Peins sur l'objet avec le pinceau (ou entoure-le au lasso), puis choisis une action."))
         aide.setObjectName("discret")
         aide.setWordWrap(True)
         lay.addWidget(aide)
-        self.b_effacer = Carte("Effacer", "Enlève ce qui est peint")
-        self.b_remplir = Carte("Remplir", "Redessine ce qui est peint")
+        self.b_effacer = Carte(tr("Effacer"), tr("Enlève ce qui est peint"))
+        self.b_remplir = Carte(tr("Remplir"), tr("Redessine ce qui est peint"))
         self.texte_remplir = QLineEdit()
-        self.texte_remplir.setPlaceholderText("Texte facultatif (laisser vide)")
-        self.b_agrandir = Carte("Agrandir l'image", "Étend la photo au-delà des bords")
-        self.b_upscale = Carte("Upscale", "Augmente la définition")
+        self.texte_remplir.setPlaceholderText(tr("Texte facultatif (laisser vide)"))
+        self.b_agrandir = Carte(tr("Agrandir l'image"), tr("Étend la photo au-delà des bords"))
+        self.b_upscale = Carte(tr("Upscale"), tr("Augmente la définition"))
         for carte, fonction, nom in ((self.b_effacer, self.ia_effacer, "effacer"),
                                      (self.b_remplir, self.ia_remplir, "remplir"),
                                      (self.b_agrandir, self.ia_agrandir, "agrandir"),
@@ -332,7 +348,7 @@ class Fenetre(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
 
     def _panneau_calques(self):
-        dock = QDockWidget("CALQUES", self)
+        dock = QDockWidget(tr("CALQUES"), self)
         dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
         self.calques = PanneauCalques(lambda nom: icone(nom, self.couleurs.texte, self.couleurs.accent, 20))
         self.calques.demande.connect(self._commande_calques)
@@ -370,7 +386,8 @@ class Fenetre(QMainWindow):
         etat = self.moteur.etat
         couleur = c.vert if etat == "prêt" else c.rouge if etat in ("introuvable", "erreur", "incomplet") \
             else c.orange
-        self.pastille_moteur.setText(f'<span style="color:{couleur}">●</span>&nbsp; Moteur IA : {self.texte_moteur}')
+        texte = tr("Moteur IA : {etat}", etat=self.texte_moteur)
+        self.pastille_moteur.setText(f'<span style="color:{couleur}">●</span>&nbsp; {texte}')
 
     # ---------------------------------------------------------- thème
     def changer_theme(self, mode: str):
@@ -378,6 +395,21 @@ class Fenetre(QMainWindow):
         self.reglages.setValue("theme", mode)
         self.couleurs = theme.appliquer(QApplication.instance(), mode)
         self._appliquer_theme()
+
+    def changer_langue(self, code: str):
+        """La langue est choisie au démarrage : on propose de redémarrer Chrypix."""
+        if code == self.reglages.value("langue", langue.AUTO):
+            return
+        self.reglages.setValue("langue", code)
+        rep = QMessageBox.question(self, NOM, tr("La nouvelle langue sera utilisée au prochain démarrage de "
+                                                 "Chrypix.\n\nRedémarrer maintenant ?"))
+        if rep == QMessageBox.Yes and self._peut_fermer():
+            chemin = str(self.doc.chemin) if self.doc and self.doc.chemin else None
+            if self.doc:
+                self.doc.modifie = False      # déjà proposé par _peut_fermer
+            racine = str(Path(__file__).resolve().parents[1])
+            QProcess.startDetached(sys.executable, ["-m", "chrypix"] + ([chemin] if chemin else []), racine)
+            self.close()
 
     def _verifier_windows(self):
         signature = theme.signature_windows()
@@ -388,7 +420,7 @@ class Fenetre(QMainWindow):
     def _basculer_theme(self):
         mode = theme.CLAIR if self.couleurs.sombre else theme.SOMBRE
         for a in self._actions_theme.actions():
-            a.setChecked(a.text() == ("Clair" if mode == theme.CLAIR else "Sombre"))
+            a.setChecked(a.text() == (tr("Clair") if mode == theme.CLAIR else tr("Sombre")))
         self.changer_theme(mode)
 
     def _appliquer_theme(self):
@@ -417,12 +449,12 @@ class Fenetre(QMainWindow):
             b.setEnabled(pret)
         titre = NOM
         if self.doc:
-            nom = self.doc.chemin.name if self.doc.chemin else "sans titre"
+            nom = self.doc.chemin.name if self.doc.chemin else tr("sans titre")
             titre = f"{nom}{' •' if self.doc.modifie else ''} — {NOM}"
         self.setWindowTitle(titre)
 
     def _aide(self):
-        QMessageBox.information(self, "Raccourcis", (
+        QMessageBox.information(self, tr("Raccourcis"), tr(
             "Outils : H main, M rectangle, L lasso, B pinceau, E gomme de sélection, G gomme de calque\n"
             "[ et ] : taille du pinceau\n"
             "Alt pendant le tracé : inverse Ajouter / Retirer\n"
@@ -432,7 +464,7 @@ class Fenetre(QMainWindow):
             "Ctrl+Z annuler, Ctrl+Y rétablir\n"
             "Shift+E Effacer, Shift+R Remplir, Shift+A Agrandir, Shift+U Upscale\n"
             "Agrandir : Maj en tirant = les deux côtés ; Entrée lancer, Échap annuler\n\n"
-            "Le guide complet est dans docs\\GUIDE.md."))
+            "Le guide complet est dans docs\\{guide}.", guide=tr("GUIDE.md")))
 
     # ================================================================ moteur
     def _demarrer_moteur(self):
@@ -442,10 +474,11 @@ class Fenetre(QMainWindow):
         t.lancer()
 
     def _moteur_en_echec(self, message: str):
-        self.etat_moteur.emit("indisponible")
+        self.etat_moteur.emit(tr("indisponible"))
         self._actualiser()
-        QMessageBox.warning(self, "Moteur IA", f"Le moteur IA n'a pas pu démarrer.\n\n{message}\n\n"
-                            "Tu peux quand même ouvrir et enregistrer des photos.")
+        QMessageBox.warning(self, tr("Moteur IA"), tr("Le moteur IA n'a pas pu démarrer.\n\n{message}\n\n"
+                                                      "Tu peux quand même ouvrir et enregistrer des photos.",
+                                                      message=message))
 
     def _tache(self, fonction, ok, erreur) -> Tache:
         t = Tache(fonction)
@@ -467,8 +500,8 @@ class Fenetre(QMainWindow):
         if not self._peut_fermer():
             return
         dossier = self.reglages.value("dossier", str(Path.home() / "Pictures"))
-        chemin, _ = QFileDialog.getOpenFileName(self, "Ouvrir une photo", dossier,
-                                                f"Images ({EXTENSIONS_LECTURE});;Tous les fichiers (*)")
+        chemin, _ = QFileDialog.getOpenFileName(self, tr("Ouvrir une photo"), dossier,
+                                                f"{tr('Images')} ({EXTENSIONS_LECTURE});;{tr('Tous les fichiers')} (*)")
         if chemin:
             self.charger(chemin)
 
@@ -476,7 +509,7 @@ class Fenetre(QMainWindow):
         try:
             doc = Document.ouvrir(chemin)
         except Exception as e:
-            QMessageBox.critical(self, "Ouvrir", f"Impossible d'ouvrir ce fichier :\n{e}")
+            QMessageBox.critical(self, tr("Ouvrir"), tr("Impossible d'ouvrir ce fichier :\n{erreur}", erreur=e))
             return
         self.reglages.setValue("dossier", str(Path(chemin).parent))
         self.doc = doc
@@ -493,9 +526,9 @@ class Fenetre(QMainWindow):
             return False
         if self.doc.chemin is None:
             return self.enregistrer_sous()
-        rep = QMessageBox.question(self, "Enregistrer",
-                                   f"Remplacer le fichier d'origine ?\n{self.doc.chemin}\n\n"
-                                   "(« Non » pour choisir un autre nom)",
+        rep = QMessageBox.question(self, tr("Enregistrer"),
+                                   tr("Remplacer le fichier d'origine ?\n{chemin}\n\n"
+                                      "(« Non » pour choisir un autre nom)", chemin=self.doc.chemin),
                                    QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel, QMessageBox.No)
         if rep == QMessageBox.Cancel:
             return False
@@ -509,15 +542,15 @@ class Fenetre(QMainWindow):
         plusieurs = len(self.doc.calques) > 1
         if self.doc.chemin:
             ext = ".ora" if plusieurs else self.doc.chemin.suffix
-            propose = str(self.doc.chemin.with_name(self.doc.chemin.stem + "_retouche" + ext))
+            propose = str(self.doc.chemin.with_name(self.doc.chemin.stem + tr("_retouche") + ext))
         else:
             propose = str(Path(self.reglages.value("dossier", str(Path.home()))) / ("image.ora" if plusieurs
                                                                                      else "image.jpg"))
-        formats = ["Projet à calques OpenRaster (*.ora)", "JPEG (*.jpg)", "PNG (*.png)", "TIFF (*.tif)",
+        formats = [tr("Projet à calques OpenRaster") + " (*.ora)", "JPEG (*.jpg)", "PNG (*.png)", "TIFF (*.tif)",
                    "WebP (*.webp)"]
         if not plusieurs:
             formats.append(formats.pop(0))
-        chemin, _ = QFileDialog.getSaveFileName(self, "Enregistrer sous", propose, ";;".join(formats),
+        chemin, _ = QFileDialog.getSaveFileName(self, tr("Enregistrer sous"), propose, ";;".join(formats),
                                                 formats[0])
         if not chemin:
             return False
@@ -530,22 +563,22 @@ class Fenetre(QMainWindow):
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.doc.enregistrer(chemin)
         except Exception as e:
-            QMessageBox.critical(self, "Enregistrer", f"Impossible d'enregistrer :\n{e}")
+            QMessageBox.critical(self, tr("Enregistrer"), tr("Impossible d'enregistrer :\n{erreur}", erreur=e))
             return False
         finally:
             QApplication.restoreOverrideCursor()
         if len(self.doc.calques) > 1 and chemin.suffix.lower() != ".ora":
-            self.statusBar().showMessage(f"Enregistré à plat (sans les calques) : {chemin}  —  pour garder les "
-                                         "calques, enregistre aussi en .ora", 10000)
+            self.statusBar().showMessage(tr("Enregistré à plat (sans les calques) : {chemin}  —  pour garder les "
+                                            "calques, enregistre aussi en .ora", chemin=chemin), 10000)
         else:
-            self.statusBar().showMessage(f"Enregistré : {chemin}", 5000)
+            self.statusBar().showMessage(tr("Enregistré : {chemin}", chemin=chemin), 5000)
         self._actualiser()
         return True
 
     def _peut_fermer(self) -> bool:
         if not self.doc or not self.doc.modifie:
             return True
-        rep = QMessageBox.question(self, NOM, "La photo a été modifiée. Enregistrer avant de continuer ?",
+        rep = QMessageBox.question(self, NOM, tr("La photo a été modifiée. Enregistrer avant de continuer ?"),
                                    QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
         if rep == QMessageBox.Save:
             return self.enregistrer_sous()
@@ -577,13 +610,14 @@ class Fenetre(QMainWindow):
         avant = self.doc.etat()
         {"tout": self.doc.tout_selectionner, "rien": self.doc.deselectionner,
          "inverser": self.doc.inverser_selection}[quoi]()
-        textes = {"tout": "Tout sélectionner", "rien": "Désélectionner", "inverser": "Inverser la sélection"}
+        textes = {"tout": tr("Tout sélectionner"), "rien": tr("Désélectionner"), "inverser": tr("Inverser la sélection")}
         self.historique.push(CommandeEtat(self.doc, avant, self.doc.etat(), textes[quoi]))
 
     # ================================================================ IA
     def _verifier_selection(self) -> bool:
         if self.doc.selection_vide():
-            QMessageBox.information(self, NOM, "Peins d'abord sur l'objet avec le pinceau (ou entoure-le au lasso ou au rectangle).")
+            QMessageBox.information(self, NOM, tr("Peins d'abord sur l'objet avec le pinceau (ou entoure-le au "
+                                                  "lasso ou au rectangle)."))
             return False
         return True
 
@@ -593,29 +627,29 @@ class Fenetre(QMainWindow):
         bloques = [c.nom for c in calques if c.verrou]
         if not bloques:
             return True
-        noms = ", ".join(f"« {n} »" for n in bloques)
-        pluriel = len(bloques) > 1
-        raison = ("change la taille de tous les calques" if tous else "modifie le calque choisi")
-        QMessageBox.information(self, action,
-                                f"{'Les calques' if pluriel else 'Le calque'} {noms} "
-                                f"{'sont cadenassés' if pluriel else 'est cadenassé'} : {action} {raison}, "
-                                "c'est donc impossible.\n\nClique sur le cadenas du calque dans le panneau "
-                                "Calques pour le déverrouiller.")
+        noms = ", ".join(tr("« {nom} »", nom=n) for n in bloques)
+        sujet = (tr("Les calques {noms} sont cadenassés", noms=noms) if len(bloques) > 1
+                 else tr("Le calque {noms} est cadenassé", noms=noms))
+        raison = (tr("{action} change la taille de tous les calques", action=action) if tous
+                  else tr("{action} modifie le calque choisi", action=action))
+        QMessageBox.information(self, action, tr("{sujet} : {raison}, c'est donc impossible.\n\nClique sur le "
+                                                 "cadenas du calque dans le panneau Calques pour le déverrouiller.",
+                                                 sujet=sujet, raison=raison))
         return False
 
     def ia_effacer(self):
-        if self.doc and self._verifier_verrou("Effacer") and self._verifier_selection():
-            self._lancer("Effacer", True, lambda nom: recettes.effacer(nom))
+        if self.doc and self._verifier_verrou(tr("Effacer")) and self._verifier_selection():
+            self._lancer(tr("Effacer"), True, lambda nom: recettes.effacer(nom))
 
     def ia_remplir(self):
-        if self.doc and self._verifier_verrou("Remplir") and self._verifier_selection():
+        if self.doc and self._verifier_verrou(tr("Remplir")) and self._verifier_selection():
             texte = self.texte_remplir.text().strip()
-            self._lancer("Remplir", True, lambda nom: recettes.remplir(nom, texte))
+            self._lancer(tr("Remplir"), True, lambda nom: recettes.remplir(nom, texte))
 
     def ia_agrandir(self):
         if not self.doc:
             return
-        if self.canevas.cadre is not None or not self._verifier_verrou("Agrandir", tous=True):
+        if self.canevas.cadre is not None or not self._verifier_verrou(tr("Agrandir"), tous=True):
             return
         # bord abîmé proposé d'office : le liseré clair ou foncé détecté sur chaque bord
         abime = lisere_auto(tableau(self.doc.image)[:, :, :3])
@@ -646,21 +680,21 @@ class Fenetre(QMainWindow):
         doc = self.doc
 
         def placer(img: QImage):   # calques décalés ; l'ajout de l'IA dans un nouveau calque
-            return doc.etat_agrandi("Agrandir", img, (ajout[2], ajout[0]))
-        self._lancer("Agrandir", False, lambda nom: recettes.agrandir(nom), apres=raccord, png=png, placer=placer)
+            return doc.etat_agrandi(tr("Agrandir"), img, (ajout[2], ajout[0]))
+        self._lancer(tr("Agrandir"), False, lambda nom: recettes.agrandir(nom), apres=raccord, png=png, placer=placer)
 
     def ia_upscale(self):
-        if not self.doc or not self._verifier_verrou("Upscale", tous=True):
+        if not self.doc or not self._verifier_verrou(tr("Upscale"), tous=True):
             return
         d = ReglagesUpscale(self.doc.image.width(), self.doc.image.height(), self)
         if d.exec():
             v = d.valeurs()
             if v["net"]:
                 taille = (self.doc.image.width(), self.doc.image.height())
-                self._lancer("Upscale", False,
+                self._lancer(tr("Upscale"), False,
                              lambda nom: recettes.upscale_net(nom, v["facteur"], v["force"], taille))
             else:
-                self._lancer("Upscale", False, lambda nom: recettes.upscale_rapide(nom, v["facteur"]))
+                self._lancer(tr("Upscale"), False, lambda nom: recettes.upscale_rapide(nom, v["facteur"]))
 
     def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None,
                 placer=None):
@@ -684,7 +718,7 @@ class Fenetre(QMainWindow):
             for libelle, donnees in bruts:
                 img = QImage.fromData(donnees)
                 if img.isNull():
-                    raise ErreurMoteur("Résultat illisible.")
+                    raise ErreurMoteur(tr("Résultat illisible."))
                 img = img.convertToFormat(FORMAT_IMAGE)
                 res.append((libelle, apres(img) if apres else img))
             return res
@@ -709,7 +743,7 @@ class Fenetre(QMainWindow):
         def autres():
             annuler.clear()
             t2 = self._tache(calcul, choix.ajouter,
-                             lambda m: choix.occupe(False, m or "Annulé."))
+                             lambda m: choix.occupe(False, m or tr("Annulé.")))
             t2.progres.connect(choix.progression)
             t2.lancer()
 

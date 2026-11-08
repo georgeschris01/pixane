@@ -20,6 +20,8 @@ from pathlib import Path
 
 import websocket
 
+from .langue import tr
+
 DOSSIER_APP = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "Chrypix"
 FICHIER_CONFIG = DOSSIER_APP / "config.json"
 PORT_EXTERNE = 8188   # ComfyUI Desktop, s'il est ouvert
@@ -115,17 +117,17 @@ class Moteur:
                 self.url = url
                 self._verifier_noeuds()
                 self.etat = "prêt"
-                signaler("prêt (ComfyUI déjà ouvert)" if port == PORT_EXTERNE else "prêt")
+                signaler(tr("prêt (ComfyUI déjà ouvert)") if port == PORT_EXTERNE else tr("prêt"))
                 return
 
         install = trouver_comfyui()
         if install is None:
             self.etat = "introuvable"
-            raise ErreurMoteur("ComfyUI n'est pas installé sur ce PC (ou pas à l'endroit attendu).")
+            raise ErreurMoteur(tr("ComfyUI n'est pas installé sur ce PC (ou pas à l'endroit attendu)."))
 
         if self._arret.is_set():
             return
-        signaler("démarrage…")
+        signaler(tr("démarrage…"))
         DOSSIER_APP.mkdir(parents=True, exist_ok=True)
         journal = open(DOSSIER_APP / "moteur.log", "w", encoding="utf-8", errors="replace")
         commande = [str(install["python"]), "main.py", "--listen", "127.0.0.1", "--port", str(PORT_INTERNE),
@@ -142,22 +144,23 @@ class Moteur:
                 return
             if self.processus.poll() is not None:
                 self.etat = "erreur"
-                raise ErreurMoteur(f"Le moteur s'est arrêté au démarrage. Détails : {DOSSIER_APP / 'moteur.log'}")
+                raise ErreurMoteur(tr("Le moteur s'est arrêté au démarrage. Détails : {fichier}",
+                                      fichier=DOSSIER_APP / 'moteur.log'))
             if self._repond(self.url):
                 self._verifier_noeuds()
                 self.etat = "prêt"
-                signaler("prêt")
+                signaler(tr("prêt"))
                 return
             time.sleep(1)
         self.etat = "erreur"
-        raise ErreurMoteur("Le moteur ne répond pas après 4 minutes.")
+        raise ErreurMoteur(tr("Le moteur ne répond pas après 4 minutes."))
 
     def _verifier_noeuds(self):
         infos = self._json("/object_info", delai=60)
         manquants = [n for n in NOEUDS_NECESSAIRES if n not in infos]
         if manquants:
             self.etat = "incomplet"
-            raise ErreurMoteur("Extensions ComfyUI manquantes : " + ", ".join(manquants))
+            raise ErreurMoteur(tr("Extensions ComfyUI manquantes : {liste}", liste=", ".join(manquants)))
 
     def arreter(self):
         self._arret.set()
@@ -191,7 +194,8 @@ class Moteur:
                 try:
                     rep = self._json("/prompt", {"prompt": prompt, "client_id": self.client_id})
                 except urllib.error.HTTPError as e:
-                    raise ErreurMoteur("ComfyUI refuse la recette : " + e.read().decode(errors="replace")[:800])
+                    raise ErreurMoteur(tr("ComfyUI refuse la recette : {detail}",
+                                          detail=e.read().decode(errors="replace")[:800]))
                 pid = rep["prompt_id"]
                 derniere_verif = 0.0
                 while True:
@@ -222,12 +226,12 @@ class Moteur:
                         pass
             entree = self._json(f"/history/{pid}").get(pid)
             if entree is None:
-                raise ErreurMoteur("Le calcul s'est arrêté sans résultat.")
+                raise ErreurMoteur(tr("Le calcul s'est arrêté sans résultat."))
             statut = entree.get("status", {})
             if statut.get("status_str") != "success":
                 messages = [m for m in statut.get("messages", []) if m[0] == "execution_error"]
                 detail = messages[0][1].get("exception_message", "") if messages else ""
-                raise ErreurMoteur("Erreur pendant le calcul. " + detail.strip()[:600])
+                raise ErreurMoteur(tr("Erreur pendant le calcul. {detail}", detail=detail.strip()[:600]))
             resultats = []
             for noeud, libelle in sorties.items():
                 images = entree["outputs"].get(noeud, {}).get("images", [])
@@ -275,7 +279,7 @@ class Moteur:
                 return True
 
 
-ETAPES = {
+ETAPES = {   # textes traduits à l'affichage par tr()
     "LoadImage": "Préparation de l'image", "InpaintCropImproved": "Découpe autour de la zone",
     "INPAINT_LoadInpaintModel": "Chargement de LaMa", "INPAINT_InpaintWithModel": "LaMa efface",
     "UNETLoader": "Chargement de Flux", "DualCLIPLoader": "Chargement de Flux", "VAELoader": "Chargement de Flux",
@@ -295,7 +299,7 @@ class Suivi:
         self.lourd = next((k for k, c in self.classes.items() if c in LOURDS), None)
         self.nb_morceaux = max(1, nb_morceaux)
         self.debut = time.time()
-        self.etape = "En attente du moteur"
+        self.etape = tr("En attente du moteur")
         self.detail = ""
         self.noeud_actuel = None
         self.lourd_fini = False
@@ -308,10 +312,10 @@ class Suivi:
         if self.lourd is not None and self.noeud_actuel == self.lourd and n != self.lourd:
             self.lourd_fini = True
         self.noeud_actuel = n
-        self.etape = ETAPES.get(self.classes.get(n, ""), "Calcul")
+        self.etape = tr(ETAPES.get(self.classes.get(n, ""), "Calcul"))
         self.detail = ""
         if n == self.lourd and self.fraction_lourd == 0:
-            self.etape = "Chargement du modèle en mémoire"
+            self.etape = tr("Chargement du modèle en mémoire")
 
     def avance(self, n, valeur, maximum):
         maximum = max(1, maximum)
@@ -324,9 +328,9 @@ class Suivi:
                 self.morceau = min(self.morceau + 1, self.nb_morceaux - 1)
             self._derniere_valeur = valeur
             self.fraction_lourd = min(1.0, (self.morceau + valeur / maximum) / self.nb_morceaux)
-            self.etape = ETAPES.get(self.classes.get(self.lourd, ""), "Calcul")
-            self.detail = (f"morceau {self.morceau + 1} sur {self.nb_morceaux}" if self.nb_morceaux > 1
-                           else f"étape {valeur} sur {maximum}")
+            self.etape = tr(ETAPES.get(self.classes.get(self.lourd, ""), "Calcul"))
+            self.detail = (tr("morceau {n} sur {total}", n=self.morceau + 1, total=self.nb_morceaux)
+                           if self.nb_morceaux > 1 else tr("étape {n} sur {total}", n=valeur, total=maximum))
         else:
             self.detail = f"{valeur} / {maximum}"
 

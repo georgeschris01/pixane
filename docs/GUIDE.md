@@ -21,6 +21,12 @@ Ce guide explique chaque outil et chaque réglage. Il est complété à chaque n
 et suit le mode clair / sombre de Windows. Menu **Affichage > Thème** : *Comme Windows*, *Clair* ou *Sombre*.
 Le bouton soleil / lune de la barre du haut bascule aussi entre clair et sombre.
 
+**Langue** : Chrypix existe en **français** et en **anglais**. Par défaut, il prend la langue de Windows
+(français si Windows est en français, anglais sinon). Menu **Affichage > Langue** : *Comme Windows*, *Français*
+ou *English* ; Chrypix propose alors de redémarrer pour appliquer la langue (le moteur IA redémarre aussi,
+environ 20 secondes). Les boutons standard (Oui / Non / Annuler, menu clic droit) suivent la même langue.
+Les noms de calques déjà créés gardent leur langue d'origine. Guide en anglais : `docs\GUIDE_en.md`.
+
 **Moteur IA** : au démarrage, Chrypix lance l'IA (ComfyUI) en arrière-plan, sans fenêtre. Comptez environ
 20 secondes. Le point en bas à gauche passe au vert quand le moteur est prêt ; les actions IA sont grisées avant.
 

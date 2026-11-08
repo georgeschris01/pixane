@@ -7,6 +7,8 @@ from PySide6.QtWidgets import (QButtonGroup, QDialog, QDialogButtonBox, QDoubleS
                                QLabel, QListWidget, QListWidgetItem, QProgressBar, QPushButton, QRadioButton, QSpinBox,
                                QVBoxLayout, QWidget)
 
+from .langue import tr
+
 
 class Apercu(QLabel):
     """Affiche une image en entier, à la taille de la zone."""
@@ -36,7 +38,7 @@ class BoutonComparer(QPushButton):
     appuye = Signal(bool)
 
     def __init__(self):
-        super().__init__("Maintenir pour voir l'original")
+        super().__init__(tr("Maintenir pour voir l'original"))
 
     def mousePressEvent(self, e):
         self.appuye.emit(True)
@@ -53,7 +55,7 @@ class ChoixResultat(QDialog):
 
     def __init__(self, titre: str, original: QImage, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(f"{titre} — choisis un résultat")
+        self.setWindowTitle(tr("{titre} — choisis un résultat", titre=titre))
         self.resize(1100, 800)
         self.original = original
         self.images: list[QImage] = []
@@ -67,12 +69,12 @@ class ChoixResultat(QDialog):
         self.vignettes.currentRowChanged.connect(self._choisi)
         comparer = BoutonComparer()
         comparer.appuye.connect(self._comparer)
-        self.bouton_autres = QPushButton("Autres propositions")
+        self.bouton_autres = QPushButton(tr("Autres propositions"))
         self.bouton_autres.clicked.connect(self._autres)
-        garder = QPushButton("Garder ce résultat")
+        garder = QPushButton(tr("Garder ce résultat"))
         garder.setDefault(True)
         garder.clicked.connect(self.accept)
-        annuler = QPushButton("Annuler")
+        annuler = QPushButton(tr("Annuler"))
         annuler.clicked.connect(self.reject)
         self.etat = QLabel("")
         self.barre = QProgressBar()
@@ -114,7 +116,7 @@ class ChoixResultat(QDialog):
         self.etat.setText(f"{info['etape']}  ·  {texte_progression(info)}")
 
     def _autres(self):
-        self.occupe(True, "Calcul de nouvelles propositions…")
+        self.occupe(True, tr("Calcul de nouvelles propositions…"))
         self.autres_demandees.emit()
 
     def _choisi(self, ligne: int):
@@ -140,7 +142,7 @@ class BarreAgrandir(QFrame):
     annuler = Signal()
     valeurs_changees = Signal(object, object)   # (ajout, bord abîmé) en px, (haut, bas, gauche, droite)
 
-    COTES = (("haut", "Haut"), ("bas", "Bas"), ("gauche", "Gauche"), ("droite", "Droite"))
+    COTES = (("haut", "Haut"), ("bas", "Bas"), ("gauche", "Gauche"), ("droite", "Droite"))   # noms traduits à l'affichage
 
     def __init__(self, parent: QWidget):
         super().__init__(parent)
@@ -151,8 +153,8 @@ class BarreAgrandir(QFrame):
         colonne = QVBoxLayout(self)
         colonne.setContentsMargins(12, 6, 8, 8)
         colonne.setSpacing(4)
-        aide = QLabel("Cadre carré : tire vers l'extérieur pour agrandir.  Cadre rond rouge : tire vers "
-                      "l'intérieur pour marquer un bord abîmé à refaire.  (Maj : les deux côtés)")
+        aide = QLabel(tr("Cadre carré : tire vers l'extérieur pour agrandir.  Cadre rond rouge : tire vers "
+                         "l'intérieur pour marquer un bord abîmé à refaire.  (Maj : les deux côtés)"))
         aide.setObjectName("discret")
         colonne.addWidget(aide)
         bas = QHBoxLayout()
@@ -162,24 +164,24 @@ class BarreAgrandir(QFrame):
         grille.setHorizontalSpacing(6)
         grille.setVerticalSpacing(4)
         bas.addLayout(grille)
-        grille.addWidget(QLabel("Agrandir"), 1, 0)
-        grille.addWidget(QLabel("Bord abîmé"), 2, 0)
+        grille.addWidget(QLabel(tr("Agrandir")), 1, 0)
+        grille.addWidget(QLabel(tr("Bord abîmé")), 2, 0)
         for i, (cle, nom) in enumerate(self.COTES):
-            titre = QLabel(nom)
+            titre = QLabel(tr(nom))
             titre.setObjectName("discret")
             titre.setAlignment(Qt.AlignCenter)
             grille.addWidget(titre, 0, 1 + i)
             a = QSpinBox()
             a.setRange(0, 200)
             a.setSuffix(" %")
-            a.setToolTip("Ce que l'IA ajoute de ce côté, en % de la photo.")
+            a.setToolTip(tr("Ce que l'IA ajoute de ce côté, en % de la photo."))
             a.valueChanged.connect(self._case_changee)
             self.ajout[cle] = a
             grille.addWidget(a, 1, 1 + i)
             m = QSpinBox()
             m.setRange(0, 5000)
             m.setSuffix(" px")
-            m.setToolTip("Bande abîmée au bord de la photo : jetée puis redessinée par l'IA.")
+            m.setToolTip(tr("Bande abîmée au bord de la photo : jetée puis redessinée par l'IA."))
             m.valueChanged.connect(self._case_changee)
             self.abime[cle] = m
             grille.addWidget(m, 2, 1 + i)
@@ -190,10 +192,10 @@ class BarreAgrandir(QFrame):
         self.texte_taille.setAlignment(Qt.AlignCenter)
         droite.addWidget(self.texte_taille)
         boutons = QHBoxLayout()
-        b_annuler = QPushButton("Annuler")
+        b_annuler = QPushButton(tr("Annuler"))
         b_annuler.setAutoDefault(False)
         b_annuler.clicked.connect(self.annuler)
-        self.b_lancer = QPushButton("Lancer")
+        self.b_lancer = QPushButton(tr("Lancer"))
         self.b_lancer.setObjectName("principal")
         self.b_lancer.setAutoDefault(False)
         self.b_lancer.clicked.connect(self.lancer)
@@ -269,10 +271,10 @@ class BarreAgrandir(QFrame):
 class ReglagesUpscale(QDialog):
     def __init__(self, largeur: int, hauteur: int, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Upscale")
+        self.setWindowTitle(tr("Upscale"))
         self.taille = (largeur, hauteur)
-        self.net = QRadioButton("Net (Flux redessine les détails, plus lent)")
-        self.rapide = QRadioButton("Rapide (RealESRGAN seul, peut lisser)")
+        self.net = QRadioButton(tr("Net (Flux redessine les détails, plus lent)"))
+        self.rapide = QRadioButton(tr("Rapide (RealESRGAN seul, peut lisser)"))
         self.net.setChecked(True)
         groupe = QButtonGroup(self)
         groupe.addButton(self.net)
@@ -290,11 +292,11 @@ class ReglagesUpscale(QDialog):
         self.facteur.valueChanged.connect(self._maj)
         self.net.toggled.connect(self._maj)
         form = QFormLayout()
-        form.addRow("Agrandir", self.facteur)
-        form.addRow("Force (0,25 léger – 0,45 fort)", self.force)
+        form.addRow(tr("Agrandir|facteur"), self.facteur)
+        form.addRow(tr("Force (0,25 léger – 0,45 fort)"), self.force)
         boutons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        boutons.button(QDialogButtonBox.Ok).setText("Lancer")
-        boutons.button(QDialogButtonBox.Cancel).setText("Annuler")
+        boutons.button(QDialogButtonBox.Ok).setText(tr("Lancer"))
+        boutons.button(QDialogButtonBox.Cancel).setText(tr("Annuler"))
         boutons.accepted.connect(self.accept)
         boutons.rejected.connect(self.reject)
         lay = QVBoxLayout(self)
@@ -308,20 +310,20 @@ class ReglagesUpscale(QDialog):
     def _maj(self):
         self.force.setEnabled(self.net.isChecked())
         w, h = (round(v * self.facteur.value()) for v in self.taille)
-        self.resultat.setText(f"Taille finale : {w} × {h} px")
+        self.resultat.setText(tr("Taille finale : {largeur} × {hauteur} px", largeur=w, hauteur=h))
 
     def valeurs(self) -> dict:
         return {"net": self.net.isChecked(), "facteur": self.facteur.value(), "force": self.force.value()}
 
 
 def duree(s: int) -> str:
-    return f"{s // 60} min {s % 60:02d} s" if s >= 60 else f"{s} s"
+    return tr("{min} min {s} s", min=s // 60, s=f"{s % 60:02d}") if s >= 60 else tr("{s} s", s=s)
 
 
 def texte_progression(info: dict) -> str:
-    texte = f"{duree(info['secondes'])} écoulées"
+    texte = tr("{duree} écoulées", duree=duree(info['secondes']))
     if info.get("restant") is not None:
-        texte += f"  —  encore environ {duree(info['restant'])}"
+        texte += tr("  —  encore environ {duree}", duree=duree(info['restant']))
     return texte
 
 
@@ -342,13 +344,13 @@ class Attente(QDialog):
         self.setWindowTitle(titre)
         self.setModal(True)
         self.titre = QLabel(f"<b>{titre}</b>")
-        self.etape = QLabel("Envoi de l'image au moteur…")
+        self.etape = QLabel(tr("Envoi de l'image au moteur…"))
         self.barre = QProgressBar()
         self.barre.setTextVisible(True)
         self.barre.setFormat("%p %")
         self.barre.setRange(0, 0)
         self.temps = QLabel("")
-        self.bouton = QPushButton("Annuler")
+        self.bouton = QPushButton(tr("Annuler"))
         self.bouton.setAutoDefault(False)
         self.bouton.clicked.connect(self._annuler)
         lay = QVBoxLayout(self)
@@ -366,7 +368,7 @@ class Attente(QDialog):
         self.temps.setText(texte_progression(info))
 
     def _annuler(self):
-        self.etape.setText("Annulation…")
+        self.etape.setText(tr("Annulation…"))
         self.bouton.setEnabled(False)
         self.annuler.emit()
 

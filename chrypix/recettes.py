@@ -7,6 +7,8 @@ from __future__ import annotations
 import math
 import random
 
+from .langue import tr
+
 NB_EFFACER = 2      # propositions Flux (plus la version LaMa seule)
 NB_REMPLIR = 3
 NB_AGRANDIR = 3
@@ -65,21 +67,21 @@ def effacer(image: str, nb: int = NB_EFFACER):
          "14": _n("InpaintStitchImproved", stitcher=["11", 0], inpainted_image=["13", 0]),
          "15": _n("PreviewImage", images=["14", 0])}
     _flux_fill(p, ["13", 0], ["11", 2], ["11", 0], nb, denoise=0.6, steps=20)
-    return p, {"32": "Flux", "15": "LaMa seul"}
+    return p, {"32": "Flux", "15": tr("LaMa seul")}
 
 
 def remplir(image: str, texte: str = "", nb: int = NB_REMPLIR):
     p = {"10": _n("LoadImage", image=image),
          "11": _n("InpaintCropImproved", image=["10", 0], mask=["10", 1], **_decoupe())}
     _flux_fill(p, ["11", 1], ["11", 2], ["11", 0], nb, texte=texte, denoise=1.0)
-    return p, {"32": "Proposition"}
+    return p, {"32": tr("Proposition")}
 
 
 def agrandir(image: str, nb: int = NB_AGRANDIR):
     """image : toile déjà préparée par Chrypix (raccord.preparer), zone à peindre en transparent."""
     p = {"10": _n("LoadImage", image=image)}
     _flux_fill(p, ["10", 0], ["10", 1], None, nb, denoise=1.0)
-    return p, {"32": "Proposition"}
+    return p, {"32": tr("Proposition")}
 
 
 def upscale_rapide(image: str, facteur: float = 2.0):
@@ -88,7 +90,7 @@ def upscale_rapide(image: str, facteur: float = 2.0):
          "12": _n("ImageUpscaleWithModel", upscale_model=["11", 0], image=["10", 0]),
          "13": _n("ImageScaleBy", image=["12", 0], upscale_method="lanczos", scale_by=facteur / 4),
          "14": _n("PreviewImage", images=["13", 0])}
-    return p, {"14": "Upscale rapide"}
+    return p, {"14": tr("Upscale rapide")}
 
 
 def nb_morceaux(largeur: int, hauteur: int, facteur: float, tuile: int = 1024) -> int:
@@ -114,5 +116,5 @@ def upscale_net(image: str, facteur: float = 2.0, force: float = 0.35, taille: t
                   tiled_decode=False, batch_size=1),
          "31": _n("PreviewImage", images=["30", 0])}
     if taille:
-        return p, {"31": "Upscale net"}, nb_morceaux(*taille, facteur)
-    return p, {"31": "Upscale net"}
+        return p, {"31": tr("Upscale net")}, nb_morceaux(*taille, facteur)
+    return p, {"31": tr("Upscale net")}

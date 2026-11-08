@@ -6,6 +6,7 @@ from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPainterPath, QPen, 
 from PySide6.QtWidgets import QWidget
 
 from .document import COULEUR_SELECTION, Document
+from .langue import tr
 
 MAIN, RECTANGLE, LASSO, PINCEAU, GOMME = "main", "rectangle", "lasso", "pinceau", "gomme"
 GOMME_CALQUE = "gomme_calque"                  # efface pour de vrai les pixels du calque actif
@@ -139,7 +140,7 @@ class Canevas(QWidget):
         p.fillRect(self.rect(), self.couleur_fond)
         if not self.doc:
             p.setPen(self.couleur_texte)
-            p.drawText(self.rect(), Qt.AlignCenter, "Fichier > Ouvrir…  (ou glisse une photo ici)")
+            p.drawText(self.rect(), Qt.AlignCenter, tr("Fichier > Ouvrir…  (ou glisse une photo ici)"))
             return
         # damier sous la photo : les zones transparentes des calques se voient
         photo = QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
@@ -431,8 +432,8 @@ class Canevas(QWidget):
         if self.cadre is not None:
             return
         if self.outil == GOMME_CALQUE and self.doc.calque_actif.verrou:
-            self.refus.emit(f"Le calque « {self.doc.calque_actif.nom} » est verrouillé : "
-                            "clique sur son cadenas pour pouvoir le gommer.")
+            self.refus.emit(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour pouvoir le "
+                               "gommer.", nom=self.doc.calque_actif.nom))
             return
         self._soustraire = self.mode_retirer != bool(e.modifiers() & Qt.AltModifier)
         self._avant = self.doc.etat()
@@ -490,7 +491,7 @@ class Canevas(QWidget):
                 LASSO: "Lasso", GOMME_CALQUE: "Gomme de calque"}
         self._img_calque = None
         self._trace = None
-        self.selection_modifiee.emit(self._avant, noms[self.outil])
+        self.selection_modifiee.emit(self._avant, tr(noms[self.outil]))
         self._avant = None
         self.update()
 

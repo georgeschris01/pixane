@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (QGraphicsOpacityEffect, QHBoxLayout, QInputDialog
                                QVBoxLayout, QWidget)
 
 from .document import Document
+from .langue import tr
 
 VIGNETTE = QSize(44, 34)
 
@@ -37,7 +38,7 @@ class LigneCalque(QWidget):
         lay.setSpacing(8)
         self.oeil = QToolButton()
         self.oeil.setAutoRaise(True)
-        self.oeil.setToolTip("Afficher / masquer le calque")
+        self.oeil.setToolTip(tr("Afficher / masquer le calque"))
         self.oeil.clicked.connect(self.oeil_clique)
         self.vignette = QLabel()
         self.vignette.setFixedSize(VIGNETTE)
@@ -59,8 +60,8 @@ class LigneCalque(QWidget):
     def remplir(self, nom: str, visible: bool, opacite: float, vignette: QPixmap, verrou: bool = False):
         self.oeil.setIcon(self.icones("oeil" if visible else "oeil_ferme"))
         self.cadenas.setIcon(self.icones("cadenas" if verrou else "cadenas_ouvert"))
-        self.cadenas.setToolTip("Calque verrouillé : cliquer pour le déverrouiller" if verrou else
-                                "Verrouiller le calque (protège contre les modifications)")
+        self.cadenas.setToolTip(tr("Calque verrouillé : cliquer pour le déverrouiller") if verrou else
+                                tr("Verrouiller le calque (protège contre les modifications)"))
         effet = self.cadenas.graphicsEffect()
         if effet is None:
             effet = QGraphicsOpacityEffect(self.cadenas)
@@ -68,7 +69,7 @@ class LigneCalque(QWidget):
         effet.setOpacity(1.0 if verrou else 0.35)        # cadenas ouvert discret
         self.nom.setText(nom)
         self.nom.setEnabled(visible)
-        self.details.setText("" if opacite >= 0.999 else f"opacité {round(opacite * 100)} %")
+        self.details.setText("" if opacite >= 0.999 else tr("opacité {n} %", n=round(opacite * 100)))
         self.details.setVisible(opacite < 0.999)
         self.vignette.setPixmap(vignette)
 
@@ -94,7 +95,7 @@ class PanneauCalques(QWidget):
         lay.addWidget(self.liste, 1)
 
         opacite = QHBoxLayout()
-        opacite.addWidget(QLabel("Opacité"))
+        opacite.addWidget(QLabel(tr("Opacité")))
         self.curseur = QSlider(Qt.Horizontal)
         self.curseur.setRange(0, 100)
         self.curseur.sliderPressed.connect(self._opacite_debut)
@@ -109,16 +110,18 @@ class PanneauCalques(QWidget):
         boutons = QHBoxLayout()
         boutons.setSpacing(2)
         self.boutons = {}
+        # bulles d'aide : tr("Nouveau calque vide"), tr("Fusionner avec le calque du dessous"),
+        # tr("Aplatir l'image (un seul calque)") ; les autres sont déjà traduites ailleurs
         for nom, aide, action in (("calque_nouveau", "Nouveau calque vide", self.nouveau),
-                                  ("dupliquer", "Dupliquer le calque", self.dupliquer),
-                                  ("monter", "Monter le calque", lambda: self.deplacer(+1)),
-                                  ("descendre", "Descendre le calque", lambda: self.deplacer(-1)),
+                                  ("dupliquer", tr("Dupliquer le calque"), self.dupliquer),
+                                  ("monter", tr("Monter le calque"), lambda: self.deplacer(+1)),
+                                  ("descendre", tr("Descendre le calque"), lambda: self.deplacer(-1)),
                                   ("fusionner", "Fusionner avec le calque du dessous", self.fusionner),
                                   ("aplatir", "Aplatir l'image (un seul calque)", self.aplatir),
-                                  ("supprimer", "Supprimer le calque", self.supprimer)):
+                                  ("supprimer", tr("Supprimer le calque"), self.supprimer)):
             b = QToolButton()
             b.setAutoRaise(True)
-            b.setToolTip(aide)
+            b.setToolTip(tr(aide))
             b.setIconSize(QSize(18, 18))
             b.clicked.connect(action)
             self.boutons[nom] = b
@@ -197,7 +200,7 @@ class PanneauCalques(QWidget):
             self.boutons["monter"].setEnabled(doc.actif < n - 1)
             self.boutons["descendre"].setEnabled(doc.actif > 0)
         self.curseur.setEnabled(bool(doc) and not verrou)
-        self.curseur.setToolTip("Calque verrouillé" if verrou else "")
+        self.curseur.setToolTip(tr("Calque verrouillé") if verrou else "")
 
     # ---------------------------------------------------------- actions
     def _ligne_choisie(self, rang: int):
@@ -208,12 +211,12 @@ class PanneauCalques(QWidget):
 
     def _oeil(self, ligne: LigneCalque):
         c = self.doc.calques[ligne.index]
-        texte = "Masquer le calque" if c.visible else "Afficher le calque"
+        texte = tr("Masquer le calque") if c.visible else tr("Afficher le calque")
         self.demande.emit(self.doc.etat_calque_modifie(ligne.index, visible=not c.visible), texte)
 
     def _cadenas(self, ligne: LigneCalque):
         c = self.doc.calques[ligne.index]
-        texte = "Déverrouiller le calque" if c.verrou else "Verrouiller le calque"
+        texte = tr("Déverrouiller le calque") if c.verrou else tr("Verrouiller le calque")
         self.demande.emit(self.doc.etat_calque_modifie(ligne.index, verrou=not c.verrou), texte)
 
     def _opacite_debut(self):
@@ -227,45 +230,45 @@ class PanneauCalques(QWidget):
         if self.curseur.isSliderDown():
             self.doc.appliquer_etat(etat)              # aperçu en direct ; l'entrée Annuler est créée au lâcher
         else:
-            self.demande.emit(etat, "Opacité du calque")
+            self.demande.emit(etat, tr("Opacité du calque"))
 
     def _opacite_fin(self):
         if self._avant_opacite is not None:
             apres = self.doc.etat()
             avant, self._avant_opacite = self._avant_opacite, None
             self.doc.appliquer_etat(avant)
-            self.demande.emit(apres, "Opacité du calque")
+            self.demande.emit(apres, tr("Opacité du calque"))
 
     def nouveau(self):
-        self.demande.emit(self.doc.etat_nouveau_calque(), "Nouveau calque")
+        self.demande.emit(self.doc.etat_nouveau_calque(), tr("Nouveau calque"))
 
     def dupliquer(self):
-        self.demande.emit(self.doc.etat_dupliquer(), "Dupliquer le calque")
+        self.demande.emit(self.doc.etat_dupliquer(), tr("Dupliquer le calque"))
 
     def deplacer(self, sens: int):
         etat = self.doc.etat_deplacer(self.doc.actif, self.doc.actif + sens)
         if etat:
-            self.demande.emit(etat, "Monter le calque" if sens > 0 else "Descendre le calque")
+            self.demande.emit(etat, tr("Monter le calque") if sens > 0 else tr("Descendre le calque"))
 
     def fusionner(self):
         etat = self.doc.etat_fusionner_bas()
         if etat:
-            self.demande.emit(etat, "Fusionner les calques")
+            self.demande.emit(etat, tr("Fusionner les calques"))
 
     def aplatir(self):
         etat = self.doc.etat_aplatir()
         if etat:
-            self.demande.emit(etat, "Aplatir l'image")
+            self.demande.emit(etat, tr("Aplatir l'image"))
 
     def supprimer(self):
         etat = self.doc.etat_supprimer()
         if etat:
-            self.demande.emit(etat, "Supprimer le calque")
+            self.demande.emit(etat, tr("Supprimer le calque"))
 
     def renommer(self):
         if not self.doc:
             return
         c = self.doc.calque_actif
-        nom, ok = QInputDialog.getText(self, "Renommer le calque", "Nom :", text=c.nom)
+        nom, ok = QInputDialog.getText(self, tr("Renommer le calque"), tr("Nom :"), text=c.nom)
         if ok and nom.strip() and nom.strip() != c.nom:
-            self.demande.emit(self.doc.etat_calque_modifie(self.doc.actif, nom=nom.strip()), "Renommer le calque")
+            self.demande.emit(self.doc.etat_calque_modifie(self.doc.actif, nom=nom.strip()), tr("Renommer le calque"))
