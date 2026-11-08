@@ -30,7 +30,13 @@ with zipfile.ZipFile(z, "w") as f:
     f.writestr("depot-abc123/sous/fichier.txt", "bonjour")
     f.writestr("depot-abc123/../../evasion.txt", "non")
 ZIP = z.getvalue()
-FICHIERS = {"/gros.bin": GROS, "/ext.zip": ZIP}
+z2 = io.BytesIO()
+with zipfile.ZipFile(z2, "w") as f:
+    f.writestr("depot-def456/__init__.py", "# extension v2")
+ZIP2 = z2.getvalue()
+GROS2 = os.urandom(1024 * 1024 + 7)
+FICHIERS = {"/gros.bin": GROS, "/ext.zip": ZIP, "/ext2.zip": ZIP2, "/gros2.bin": GROS2,
+            "/comfy2.7z": b"archive"}
 LENT = threading.Event()
 
 
@@ -154,7 +160,60 @@ with tempfile.TemporaryDirectory() as tmp:
     verifier(not f.b_lancer.isEnabled(), "ComfyUI d'un autre : installation refusée dans ce dossier")
     f.close()
 
-# 6. catalogue et fenêtre
+# 6. mises à jour : nouvelle version d'une extension, d'un modèle (autre fichier) et de ComfyUI
+import subprocess  # noqa: E402
+with tempfile.TemporaryDirectory() as tmp:
+    dossier = Path(tmp) / "moteur"
+    r = im.racine(dossier)
+    (r / "ComfyUI").mkdir(parents=True)
+    (r / "ComfyUI" / "main.py").write_text("v1")
+    comfy1 = im.Element("comfyui", "ComfyUI", URL + "/comfy1.7z", 7, "1" * 64, "GPL-3.0", "7z")
+    ok, m = executer(im.Installation(dossier, [modele, extension]))
+    infos = im.lire_infos(dossier)
+    infos["versions"]["comfyui"] = im._signature(comfy1)          # ComfyUI v1 « déjà installé »
+    (r / im.INFOS).write_text(__import__("json").dumps(infos), encoding="utf-8")
+    verifier(ok and set(infos["versions"]) >= {"gros", "ext"}, "versions installées retenues dans chrypix.json")
+    verifier(all(im.etat_element(dossier, e) == "ok" for e in (modele, extension, comfy1)), "tout est à jour")
+
+    modele2 = replace(modele, url=URL + "/gros2.bin", taille=len(GROS2), sha256=hashlib.sha256(GROS2).hexdigest(),
+                      dest="ComfyUI/models/essai/gros2.bin")
+    extension2 = replace(extension, url=URL + "/ext2.zip")
+    comfy2 = replace(comfy1, url=URL + "/comfy2.7z", taille=7, sha256=hashlib.sha256(b"archive").hexdigest())
+    verifier([im.etat_element(dossier, e) for e in (modele2, extension2, comfy2)] == ["absent", "maj", "maj"],
+             "nouvelles versions repérées (modèle à télécharger, extension et ComfyUI à mettre à jour)")
+    vrai_run = subprocess.run
+
+    def faux_7zr(cmd, **k):                                          # « décompresse » un ComfyUI v2
+        sortie = Path(next(x for x in cmd if x.startswith("-o"))[2:]) / im.PORTABLE / "ComfyUI"
+        (sortie / "models").mkdir(parents=True)
+        (sortie / "main.py").write_text("v2")
+        (sortie / "models" / "vide_v2.txt").write_text("")
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+    im.subprocess.run = faux_7zr
+    outil = im.Element("7zr", "7zr", URL + "/gros.bin", len(GROS), hashlib.sha256(GROS).hexdigest(), "LGPL",
+                       "outil")
+    ok, m = executer(im.Installation(dossier, [outil, comfy2, extension2, modele2]))
+    im.subprocess.run = vrai_run
+    verifier(ok is True, f"mise à jour faite : {m}")
+    verifier((r / "ComfyUI" / "main.py").read_text() == "v2", "ComfyUI remplacé par la nouvelle version")
+    verifier((r / "ComfyUI/custom_nodes/ext/__init__.py").read_text() == "# extension v2"
+             and not (r / "ComfyUI/custom_nodes/ext/sous").exists(), "extension remplacée (ancienne version enlevée)")
+    verifier((r / modele2.dest).read_bytes() == GROS2, "nouveau modèle téléchargé")
+    verifier(not (r / modele.dest).exists(), "ancien modèle effacé")
+    verifier(not (r / "ComfyUI/models/vide_v2.txt").exists(), "dossier models de l'ancien ComfyUI gardé")
+    verifier(not (dossier / "mise_a_jour").exists() and not (dossier / "ancien_comfyui").exists(),
+             "dossiers temporaires nettoyés")
+    verifier(all(im.etat_element(dossier, e) == "ok" for e in (modele2, extension2, comfy2)),
+             "après la mise à jour : tout est à jour")
+    ok, m = executer(inst := im.Installation(dossier, [outil, comfy2, extension2, modele2]))
+    verifier(ok and inst._recu == 0, "relancer : rien retéléchargé (7-Zip non plus)")
+    # moteur installé avant le suivi des versions : rien n'est imposé
+    infos = im.lire_infos(dossier)
+    infos.pop("versions")
+    (r / im.INFOS).write_text(__import__("json").dumps(infos), encoding="utf-8")
+    verifier(im.etat_element(dossier, extension) == "ok", "ancien moteur sans versions : pris tel quel")
+
+# 7. catalogue et fenêtre
 cat = im.catalogue(True, False)
 verifier(all(e.sha256 for e in cat if e.genre in ("modele", "outil", "7z")), "catalogue : toutes les empreintes")
 verifier("nvidia.7z" in cat[1].url and "cu126" in im.catalogue(False)[1].url, "ComfyUI selon le pilote")

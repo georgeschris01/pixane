@@ -424,6 +424,14 @@ The same window opens from **AI > Install the AI engine…** (for example to add
 offers it at start-up if it finds no engine. If a ComfyUI installed another way is already there, Chrypix uses it
 and installs nothing.
 
+**AI engine updates**: the versions of ComfyUI, the extensions and the models are chosen and tested with each
+version of Chrypix; nothing changes on its own. When a new version of Chrypix needs other versions, Chrypix offers
+it once at start-up (list and download size), and the **Install the AI engine** window shows the state of each
+item (*up to date*, *new version*) with the **Update** button. Only what changed is downloaded. ComfyUI is replaced
+while keeping its models, extensions and settings; a replaced old model is deleted. The engine is stopped during the
+update and restarted afterwards. A ComfyUI installed another way (for example ComfyUI Desktop) updates itself:
+Chrypix does not touch it.
+
 A new version installs over the old one (settings kept). To uninstall: Windows Settings > Apps. The uninstaller
 asks two questions (default answer "No"):
 - also delete the **AI engine installed by Chrypix** (ComfyUI, extensions, models)? A ComfyUI installed another

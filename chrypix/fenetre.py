@@ -863,9 +863,44 @@ class Fenetre(QMainWindow):
                                            dossier=install["dir"]))
                 return
             dossier = str(racine.parent)        # installé par Chrypix : on complète (ex. Flux Schnell)
-        f = FenetreInstallation(self, dossier=dossier, schnell=dossier is not None)
+        schnell = False
+        if dossier is not None:
+            from .installation_moteur import lire_infos
+            infos = lire_infos(Path(dossier)) or {}
+            schnell = "schnell" in infos.get("elements", []) or "schnell" in (infos.get("versions") or {})
+        f = FenetreInstallation(self, dossier=dossier, schnell=schnell)
+        f.commence.connect(self.moteur.arreter)      # ComfyUI ne doit pas tourner pendant qu'on le remplace
         f.installe.connect(lambda _d: self._redemarrer_moteur())
         f.exec()
+        if self.moteur.etat == "arrêté":               # arrêté en route : on relance l'ancien
+            self._redemarrer_moteur()
+
+    def _verifier_moteur_a_jour(self):
+        """Après le démarrage du moteur : si Chrypix l'a installé et qu'une nouvelle version de Chrypix demande
+        d'autres versions (ComfyUI, extension, modèle), le proposer une fois."""
+        from .installation_moteur import PORTABLE, go, mises_a_jour_moteur
+        install = trouver_comfyui()
+        if install is None:
+            return
+        r = Path(install["dir"]).parent
+        if r.name != PORTABLE:
+            return
+        maj = mises_a_jour_moteur(r.parent)
+        if not maj:
+            return
+        cle = ",".join(f"{e.cle}:{e.sha256 or e.url}" for e in maj)
+        if self.reglages.value("moteur_maj_vue", "") == cle:
+            self.statusBar().showMessage(tr("Une mise à jour du moteur IA attend : menu IA > Installer le moteur "
+                                            "IA."), 10000)
+            return
+        self.reglages.setValue("moteur_maj_vue", cle)
+        taille = sum(e.taille or 0 for e in maj)
+        if QMessageBox.question(self, tr("Moteur IA"), tr(
+                "Cette version de Chrypix utilise de nouvelles versions pour le moteur IA :\n{liste}\n\n"
+                "À télécharger : environ {taille}. Le moteur sera arrêté pendant la mise à jour.\n\n"
+                "Mettre à jour maintenant ? (Plus tard : menu IA > Installer le moteur IA.)",
+                liste="\n".join("• " + e.nom for e in maj), taille=go(taille))) == QMessageBox.Yes:
+            self.installer_moteur()
 
     def _redemarrer_moteur(self):
         self.moteur.arreter()
@@ -876,7 +911,8 @@ class Fenetre(QMainWindow):
     def _demarrer_moteur(self):
         def travail(_progres):
             self.moteur.demarrer(self.etat_moteur.emit)
-        t = self._tache(travail, lambda _: self._actualiser(), self._moteur_en_echec)
+        t = self._tache(travail, lambda _: (self._actualiser(), self._verifier_moteur_a_jour()),
+                        self._moteur_en_echec)
         t.lancer()
 
     def _moteur_en_echec(self, message: str):

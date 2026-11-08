@@ -478,6 +478,14 @@ La même fenêtre s'ouvre par le menu **IA > Installer le moteur IA…** (par ex
 tard), et Chrypix la propose au démarrage s'il ne trouve pas de moteur. Si un ComfyUI installé autrement est déjà
 là, Chrypix l'utilise et n'installe rien.
 
+**Mises à jour du moteur IA** : les versions de ComfyUI, des extensions et des modèles sont choisies et essayées
+avec chaque version de Chrypix ; rien ne change tout seul. Quand une nouvelle version de Chrypix demande d'autres
+versions, Chrypix le propose une fois au démarrage (liste et taille à télécharger), et la fenêtre **Installer le
+moteur IA** montre l'état de chaque élément (*à jour*, *nouvelle version*) avec le bouton **Mettre à jour**.
+Seul ce qui a changé est téléchargé. ComfyUI est remplacé en gardant ses modèles, ses extensions et ses réglages ;
+un ancien modèle remplacé est effacé. Le moteur est arrêté pendant la mise à jour et relancé après. Un ComfyUI
+installé autrement (par exemple ComfyUI Desktop) se met à jour de son côté : Chrypix n'y touche pas.
+
 Une nouvelle version s'installe par-dessus l'ancienne (réglages gardés). Désinstaller : Paramètres de Windows >
 Applications. Le désinstalleur pose deux questions (réponse « Non » par défaut) :
 - supprimer aussi le **moteur IA installé par Chrypix** (ComfyUI, extensions, modèles) ? Un ComfyUI installé

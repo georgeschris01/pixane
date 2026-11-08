@@ -5,6 +5,11 @@ Lancement seul : python -m chrypix.installation_moteur [--dossier D] [--schnell]
 
 Chaque fichier est téléchargé dans un fichier « .part » : si on arrête (ou si la connexion coupe), le
 téléchargement reprend plus tard là où il s'était arrêté. Chaque fichier est vérifié (taille, empreinte SHA-256).
+
+Mises à jour : les versions sont fixées dans catalogue() (adresse avec numéro de version ou commit, empreinte).
+Le fichier chrypix.json du moteur garde la version installée de chaque élément. Quand une nouvelle version de
+Chrypix change le catalogue, seuls les éléments changés sont retéléchargés ; ComfyUI est remplacé en gardant
+ses dossiers models, custom_nodes, user, input et output ; un ancien modèle qui n'est plus utilisé est effacé.
 """
 from __future__ import annotations
 
@@ -186,12 +191,15 @@ def taille_restante(dossier: Path, elements: list[Element]) -> int:
     """Place disque encore nécessaire (fichiers pas encore là + ComfyUI décompressé)."""
     total = 0
     r = racine(dossier)
+    infos = lire_infos(dossier)
     for e in elements:
+        a_faire = e.genre == "outil" or etat_element(dossier, e, infos) != "ok"
+        if not a_faire:
+            continue
         if e.genre == "modele":
-            if not _modele_present(r / e.dest, e):
-                part = (r / e.dest).with_name(e.fichier + ".part")
-                total += e.taille - (part.stat().st_size if part.is_file() else 0)
-        elif e.genre == "7z" and not (r / "ComfyUI" / "main.py").is_file():
+            part = (r / e.dest).with_name(e.fichier + ".part")
+            total += e.taille - (part.stat().st_size if part.is_file() else 0)
+        elif e.genre == "7z":
             total += e.taille + MARGE_EXTRACTION
         elif e.taille:
             total += e.taille
@@ -200,6 +208,64 @@ def taille_restante(dossier: Path, elements: list[Element]) -> int:
 
 def _modele_present(chemin: Path, e: Element) -> bool:
     return chemin.is_file() and chemin.stat().st_size == e.taille
+
+
+# ---------------------------------------------------------------- versions installées
+INFOS = "chrypix.json"                           # dans ComfyUI_windows_portable : « installé par Chrypix »
+GARDER = ("models", "custom_nodes", "user", "input", "output")   # dossiers de ComfyUI gardés lors d'une mise à jour
+
+
+def lire_infos(dossier: Path) -> dict | None:
+    """Contenu de chrypix.json (None si le moteur n'a pas été installé par Chrypix)."""
+    try:
+        return json.loads((racine(dossier) / INFOS).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def _signature(e: Element) -> dict:
+    return {"url": e.url, "sha256": e.sha256, "dest": e.dest}
+
+
+def _present(r: Path, e: Element) -> bool:
+    if e.genre == "7z":
+        return (r / "ComfyUI" / "main.py").is_file()
+    if e.genre == "zip":
+        return (r / e.dest / "__init__.py").is_file() or (e.cle == "usdu_script" and (r / e.dest / "scripts").is_dir())
+    if e.genre == "modele":
+        return _modele_present(r / e.dest, e)
+    return True                                  # outil : seulement le temps de l'installation
+
+
+def etat_element(dossier: Path, e: Element, infos: dict | None = None) -> str:
+    """« ok » (à jour), « maj » (présent mais d'une autre version) ou « absent »."""
+    infos = lire_infos(dossier) if infos is None else infos
+    r = racine(dossier)
+    if not _present(r, e):
+        return "absent"
+    versions = (infos or {}).get("versions")
+    if versions is None:                         # installé avant le suivi des versions : pris tel quel
+        return "ok"
+    connu = versions.get(e.cle)
+    if connu is None:
+        return "ok" if e.genre == "modele" else "maj"   # un modèle à la bonne taille est le bon
+    return "ok" if connu.get("url") == e.url and connu.get("sha256") == e.sha256 else "maj"
+
+
+def elements_installes(dossier: Path, pilote_recent: bool = True) -> list[Element]:
+    """Catalogue actuel pour un moteur déjà installé (avec Flux Schnell s'il l'avait)."""
+    infos = lire_infos(dossier) or {}
+    schnell = "schnell" in infos.get("elements", []) or "schnell" in infos.get("versions", {})
+    return catalogue(pilote_recent, schnell)
+
+
+def mises_a_jour_moteur(dossier: Path, pilote_recent: bool = True) -> list[Element]:
+    """Éléments à télécharger pour mettre à jour un moteur installé par Chrypix ([] si rien, ou pas le nôtre)."""
+    infos = lire_infos(dossier)
+    if infos is None:
+        return []
+    return [e for e in elements_installes(dossier, pilote_recent)
+            if e.genre != "outil" and etat_element(dossier, e, infos) != "ok"]
 
 
 def _journal(texte: str):
@@ -252,48 +318,57 @@ class Installation(QObject):
             telechargements = self.dossier / "telechargements"
             telechargements.mkdir(exist_ok=True)
             r = racine(self.dossier)
-            outil = None
+            infos = lire_infos(self.dossier)
+            versions = dict((infos or {}).get("versions") or {})
+            outil, outil_e = None, None
             for e in self.elements:
                 if self.arret.is_set():
                     raise Arrete()
                 self._fait_avant[e.cle] = self.fait
+                etat = etat_element(self.dossier, e, infos) if e.genre != "outil" else "ok"
                 if e.genre == "outil":
-                    outil = telechargements / e.fichier
-                    if outil.is_file() and outil.stat().st_size == e.taille:
-                        self.etat.emit(e.cle, tr("déjà là"))
-                    else:
-                        self._telecharger(e, outil)
+                    outil, outil_e = telechargements / e.fichier, e      # téléchargé seulement s'il sert
+                    self.etat.emit(e.cle, tr("si besoin"))
+                elif etat == "ok":
+                    self.etat.emit(e.cle, tr("déjà là"))
                 elif e.genre == "7z":
-                    if (r / "ComfyUI" / "main.py").is_file():
-                        self.etat.emit(e.cle, tr("déjà là"))
-                    else:
-                        archive = telechargements / e.fichier
-                        if not (archive.is_file() and archive.stat().st_size == e.taille):
-                            self._telecharger(e, archive)
-                        self._decompresser(e, outil, archive)
-                        archive.unlink(missing_ok=True)
-                elif e.genre == "zip":
-                    if (r / e.dest / "__init__.py").is_file() or (e.cle == "usdu_script" and
-                                                                  (r / e.dest / "scripts").is_dir()):
-                        self.etat.emit(e.cle, tr("déjà là"))
-                    else:
-                        archive = telechargements / f"{e.cle}.zip"
+                    if outil is not None and not (outil.is_file() and outil.stat().st_size == outil_e.taille):
+                        self._telecharger(outil_e, outil)
+                    archive = telechargements / e.fichier
+                    if not (archive.is_file() and archive.stat().st_size == e.taille):
                         self._telecharger(e, archive)
-                        self._dezipper(e, archive, r / e.dest)
-                        archive.unlink(missing_ok=True)
-                    if e.cle == "gguf":
-                        self._pip(r)
-                else:
-                    cible = r / e.dest
-                    if _modele_present(cible, e):
-                        self.etat.emit(e.cle, tr("déjà là"))
+                    if etat == "maj":
+                        self._remplacer_comfyui(e, outil, archive)
                     else:
-                        self._telecharger(e, cible)
+                        self._decompresser(e, outil, archive)
+                    archive.unlink(missing_ok=True)
+                elif e.genre == "zip":
+                    archive = telechargements / f"{e.cle}.zip"
+                    self._telecharger(e, archive)
+                    if etat == "maj":                                   # nouvelle version : à côté, puis échange
+                        neuf = (r / e.dest).with_name((r / e.dest).name + ".neuf")
+                        shutil.rmtree(neuf, ignore_errors=True)
+                        self._dezipper(e, archive, neuf)
+                        shutil.rmtree(r / e.dest)
+                        os.replace(neuf, r / e.dest)
+                    else:
+                        self._dezipper(e, archive, r / e.dest)
+                    archive.unlink(missing_ok=True)
+                else:
+                    self._telecharger(e, r / e.dest)
+                if e.cle == "gguf" and (etat != "ok" or versions.get("_pip") != GGUF_PIP):
+                    self._pip(r)
+                    versions["_pip"] = GGUF_PIP
+                if e.genre != "outil":
+                    ancien = versions.get(e.cle, {}).get("dest")
+                    if e.genre == "modele" and ancien and ancien != e.dest and (r / ancien).is_file():
+                        (r / ancien).unlink()                           # ancienne version d'un modèle
+                        _journal(f"{e.cle} : ancien fichier effacé ({ancien})")
+                    versions[e.cle] = _signature(e)
+                    self._ecrire_infos(r, versions)                     # retenu au fur et à mesure
                 self.fait = self._fait_avant[e.cle] + (e.taille or 2 * 1024 ** 2)
                 self.progres.emit(self.fait, self.total, self._vitesse())
-            (r / "chrypix.json").write_text(json.dumps({"installe_le": time.strftime("%Y-%m-%d %H:%M"),
-                                                        "elements": [e.cle for e in self.elements]}, indent=1),
-                                            encoding="utf-8")
+            self._ecrire_infos(r, versions)
             shutil.rmtree(telechargements, ignore_errors=True)
             QSettings("Chrypix", os.environ.get("CHRYPIX_REGLAGES", "Chrypix")).setValue("comfyui_dir", str(r))
             _journal("terminé")
@@ -307,6 +382,44 @@ class Installation(QObject):
             self.fini.emit(False, tr("L'installation s'est arrêtée : {erreur}\n\nRelance-la plus tard : elle "
                                      "reprendra où elle s'est arrêtée. Détails : {fichier}", erreur=ex,
                                      fichier=JOURNAL))
+
+    def _ecrire_infos(self, r: Path, versions: dict):
+        if not r.is_dir():
+            return
+        cles = [k for k in versions if not k.startswith("_")]
+        (r / INFOS).write_text(json.dumps({"installe_le": time.strftime("%Y-%m-%d %H:%M"), "elements": cles,
+                                           "versions": versions}, indent=1), encoding="utf-8")
+
+    def _remplacer_comfyui(self, e: Element, outil: Path | None, archive: Path):
+        """Nouvelle version de ComfyUI : décompressée à côté, on y remet models, custom_nodes, user, input,
+        output, puis on échange les dossiers. En cas d'échec, l'ancien ComfyUI reste en place."""
+        if outil is None:
+            raise OSError("7zr.exe manquant")
+        tmp = self.dossier / "mise_a_jour"
+        shutil.rmtree(tmp, ignore_errors=True)
+        self.etat.emit(e.cle, tr("décompression… (quelques minutes)"))
+        res = subprocess.run([str(outil), "x", str(archive), f"-o{tmp}", "-y", "-bso0", "-bsp0"],
+                             capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        neuf, vieux = tmp / PORTABLE, racine(self.dossier)
+        if res.returncode != 0 or not (neuf / "ComfyUI" / "main.py").is_file():
+            _journal(f"7zr (mise à jour) : {res.returncode} {res.stderr[-2000:]}")
+            shutil.rmtree(tmp, ignore_errors=True)
+            raise OSError(tr("la décompression de ComfyUI a échoué"))
+        self.etat.emit(e.cle, tr("mise à jour…"))
+        for d in GARDER:
+            if (vieux / "ComfyUI" / d).exists():
+                shutil.rmtree(neuf / "ComfyUI" / d, ignore_errors=True)
+                shutil.move(str(vieux / "ComfyUI" / d), str(neuf / "ComfyUI" / d))
+        if (vieux / INFOS).is_file():
+            shutil.copy2(vieux / INFOS, neuf / INFOS)
+        ancien = self.dossier / "ancien_comfyui"
+        shutil.rmtree(ancien, ignore_errors=True)
+        os.replace(vieux, ancien)
+        os.replace(neuf, vieux)
+        shutil.rmtree(ancien, ignore_errors=True)
+        shutil.rmtree(tmp, ignore_errors=True)
+        self.etat.emit(e.cle, tr("prêt"))
+        _journal("ComfyUI mis à jour")
 
     def _vitesse(self) -> float:
         duree = time.time() - self._debut
@@ -516,6 +629,8 @@ class FenetreInstallation(QDialog):
         recent = self.pilote is None or self.pilote >= PILOTE_CUDA13
         return catalogue(recent, self.c_schnell.isChecked())
 
+    commence = Signal()                          # le travail commence (Chrypix arrête alors son moteur)
+
     def _parcourir(self):
         d = QFileDialog.getExistingDirectory(self, tr("Dossier du moteur IA"), self.dossier.text())
         if d:
@@ -535,10 +650,16 @@ class FenetreInstallation(QDialog):
             return
         self.liste.clear()
         self._lignes = {}
+        dossier = Path(self.dossier.text())
+        infos = lire_infos(dossier) if self.dossier.text().strip() else None
+        etats = {"ok": tr("à jour"), "maj": tr("nouvelle version"), "absent": ""}
+        nb_maj = 0
         for e in self.elements():
             source = e.url.split("/")[2].replace("www.", "")
             taille = go(e.taille) if e.taille else tr("< 5 Mo")
-            ligne = QTreeWidgetItem([e.nom, taille, e.licence, source, ""])
+            etat = etat_element(dossier, e, infos) if infos is not None and e.genre != "outil" else "absent"
+            nb_maj += etat != "ok" and infos is not None and e.genre != "outil"
+            ligne = QTreeWidgetItem([e.nom, taille, e.licence, source, etats[etat]])
             ligne.setToolTip(0, e.url)
             ligne.setTextAlignment(1, Qt.AlignRight | Qt.AlignVCenter)
             self.liste.addTopLevelItem(ligne)
@@ -562,6 +683,11 @@ class FenetreInstallation(QDialog):
         self.place.setText(texte)
         ok = assez and permis and not etranger
         self.place.setStyleSheet("" if ok else "color: #e8366f; font-weight: bold;")
+        if infos is not None:
+            self.b_lancer.setText(tr("Mettre à jour") if nb_maj else tr("Tout est à jour"))
+            ok = ok and nb_maj > 0
+        else:
+            self.b_lancer.setText(tr("Télécharger et installer"))
         self.b_lancer.setEnabled(self.c_licence.isChecked() and ok
                                  and bool(self.dossier.text().strip()))
 
@@ -576,6 +702,7 @@ class FenetreInstallation(QDialog):
             w.setEnabled(False)
         self.b_arreter.setEnabled(True)
         self.statut.setText(tr("Démarrage…"))
+        self.commence.emit()
         self.travail.lancer()
 
     def _etat(self, cle: str, texte: str):
