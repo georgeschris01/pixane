@@ -12,8 +12,8 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
 1. [ ] **Calques** — en cours (lancé le 08/11/2026). Fait : panneau, IA sur calques, gomme de calque, .ora.
    Reste : validation par Christophe.
    Panneau Calques (vignette, œil, nom, opacité, ordre, nouveau / dupliquer / supprimer / fusionner / aplatir) ;
-   Effacer et Remplir créent un calque avec seulement la zone retouchée ; Agrandir décale les calques et met
-   l'ajout dessous ; Upscale agrandit tous les calques ; l'IA voit l'image visible ; outil « Gomme de calque » ;
+   Effacer et Remplir créent un calque avec seulement la zone retouchée ; Agrandir décale les calques et met l'ajout
+   (seulement les nouveaux pixels) dans un calque au-dessus ; Upscale agrandit tous les calques ; l'IA voit l'image visible ; outil « Gomme de calque » ;
    format projet .ora (OpenRaster) pour garder les calques.
 2. [ ] **Outils** : recadrer, pinceau de couleur, tampon (copier une zone sur une autre), texte.
 3. [ ] **Réglages d'image** : luminosité, contraste, couleurs, netteté.
