@@ -15,9 +15,9 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageOps
-from PySide6.QtCore import QObject, QPoint, QRect, Qt, Signal
-from PySide6.QtGui import QColor, QImage, QPainter
+from PIL import Image, ImageFilter, ImageOps
+from PySide6.QtCore import QObject, QPoint, QPointF, QRect, Qt, Signal
+from PySide6.QtGui import QColor, QImage, QPainter, QTransform
 
 from .langue import tr
 from .texte import Texte, nom_calque, rendre
@@ -323,6 +323,73 @@ class Document(QObject):
                 nouveaux.append(replace(c, image=c.image.copy(r)))
         return self.etat_avec(tuple(nouveaux), self.actif, self.selection.copy(r))
 
+    # ---------------------------------------------------------- géométrie de toute l'image
+    def etat_geometrie(self, transfo: QTransform, W: int, H: int, tourne: float | None, lisse: bool = True):
+        """Chaque calque (et la sélection) redessiné par `transfo` sur une toile W × H. Les textes restent des
+        textes s'ils sont seulement tournés (`tourne` = degrés ajoutés à leur angle) ; retournés en miroir
+        (`tourne` None), ils deviennent des images."""
+        nouveaux = []
+        for c in self.calques:
+            if c.texte is not None and tourne is not None:
+                pt = transfo.map(QPointF(c.texte.x, c.texte.y))
+                t = replace(c.texte, x=pt.x(), y=pt.y(), angle=(c.texte.angle + tourne + 180) % 360 - 180)
+                nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
+            else:
+                nouveaux.append(replace(c, image=_transformee(c.image, transfo, W, H, lisse), texte=None))
+        sel = _transformee(self.selection, transfo, W, H, lisse)
+        return self.etat_avec(tuple(nouveaux), self.actif, sel)
+
+    def etat_pivote(self, sens: int):
+        """sens : 90 (horaire), -90 (antihoraire) ou 180."""
+        w, h = self.taille()
+        if sens == 90:
+            return self.etat_geometrie(QTransform().translate(h, 0).rotate(90), h, w, 90, False)
+        if sens == -90:
+            return self.etat_geometrie(QTransform().translate(0, w).rotate(-90), h, w, -90, False)
+        return self.etat_geometrie(QTransform().translate(w, h).rotate(180), w, h, 180, False)
+
+    def etat_miroir(self, horizontal: bool):
+        w, h = self.taille()
+        t = QTransform(-1, 0, 0, 1, w, 0) if horizontal else QTransform(1, 0, 0, -1, 0, h)
+        return self.etat_geometrie(t, w, h, None, False)
+
+    def etat_redresse(self, angle: float, recadrer: bool = True):
+        """Tourne de `angle` degrés autour du centre. recadrer : garde le plus grand rectangle sans coin vide (mêmes
+        proportions) ; sinon la toile s'agrandit et les coins sont transparents."""
+        w, h = self.taille()
+        W, H = taille_redressee(w, h, angle, recadrer)
+        t = QTransform().translate(W / 2, H / 2).rotate(angle).translate(-w / 2, -h / 2)
+        return self.etat_geometrie(t, W, H, angle)
+
+    def etat_taille(self, W: int, H: int):
+        """Change la taille de l'image (sans IA) : calques rééchantillonnés (Lanczos), textes redessinés nets."""
+        w, h = self.taille()
+        nouveaux = []
+        for c in self.calques:
+            if c.texte is not None:
+                t = c.texte.mis_a_l_echelle(W / w, H / h)
+                nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
+            else:
+                im = qimage_vers_pil(c.image).resize((W, H), Image.LANCZOS)
+                nouveaux.append(replace(c, image=pil_vers_qimage(im).convertToFormat(FORMAT_CALQUE)))
+        sel = self.selection.scaled(W, H, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+        return self.etat_avec(tuple(nouveaux), self.actif, sel.convertToFormat(FORMAT_SELECTION))
+
+    # ---------------------------------------------------------- sélection : agrandir, réduire, adoucir
+    def selection_modifiee(self, mode: str, px: float) -> QImage:
+        """Nouvelle sélection : « agrandir » / « reduire » de px pixels (bord arrondi), ou « adoucir » (flou de px)."""
+        m = Image.fromarray(masque(self.selection), "L")
+        if px <= 0:
+            return self.selection.copy()
+        if mode == "adoucir":
+            m = m.filter(ImageFilter.GaussianBlur(px / 2))
+        else:
+            # un flou gaussien de rayon σ dépasse 2 % à 2,05 σ du bord : seuil bas = agrandir, haut = réduire
+            flou = np.asarray(m.filter(ImageFilter.GaussianBlur(px / 2.05)))
+            dur = flou > 5 if mode == "agrandir" else flou >= 250
+            m = Image.fromarray((dur * 255).astype(np.uint8), "L").filter(ImageFilter.GaussianBlur(0.7))
+        return _masque_vers_selection(np.asarray(m)).convertToFormat(FORMAT_SELECTION)
+
     def rect_selection(self) -> QRect | None:
         """Plus petit rectangle qui contient la sélection, ou None si elle est vide."""
         m = masque(self.selection) > 0
@@ -487,6 +554,39 @@ class Document(QObject):
 # la liste des calques (stack.xml), l'image fusionnée et une vignette.
 # Le format de Chrypix (.chr) est le même, avec en plus les réglages des textes (attribut chrypix-texte) :
 # un .chr renommé en .ora s'ouvre donc aussi dans Krita ou GIMP (les textes y sont des images).
+def taille_redressee(w: int, h: int, angle: float, recadrer: bool) -> tuple[int, int]:
+    import math
+    a = math.radians(abs(angle))
+    c, s = math.cos(a), math.sin(a)
+    if recadrer:      # plus grand rectangle de mêmes proportions dans la photo tournée
+        k = min(w / (w * c + h * s), h / (w * s + h * c))
+        return max(1, int(w * k)), max(1, int(h * k))
+    return max(1, math.ceil(w * c + h * s - 1e-6)), max(1, math.ceil(w * s + h * c - 1e-6))
+
+
+def _transformee(img: QImage, transfo: QTransform, W: int, H: int, lisse: bool = True) -> QImage:
+    res = QImage(W, H, img.format())
+    res.fill(0)
+    p = QPainter(res)
+    p.setRenderHint(QPainter.SmoothPixmapTransform, lisse)
+    p.setRenderHint(QPainter.Antialiasing, lisse)
+    p.setTransform(transfo)
+    p.drawImage(0, 0, img)
+    p.end()
+    return res
+
+
+def _masque_vers_selection(a: np.ndarray) -> QImage:
+    """Masque 0..255 -> image de sélection (rouge, transparence = masque)."""
+    sel = np.zeros(a.shape + (4,), np.uint8)
+    sel[..., 0] = (a.astype(np.uint16) * COULEUR_SELECTION.red() // 255).astype(np.uint8)
+    sel[..., 1] = (a.astype(np.uint16) * COULEUR_SELECTION.green() // 255).astype(np.uint8)
+    sel[..., 2] = (a.astype(np.uint16) * COULEUR_SELECTION.blue() // 255).astype(np.uint8)
+    sel[..., 3] = a
+    h, w = a.shape
+    return QImage(np.ascontiguousarray(sel).data, w, h, w * 4, QImage.Format_RGBA8888_Premultiplied).copy()
+
+
 def _png(img: QImage) -> bytes:
     tampon = io.BytesIO()
     qimage_vers_pil(img).save(tampon, "PNG", compress_level=6)

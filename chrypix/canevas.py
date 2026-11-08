@@ -13,6 +13,7 @@ from .document import COULEUR_SELECTION, Document
 from .langue import tr
 from .retouche import Trait
 from .texte import contient, contour_bloc, rendre
+from .transformation import POIGNEES, Transformation
 
 MAIN, RECTANGLE, LASSO, PINCEAU, GOMME = "main", "rectangle", "lasso", "pinceau", "gomme"
 GOMME_CALQUE = "gomme_calque"                  # efface pour de vrai les pixels du calque actif
@@ -38,6 +39,9 @@ class Canevas(QWidget):
     couleur_prise = Signal(str)                 # pinceau de couleur : Alt+clic (pipette) -> couleur « #rrggbb »
     recadre_change = Signal(object)             # outil Recadrer : QRect (image) ou None
     recadre_valide = Signal()                   # Entrée ou double-clic dans le cadre
+    transfo_change = Signal()                   # Transformer (Ctrl+T) : taille ou angle modifié
+    transfo_valide = Signal()                   # Entrée ou double-clic dans le cadre
+    transfo_annule = Signal()                   # Échap
     message = Signal(str)                       # information (barre d'état)
 
     def __init__(self, parent=None):
@@ -78,6 +82,10 @@ class Canevas(QWidget):
         self.recadre: QRectF | None = None           # cadre (image) à garder
         self.proportion: float | None = None         # largeur / hauteur imposée, ou libre
         self._recadre_glisse = None  # (mode « nouveau » / « deplacer » / côtés, point de départ, cadre d'origine)
+        # transformer un calque (Ctrl+T)
+        self.transfo: Transformation | None = None
+        self._transfo_index = 0
+        self._transfo_glisse = False
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMinimumSize(300, 200)
@@ -214,6 +222,9 @@ class Canevas(QWidget):
         p.drawRect(QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
                                                                  self.doc.image.height()) * self.zoom))
         self._dessiner_cadre_texte(p)
+        if self.transfo is not None:
+            self._dessiner_transfo(p)
+            return
         if self.outil == RECADRER and self.recadre is not None:
             self._dessiner_recadre(p)
         if self.outil == TAMPON and self.source_tampon is not None and not self._espace:
@@ -732,6 +743,62 @@ class Canevas(QWidget):
             p.drawText(boite, Qt.AlignCenter, texte)
         p.restore()
 
+    # ---------------------------------------------------------- transformer un calque (Ctrl+T)
+    def commencer_transfo(self, t: Transformation, index: int):
+        self.transfo = t
+        self._transfo_index = index
+        self._apercu_transfo(lisse=True)
+        self.setFocus()
+        self.update()
+
+    def finir_transfo(self):
+        self.transfo = None
+        self._transfo_glisse = False
+        self._curseur()
+        self.update()
+
+    def _apercu_transfo(self, lisse: bool):
+        w, h = self.doc.taille()
+        self.doc.apercu_calque(self._transfo_index, self.transfo.rendu(w, h, lisse))
+
+    def _sous_transfo(self, pos: QPointF):
+        """Ce qui est sous la souris : nom de poignée, « deplacer » ou « tourner »."""
+        for nom, (gx, gy) in POIGNEES.items():
+            if QLineF(self.vers_ecran(self.transfo.point(gx, gy)), pos).length() <= 9:
+                return nom
+        return "deplacer" if self.transfo.dedans(self.vers_image(pos)) else "tourner"
+
+    def _curseur_transfo(self, quoi):
+        if quoi == "deplacer":
+            self.setCursor(Qt.SizeAllCursor)
+        elif quoi == "tourner":
+            self.setCursor(Qt.CrossCursor)
+        else:
+            gx, gy = POIGNEES[quoi]
+            a = (math.degrees(math.atan2(gy, gx)) + self.transfo.angle) % 180
+            self.setCursor(Qt.SizeHorCursor if a < 22.5 or a >= 157.5 else
+                           Qt.SizeFDiagCursor if a < 67.5 else
+                           Qt.SizeVerCursor if a < 112.5 else Qt.SizeBDiagCursor)
+
+    def _dessiner_transfo(self, p: QPainter):
+        coins = [self.vers_ecran(c) for c in self.transfo.coins()]
+        p.save()
+        p.setBrush(Qt.NoBrush)
+        p.setPen(QPen(QColor(0, 0, 0, 160), 1))
+        p.drawPolygon(QPolygonF(coins))
+        p.setPen(QPen(QColor(255, 255, 255), 1, Qt.DashLine))
+        p.drawPolygon(QPolygonF(coins))
+        p.setPen(QPen(QColor(0, 0, 0, 180), 1))
+        p.setBrush(self.couleur_accent)
+        for gx, gy in POIGNEES.values():
+            pt = self.vers_ecran(self.transfo.point(gx, gy))
+            p.drawRect(QRectF(pt.x() - 5, pt.y() - 5, 10, 10))
+        c = self.vers_ecran(self.transfo.centre)
+        p.setPen(QPen(QColor(255, 255, 255), 1))
+        p.drawLine(QPointF(c.x() - 6, c.y()), QPointF(c.x() + 6, c.y()))
+        p.drawLine(QPointF(c.x(), c.y() - 6), QPointF(c.x(), c.y() + 6))
+        p.restore()
+
     def _damier(self) -> QPixmap:
         if getattr(self, "_motif_damier", None) is None:
             pm = QPixmap(16, 16)
@@ -813,6 +880,10 @@ class Canevas(QWidget):
             return
         if self.cadre is not None:
             return
+        if self.transfo is not None:
+            self.transfo.commencer(self._sous_transfo(pos), self.vers_image(pos))
+            self._transfo_glisse = True
+            return
         if self.outil == TEXTE:
             self._presser_texte(pos)
             self.update()
@@ -869,6 +940,15 @@ class Canevas(QWidget):
             else:
                 self._curseur_cadre(self._poignee_sous(pos))
             return
+        if self.transfo is not None:
+            if self._transfo_glisse:
+                self.transfo.glisser(self.vers_image(pos), bool(e.modifiers() & Qt.ShiftModifier))
+                self._apercu_transfo(lisse=False)        # rapide pendant le geste, lissé au lâcher
+                self.transfo_change.emit()
+            else:
+                self._curseur_transfo(self._sous_transfo(pos))
+            self.update()
+            return
         if self._texte_glisse is not None:
             self._glisser_texte(pos, bool(e.modifiers() & Qt.ShiftModifier))
             return
@@ -922,6 +1002,13 @@ class Canevas(QWidget):
         if self.cadre is not None:
             self._poignee = None
             return
+        if self.transfo is not None:
+            if self._transfo_glisse:
+                self._transfo_glisse = False
+                self.transfo.finir()
+                self._apercu_transfo(lisse=True)
+                self.transfo_change.emit()
+            return
         if self._texte_glisse is not None:
             self._lacher_texte()
             return
@@ -952,6 +1039,10 @@ class Canevas(QWidget):
         self.update()
 
     def mouseDoubleClickEvent(self, e):
+        if self.transfo is not None and e.button() == Qt.LeftButton:
+            if self.transfo.dedans(self.vers_image(e.position())):
+                self.transfo_valide.emit()
+            return
         if (self.outil == RECADRER and self.recadre is not None and e.button() == Qt.LeftButton
                 and self.recadre.contains(self.vers_image(e.position()))):
             self.recadre_valide.emit()
@@ -970,7 +1061,11 @@ class Canevas(QWidget):
 
     # ---------------------------------------------------------- clavier
     def keyPressEvent(self, e):
-        if self.cadre is not None and e.key() in (Qt.Key_Return, Qt.Key_Enter):
+        if self.transfo is not None and e.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self.transfo_valide.emit()
+        elif self.transfo is not None and e.key() == Qt.Key_Escape:
+            self.transfo_annule.emit()
+        elif self.cadre is not None and e.key() in (Qt.Key_Return, Qt.Key_Enter):
             self.cadre_valide.emit()
         elif self.cadre is not None and e.key() == Qt.Key_Escape:
             self.cadre_annule.emit()

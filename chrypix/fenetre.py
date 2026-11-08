@@ -9,10 +9,12 @@ from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import QBuffer, QMimeData, QObject, QPoint, QProcess, QSettings, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QAction, QActionGroup, QColor, QIcon, QImage, QKeySequence, QUndoCommand, QUndoStack
+from PySide6.QtCore import QUrl
+from PySide6.QtGui import (QAction, QActionGroup, QColor, QDesktopServices, QIcon, QImage, QKeySequence, QUndoCommand,
+                           QUndoStack)
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QComboBox, QDialog, QDockWidget, QFileDialog, QHBoxLayout, QLabel,
                                QLineEdit, QMainWindow, QMenu, QMessageBox, QPushButton, QSizePolicy, QSlider,
-                               QSpinBox, QToolBar, QToolButton, QVBoxLayout, QWidget)
+                               QSpinBox, QToolBar, QToolButton, QUndoView, QVBoxLayout, QWidget, QInputDialog)
 
 from . import langue, recettes, theme
 from .icones import icone
@@ -25,7 +27,10 @@ from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selec
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
 from .panneau_texte import BoutonCouleur, PanneauTexte
 from .raccord import finaliser, lisere_auto, preparer
-from .reglages_image import FenetreReglages, ajuster, neutre
+from .reglages_image import FenetreReglages, ajuster, auto, neutre
+from .dialogues_image import APropos, NouvelleImage, Redresser, TailleImage
+from .transformation import Transformation
+from . import mises_a_jour
 from .texte import Texte
 
 NOM = "Chrypix"
@@ -152,6 +157,11 @@ class Fenetre(QMainWindow):
         self.canevas.recadre_change.connect(self._recadre_change)
         self.canevas.recadre_valide.connect(self._recadrer)
         self.canevas.couleur_prise.connect(self._couleur_prise)
+        self.canevas.transfo_change.connect(self._transfo_change)
+        self.canevas.transfo_valide.connect(self._valider_transfo)
+        self.canevas.transfo_annule.connect(self._annuler_transfo)
+        self._transfo_avant = None
+        self.historique.indexChanged.connect(self._historique_bouge)
         self._session_texte = 0      # regroupe les changements d'un même texte dans Annuler
 
         self._menus()
@@ -159,12 +169,15 @@ class Fenetre(QMainWindow):
         self._outils()
         self._panneau_ia()
         self._panneau_calques()
+        self._panneau_historique()
         self._panneau_texte()
         self._barre_etat()
         self._appliquer_theme()
         self._choisir_outil(PINCEAU)
         self._actualiser()
         self._demarrer_moteur()
+        if self.reglages.value("maj_auto", False, type=bool):
+            QTimer.singleShot(8000, lambda: self.verifier_maj(silencieux=True))
         # suivre les changements de couleur ou de thème faits dans Windows
         self._signature_windows = theme.signature_windows()
         self._veille_windows = QTimer(self)
@@ -192,7 +205,12 @@ class Fenetre(QMainWindow):
 
     def _menus(self):
         m = self.menuBar().addMenu(tr("&Fichier"))
+        self._action(m, tr("Nouvelle image…"), QKeySequence.New, self.nouvelle_image, "a_nouvelle")
+        self._action(m, tr("Nouvelle image depuis le presse-papiers"), "Ctrl+Alt+V", self.nouvelle_depuis_presse_papiers,
+                     "a_nouvelle_pp")
         self._action(m, tr("Ouvrir…"), QKeySequence.Open, self.ouvrir, "a_ouvrir", "ouvrir")
+        self.m_recents = m.addMenu(tr("Fichiers récents"))
+        self.m_recents.aboutToShow.connect(self._remplir_recents)
         self._action(m, tr("Enregistrer"), QKeySequence.Save, self.enregistrer, "a_enregistrer", "enregistrer")
         self._action(m, tr("Enregistrer sous…"), "Ctrl+Shift+S", self.enregistrer_sous, "a_enregistrer_sous")
         m.addSeparator()
@@ -213,18 +231,36 @@ class Fenetre(QMainWindow):
         self._action(m, tr("Coller"), QKeySequence.Paste, self.coller, "a_coller")
         self._action(m, tr("Supprimer la sélection"), QKeySequence.Delete, self.supprimer_selection,
                      "a_supprimer_selection")
+        m.addSeparator()
+        self._action(m, tr("Transformer le calque"), "Ctrl+T", self.transformer, "a_transformer")
 
         m = self.menuBar().addMenu(tr("&Sélection"))
         self._action(m, tr("Tout sélectionner"), "Ctrl+A", lambda: self._modifier_selection("tout"), "a_tout")
         self._action(m, tr("Désélectionner"), "Ctrl+D", lambda: self._modifier_selection("rien"), "a_rien")
         self._action(m, tr("Inverser la sélection"), "Ctrl+Shift+I", lambda: self._modifier_selection("inverser"),
                      "a_inverser")
+        sous = m.addMenu(tr("Modifier la sélection"))
+        self._action(sous, tr("Agrandir…"), None, lambda: self._modifier_bord("agrandir"), "a_sel_agrandir")
+        self._action(sous, tr("Réduire…"), None, lambda: self._modifier_bord("reduire"), "a_sel_reduire")
+        self._action(sous, tr("Adoucir les bords…"), None, lambda: self._modifier_bord("adoucir"), "a_sel_adoucir")
+        self._action(m, tr("Sélectionner le sujet (IA)"), "Ctrl+Alt+S", self.selectionner_sujet, "a_sujet")
         m.addSeparator()
         self._action(m, tr("Recadrer à la sélection"), None, self._recadrer_selection, "a_recadrer_selection",
                      "recadrer")
 
         m = self.menuBar().addMenu(tr("I&mage"))
         self._action(m, tr("Réglages de l'image…"), "Ctrl+U", self.reglages_image, "a_reglages_image", "reglages")
+        m.addSeparator()
+        self._action(m, tr("Taille de l'image…"), "Ctrl+Alt+I", self.taille_image, "a_taille")
+        self._action(m, tr("Pivoter de 90° à droite"), None, lambda: self._geometrie(tr("Pivoter"), 90), "a_pivoter_d")
+        self._action(m, tr("Pivoter de 90° à gauche"), None, lambda: self._geometrie(tr("Pivoter"), -90),
+                     "a_pivoter_g")
+        self._action(m, tr("Pivoter de 180°"), None, lambda: self._geometrie(tr("Pivoter"), 180), "a_pivoter_180")
+        self._action(m, tr("Retourner horizontalement"), None, lambda: self._geometrie(tr("Retourner"), "h"),
+                     "a_miroir_h")
+        self._action(m, tr("Retourner verticalement"), None, lambda: self._geometrie(tr("Retourner"), "v"),
+                     "a_miroir_v")
+        self._action(m, tr("Redresser…"), None, self.redresser, "a_redresser")
 
         m = self.menuBar().addMenu(tr("&Affichage"))
         self._action(m, tr("Zoom avant"), "Ctrl++", lambda: self.canevas.zoomer(1.25), "a_zoom_plus", "zoom_plus")
@@ -256,11 +292,21 @@ class Fenetre(QMainWindow):
         self._action(m, tr("Remplir"), "Shift+R", self.ia_remplir, "a_remplir", "remplir")
         self._action(m, tr("Agrandir l'image…"), "Shift+A", self.ia_agrandir, "a_agrandir", "agrandir")
         self._action(m, tr("Upscale…"), "Shift+U", self.ia_upscale, "a_upscale", "upscale")
+        self._action(m, tr("Supprimer l'arrière-plan"), "Shift+B", self.supprimer_arriere_plan, "a_arriere_plan",
+                     "arriere_plan")
         m.addSeparator()
         self._action(m, tr("Installer le moteur IA…"), None, self.installer_moteur, "a_installer_moteur")
 
         m = self.menuBar().addMenu(tr("&Aide"))
         self._action(m, tr("Raccourcis"), "F1", self._aide)
+        m.addSeparator()
+        self._action(m, tr("Rechercher une mise à jour…"), None, lambda: self.verifier_maj(False))
+        a = self._action(m, tr("Vérifier les mises à jour au démarrage"), None, None, "a_maj_auto")
+        a.setCheckable(True)
+        a.setChecked(self.reglages.value("maj_auto", False, type=bool))
+        a.toggled.connect(lambda v: self.reglages.setValue("maj_auto", v))
+        m.addSeparator()
+        self._action(m, tr("À propos de Chrypix"), None, self.a_propos)
 
     def _barre_commandes(self):
         """Barre du haut : fichiers, annuler, options de l'outil, zoom, thème."""
@@ -318,6 +364,20 @@ class Fenetre(QMainWindow):
             lay.addWidget(p_)
         self.p_nouvelle.setChecked(True)
         tout.addWidget(self.opt_selection)
+        self.opt_transfo = QWidget()
+        lay = QHBoxLayout(self.opt_transfo)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(8)
+        self.info_transfo = QLabel()
+        lay.addWidget(self.info_transfo)
+        b_ok = QPushButton(tr("Valider"))
+        b_ok.clicked.connect(self._valider_transfo)
+        b_non = QPushButton(tr("Annuler"))
+        b_non.clicked.connect(self._annuler_transfo)
+        lay.addWidget(b_ok)
+        lay.addWidget(b_non)
+        self.opt_transfo.hide()
+        tout.addWidget(self.opt_transfo)
         self._options_retouche(tout)
         self._options_recadrer(tout)
         b.addWidget(self.options)
@@ -507,6 +567,8 @@ class Fenetre(QMainWindow):
             self.canevas.definir_mode_retirer(mode == "retirer")
 
     def _choisir_outil(self, outil: str):
+        if getattr(self.canevas, "transfo", None) is not None:
+            self._valider_transfo()
         self.canevas.definir_outil(outil)
         self._actions_outils[outil].setChecked(True)
         if outil in self._bouton_groupe:
@@ -568,10 +630,12 @@ class Fenetre(QMainWindow):
         self.texte_remplir.setPlaceholderText(tr("Texte facultatif (laisser vide)"))
         self.b_agrandir = Carte(tr("Agrandir l'image"), tr("Étend la photo au-delà des bords"))
         self.b_upscale = Carte(tr("Upscale"), tr("Augmente la définition"))
+        self.b_arriere_plan = Carte(tr("Arrière-plan"), tr("Supprime le fond, garde le sujet"))
         for carte, fonction, nom in ((self.b_effacer, self.ia_effacer, "effacer"),
                                      (self.b_remplir, self.ia_remplir, "remplir"),
                                      (self.b_agrandir, self.ia_agrandir, "agrandir"),
-                                     (self.b_upscale, self.ia_upscale, "upscale")):
+                                     (self.b_upscale, self.ia_upscale, "upscale"),
+                                     (self.b_arriere_plan, self.supprimer_arriere_plan, "arriere_plan")):
             carte.clicked.connect(fonction)
             self._icone(carte, nom)
         lay.addWidget(self.b_effacer)
@@ -580,6 +644,7 @@ class Fenetre(QMainWindow):
         lay.addSpacing(6)
         lay.addWidget(self.b_agrandir)
         lay.addWidget(self.b_upscale)
+        lay.addWidget(self.b_arriere_plan)
         dock.setWidget(w)
         dock.setFixedWidth(290)
         w.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
@@ -593,6 +658,21 @@ class Fenetre(QMainWindow):
         dock.setWidget(self.calques)
         dock.setFixedWidth(290)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.dock_calques = dock
+
+    def _panneau_historique(self):
+        """Liste des étapes (comme Photoshop) : un clic revient à cette étape ; les suivantes restent dans
+        Rétablir tant qu'on ne fait rien d'autre."""
+        dock = QDockWidget(tr("HISTORIQUE"), self)
+        dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
+        self.vue_historique = QUndoView(self.historique)
+        self.vue_historique.setEmptyLabel(tr("Photo ouverte"))
+        dock.setWidget(self.vue_historique)
+        dock.setFixedWidth(290)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.tabifyDockWidget(self.dock_calques, dock)
+        self.dock_calques.raise_()
+        self.dock_historique = dock
 
     def _panneau_texte(self):
         self.dock_texte = QDockWidget(tr("TEXTE"), self)
@@ -744,11 +824,15 @@ class Fenetre(QMainWindow):
         a_doc = self.doc is not None
         pret = a_doc and self.moteur.etat == "prêt"
         for a in (self.a_enregistrer, self.a_enregistrer_sous, self.a_tout, self.a_rien, self.a_inverser,
-                  self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster, self.a_recadrer_selection):
+                  self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster, self.a_recadrer_selection, self.a_taille,
+                  self.a_pivoter_d, self.a_pivoter_g, self.a_pivoter_180, self.a_miroir_h, self.a_miroir_v,
+                  self.a_redresser, self.a_transformer, self.a_reglages_image, self.a_sel_agrandir,
+                  self.a_sel_reduire, self.a_sel_adoucir, self.a_couper, self.a_copier, self.a_supprimer_selection):
             a.setEnabled(a_doc)
-        for a in (self.a_effacer, self.a_remplir, self.a_agrandir, self.a_upscale):
+        for a in (self.a_effacer, self.a_remplir, self.a_agrandir, self.a_upscale, self.a_arriere_plan,
+                  self.a_sujet):
             a.setEnabled(pret)
-        for b in (self.b_effacer, self.b_remplir, self.b_agrandir, self.b_upscale):
+        for b in (self.b_effacer, self.b_remplir, self.b_agrandir, self.b_upscale, self.b_arriere_plan):
             b.setEnabled(pret)
         titre = NOM
         if self.doc:
@@ -771,6 +855,9 @@ class Fenetre(QMainWindow):
             "Ctrl+A tout, Ctrl+D désélectionner, Ctrl+Shift+I inverser\n"
             "Ctrl+X couper, Ctrl+C copier, Ctrl+V coller (nouveau calque), Suppr effacer la sélection\n"
             "Ctrl+U réglages de l'image (luminosité, contraste, couleurs, netteté)\n"
+            "Ctrl+N nouvelle image, Ctrl+Alt+V nouvelle image depuis le presse-papiers, Ctrl+Alt+I taille de l'image\n"
+            "Ctrl+T transformer le calque (coins = taille, dedans = déplacer, dehors = tourner ; Entrée / Échap)\n"
+            "Ctrl+Alt+S sélectionner le sujet (IA), Shift+B supprimer l'arrière-plan (IA)\n"
             "Ctrl+Z annuler, Ctrl+Y rétablir\n"
             "Shift+E Effacer, Shift+R Remplir, Shift+A Agrandir, Shift+U Upscale\n"
             "Agrandir : Maj en tirant = les deux côtés ; Entrée lancer, Échap annuler\n"
@@ -855,6 +942,13 @@ class Fenetre(QMainWindow):
             QMessageBox.critical(self, tr("Ouvrir"), tr("Impossible d'ouvrir ce fichier :\n{erreur}", erreur=e))
             return
         self.reglages.setValue("dossier", str(Path(chemin).parent))
+        self._ajouter_recent(chemin)
+        self._installer_document(doc)
+
+    def _installer_document(self, doc: Document):
+        if self.canevas.transfo is not None:
+            self.canevas.finir_transfo()
+            self._transfo_avant = None
         self.doc = doc
         self.historique.clear()
         doc.change.connect(self._actualiser)
@@ -910,6 +1004,8 @@ class Fenetre(QMainWindow):
         return self._ecrire(Path(chemin))
 
     def _ecrire(self, chemin: Path) -> bool:
+        if self.canevas.transfo is not None:
+            self._valider_transfo()
         try:
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.doc.enregistrer(chemin)
@@ -918,6 +1014,7 @@ class Fenetre(QMainWindow):
             return False
         finally:
             QApplication.restoreOverrideCursor()
+        self._ajouter_recent(str(chemin))
         ext = chemin.suffix.lower()
         textes = any(c.texte is not None for c in self.doc.calques)
         if len(self.doc.calques) > 1 and ext not in (".chr", ".ora", ".psd"):
@@ -991,6 +1088,7 @@ class Fenetre(QMainWindow):
 
     def coller(self):
         if not self.doc:
+            self.nouvelle_depuis_presse_papiers()
             return
         donnees = QApplication.clipboard().mimeData()
         img = QApplication.clipboard().image()
@@ -1030,7 +1128,8 @@ class Fenetre(QMainWindow):
         avant, modifie = doc.etat(), doc.modifie
         index, calque = doc.actif, doc.calque_actif
         selection = None if doc.selection_vide() else doc.selection.copy()
-        d = FenetreReglages(calque.nom, selection is not None, self)
+        d = FenetreReglages(calque.nom, selection is not None, self,
+                            propose_auto=lambda: auto(calque.image, selection))
         d.adjustSize()                               # à droite, sur le panneau IA : la photo reste visible
         coin = self.mapToGlobal(self.rect().topRight())
         d.move(coin.x() - d.width() - 20, coin.y() + 110)
@@ -1082,6 +1181,295 @@ class Fenetre(QMainWindow):
                 QApplication.restoreOverrideCursor()
             apres = doc.etat_calque_modifie(index, image=img, texte=None)
             self.historique.push(CommandeEtat(doc, avant, apres, tr("Réglages de l'image")))
+
+    # ================================================================ nouvelle image, fichiers récents
+    def nouvelle_image(self):
+        if not self._peut_fermer():
+            return
+        pp = QApplication.clipboard().image()
+        l, h = (pp.width(), pp.height()) if not pp.isNull() else (1920, 1080)
+        d = NouvelleImage(l, h, self)
+        if d.exec():
+            self._installer_document(Document(d.image()))
+            self.doc.modifie = True
+            self._actualiser()
+
+    def nouvelle_depuis_presse_papiers(self):
+        img = QApplication.clipboard().image()
+        if img.isNull():
+            self.statusBar().showMessage(tr("Le presse-papiers ne contient pas d'image."), 5000)
+            return
+        if not self._peut_fermer():
+            return
+        self._installer_document(Document(img.convertToFormat(QImage.Format_ARGB32_Premultiplied)))
+        self.doc.modifie = True
+        self._actualiser()
+
+    def _recents(self) -> list[str]:
+        v = self.reglages.value("recents", [])
+        return [v] if isinstance(v, str) else list(v or [])
+
+    def _ajouter_recent(self, chemin: str):
+        chemin = str(Path(chemin))
+        liste = [chemin] + [c for c in self._recents() if c.lower() != chemin.lower()]
+        self.reglages.setValue("recents", liste[:10])
+
+    def _remplir_recents(self):
+        m = self.m_recents
+        m.clear()
+        liste = self._recents()
+        if not liste:
+            a = m.addAction(tr("(aucun)"))
+            a.setEnabled(False)
+            return
+        for i, c in enumerate(liste):
+            a = m.addAction(f"&{(i + 1) % 10}  {Path(c).name}")
+            a.setToolTip(c)
+            a.setStatusTip(c)
+            a.triggered.connect(lambda _=False, ch=c: self._ouvrir_recent(ch))
+        m.addSeparator()
+        m.addAction(tr("Effacer la liste"), lambda: self.reglages.setValue("recents", []))
+
+    def _ouvrir_recent(self, chemin: str):
+        if not Path(chemin).is_file():
+            QMessageBox.information(self, tr("Fichiers récents"),
+                                    tr("Ce fichier n'existe plus :\n{chemin}", chemin=chemin))
+            self.reglages.setValue("recents", [c for c in self._recents() if c != chemin])
+            return
+        if self._peut_fermer():
+            self.charger(chemin)
+
+    # ================================================================ géométrie de l'image
+    def _geometrie(self, titre: str, quoi):
+        if not self.doc or not self._verifier_verrou(titre, tous=True):
+            return
+        avant = self.doc.etat()
+        if quoi in ("h", "v"):
+            apres = self.doc.etat_miroir(quoi == "h")
+            if any(c.texte is not None for c in self.doc.calques):
+                self.statusBar().showMessage(tr("Les textes retournés deviennent des images (Ctrl+Z pour "
+                                                "revenir)."), 6000)
+        else:
+            apres = self.doc.etat_pivote(quoi)
+        self.historique.push(CommandeEtat(self.doc, avant, apres, titre))
+
+    def taille_image(self):
+        if not self.doc or not self._verifier_verrou(tr("Taille de l'image"), tous=True):
+            return
+        w, h = self.doc.taille()
+        d = TailleImage(w, h, self)
+        if d.exec() and d.valeurs() != (w, h):
+            W, H = d.valeurs()
+            avant = self.doc.etat()
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                apres = self.doc.etat_taille(W, H)
+            finally:
+                QApplication.restoreOverrideCursor()
+            self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Taille de l'image")))
+
+    def redresser(self):
+        if not self.doc or not self._verifier_verrou(tr("Redresser"), tous=True):
+            return
+        d = Redresser(self.doc.image, self)
+        if d.exec():
+            angle, recadrer = d.valeurs()
+            if abs(angle) < 0.05:
+                return
+            avant = self.doc.etat()
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                apres = self.doc.etat_redresse(angle, recadrer)
+            finally:
+                QApplication.restoreOverrideCursor()
+            self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Redresser")))
+
+    # ================================================================ transformer un calque (Ctrl+T)
+    def transformer(self):
+        if not self.doc or self.canevas.transfo is not None or self.canevas.cadre is not None:
+            return
+        if not self._verifier_verrou(tr("Transformer le calque")):
+            return
+        c = self.doc.calque_actif
+        a = tableau(c.image)[:, :, 3]
+        ys, xs = (a > 0).nonzero()
+        if not len(ys):
+            self.statusBar().showMessage(tr("Le calque « {nom} » est vide : rien à transformer.", nom=c.nom), 6000)
+            return
+        from PySide6.QtCore import QRect
+        rect = QRect(int(xs.min()), int(ys.min()), int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1))
+        if c.texte is not None:
+            self.statusBar().showMessage(tr("Le texte « {nom} » devient une image (pour garder un texte modifiable, "
+                                            "change sa taille et tourne-le avec l'outil Texte).", nom=c.nom), 8000)
+        self._transfo_avant = (self.doc.etat(), self.doc.modifie)
+        self.canevas.commencer_transfo(Transformation(c.image, rect), self.doc.actif)
+        self.opt_transfo.show()
+        self._transfo_change()
+        self.statusBar().showMessage(tr("Transformer : coins = taille (Maj : libre), dedans = déplacer, dehors = "
+                                        "tourner (Maj : par 15°). Entrée pour valider, Échap pour annuler."), 15000)
+
+    def _historique_bouge(self, _index):
+        """Ctrl+Z ou clic dans l'Historique pendant une transformation : elle est abandonnée."""
+        if self.canevas.transfo is not None:
+            self.canevas.finir_transfo()
+            self.opt_transfo.hide()
+            self._transfo_avant = None
+
+    def _transfo_change(self):
+        t = self.canevas.transfo
+        if t is not None:
+            l, h, a = t.resume()
+            self.info_transfo.setText(tr("Largeur {l} %  ·  Hauteur {h} %  ·  Angle {a}°", l=f"{l:.0f}",
+                                         h=f"{h:.0f}", a=f"{a:.1f}"))
+
+    def _valider_transfo(self):
+        t = self.canevas.transfo
+        if t is None or self._transfo_avant is None:
+            return
+        avant, _modifie = self._transfo_avant
+        index = self.canevas._transfo_index
+        w, h = self.doc.taille()
+        img = t.rendu(w, h, lisse=True)
+        self.canevas.finir_transfo()
+        self.opt_transfo.hide()
+        self._transfo_avant = None
+        self.doc.appliquer_etat(avant)
+        self.doc.modifie = _modifie
+        apres = self.doc.etat_calque_modifie(index, image=img, texte=None)
+        self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Transformer le calque")))
+
+    def _annuler_transfo(self):
+        if self.canevas.transfo is None or self._transfo_avant is None:
+            return
+        avant, modifie = self._transfo_avant
+        self.canevas.finir_transfo()
+        self.opt_transfo.hide()
+        self._transfo_avant = None
+        self.doc.appliquer_etat(avant)
+        self.doc.modifie = modifie
+        self.statusBar().clearMessage()
+
+    # ================================================================ sélection : agrandir, réduire, adoucir
+    def _modifier_bord(self, mode: str):
+        if not self.doc or not self._verifier_selection_simple():
+            return
+        titres = {"agrandir": tr("Agrandir la sélection"), "reduire": tr("Réduire la sélection"),
+                  "adoucir": tr("Adoucir les bords")}
+        cle = f"sel_{mode}"
+        px, ok = QInputDialog.getInt(self, titres[mode], tr("De combien de pixels ?"),
+                                     self.reglages.value(cle, 10, type=int), 1, 500)
+        if not ok:
+            return
+        self.reglages.setValue(cle, px)
+        avant = self.doc.etat()
+        sel = self.doc.selection_modifiee(mode, px)
+        apres = (self.doc.calques, self.doc.actif, sel)
+        self.historique.push(CommandeEtat(self.doc, avant, apres, titres[mode]))
+
+    # ================================================================ sujet / arrière-plan (IA, BiRefNet)
+    def _detourage(self, titre: str, suite):
+        """Demande au moteur le masque du sujet (calculé sur l'image visible), puis appelle suite(masque 0..255)."""
+        if not self.doc:
+            return
+        if not recettes.detourage_disponible():
+            QMessageBox.information(self, titre, tr(
+                "Cette action a besoin du modèle BiRefNet (444 Mo), qui n'est pas installé. Menu IA > Installer le "
+                "moteur IA permet de l'ajouter."))
+            return
+        doc = self.doc
+        png = doc.png_pour_ia(False)
+        annuler = threading.Event()
+
+        def calcul(progres):
+            nom = self.moteur.envoyer_image(png)
+            prompt, sorties = recettes.detourer(nom)
+            res = self.moteur.executer(prompt, sorties, annuler, progres)
+            if not res:
+                raise ErreurMoteur(tr("Le calcul s'est arrêté sans résultat."))
+            img = QImage.fromData(res[0][1])
+            if img.isNull():
+                raise ErreurMoteur(tr("Résultat illisible."))
+            w, h = doc.taille()
+            if (img.width(), img.height()) != (w, h):
+                img = img.scaled(w, h, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+            return tableau(img.convertToFormat(FORMAT_IMAGE))[:, :, 0].copy()
+
+        attente = Attente(titre, self)
+        attente.annuler.connect(annuler.set)
+
+        def ok(m):
+            attente.hide()
+            attente.deleteLater()
+            if doc is self.doc:
+                suite(m)
+
+        def echec(message):
+            attente.hide()
+            attente.deleteLater()
+            if message:
+                QMessageBox.warning(self, titre, message)
+
+        t = self._tache(calcul, ok, echec)
+        t.progres.connect(attente.maj)
+        t.lancer()
+        attente.show()
+
+    def selectionner_sujet(self):
+        def suite(m):
+            from .document import _masque_vers_selection
+            avant = self.doc.etat()
+            sel = _masque_vers_selection(m).convertToFormat(QImage.Format_ARGB32_Premultiplied)
+            self.historique.push(CommandeEtat(self.doc, avant, (self.doc.calques, self.doc.actif, sel),
+                                              tr("Sélectionner le sujet")))
+        self._detourage(tr("Sélectionner le sujet"), suite)
+
+    def supprimer_arriere_plan(self):
+        if not self.doc or not self._verifier_verrou(tr("Supprimer l'arrière-plan")):
+            return
+
+        def suite(m):
+            import numpy as np
+            from .document import qimage_rgba
+            c = self.doc.calque_actif
+            t = tableau(c.image.convertToFormat(FORMAT_IMAGE))
+            t[:, :, 3] = (t[:, :, 3].astype(np.uint16) * m // 255).astype(np.uint8)
+            img = qimage_rgba(t).convertToFormat(QImage.Format_ARGB32_Premultiplied)
+            avant = self.doc.etat()
+            apres = self.doc.etat_calque_modifie(self.doc.actif, image=img, texte=None)
+            self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Supprimer l'arrière-plan")))
+            self.statusBar().showMessage(tr("Arrière-plan supprimé sur le calque « {nom} » : enregistrez en PNG, "
+                                            "PSD ou .chr pour garder la transparence.", nom=c.nom), 10000)
+        self._detourage(tr("Supprimer l'arrière-plan"), suite)
+
+    # ================================================================ aide : à propos, mises à jour
+    def a_propos(self):
+        icone_app = QApplication.instance().windowIcon()
+        APropos(icone_app.pixmap(96, 96) if not icone_app.isNull() else None, self).exec()
+
+    def verifier_maj(self, silencieux: bool = False):
+        def ok(info):
+            if mises_a_jour.plus_recente(info["version"]):
+                notes = info["notes"][:600] + ("…" if len(info["notes"]) > 600 else "")
+                rep = QMessageBox.question(self, tr("Mise à jour"), tr(
+                    "Une nouvelle version de Chrypix est disponible : {v} (vous avez {actuelle}).\n\n{notes}\n\n"
+                    "Ouvrir la page de téléchargement ?", v=info["version"], actuelle=__import__("chrypix").__version__,
+                    notes=notes))
+                if rep == QMessageBox.Yes:
+                    QDesktopServices.openUrl(QUrl(info["page"]))
+            elif not silencieux:
+                QMessageBox.information(self, tr("Mise à jour"), tr("Chrypix est à jour."))
+
+        def echec(message):
+            if not silencieux:
+                QMessageBox.information(self, tr("Mise à jour"), message or tr("La recherche a échoué."))
+
+        def chercher(_progres):
+            try:
+                return mises_a_jour.derniere_version()
+            except OSError as e:
+                raise ErreurMoteur(str(e)) from e
+        t = self._tache(chercher, ok, echec)
+        t.lancer()
 
     def _verifier_selection_simple(self) -> bool:
         if self.doc.selection_vide():

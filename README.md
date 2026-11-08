@@ -14,7 +14,10 @@
 - Outils de retouche : recadrer, pinceau de couleur, tampon, gomme de calque, déplacer
 - Texte modifiable : police, taille, couleur, contour, ombre, fond, rotation
 - JPG, PNG, TIFF, WebP, BMP, et `.chr` / `.ora` pour garder les calques ; informations EXIF et profil couleur conservés
-- Annuler / Rétablir (30 dernières étapes)
+- Taille de l'image, pivoter, retourner, redresser ; transformer un calque (taille, rotation)
+- Supprimer l'arrière-plan ou sélectionner le sujet en un clic (IA)
+- Réglages de l'image avec bouton Auto ; agrandir, réduire, adoucir une sélection
+- Annuler / Rétablir (30 dernières étapes) avec panneau Historique ; fichiers récents
 - Thème clair ou sombre, couleur d'accent de Windows
 - Installateur qui vérifie le PC et télécharge lui-même le moteur IA (ComfyUI et les modèles), avec reprise après coupure
 
@@ -25,7 +28,7 @@
 **Il faut :**
 - Windows 10 ou 11, 64 bits ;
 - une carte graphique **NVIDIA** avec **8 Go** de mémoire (testé sur une RTX 3060 Ti) ; sans elle, Chrypix s'ouvre et retouche, mais les actions IA ne marchent pas ;
-- environ **30 Go** de place pour le moteur IA (19,4 Go à télécharger), 41 Go avec l'option « Upscale net ».
+- environ **30 Go** de place pour le moteur IA (19,8 Go à télécharger), 42 Go avec l'option « Upscale net ».
 
 L'installateur vérifie la carte graphique et la place libre, puis propose de télécharger le moteur IA depuis les sites officiels (GitHub, Hugging Face). Le modèle Flux Fill est sous licence **FLUX.1 [dev] non commerciale** : il faut l'accepter pour l'installer.
 
@@ -63,7 +66,7 @@ Ce qui suit est le guide complet. C'est le même texte que le fichier `docs\GUID
 | **Panneau « Texte » (à gauche)** | Réglages du texte, visible avec l'outil Texte (voir chapitre 7) |
 | **Photo (au centre)** | La photo ; la zone sélectionnée apparaît en rouge transparent |
 | **Panneau « Intelligence artificielle » (à droite)** | Effacer, Remplir, Agrandir l'image, Upscale |
-| **Panneau « Calques » (à droite, en dessous)** | Les calques de l'image (voir chapitre 6) |
+| **Panneau « Calques » (à droite, en dessous)** | Les calques de l'image (voir chapitre 6) ; onglet **Historique** à côté |
 | **Barre d'état (en bas)** | État du moteur IA (point de couleur), taille de la photo |
 
 **Couleurs** : Chrypix prend la couleur d'accent choisie dans Windows (Paramètres > Personnalisation > Couleurs)
@@ -104,6 +107,12 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
   Les informations de l'appareil (EXIF) et le profil de couleur sont conservés.
 - **Annuler** (Ctrl+Z) / **Rétablir** (Ctrl+Y ou Ctrl+Maj+Z) : chaque retouche et chaque sélection peut être annulée
   (30 étapes).
+- **Panneau Historique** (onglet à côté de « Calques ») : la liste des étapes. Un clic sur une étape revient à ce
+  moment-là ; un clic sur une étape plus bas refait les suivantes. Une nouvelle retouche efface les étapes « en avance ».
+- **Fichier > Fichiers récents** : les 10 dernières images ouvertes ou enregistrées (*Effacer la liste* pour la vider).
+- **Fichier > Nouvelle image…** (Ctrl+N) : image vide, taille au choix, fond blanc, noir ou transparent.
+- **Fichier > Nouvelle image depuis le presse-papiers** (Ctrl+Alt+V) : ouvre l'image copiée (capture d'écran, autre
+  logiciel…). **Ctrl+V** sans photo ouverte fait la même chose.
 
 ---
 
@@ -141,6 +150,10 @@ Les quatre outils de sélection sont rangés sous **un seul bouton** de la barre
   (comme la gomme de sélection).
 - **Taille du pinceau** : curseur « Taille » de la barre du haut, ou touches `[` et `]`.
 - Menu **Sélection** : *Tout sélectionner* (Ctrl+A), *Désélectionner* (Ctrl+D), *Inverser* (Ctrl+Maj+I).
+- **Sélection > Modifier la sélection** : *Agrandir…* ou *Réduire…* d'un nombre de pixels, *Adoucir les bords…*
+  (bord progressif, utile pour les réglages de l'image).
+- **Sélection > Sélectionner le sujet (IA)** (Ctrl+Alt+S) : l'IA trouve le sujet principal (personne, animal,
+  objet) et le sélectionne. Voir chapitre 5, « Sujet et arrière-plan ».
 
 ### Couper, copier, coller, supprimer (menu Édition)
 Ils agissent sur le **calque choisi** dans le panneau Calques :
@@ -236,6 +249,14 @@ La fenêtre indique la taille finale avant de lancer ; pendant le calcul, la pro
 
 **Calques** : tous les calques sont agrandis (lissage simple) et le résultat de l'IA arrive, complet, sur un
 calque « Upscale 1 » au-dessus.
+
+### Sujet et arrière-plan
+Modèle **BiRefNet** (MIT, 444 Mo, installé avec le moteur IA ; s'il manque, menu **IA > Installer le moteur IA…**
+l'ajoute). Quelques secondes.
+- **Supprimer l'arrière-plan** (Maj+B, panneau IA ou menu IA) : le fond du **calque choisi** devient transparent,
+  le sujet reste. Enregistrez en PNG, PSD ou .chr pour garder la transparence. Ctrl+Z annule.
+- **Sélectionner le sujet** (Ctrl+Alt+S, menu Sélection) : sélectionne le sujet sans rien effacer, par exemple
+  pour le régler (Ctrl+U), ou *Inverser* (Ctrl+Maj+I) pour travailler le fond.
 
 ---
 
@@ -379,11 +400,33 @@ Menu **Image > Réglages de l'image…** (Ctrl+U) : corriger la lumière, les co
   arrive après une fraction de seconde). Décochez pour comparer avec l'original.
 - **Réinitialiser** remet tout à zéro, **Appliquer** garde le résultat, **Annuler** (ou Échap) laisse la photo
   comme avant. Après Appliquer, Ctrl+Z annule le réglage.
+- **Auto** : propose d'office une luminosité, un contraste et une température (d'après la photo, ou la sélection) ;
+  les curseurs restent ajustables ensuite.
 - Un calque **verrouillé** est protégé ; un **texte** réglé devient une image.
 
 ---
 
-## 10. Raccourcis
+## 10. Menu Image : taille, rotation, transformer
+
+- **Taille de l'image…** (Ctrl+Alt+I) : en pixels ou en %, proportions gardées (case à décocher), boutons rapides
+  (par exemple 1920 px pour l'écran et Internet). Sans IA : pour agrandir avec plus de détails, préférez Upscale.
+- **Pivoter** de 90° à droite, à gauche ou de 180°, **Retourner** horizontalement ou verticalement : toute l'image,
+  tous les calques, sans perte. Les textes retournés deviennent des images ; pivotés, ils restent modifiables.
+- **Redresser…** : tourner d'un petit angle (-45° à +45°) avec une grille pour aligner l'horizon ou un mur.
+  *Recadrer pour enlever les coins vides* (coché par défaut) ; décoché, l'image s'agrandit et les coins sont
+  transparents.
+- **Édition > Transformer le calque** (Ctrl+T) : un cadre entoure le **calque choisi**.
+  - **coin** : taille, proportions gardées (Maj : libre) ; **bord** : largeur ou hauteur seule ;
+  - **dedans** : déplacer ; **dehors** (le curseur devient une flèche ronde) : tourner (Maj : par 15°) ;
+  - la barre du haut affiche largeur, hauteur et angle ; **Entrée**, double-clic ou **Valider** pour garder,
+    **Échap** ou **Annuler** pour revenir. Changer d'outil valide aussi.
+  Un texte transformé devient une image (pour garder un texte modifiable, utilisez l'outil Texte).
+
+Tout s'annule par Ctrl+Z.
+
+---
+
+## 11. Raccourcis
 
 | Touche | Action |
 |---|---|
@@ -399,6 +442,10 @@ Menu **Image > Réglages de l'image…** (Ctrl+U) : corriger la lumière, les co
 | Ctrl+A, Ctrl+D, Ctrl+Maj+I | Tout sélectionner, Désélectionner, Inverser |
 | Ctrl+X, Ctrl+C, Ctrl+V, Suppr | Couper, Copier, Coller (nouveau calque), Supprimer la sélection |
 | Ctrl+U | Réglages de l'image |
+| Ctrl+N, Ctrl+Alt+V | Nouvelle image, Nouvelle image depuis le presse-papiers |
+| Ctrl+Alt+I | Taille de l'image |
+| Ctrl+T | Transformer le calque (Entrée valider, Échap annuler) |
+| Ctrl+Alt+S, Maj+B | Sélectionner le sujet, Supprimer l'arrière-plan (IA) |
 | Clic droit sur un outil à petit triangle | Choisir un autre outil du groupe |
 | Ctrl+0, Ctrl+1 | Ajuster, 100 % |
 | Entrée / Échap | (Agrandir) Lancer / Annuler ; (Recadrer) Valider / Annuler |
@@ -407,7 +454,7 @@ Menu **Image > Réglages de l'image…** (Ctrl+U) : corriger la lumière, les co
 
 ---
 
-## 11. Matériel et licences
+## 12. Matériel et licences
 
 **Installation** : lancer `Chrypix-Setup-<version>-64bits.exe`.
 1. Langue de l'installation (ce sera aussi la langue de Chrypix, modifiable ensuite dans Affichage > Langue).
@@ -417,7 +464,7 @@ Menu **Image > Réglages de l'image…** (Ctrl+U) : corriger la lumière, les co
    (ComfyUI) trouvé ou non. Si ComfyUI est installé ailleurs, bouton **Parcourir…** pour indiquer son dossier.
    Sans ComfyUI, Chrypix ouvre, retouche (calques, texte) et enregistre, mais les actions IA ne marchent pas.
 5. **Moteur IA** (seulement si ComfyUI n'est pas trouvé) : liste de ce qui sera téléchargé, avec taille, site et
-   licence (19,4 Go à télécharger, environ 28 Go sur le disque) ; dossier du moteur (par défaut
+   licence (19,8 Go à télécharger, environ 29 Go sur le disque) ; dossier du moteur (par défaut
    `%LOCALAPPDATA%\Chrypix\moteur`) ; case facultative **Flux Schnell** pour « Upscale net » (11,8 Go de plus) ;
    case **J'accepte la licence FLUX.1 [dev]** (usage non commercial) obligatoire pour installer le moteur.
    On peut aussi décocher : Chrypix s'installe sans moteur.
@@ -444,7 +491,7 @@ Applications. Le désinstalleur pose deux questions (réponse « Non » par déf
   Éléments tiers : `docs\LICENCES_TIERS.md`.
 - Testé sur une carte graphique NVIDIA de 8 Go (RTX 3060 Ti). Les durées indiquées viennent de ce PC.
 - Modèles utilisés : Flux.1 Fill dev (**usage non commercial** ; version GGUF Q8 si installé par Chrypix, même
-  qualité), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3).
+  qualité), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3), BiRefNet (MIT).
 - Moteur : ComfyUI (GPL-3.0) et ses extensions Inpaint nodes, Inpaint Crop and Stitch, Ultimate SD Upscale
   (GPL-3.0), ComfyUI-GGUF (Apache-2.0).
 <!-- /guide -->

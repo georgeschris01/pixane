@@ -22,6 +22,9 @@ _fill = {"type": "complet", "fichier": FILL_COMPLET}
 # Flux Schnell (Upscale net) : version complète si elle est là, sinon GGUF (installée par Chrypix, facultative)
 SCHNELL_COMPLET = "flux1-schnell.safetensors"
 _schnell: dict = {"type": "complet", "fichier": SCHNELL_COMPLET}
+# Détourage (sujet / arrière-plan) : nœuds intégrés à ComfyUI + modèle BiRefNet (MIT)
+BIREFNET = "birefnet.safetensors"
+_detourage = {"ok": False}
 
 
 class ModeleManquant(Exception):
@@ -48,11 +51,27 @@ def configurer(infos: dict) -> str | None:
     else:
         schnells = sorted(f for f in _options(infos, "UnetLoaderGGUF", "unet_name") if "schnell" in f.lower())
         _schnell.update(type="gguf" if schnells else None, fichier=schnells[-1] if schnells else None)
+    _detourage["ok"] = ("RemoveBackground" in infos
+                        and BIREFNET in _options(infos, "LoadBackgroundRemovalModel", "bg_removal_name"))
     for t in PREFERENCE_FILL:
         if t in trouves:
             _fill.update(type=t, fichier=trouves[t])
             return trouves[t]
     return None
+
+
+def detourage_disponible() -> bool:
+    return _detourage["ok"]
+
+
+def detourer(image: str):
+    """Masque du sujet principal (blanc = sujet, noir = arrière-plan), de la taille de l'image."""
+    p = {"10": _n("LoadImage", image=image),
+         "11": _n("LoadBackgroundRemovalModel", bg_removal_name=BIREFNET),
+         "12": _n("RemoveBackground", bg_removal_model=["11", 0], image=["10", 0]),
+         "13": _n("MaskToImage", mask=["12", 0]),
+         "14": _n("PreviewImage", images=["13", 0])}
+    return p, {"14": tr("Sujet")}
 
 
 def schnell_disponible() -> bool:

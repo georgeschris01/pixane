@@ -55,6 +55,12 @@ Layer names that already exist keep their original language.
     A message reminds you of this if the image has several layers.
   Camera information (EXIF) and the colour profile are kept.
 - **Undo** (Ctrl+Z) / **Redo** (Ctrl+Y or Ctrl+Shift+Z): every edit and every selection can be undone (30 steps).
+- **History panel** (tab next to "Layers"): the list of steps. Click a step to go back to that moment; click a step
+  further down to redo the next ones. A new edit discards the steps "ahead".
+- **File > Recent files**: the last 10 images opened or saved (*Clear the list* empties it).
+- **File > New image…** (Ctrl+N): empty image, any size, white, black or transparent background.
+- **File > New image from clipboard** (Ctrl+Alt+V): opens the copied image (screenshot, other program…).
+  **Ctrl+V** with no photo open does the same.
 
 ---
 
@@ -92,6 +98,10 @@ hold, to choose; or press their key directly.
   selection eraser).
 - **Brush size**: "Size" slider in the top bar, or the `[` and `]` keys.
 - **Select** menu: *Select all* (Ctrl+A), *Deselect* (Ctrl+D), *Invert* (Ctrl+Shift+I).
+- **Select > Modify selection**: *Expand…* or *Shrink…* by a number of pixels, *Soften edges…* (gradual edge,
+  useful for image adjustments).
+- **Select > Select subject (AI)** (Ctrl+Alt+S): the AI finds the main subject (person, animal, object) and selects
+  it. See chapter 5, "Subject and background".
 
 ### Cut, copy, paste, delete (Edit menu)
 They work on the **layer chosen** in the Layers panel:
@@ -186,6 +196,14 @@ The window shows the final size before starting; while computing, the progress c
 
 **Layers**: all layers are enlarged (simple smoothing) and the AI result arrives, complete, on an
 "Upscale 1" layer on top.
+
+### Subject and background
+**BiRefNet** model (MIT, 444 MB, installed with the AI engine; if it is missing, **AI > Install the AI engine…**
+adds it). A few seconds.
+- **Remove background** (Shift+B, AI panel or AI menu): the background of the **chosen layer** becomes
+  transparent, the subject stays. Save as PNG, PSD or .chr to keep the transparency. Ctrl+Z undoes it.
+- **Select subject** (Ctrl+Alt+S, Select menu): selects the subject without erasing anything, for example to
+  adjust it (Ctrl+U), or *Invert* (Ctrl+Shift+I) to work on the background.
 
 ---
 
@@ -329,11 +347,33 @@ A **text** retouched with the brush or the stamp becomes an image (a message rem
   fraction of a second). Untick to compare with the original.
 - **Reset** sets everything back to zero, **Apply** keeps the result, **Cancel** (or Esc) leaves the photo as it
   was. After Apply, Ctrl+Z undoes the adjustment.
+- **Auto**: suggests a brightness, contrast and temperature (from the photo, or the selection); the sliders can
+  still be adjusted afterwards.
 - A **locked** layer is protected; an adjusted **text** becomes an image.
 
 ---
 
-## 10. Shortcuts
+## 10. Image menu: size, rotation, transform
+
+- **Image size…** (Ctrl+Alt+I): in pixels or %, proportions kept (tick box), quick buttons (for example 1920 px
+  for screen and Internet). No AI: to enlarge with more detail, prefer Upscale.
+- **Rotate** 90° right, left or 180°, **Flip** horizontally or vertically: the whole image, all layers, lossless.
+  Flipped texts become images; rotated ones stay editable.
+- **Straighten…**: rotate by a small angle (-45° to +45°) with a grid to align the horizon or a wall.
+  *Crop to remove the empty corners* (ticked by default); unticked, the image grows and the corners are
+  transparent.
+- **Edit > Transform layer** (Ctrl+T): a frame surrounds the **chosen layer**.
+  - **corner**: size, proportions kept (Shift: free); **side**: width or height only;
+  - **inside**: move; **outside** (the cursor becomes a round arrow): rotate (Shift: by 15°);
+  - the top bar shows width, height and angle; **Enter**, double-click or **Apply** to keep, **Esc** or
+    **Cancel** to go back. Changing tool also applies.
+  A transformed text becomes an image (to keep a text editable, use the Text tool).
+
+Everything can be undone with Ctrl+Z.
+
+---
+
+## 11. Shortcuts
 
 | Key | Action |
 |---|---|
@@ -349,6 +389,10 @@ A **text** retouched with the brush or the stamp becomes an image (a message rem
 | Ctrl+A, Ctrl+D, Ctrl+Shift+I | Select all, Deselect, Invert |
 | Ctrl+X, Ctrl+C, Ctrl+V, Del | Cut, Copy, Paste (new layer), Delete selection |
 | Ctrl+U | Image adjustments |
+| Ctrl+N, Ctrl+Alt+V | New image, New image from clipboard |
+| Ctrl+Alt+I | Image size |
+| Ctrl+T | Transform layer (Enter apply, Esc cancel) |
+| Ctrl+Alt+S, Shift+B | Select subject, Remove background (AI) |
 | Right-click on a tool with a small triangle | Choose another tool of the group |
 | Ctrl+0, Ctrl+1 | Fit, 100% |
 | Enter / Esc | (Expand) Start / Cancel; (Crop) Apply / Cancel |
@@ -357,7 +401,7 @@ A **text** retouched with the brush or the stamp becomes an image (a message rem
 
 ---
 
-## 11. Hardware and licences
+## 12. Hardware and licences
 
 **Installation**: run `Chrypix-Setup-<version>-64bits.exe`.
 1. Installation language (it will also be Chrypix's language, which can be changed later in View > Language).
@@ -367,7 +411,7 @@ A **text** retouched with the brush or the stamp becomes an image (a message rem
    not. If ComfyUI is installed elsewhere, use **Browse…** to select its folder.
    Without ComfyUI, Chrypix opens, edits (layers, text) and saves photos, but the AI actions do not work.
 5. **AI engine** (only if ComfyUI is not found): list of what will be downloaded, with size, site and licence
-   (19.4 GB to download, about 28 GB on disk); engine folder (default `%LOCALAPPDATA%\Chrypix\moteur`); optional
+   (19.8 GB to download, about 29 GB on disk); engine folder (default `%LOCALAPPDATA%\Chrypix\moteur`); optional
    **Flux Schnell** box for "Sharp upscale" (11.8 GB more); the **I accept the FLUX.1 [dev] licence** box
    (non-commercial use) is required to install the engine. You can also untick it: Chrypix installs without the
    engine.
@@ -393,6 +437,6 @@ asks two questions (default answer "No"):
   Third-party items: `docs\LICENCES_TIERS.md`.
 - Tested on an 8 GB NVIDIA graphics card (RTX 3060 Ti). The times given come from this PC.
 - Models used: Flux.1 Fill dev (**non-commercial use**; GGUF Q8 version when installed by Chrypix, same
-  quality), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3).
+  quality), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3), BiRefNet (MIT).
 - Engine: ComfyUI (GPL-3.0) and its extensions Inpaint nodes, Inpaint Crop and Stitch, Ultimate SD Upscale
   (GPL-3.0), ComfyUI-GGUF (Apache-2.0).

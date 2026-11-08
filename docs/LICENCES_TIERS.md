@@ -28,6 +28,7 @@ Chrypix itself: Chrypix Licence 1.1 (free of charge, source-available, non-comme
 | Encodeurs T5 et CLIP / T5 and CLIP encoders, VAE | Apache-2.0 |
 | LaMa | Apache-2.0 |
 | RealESRGAN x4plus | BSD-3-Clause |
+| BiRefNet (détourage / background removal) | MIT |
 
 Chrypix lance ComfyUI comme un programme séparé (aucun code de ComfyUI n'est inclus dans Chrypix).
 Chrypix runs ComfyUI as a separate program (no ComfyUI code is included in Chrypix).

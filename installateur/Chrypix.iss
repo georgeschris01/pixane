@@ -85,7 +85,7 @@ french.PageMoteurDescription=Le moteur IA n'est pas sur ce PC : Chrypix peut le 
 french.MoteurIntro=Les actions IA (Effacer, Remplir, Agrandir, Upscale) utilisent ComfyUI, caché derrière les boutons de Chrypix. Tout vient des sites officiels (GitHub, Hugging Face) ; le téléchargement se fait après l'installation, dans une fenêtre qui montre l'avancement. On peut l'arrêter : il reprendra plus tard (menu IA > Installer le moteur IA).
 french.MoteurCase=Télécharger et installer le moteur IA après l'installation de Chrypix
 french.MoteurDossier=Dossier du moteur IA :
-french.MoteurListe=ComfyUI portable 0.44 (le moteur) — 1,9 Go — GitHub — GPL-3.0%nExtensions Inpaint nodes, Crop and Stitch, Ultimate SD Upscale, GGUF — moins de 5 Mo — GitHub — GPL-3.0, Apache-2.0%nFlux Fill, version GGUF Q8 (effacer, remplir, agrandir) — 11,9 Go — Hugging Face — FLUX.1 [dev] non commerciale%nEncodeurs de texte T5 et CLIP — 5,0 Go — Hugging Face — Apache-2.0%nDécodeur d'image (VAE) — 0,3 Go — Hugging Face — Apache-2.0%nLaMa (effacer) — 0,2 Go — GitHub — Apache-2.0%nRealESRGAN x4 (upscale) — 64 Mo — GitHub — BSD-3-Clause%n7-Zip (pour décompresser) — 0,6 Mo — GitHub — LGPL-2.1%nTotal : 19,4 Go à télécharger, environ 28 Go sur le disque.
+french.MoteurListe=ComfyUI portable 0.44 (le moteur) — 1,9 Go — GitHub — GPL-3.0%nExtensions Inpaint nodes, Crop and Stitch, Ultimate SD Upscale, GGUF — moins de 5 Mo — GitHub — GPL-3.0, Apache-2.0%nFlux Fill, version GGUF Q8 (effacer, remplir, agrandir) — 11,9 Go — Hugging Face — FLUX.1 [dev] non commerciale%nEncodeurs de texte T5 et CLIP — 5,0 Go — Hugging Face — Apache-2.0%nDécodeur d'image (VAE) — 0,3 Go — Hugging Face — Apache-2.0%nLaMa (effacer) — 0,2 Go — GitHub — Apache-2.0%nBiRefNet (sujet, arrière-plan) — 0,4 Go — Hugging Face — MIT%nRealESRGAN x4 (upscale) — 64 Mo — GitHub — BSD-3-Clause%n7-Zip (pour décompresser) — 0,6 Mo — GitHub — LGPL-2.1%nTotal : 19,8 Go à télécharger, environ 29 Go sur le disque.
 french.MoteurSchnell=Ajouter Flux Schnell pour « Upscale net » (11,8 Go de plus, facultatif ; l'upscale simple marche sans)
 french.MoteurLicence=Flux Fill est sous licence FLUX.1 [dev] non commerciale : usage personnel permis, pas d'usage commercial.
 french.MoteurLien=Lire la licence FLUX.1 [dev]
@@ -119,7 +119,7 @@ english.PageMoteurDescription=The AI engine is not on this PC: Chrypix can downl
 english.MoteurIntro=The AI actions (Erase, Fill, Expand, Upscale) use ComfyUI, hidden behind Chrypix's buttons. Everything comes from the official sites (GitHub, Hugging Face); the download runs after the installation, in a window showing its progress. It can be stopped and resumed later (AI menu > Install the AI engine).
 english.MoteurCase=Download and install the AI engine after installing Chrypix
 english.MoteurDossier=AI engine folder:
-english.MoteurListe=ComfyUI portable 0.44 (the engine) — 1.9 GB — GitHub — GPL-3.0%nExtensions Inpaint nodes, Crop and Stitch, Ultimate SD Upscale, GGUF — under 5 MB — GitHub — GPL-3.0, Apache-2.0%nFlux Fill, GGUF Q8 version (erase, fill, expand) — 11.9 GB — Hugging Face — FLUX.1 [dev] non-commercial%nT5 and CLIP text encoders — 5.0 GB — Hugging Face — Apache-2.0%nImage decoder (VAE) — 0.3 GB — Hugging Face — Apache-2.0%nLaMa (erase) — 0.2 GB — GitHub — Apache-2.0%nRealESRGAN x4 (upscale) — 64 MB — GitHub — BSD-3-Clause%n7-Zip (to unpack) — 0.6 MB — GitHub — LGPL-2.1%nTotal: 19.4 GB to download, about 28 GB on disk.
+english.MoteurListe=ComfyUI portable 0.44 (the engine) — 1.9 GB — GitHub — GPL-3.0%nExtensions Inpaint nodes, Crop and Stitch, Ultimate SD Upscale, GGUF — under 5 MB — GitHub — GPL-3.0, Apache-2.0%nFlux Fill, GGUF Q8 version (erase, fill, expand) — 11.9 GB — Hugging Face — FLUX.1 [dev] non-commercial%nT5 and CLIP text encoders — 5.0 GB — Hugging Face — Apache-2.0%nImage decoder (VAE) — 0.3 GB — Hugging Face — Apache-2.0%nLaMa (erase) — 0.2 GB — GitHub — Apache-2.0%nBiRefNet (subject, background) — 0.4 GB — Hugging Face — MIT%nRealESRGAN x4 (upscale) — 64 MB — GitHub — BSD-3-Clause%n7-Zip (to unpack) — 0.6 MB — GitHub — LGPL-2.1%nTotal: 19.8 GB to download, about 29 GB on disk.
 english.MoteurSchnell=Add Flux Schnell for "Sharp upscale" (11.8 GB more, optional; the simple upscale works without it)
 english.MoteurLicence=Flux Fill is under the FLUX.1 [dev] non-commercial licence: personal use allowed, no commercial use.
 english.MoteurLien=Read the FLUX.1 [dev] licence
@@ -691,8 +691,8 @@ begin
     Result := False;
     Exit;
   end;
-  Besoin := 29;
-  if CaseSchnell.Checked then Besoin := 41;
+  Besoin := 30;
+  if CaseSchnell.Checked then Besoin := 42;
   Lecteur := AddBackslash(ExtractFileDrive(EditMoteur.Text));
   if GetSpaceOnDisk64(Lecteur, Libre, Total) and (Libre div (1024 * 1024 * 1024) < Besoin) then
   begin

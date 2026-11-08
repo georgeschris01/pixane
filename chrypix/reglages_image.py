@@ -100,12 +100,37 @@ def ajuster(img: QImage, r: dict, selection: QImage | None = None) -> QImage:
     return qimage_rgba(tab).convertToFormat(FORMAT_CALQUE)
 
 
+def auto(img: QImage, selection: QImage | None = None) -> dict:
+    """Réglages proposés par le bouton Auto : contraste (les 1 % les plus sombres et les plus clairs vont vers le noir
+    et le blanc), luminosité (gris moyen au milieu), température (gris neutre)."""
+    t = tableau(img.convertToFormat(FORMAT_IMAGE)).astype(np.float32)
+    ok = t[..., 3] > 128
+    if selection is not None:
+        m = masque(selection) > 128
+        if m.any():
+            ok &= m
+    px = t[ok][:, :3] if ok.any() else t[..., :3].reshape(-1, 3)
+    if len(px) > 400000:
+        px = px[:: len(px) // 400000]
+    lum = px @ np.array([0.2126, 0.7152, 0.0722], np.float32) / 255
+    bas, haut = np.percentile(lum, [1, 99])
+    c = 0.0
+    if haut - bas > 0.05:
+        c = float(np.clip(math.log2(0.95 / (haut - bas)) / 1.5 * 100, -40, 60))
+    med = float(np.clip(np.median(lum), 0.05, 0.95))
+    b = float(np.clip(-math.log2(math.log(0.5) / math.log(med)) * 100 * 0.7, -50, 50))
+    r, bl = float(px[:, 0].mean()), float(px[:, 2].mean())
+    temp = float(np.clip((bl - r) / (0.2 * (r + bl) + 1e-6) * 100 * 0.5, -40, 40)) if r + bl > 20 else 0.0
+    return {"luminosite": round(b), "contraste": round(c), "temperature": round(temp)}
+
+
 class FenetreReglages(QDialog):
     """Curseurs des réglages, aperçu en direct sur la photo (signal `change`, envoyé après une courte pause)."""
     change = Signal(dict)
 
-    def __init__(self, nom_calque: str, dans_selection: bool, parent=None):
+    def __init__(self, nom_calque: str, dans_selection: bool, parent=None, propose_auto=None):
         super().__init__(parent)
+        self._propose_auto = propose_auto        # fonction -> réglages du bouton Auto
         self.setWindowTitle(tr("Réglages de l'image"))
         lay = QVBoxLayout(self)
         ou = tr("dans la sélection") if dans_selection else tr("sur tout le calque")
@@ -153,6 +178,11 @@ class FenetreReglages(QDialog):
         b = QPushButton(tr("Réinitialiser"))
         b.clicked.connect(self.reinitialiser)
         boutons.addWidget(b)
+        if self._propose_auto is not None:
+            b = QPushButton(tr("Auto"))
+            b.setToolTip(tr("Corrige d'office la luminosité, le contraste et la température (ajustable ensuite)"))
+            b.clicked.connect(self.automatique)
+            boutons.addWidget(b)
         boutons.addStretch(1)
         self.b_ok = QPushButton(tr("Appliquer"))
         self.b_ok.setDefault(True)
@@ -177,6 +207,10 @@ class FenetreReglages(QDialog):
     def valeurs_apercu(self) -> dict:
         r = self.valeurs()
         return r if self.c_apercu.isChecked() else {cle: 0 for cle in r}
+
+    def automatique(self):
+        for cle, v in self._propose_auto().items():
+            self.curseurs[cle].setValue(v)
 
     def reinitialiser(self):
         for c in self.curseurs.values():
