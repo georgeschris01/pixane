@@ -39,25 +39,58 @@ SOMBRE_C = Couleurs(fond="#16181D", panneau="#1E2128", bordure="#2C313A", texte=
                     rouge="#F06A5C", sombre=True)
 
 
-_ACCENT_SYSTEME: list = []
+_ACCENT_QT: list = []
+CLE_ACCENT = r"Software\Microsoft\Windows\CurrentVersion\Explorer\Accent"
+CLE_THEME = r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
 
 
-def accent_windows() -> QColor | None:
-    """Couleur d'accent choisie dans Windows (comme TwinPanel), lue une seule fois au démarrage."""
-    if not _ACCENT_SYSTEME:
+def _registre(cle: str, nom: str):
+    """Valeur lue dans HKEY_CURRENT_USER (None si absente ou hors Windows)."""
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, cle) as k:
+            return winreg.QueryValueEx(k, nom)[0]
+    except (ImportError, OSError):
+        return None
+
+
+def palette_accent() -> list[QColor] | None:
+    """Les 8 nuances de l'accent préparées par Windows (de la plus claire à la plus foncée)."""
+    brut = _registre(CLE_ACCENT, "AccentPalette")
+    if not isinstance(brut, (bytes, bytearray)) or len(brut) < 28:
+        return None
+    return [QColor(brut[i], brut[i + 1], brut[i + 2]) for i in range(0, 32, 4)]
+
+
+def windows_sombre() -> bool:
+    valeur = _registre(CLE_THEME, "AppsUseLightTheme")
+    if valeur is None:  # hors Windows : on demande à Qt
+        return QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
+    return valeur == 0
+
+
+def signature_windows() -> tuple:
+    """Change quand l'utilisateur modifie la couleur d'accent ou le thème de Windows."""
+    return _registre(CLE_ACCENT, "AccentPalette"), _registre(CLE_THEME, "AppsUseLightTheme")
+
+
+def accent_windows(sombre: bool) -> QColor | None:
+    """Accent de Windows, avec la nuance utilisée par Windows (et TwinPanel) pour ce thème :
+    plus clair en sombre (« Light 2 »), plus foncé en clair (« Dark 1 »)."""
+    nuances = palette_accent()
+    if nuances:
+        return nuances[1] if sombre else nuances[4]
+    if not _ACCENT_QT:  # repli : accent fourni par Qt, lu une seule fois
         try:
             c = QGuiApplication.palette().color(QPalette.Accent)
-            _ACCENT_SYSTEME.append(QColor(c) if c.isValid() else None)
+            _ACCENT_QT.append(QColor(c) if c.isValid() else None)
         except AttributeError:
-            _ACCENT_SYSTEME.append(None)
-    return _ACCENT_SYSTEME[0]
+            _ACCENT_QT.append(None)
+    return _ACCENT_QT[0]
 
 
 def choisir(mode: str) -> Couleurs:
-    if mode == AUTO:
-        sombre = QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
-    else:
-        sombre = mode == SOMBRE
+    sombre = windows_sombre() if mode == AUTO else mode == SOMBRE
     return SOMBRE_C if sombre else CLAIR_C
 
 
@@ -149,17 +182,20 @@ QScrollBar::add-page, QScrollBar::sub-page {{ background: transparent; }}
 """
 
 
+def _luminance(c: QColor) -> float:
+    return 0.2126 * c.redF() + 0.7152 * c.greenF() + 0.0722 * c.blueF()
+
+
 def appliquer(app: QApplication, mode: str) -> Couleurs:
     c = choisir(mode)
-    accent = accent_windows()
-    if accent is not None and mode == AUTO:
-        # même accent que Windows, éclairci en sombre pour rester lisible
-        a = accent.lighter(135) if c.sombre and accent.lightness() < 140 else accent
+    a = accent_windows(c.sombre)
+    if a is not None:
+        # même accent que Windows, dans tous les modes (comme TwinPanel)
         fond = QColor(c.panneau)
         melange = QColor((a.red() + fond.red() * 4) // 5, (a.green() + fond.green() * 4) // 5,
                          (a.blue() + fond.blue() * 4) // 5)
         c = Couleurs(**{**c.__dict__, "accent": a.name(), "accent_doux": melange.name(),
-                        "accent_texte": "#0B1220" if a.lightness() > 150 else "#FFFFFF"})
+                        "accent_texte": "#000000" if _luminance(a) > 0.45 else "#FFFFFF"})
     app.setStyle("Fusion")
     try:
         app.styleHints().setColorScheme(Qt.ColorScheme.Dark if c.sombre else Qt.ColorScheme.Light)

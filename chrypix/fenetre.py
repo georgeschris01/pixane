@@ -4,7 +4,7 @@ from __future__ import annotations
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QSettings, QSize, Qt, Signal
+from PySide6.QtCore import QObject, QSettings, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QIcon, QImage, QKeySequence, QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QDockWidget, QFileDialog, QHBoxLayout, QLabel, QLineEdit,
                                QMainWindow, QMessageBox, QPushButton, QSizePolicy, QSlider, QToolBar, QVBoxLayout,
@@ -118,6 +118,11 @@ class Fenetre(QMainWindow):
         self._appliquer_theme()
         self._actualiser()
         self._demarrer_moteur()
+        # suivre les changements de couleur ou de thème faits dans Windows
+        self._signature_windows = theme.signature_windows()
+        self._veille_windows = QTimer(self)
+        self._veille_windows.timeout.connect(self._verifier_windows)
+        self._veille_windows.start(2000)
 
     # ================================================================ interface
     def _icone(self, objet, nom: str):
@@ -346,6 +351,12 @@ class Fenetre(QMainWindow):
         self.reglages.setValue("theme", mode)
         self.couleurs = theme.appliquer(QApplication.instance(), mode)
         self._appliquer_theme()
+
+    def _verifier_windows(self):
+        signature = theme.signature_windows()
+        if signature != self._signature_windows:
+            self._signature_windows = signature
+            self.changer_theme(self.mode_theme)
 
     def _basculer_theme(self):
         mode = theme.CLAIR if self.couleurs.sombre else theme.SOMBRE
