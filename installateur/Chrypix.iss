@@ -91,6 +91,7 @@ french.MoteurLicence=Flux Fill est sous licence FLUX.1 [dev] non commerciale : u
 french.MoteurLien=Lire la licence FLUX.1 [dev]
 french.MoteurAccepte=J'accepte la licence FLUX.1 [dev] (usage non commercial)
 french.MoteurPasAccepte=Pour installer le moteur IA, il faut accepter la licence FLUX.1 [dev]. Sinon, décoche « Télécharger et installer le moteur IA » : Chrypix s'installera sans lui.
+french.MoteurProtege=Le moteur IA ne peut pas aller dans « %1 » : c'est un dossier protégé (comme Program Files), où le téléchargement n'a pas le droit d'écrire.%n%nChoisissez un autre dossier, par exemple D:\Chrypix-moteur.
 french.MoteurPlace=Pas assez de place sur %1 : il faut environ %2 Go, il reste %3 Go. Choisis un autre dossier.
 french.MoteurLancer=Télécharger et installer le moteur IA maintenant
 french.DesinstMoteur=Supprimer aussi le moteur IA installé par Chrypix (ComfyUI, ses extensions et les modèles d'IA, environ 20 à 32 Go) ?%n%n%1%n%nNon : il reste sur le PC et resservira si tu réinstalles Chrypix.
@@ -124,6 +125,7 @@ english.MoteurLicence=Flux Fill is under the FLUX.1 [dev] non-commercial licence
 english.MoteurLien=Read the FLUX.1 [dev] licence
 english.MoteurAccepte=I accept the FLUX.1 [dev] licence (non-commercial use)
 english.MoteurPasAccepte=To install the AI engine, you must accept the FLUX.1 [dev] licence. Otherwise, untick "Download and install the AI engine": Chrypix will install without it.
+english.MoteurProtege=The AI engine cannot go into "%1": it is a protected folder (like Program Files), where the download is not allowed to write.%n%nChoose another folder, for example D:\Chrypix-engine.
 english.MoteurPlace=Not enough space on %1: about %2 GB is needed, %3 GB is left. Choose another folder.
 english.MoteurLancer=Download and install the AI engine now
 english.DesinstMoteur=Also delete the AI engine installed by Chrypix (ComfyUI, its extensions and the AI models, about 20 to 32 GB)?%n%n%1%n%nNo: it stays on the PC and will be reused if you reinstall Chrypix.
@@ -674,6 +676,18 @@ begin
   if not CaseLicence.Checked then
   begin
     MsgBox(CustomMessage('MoteurPasAccepte'), mbInformation, MB_OK);
+    Result := False;
+    Exit;
+  end;
+  { le téléchargeur tourne sans droits administrateur (runasoriginaluser) : le dossier du moteur doit être permis à
+    l'utilisateur ; en installation « pour tous », l'essai ci-dessous se fait avec les droits administrateur, donc
+    Program Files est refusé d'office. }
+  if (not DossierInscriptible(EditMoteur.Text)) or (IsAdminInstallMode and
+    ((Pos(Uppercase(ExpandConstant('{commonpf64}')), Uppercase(EditMoteur.Text)) = 1) or
+     (Pos(Uppercase(ExpandConstant('{commonpf32}')), Uppercase(EditMoteur.Text)) = 1) or
+     (Pos(':\PROGRAM FILES', Uppercase(EditMoteur.Text)) = 2))) then
+  begin
+    MsgBox(FmtMessage(CustomMessage('MoteurProtege'), [EditMoteur.Text]), mbError, MB_OK);
     Result := False;
     Exit;
   end;

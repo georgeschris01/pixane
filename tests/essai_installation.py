@@ -148,6 +148,8 @@ with tempfile.TemporaryDirectory() as tmp:
     (Path(tmp) / im.PORTABLE / "ComfyUI").mkdir(parents=True)
     (Path(tmp) / im.PORTABLE / "ComfyUI" / "main.py").write_text("")
     verifier(im.comfyui_etranger(Path(tmp)), "ComfyUI d'un autre : reconnu")
+    verifier(not im.inscriptible(Path(os.environ.get("SystemRoot", "C:/Windows")) / "chrypix-essai"), "dossier protégé : refusé")
+    verifier(im.inscriptible(Path(tmp) / "sous" / "dossier"), "dossier à créer dans un dossier permis : accepté")
     f = im.FenetreInstallation(dossier=tmp, accepte=True)
     verifier(not f.b_lancer.isEnabled(), "ComfyUI d'un autre : installation refusée dans ce dossier")
     f.close()

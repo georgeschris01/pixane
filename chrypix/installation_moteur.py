@@ -163,6 +163,21 @@ def comfyui_etranger(dossier: Path) -> bool:
     return (racine(dossier) / "ComfyUI" / "main.py").is_file() and not (Path(dossier) / MARQUE).is_file()
 
 
+def inscriptible(dossier: Path) -> bool:
+    """Vrai si Windows laisse écrire dans ce dossier (ou dans son plus proche parent qui existe). Sans droits
+    administrateur, un dossier protégé (Program Files…) donne sinon « accès refusé » en plein téléchargement."""
+    p = Path(dossier)
+    while not p.exists() and p.parent != p:
+        p = p.parent
+    essai = p / f"chrypix-essai-ecriture-{os.getpid()}.tmp"
+    try:
+        essai.write_bytes(b"essai")
+        essai.unlink()
+        return True
+    except OSError:
+        return False
+
+
 def taille_restante(dossier: Path, elements: list[Element]) -> int:
     """Place disque encore nécessaire (fichiers pas encore là + ComfyUI décompressé)."""
     total = 0
@@ -530,15 +545,20 @@ class FenetreInstallation(QDialog):
         libre = self._libre()
         assez = libre is None or libre > besoin + GO
         etranger = comfyui_etranger(Path(self.dossier.text()))
+        permis = inscriptible(Path(self.dossier.text())) if self.dossier.text().strip() else True
         texte = tr("Place nécessaire : {besoin} ; libre sur ce disque : {libre}", besoin=go(besoin),
                    libre=go(libre) if libre is not None else "?")
         if not assez:
             texte += "  —  " + tr("pas assez de place, choisis un autre dossier")
+        if not permis:
+            texte = tr("Windows n'autorise pas l'écriture dans ce dossier (dossier protégé, comme Program Files) : "
+                       "choisis un autre dossier.")
         if etranger:
             texte = tr("Ce dossier contient déjà un ComfyUI : choisis un dossier vide.")
         self.place.setText(texte)
-        self.place.setStyleSheet("" if assez and not etranger else "color: #e8366f; font-weight: bold;")
-        self.b_lancer.setEnabled(self.c_licence.isChecked() and assez and not etranger
+        ok = assez and permis and not etranger
+        self.place.setStyleSheet("" if ok else "color: #e8366f; font-weight: bold;")
+        self.b_lancer.setEnabled(self.c_licence.isChecked() and ok
                                  and bool(self.dossier.text().strip()))
 
     def commencer(self):

@@ -267,6 +267,7 @@
  "Upscale…": "Upscale…",
  "Verrouiller le calque": "Lock layer",
  "Verrouiller le calque (protège contre les modifications)": "Lock the layer (protects it from changes)",
+ "Windows n'autorise pas l'écriture dans ce dossier (dossier protégé, comme Program Files) : choisis un autre dossier.": "Windows does not allow writing to this folder (protected folder, like Program Files): choose another folder.",
  "Zoom arrière": "Zoom out",
  "Zoom avant": "Zoom in",
  "_retouche": "_edited",
