@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (QApplication, QButtonGroup, QDockWidget, QFileDia
 from . import recettes, theme
 from .icones import icone
 from .canevas import GOMME, LASSO, MAIN, PINCEAU, RECTANGLE, Canevas
-from .dialogues import Attente, ChoixResultat, ReglagesAgrandir, ReglagesUpscale
+from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection, qimage_rgb, tableau
 from .moteur import Annule, ErreurMoteur, Moteur
 from .raccord import finaliser, preparer
@@ -109,6 +109,13 @@ class Fenetre(QMainWindow):
         self.canevas = Canevas()
         self.canevas.selection_modifiee.connect(self._selection_modifiee)
         self.setCentralWidget(self.canevas)
+        self.barre_agrandir = BarreAgrandir(self.canevas)
+        self.barre_agrandir.lancer.connect(self._lancer_agrandir)
+        self.barre_agrandir.annuler.connect(self._fin_agrandir)
+        self.barre_agrandir.valeurs_changees.connect(self.canevas.definir_cadre)
+        self.canevas.cadre_change.connect(self.barre_agrandir.definir_px)
+        self.canevas.cadre_valide.connect(self._lancer_agrandir)
+        self.canevas.cadre_annule.connect(self._fin_agrandir)
 
         self._menus()
         self._barre_commandes()
@@ -373,7 +380,7 @@ class Fenetre(QMainWindow):
             else:
                 objet.setIcon(ic)
         self.a_theme.setIcon(icone("soleil" if c.sombre else "lune", c.texte, c.accent))
-        self.canevas.definir_couleurs(c.canevas, c.discret)
+        self.canevas.definir_couleurs(c.canevas, c.discret, c.accent)
         self._peindre_pastille_moteur()
 
     def _actualiser(self):
@@ -451,6 +458,8 @@ class Fenetre(QMainWindow):
         self.doc = doc
         self.historique.clear()
         doc.change.connect(self._actualiser)
+        self.barre_agrandir.hide()
+        self.canevas.cadre = None
         self.canevas.definir_document(doc)
         self._actualiser()
 
@@ -554,14 +563,25 @@ class Fenetre(QMainWindow):
     def ia_agrandir(self):
         if not self.doc:
             return
-        d = ReglagesAgrandir(self)
-        if d.exec():
-            v = d.valeurs()
-            png, geo, orig = preparer(tableau(self.doc.image)[:, :, :3], **v)
+        if self.canevas.cadre is not None:
+            return
+        self.barre_agrandir.ouvrir(self.doc.image.width(), self.doc.image.height())
+        self.canevas.commencer_cadre()
 
-            def raccord(img: QImage) -> QImage:
-                return qimage_rgb(finaliser(orig, tableau(img)[:, :, :3], geo))
-            self._lancer("Agrandir", False, lambda nom: recettes.agrandir(nom), apres=raccord, png=png)
+    def _fin_agrandir(self):
+        self.barre_agrandir.hide()
+        self.canevas.finir_cadre()
+
+    def _lancer_agrandir(self):
+        if self.canevas.cadre is None or not any(self.canevas.cadre):
+            return
+        v = self.barre_agrandir.valeurs()
+        self._fin_agrandir()
+        png, geo, orig = preparer(tableau(self.doc.image)[:, :, :3], **v)
+
+        def raccord(img: QImage) -> QImage:
+            return qimage_rgb(finaliser(orig, tableau(img)[:, :, :3], geo))
+        self._lancer("Agrandir", False, lambda nom: recettes.agrandir(nom), apres=raccord, png=png)
 
     def ia_upscale(self):
         if not self.doc:

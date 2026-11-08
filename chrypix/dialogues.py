@@ -1,9 +1,9 @@
-"""Fenêtres : choix du résultat, réglages Agrandir et Upscale."""
+"""Fenêtres : choix du résultat, barre Agrandir, réglages Upscale."""
 from __future__ import annotations
 
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QEvent, QSize, Qt, Signal
 from PySide6.QtGui import QIcon, QImage, QPixmap
-from PySide6.QtWidgets import (QButtonGroup, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QHBoxLayout,
+from PySide6.QtWidgets import (QButtonGroup, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QFrame, QHBoxLayout,
                                QLabel, QListWidget, QListWidgetItem, QProgressBar, QPushButton, QRadioButton, QSpinBox,
                                QVBoxLayout, QWidget)
 
@@ -132,38 +132,99 @@ class ChoixResultat(QDialog):
         return self.images[ligne] if 0 <= ligne < len(self.images) else None
 
 
-class ReglagesAgrandir(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Agrandir l'image")
-        self.cotes = {}
-        form = QFormLayout()
-        for cle, nom, defaut in (("haut", "En haut", 0), ("bas", "En bas", 0), ("gauche", "À gauche", 25),
-                                 ("droite", "À droite", 25)):
-            s = QSpinBox()
-            s.setRange(0, 200)
-            s.setSuffix(" %")
-            s.setValue(defaut)
-            self.cotes[cle] = s
-            form.addRow(nom, s)
-        aide = QLabel("Pourcentage de la photo à ajouter de chaque côté.")
-        aide.setWordWrap(True)
-        boutons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        boutons.button(QDialogButtonBox.Ok).setText("Agrandir")
-        boutons.button(QDialogButtonBox.Cancel).setText("Annuler")
-        boutons.accepted.connect(self._valider)
-        boutons.rejected.connect(self.reject)
-        lay = QVBoxLayout(self)
-        lay.addWidget(aide)
-        lay.addLayout(form)
-        lay.addWidget(boutons)
+class BarreAgrandir(QFrame):
+    """Petite barre posée sur la photo pendant Agrandir : côtés en %, taille finale, Lancer / Annuler.
+    Les côtés se règlent surtout en tirant le cadre à la souris ; les cases suivent (et l'inverse)."""
+    lancer = Signal()
+    annuler = Signal()
+    valeurs_changees = Signal(object)   # (haut, bas, gauche, droite) en px
 
-    def _valider(self):
-        if any(s.value() for s in self.cotes.values()):
-            self.accept()
+    def __init__(self, parent: QWidget):
+        super().__init__(parent)
+        self.setObjectName("panneau")
+        self.taille = (1, 1)
+        self.cotes = {}
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(12, 8, 8, 8)
+        lay.setSpacing(6)
+        aide = QLabel("Tire les bords du cadre  (Maj : les deux côtés)")
+        aide.setObjectName("discret")
+        lay.addWidget(aide)
+        lay.addSpacing(8)
+        for cle, nom in (("haut", "Haut"), ("bas", "Bas"), ("gauche", "Gauche"), ("droite", "Droite")):
+            lay.addWidget(QLabel(nom))
+            c = QSpinBox()
+            c.setRange(0, 200)
+            c.setSuffix(" %")
+            c.valueChanged.connect(self._case_changee)
+            self.cotes[cle] = c
+            lay.addWidget(c)
+        lay.addSpacing(8)
+        self.texte_taille = QLabel()
+        self.texte_taille.setMinimumWidth(self.texte_taille.fontMetrics().horizontalAdvance("00000 × 00000 px"))
+        lay.addWidget(self.texte_taille)
+        lay.addSpacing(8)
+        b_annuler = QPushButton("Annuler")
+        b_annuler.setAutoDefault(False)
+        b_annuler.clicked.connect(self.annuler)
+        self.b_lancer = QPushButton("Lancer")
+        self.b_lancer.setObjectName("principal")
+        self.b_lancer.setAutoDefault(False)
+        self.b_lancer.clicked.connect(self.lancer)
+        lay.addWidget(b_annuler)
+        lay.addWidget(self.b_lancer)
+        self._px = (0, 0, 0, 0)
+        parent.installEventFilter(self)
+        self.hide()
+
+    def ouvrir(self, largeur: int, hauteur: int):
+        self.taille = (largeur, hauteur)
+        self.definir_px((0, 0, 0, 0))
+        self.adjustSize()
+        self._placer()
+        self.show()
+        self.raise_()
+
+    def definir_px(self, px):
+        """Valeurs venant du cadre tiré à la souris."""
+        self._px = tuple(int(v) for v in px)
+        w, h = self.taille
+        for (cle, c), v, n in zip(self.cotes.items(), self._px, (h, h, w, w)):
+            c.blockSignals(True)
+            c.setValue(round(v * 100 / n))
+            c.blockSignals(False)
+        self._maj_texte()
+
+    def _case_changee(self):
+        """Seul le côté modifié change (les autres gardent leur valeur exacte en px)."""
+        w, h = self.taille
+        px = list(self._px)
+        for i, (c, n) in enumerate(zip(self.cotes.values(), (h, h, w, w))):
+            if c is self.sender():
+                px[i] = round(c.value() * n / 100)
+        self._px = tuple(px)
+        self._maj_texte()
+        self.valeurs_changees.emit(self._px)
+
+    def _maj_texte(self):
+        w, h = self.taille
+        hh, bb, gg, dd = self._px
+        self.texte_taille.setText(f"{w + gg + dd} × {h + hh + bb} px")
+        self.b_lancer.setEnabled(any(self._px))
 
     def valeurs(self) -> dict:
-        return {k: float(s.value()) for k, s in self.cotes.items()}
+        """Pourcentages exacts (pour raccord.preparer)."""
+        w, h = self.taille
+        return {cle: v * 100 / n for cle, v, n in zip(self.cotes, self._px, (h, h, w, w))}
+
+    def _placer(self):
+        p = self.parentWidget()
+        self.move(max(0, (p.width() - self.width()) // 2), 12)
+
+    def eventFilter(self, objet, e):
+        if e.type() == QEvent.Resize:
+            self._placer()
+        return False
 
 
 class ReglagesUpscale(QDialog):

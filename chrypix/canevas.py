@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QImage, QPainter, QPainterPath, QPen, QPixmap, QTransform
+from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPainterPath, QPen, QPixmap, QTransform
 from PySide6.QtWidgets import QWidget
 
 from .document import COULEUR_SELECTION, Document
@@ -14,6 +14,9 @@ OPACITE_SELECTION = 0.45
 class Canevas(QWidget):
     selection_modifiee = Signal(object, str)   # (état avant, nom de l'action) -> pour annuler
     infos = Signal(int, int, float)             # largeur, hauteur, zoom
+    cadre_change = Signal(object)               # Agrandir : (haut, bas, gauche, droite) en px
+    cadre_valide = Signal()                     # Entrée pendant Agrandir
+    cadre_annule = Signal()                     # Échap pendant Agrandir
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -33,6 +36,9 @@ class Canevas(QWidget):
         self.mode_retirer = False    # pastilles Ajouter / Retirer
         self.couleur_fond = QColor(40, 40, 40)
         self.couleur_texte = QColor(150, 150, 150)
+        self.couleur_accent = QColor(0, 120, 215)
+        self.cadre = None            # Agrandir : [haut, bas, gauche, droite] en px de l'image, sinon None
+        self._poignee = None         # côtés tirés : ensemble parmi "h", "b", "g", "d"
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMinimumSize(300, 200)
@@ -69,7 +75,12 @@ class Canevas(QWidget):
             self.update()
             return
         iw, ih = self.doc.image.width(), self.doc.image.height()
-        self.zoom = max(0.01, min(self.width() / iw, self.height() / ih) * 0.96)
+        if self.cadre is not None:   # place pour tirer le cadre : au moins 40 % de chaque côté
+            h, b, g, d = self.cadre
+            tw, th = iw + 2 * max(g, d, iw * 0.4), ih + 2 * max(h, b, ih * 0.4)
+        else:
+            tw, th = iw, ih
+        self.zoom = max(0.01, min(self.width() / tw, self.height() / th) * 0.96)
         self._centrer()
         self._ajuste = True
 
@@ -80,6 +91,9 @@ class Canevas(QWidget):
     def _centrer(self):
         iw, ih = self.doc.image.width() * self.zoom, self.doc.image.height() * self.zoom
         self.decalage = QPointF((self.width() - iw) / 2, (self.height() - ih) / 2)
+        if self.cadre is not None:   # centrer le cadre entier plutôt que la photo
+            h, b, g, d = self.cadre
+            self.decalage += QPointF((g - d) * self.zoom / 2, (h - b) * self.zoom / 2)
         self._signaler()
         self.update()
 
@@ -148,17 +162,130 @@ class Canevas(QWidget):
                     chemin.lineTo(pt)
                 p.drawPath(chemin)
         p.restore()
+        if self.cadre is not None:
+            self._dessiner_cadre(p)
+            return
         # contour de l'image
         p.setPen(QColor(0, 0, 0, 60))
         p.drawRect(QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
                                                                  self.doc.image.height()) * self.zoom))
         # curseur du pinceau
-        if self._souris is not None and self.outil in (PINCEAU, GOMME) and not self._espace:
+        if self._souris is not None and self.outil in (PINCEAU, GOMME) and not self._espace and self.cadre is None:
             r = self.taille_pinceau * self.zoom / 2
             p.setPen(QPen(QColor(0, 0, 0), 3))
             p.drawEllipse(self._souris, r, r)
             p.setPen(QPen(QColor(255, 255, 255), 1))
             p.drawEllipse(self._souris, r, r)
+
+    # ---------------------------------------------------------- Agrandir : cadre à poignées
+    def commencer_cadre(self, valeurs=(0, 0, 0, 0)):
+        self.cadre = [int(v) for v in valeurs]
+        self._poignee = None
+        self.ajuster()
+        self.setCursor(Qt.ArrowCursor)
+        self.setFocus()
+        self.cadre_change.emit(tuple(self.cadre))
+
+    def definir_cadre(self, valeurs):
+        """Valeurs venant des réglages chiffrés (sans changer le zoom)."""
+        if self.cadre is not None:
+            self.cadre = [int(v) for v in valeurs]
+            self.update()
+
+    def finir_cadre(self):
+        self.cadre = None
+        self._poignee = None
+        self._curseur()
+        self.ajuster()
+
+    def _rect_cadre(self) -> QRectF:
+        """Le cadre (photo + ajouts) en coordonnées écran."""
+        h, b, g, d = self.cadre
+        iw, ih = self.doc.image.width(), self.doc.image.height()
+        return QRectF(self.vers_ecran(QPointF(-g, -h)), self.vers_ecran(QPointF(iw + d, ih + b)))
+
+    def _poignee_sous(self, pos: QPointF) -> set:
+        r = self._rect_cadre()
+        tol = 10
+        if not r.adjusted(-tol, -tol, tol, tol).contains(pos):
+            return set()
+        cotes = set()
+        if abs(pos.y() - r.top()) <= tol:
+            cotes.add("h")
+        elif abs(pos.y() - r.bottom()) <= tol:
+            cotes.add("b")
+        if abs(pos.x() - r.left()) <= tol:
+            cotes.add("g")
+        elif abs(pos.x() - r.right()) <= tol:
+            cotes.add("d")
+        return cotes
+
+    def _curseur_cadre(self, cotes: set):
+        if cotes in ({"h", "g"}, {"b", "d"}):
+            self.setCursor(Qt.SizeFDiagCursor)
+        elif cotes in ({"h", "d"}, {"b", "g"}):
+            self.setCursor(Qt.SizeBDiagCursor)
+        elif cotes & {"h", "b"}:
+            self.setCursor(Qt.SizeVerCursor)
+        elif cotes:
+            self.setCursor(Qt.SizeHorCursor)
+        else:
+            self.setCursor(Qt.ArrowCursor)
+
+    def _tirer_cadre(self, pos: QPointF, symetrique: bool):
+        pt = self.vers_image(pos)
+        iw, ih = self.doc.image.width(), self.doc.image.height()
+
+        def limite(v, n):   # de 0 à 200 % de la photo
+            return int(max(0, min(2 * n, round(v))))
+        h, b, g, d = self.cadre
+        if "h" in self._poignee:
+            h = limite(-pt.y(), ih)
+            b = h if symetrique else b
+        if "b" in self._poignee:
+            b = limite(pt.y() - ih, ih)
+            h = b if symetrique else h
+        if "g" in self._poignee:
+            g = limite(-pt.x(), iw)
+            d = g if symetrique else d
+        if "d" in self._poignee:
+            d = limite(pt.x() - iw, iw)
+            g = d if symetrique else g
+        self.cadre = [h, b, g, d]
+        self.cadre_change.emit(tuple(self.cadre))
+        self.update()
+
+    def _dessiner_cadre(self, p: QPainter):
+        r = self._rect_cadre()
+        photo = QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
+                                                              self.doc.image.height()) * self.zoom)
+        # zone ajoutée : damier gris (comme une zone vide)
+        zone = QPainterPath()
+        zone.addRect(r)
+        interieur = QPainterPath()
+        interieur.addRect(photo)
+        damier = QPixmap(16, 16)
+        damier.fill(QColor(205, 205, 205))
+        pd = QPainter(damier)
+        pd.fillRect(0, 0, 8, 8, QColor(240, 240, 240))
+        pd.fillRect(8, 8, 8, 8, QColor(240, 240, 240))
+        pd.end()
+        p.fillPath(zone.subtracted(interieur), QBrush(damier))
+        # contour de la photo, cadre en pointillés et poignées
+        p.setPen(QPen(self.couleur_accent, 2))
+        p.setBrush(Qt.NoBrush)
+        p.drawRect(photo)
+        p.setPen(QPen(QColor(0, 0, 0, 160), 1))
+        p.drawRect(r)
+        p.setPen(QPen(QColor(255, 255, 255), 1, Qt.DashLine))
+        p.drawRect(r)
+        c = r.center()
+        points = [r.topLeft(), QPointF(c.x(), r.top()), r.topRight(), QPointF(r.right(), c.y()),
+                  r.bottomRight(), QPointF(c.x(), r.bottom()), r.bottomLeft(), QPointF(r.left(), c.y())]
+        p.setPen(QPen(QColor(0, 0, 0, 180), 1))
+        p.setBrush(self.couleur_accent)
+        for pt in points:
+            p.drawRect(QRectF(pt.x() - 5, pt.y() - 5, 10, 10))
 
     # ---------------------------------------------------------- peinture de la sélection
     def _peintre_selection(self) -> QPainter:
@@ -207,6 +334,9 @@ class Canevas(QWidget):
             return
         if e.button() != Qt.LeftButton:
             return
+        if self.cadre is not None:
+            self._poignee = self._poignee_sous(pos) or None
+            return
         self._soustraire = self.mode_retirer != bool(e.modifiers() & Qt.AltModifier)
         self._avant = self.doc.etat()
         pt = self.vers_image(pos)
@@ -224,6 +354,12 @@ class Canevas(QWidget):
             self._ajuste = False
             self.update()
             return
+        if self.cadre is not None:
+            if self._poignee:
+                self._tirer_cadre(pos, bool(e.modifiers() & Qt.ShiftModifier))
+            else:
+                self._curseur_cadre(self._poignee_sous(pos))
+            return
         if self._trace is not None:
             pt = self.vers_image(pos)
             if self.outil in (PINCEAU, GOMME):
@@ -239,6 +375,9 @@ class Canevas(QWidget):
         if self._glisse is not None:
             self._glisse = None
             self._curseur()
+            return
+        if self.cadre is not None:
+            self._poignee = None
             return
         if self._trace is None:
             return
@@ -263,7 +402,11 @@ class Canevas(QWidget):
 
     # ---------------------------------------------------------- clavier
     def keyPressEvent(self, e):
-        if e.key() == Qt.Key_Space and not e.isAutoRepeat():
+        if self.cadre is not None and e.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self.cadre_valide.emit()
+        elif self.cadre is not None and e.key() == Qt.Key_Escape:
+            self.cadre_annule.emit()
+        elif e.key() == Qt.Key_Space and not e.isAutoRepeat():
             self._espace = True
             self.setCursor(Qt.OpenHandCursor)
         elif e.key() == Qt.Key_BracketLeft:
@@ -287,8 +430,10 @@ class Canevas(QWidget):
         self.taille_changee.emit(self.taille_pinceau)
         self.update()
 
-    def definir_couleurs(self, fond: str, texte: str):
+    def definir_couleurs(self, fond: str, texte: str, accent: str | None = None):
         self.couleur_fond, self.couleur_texte = QColor(fond), QColor(texte)
+        if accent:
+            self.couleur_accent = QColor(accent)
         self.update()
 
     def definir_mode_retirer(self, oui: bool):
@@ -300,5 +445,8 @@ class Canevas(QWidget):
         self.update()
 
     def _curseur(self):
+        if self.cadre is not None:
+            self.setCursor(Qt.ArrowCursor)
+            return
         self.setCursor(Qt.OpenHandCursor if self.outil == MAIN else
                        Qt.BlankCursor if self.outil in (PINCEAU, GOMME) else Qt.CrossCursor)

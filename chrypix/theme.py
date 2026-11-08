@@ -75,11 +75,10 @@ def signature_windows() -> tuple:
 
 
 def accent_windows(sombre: bool) -> QColor | None:
-    """Accent de Windows, avec la nuance utilisée par Windows (et TwinPanel) pour ce thème :
-    plus clair en sombre (« Light 2 »), plus foncé en clair (« Dark 1 »)."""
+    """La couleur d'accent exacte choisie dans Windows (nuance centrale de la palette), dans les deux thèmes."""
     nuances = palette_accent()
     if nuances:
-        return nuances[1] if sombre else nuances[4]
+        return nuances[3]
     if not _ACCENT_QT:  # repli : accent fourni par Qt, lu une seule fois
         try:
             c = QGuiApplication.palette().color(QPalette.Accent)
