@@ -79,7 +79,7 @@ def agrandir(image: str, haut: float, bas: float, gauche: float, droite: float, 
          "11": _n("InpaintCropImproved", image=["10", 0], mask=["10", 1], optional_context_mask=["9", 0],
                   **_decoupe(extend_for_outpainting=True, extend_up_factor=1 + haut / 100,
                              extend_down_factor=1 + bas / 100, extend_left_factor=1 + gauche / 100,
-                             extend_right_factor=1 + droite / 100, mask_expand_pixels=48, mask_blend_pixels=96,
+                             extend_right_factor=1 + droite / 100, mask_expand_pixels=32, mask_blend_pixels=16,
                              context_from_mask_extend_factor=1.2))}
     _flux_fill(p, ["11", 1], ["11", 2], ["11", 0], nb, denoise=1.0)
     return p, {"32": "Proposition"}

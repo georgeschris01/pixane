@@ -35,6 +35,13 @@ def qimage_vers_pil(img: QImage) -> Image.Image:
     return Image.fromarray(tableau(img), "RGBA")
 
 
+def qimage_rgb(tab: np.ndarray) -> QImage:
+    """Tableau (h, w, 3) uint8 -> QImage au format du document."""
+    h, w = tab.shape[:2]
+    rgba = np.ascontiguousarray(np.dstack([tab, np.full((h, w), 255, np.uint8)]))
+    return QImage(rgba.data, w, h, w * 4, FORMAT_IMAGE).copy()
+
+
 def nouvelle_selection(largeur: int, hauteur: int) -> QImage:
     sel = QImage(largeur, hauteur, FORMAT_SELECTION)
     sel.fill(0)
