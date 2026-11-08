@@ -295,6 +295,8 @@ asks two questions (default answer "No"):
 - also delete the **settings** (language, theme, last folder, text style, engine folder) and the logs?
 
 
+- Chrypix: MIT licence, © 2026 Georges Christophe (chrypox): free, provided the author's name is kept.
+  Third-party items: `docs\LICENCES_TIERS.md`.
 - Tested on an 8 GB NVIDIA graphics card (RTX 3060 Ti). The times given come from this PC.
 - Models used: Flux.1 Fill dev (**non-commercial use**; GGUF Q8 version when installed by Chrypix, same
   quality), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3).

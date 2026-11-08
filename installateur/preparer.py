@@ -47,8 +47,10 @@ def main():
     (paquets / "chrypix.pth").write_text("../../..\n", encoding="utf-8")
     shutil.copytree(RACINE / "chrypix", SORTIE / "chrypix", ignore=ignorer(set()))
     (SORTIE / "docs").mkdir()
-    for f in ("GUIDE.md", "GUIDE_en.md"):
+    for f in ("GUIDE.md", "GUIDE_en.md", "LICENCES_TIERS.md"):
         shutil.copy2(RACINE / "docs" / f, SORTIE / "docs" / f)
+    for f in ("LICENSE", "LICENSE.fr.txt"):              # licence MIT : le nom de l'auteur reste avec le programme
+        shutil.copy2(RACINE / f, SORTIE / f)
     shutil.copy2(RACINE / "chrypix" / "ressources" / "chrypix.ico", SORTIE / "chrypix.ico")
     # compilé d'avance : Program Files est en lecture seule, Python ne pourrait pas le faire au démarrage
     compileall.compile_dir(SORTIE, quiet=1, workers=0)

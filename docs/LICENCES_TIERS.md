@@ -1,0 +1,31 @@
+# Licences des éléments tiers / Third-party licences
+
+Chrypix lui-même : licence MIT, © 2026 Georges Christophe (chrypox) — voir `LICENSE`.
+Chrypix itself: MIT licence, © 2026 Georges Christophe (chrypox) — see `LICENSE`.
+
+## Inclus dans l'installateur / Included in the installer
+
+| Élément / Item | Licence |
+|---|---|
+| Python 3.11 | PSF License (`python\LICENSE.txt`) |
+| PySide6 / Qt 6.12, shiboken6 | LGPL-3.0 (bibliothèques non modifiées / unmodified libraries) |
+| numpy | BSD-3-Clause (et composants 0BSD, MIT, Zlib, CC0) |
+| Pillow | MIT-CMU |
+| websocket-client | Apache-2.0 |
+
+## Téléchargé seulement si l'utilisateur le choisit / Downloaded only if the user chooses
+
+| Élément / Item | Licence |
+|---|---|
+| ComfyUI portable | GPL-3.0 |
+| comfyui-inpaint-nodes, ComfyUI-Inpaint-CropAndStitch, ComfyUI_UltimateSDUpscale | GPL-3.0 |
+| ComfyUI-GGUF | Apache-2.0 ; bibliothèque gguf : MIT |
+| 7-Zip (7zr.exe) | LGPL-2.1 |
+| FLUX.1 Fill [dev] (GGUF Q8) | **FLUX.1 [dev] Non-Commercial License** — https://huggingface.co/black-forest-labs/FLUX.1-dev/blob/main/LICENSE.md |
+| FLUX.1 [schnell] (GGUF Q8, facultatif / optional) | Apache-2.0 |
+| Encodeurs T5 et CLIP / T5 and CLIP encoders, VAE | Apache-2.0 |
+| LaMa | Apache-2.0 |
+| RealESRGAN x4plus | BSD-3-Clause |
+
+Chrypix lance ComfyUI comme un programme séparé (aucun code de ComfyUI n'est inclus dans Chrypix).
+Chrypix runs ComfyUI as a separate program (no ComfyUI code is included in Chrypix).

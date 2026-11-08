@@ -3,7 +3,7 @@
 ; Compilé par construire-installateur.bat, qui prépare d'abord les fichiers dans publication\Chrypix et donne la version.
 ; Une nouvelle version = un nouveau Chrypix-Setup-x.y.z.exe : lancé sur un PC où Chrypix est déjà installé, il le met
 ; à jour (même AppId ci-dessous, à NE JAMAIS changer). Les réglages (registre, %LOCALAPPDATA%\Chrypix) ne sont pas touchés.
-; Pages : langue, accueil, dossier, vérification du PC (carte graphique, place libre, moteur IA ComfyUI), moteur IA
+; Pages : langue, accueil, licence (MIT), dossier, vérification du PC (carte graphique, place libre, moteur IA ComfyUI), moteur IA
 ; (seulement si ComfyUI est absent : liste des téléchargements, licence FLUX.1 [dev] à accepter), installation.
 ; Le téléchargement du moteur se fait après, par Chrypix (chrypix\installation_moteur.py, reprise possible).
 ; Désinstallation : propose de supprimer aussi le moteur IA installé par Chrypix et les réglages (non par défaut).
@@ -54,8 +54,9 @@ RestartApplications=no
 ChangesAssociations=yes
 
 [Languages]
-Name: "french"; MessagesFile: "compiler:Languages\French.isl"
-Name: "english"; MessagesFile: "compiler:Default.isl"
+; Page de licence (MIT) : traduction française de courtoisie, le texte anglais fait foi.
+Name: "french"; MessagesFile: "compiler:Languages\French.isl"; LicenseFile: "..\LICENSE.fr.txt"
+Name: "english"; MessagesFile: "compiler:Default.isl"; LicenseFile: "..\LICENSE"
 
 [CustomMessages]
 french.PagePCTitre=Vérification du PC

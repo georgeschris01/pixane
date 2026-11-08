@@ -16,6 +16,10 @@ Double-clic sur `Chrypix.bat` (ou `.venv\Scripts\python -m chrypix photo.jpg`).
   `ComfyUI_UltimateSDUpscale`, et les modèles Flux Fill, Flux Schnell, LaMa, RealESRGAN x4plus.
 - Emplacement de ComfyUI réglable dans `%LOCALAPPDATA%\Chrypix\config.json` (`comfyui_dir`, `extra_model_paths`).
 
-## Licences des modèles
+## Licence
 
-Flux.1 Fill dev : usage non commercial. Flux.1 Schnell : Apache-2.0. LaMa : Apache-2.0. RealESRGAN : BSD-3.
+Chrypix : licence **MIT**, © 2026 Georges Christophe (chrypox) — libre d'utiliser, modifier et redistribuer, à
+condition de garder le nom de l'auteur et la licence (`LICENSE` ; traduction française : `LICENSE.fr.txt`).
+
+Modèles : Flux.1 Fill dev : usage non commercial. Flux.1 Schnell : Apache-2.0. LaMa : Apache-2.0. RealESRGAN : BSD-3.
+Détail de tous les éléments tiers : `docs/LICENCES_TIERS.md`.
