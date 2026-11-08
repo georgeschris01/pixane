@@ -1,9 +1,11 @@
 """Fenêtre principale de Chrypix."""
 from __future__ import annotations
 
+import json
 import os
 import sys
 import threading
+from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QProcess, QSettings, QSize, Qt, QTimer, Signal
@@ -16,11 +18,13 @@ from . import langue, recettes, theme
 from .icones import icone
 from .langue import tr
 from .calques import PanneauCalques
-from .canevas import GOMME, GOMME_CALQUE, LASSO, MAIN, PINCEAU, RECTANGLE, Canevas
+from .canevas import GOMME, GOMME_CALQUE, LASSO, MAIN, PINCEAU, RECTANGLE, TEXTE, Canevas
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection, qimage_rgb, tableau
 from .moteur import Annule, ErreurMoteur, Moteur
+from .panneau_texte import PanneauTexte
 from .raccord import finaliser, lisere_auto, preparer
+from .texte import Texte
 
 NOM = "Chrypix"
 
@@ -55,9 +59,21 @@ class Tache(QObject):
 
 
 class CommandeEtat(QUndoCommand):
-    def __init__(self, doc: Document, avant, apres, texte: str):
+    """Passage d'un état du document à un autre. Deux commandes de même `cle` à la suite n'en font qu'une
+    (ex. les lettres tapées dans un texte : un seul Ctrl+Z annule toute la saisie)."""
+
+    def __init__(self, doc: Document, avant, apres, texte: str, cle=None):
         super().__init__(texte)
-        self.doc, self.avant, self.apres = doc, avant, apres
+        self.doc, self.avant, self.apres, self.cle = doc, avant, apres, cle
+
+    def id(self):
+        return 1 if self.cle is not None else -1
+
+    def mergeWith(self, autre):
+        if autre.cle != self.cle or autre.doc is not self.doc:
+            return False
+        self.apres = autre.apres
+        return True
 
     def redo(self):
         self.doc.appliquer_etat(self.apres)
@@ -127,12 +143,16 @@ class Fenetre(QMainWindow):
         self.canevas.cadre_change.connect(self.barre_agrandir.definir_px)
         self.canevas.cadre_valide.connect(self._lancer_agrandir)
         self.canevas.cadre_annule.connect(self._fin_agrandir)
+        self.canevas.texte_nouveau.connect(self._nouveau_texte)
+        self.canevas.texte_choisi.connect(self._texte_choisi)
+        self._session_texte = 0      # regroupe les changements d'un même texte dans Annuler
 
         self._menus()
         self._barre_commandes()
         self._outils()
         self._panneau_ia()
         self._panneau_calques()
+        self._panneau_texte()
         self._barre_etat()
         self._appliquer_theme()
         self._actualiser()
@@ -286,13 +306,15 @@ class Fenetre(QMainWindow):
         barre.setToolButtonStyle(Qt.ToolButtonIconOnly)
         self.addToolBar(Qt.LeftToolBarArea, barre)
         groupe = QActionGroup(self)
+        self._actions_outils = {}
         for outil, texte, touche, nom in ((MAIN, tr("Main : déplacer la vue"), "H", "main"),
                                           (RECTANGLE, tr("Sélection rectangle"), "M", "rectangle"),
                                           (LASSO, tr("Lasso"), "L", "lasso"),
                                           (PINCEAU, tr("Pinceau de sélection"), "B", "pinceau"),
                                           (GOMME, tr("Gomme de sélection"), "E", "gomme"),
                                           (GOMME_CALQUE, tr("Gomme de calque : efface les pixels du calque choisi"),
-                                           "G", "gomme_calque")):
+                                           "G", "gomme_calque"),
+                                          (TEXTE, tr("Texte : écrire, déplacer, tourner"), "T", "texte")):
             a = QAction(texte, self, checkable=True)
             a.setShortcut(touche)
             a.setToolTip(f"{texte}  ({touche})")
@@ -300,12 +322,17 @@ class Fenetre(QMainWindow):
             self._icone(a, nom)
             groupe.addAction(a)
             barre.addAction(a)
+            self._actions_outils[outil] = a
             if outil == PINCEAU:
                 a.setChecked(True)
 
     def _choisir_outil(self, outil: str):
         self.canevas.definir_outil(outil)
-        self.options.setEnabled(outil != MAIN)
+        self._actions_outils[outil].setChecked(True)
+        self.options.setEnabled(outil not in (MAIN, TEXTE))
+        self.dock_texte.setVisible(outil == TEXTE)
+        if outil == TEXTE:
+            self._sync_texte()
 
     def _taille_changee(self, v: int):
         self.curseur_taille.blockSignals(True)
@@ -355,6 +382,70 @@ class Fenetre(QMainWindow):
         dock.setWidget(self.calques)
         dock.setFixedWidth(290)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
+
+    def _panneau_texte(self):
+        self.dock_texte = QDockWidget(tr("TEXTE"), self)
+        self.dock_texte.setFeatures(QDockWidget.NoDockWidgetFeatures)
+        self.panneau_texte = PanneauTexte(lambda nom: icone(nom, self.couleurs.texte, self.couleurs.accent, 20))
+        try:                                       # style du dernier texte écrit
+            self.panneau_texte.defaut = Texte.depuis_dict(json.loads(self.reglages.value("texte_defaut", "{}")))
+            self.panneau_texte.afficher(None)
+        except (ValueError, TypeError):
+            pass
+        self.panneau_texte.modifie.connect(self._texte_modifie)
+        self.panneau_texte.en_pixels.connect(self._texte_en_pixels)
+        self.dock_texte.setWidget(self.panneau_texte)
+        self.dock_texte.setFixedWidth(290)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_texte)
+        self.dock_texte.hide()
+
+    # ---------------------------------------------------------- texte
+    def _sync_texte(self):
+        """Le panneau Texte montre le calque choisi s'il est un texte."""
+        if not hasattr(self, "panneau_texte"):
+            return
+        c = self.doc.calque_actif if self.doc else None
+        if c is not None and c.texte is not None:
+            if self.panneau_texte.t is not c.texte:
+                self.panneau_texte.afficher(c.texte, c.verrou)
+        elif self.panneau_texte.lie or c is None:
+            self.panneau_texte.afficher(None)
+        self.canevas.update()
+
+    def _nouveau_texte(self, pt):
+        if not self.doc:
+            return
+        w, h = self.doc.taille()
+        t = replace(self.panneau_texte.defaut, texte=tr("Texte"), x=pt.x(), y=pt.y(), angle=0.0,
+                    taille=float(max(12, round(min(w, h) / 12))))
+        self._session_texte += 1
+        self.historique.push(CommandeEtat(self.doc, self.doc.etat(), self.doc.etat_nouveau_texte(t),
+                                          tr("Nouveau texte")))
+        self.panneau_texte.commencer_saisie()
+
+    def _texte_choisi(self, index: int):
+        if self.doc and index != self.doc.actif:
+            self._session_texte += 1
+            self.doc.actif = index
+            self.doc.calques_changes.emit()
+
+    def _texte_modifie(self, t: Texte, champ: str):
+        doc = self.doc
+        if not doc or doc.calque_actif.texte is None:
+            return
+        if doc.calque_actif.verrou:
+            self.statusBar().showMessage(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour "
+                                            "pouvoir le modifier.", nom=doc.calque_actif.nom), 6000)
+            self.panneau_texte.afficher(doc.calque_actif.texte, True)
+            return
+        cle = ("texte", self._session_texte, doc.actif, champ)
+        self.historique.push(CommandeEtat(doc, doc.etat(), doc.etat_texte_modifie(doc.actif, t),
+                                          tr("Modifier le texte"), cle))
+
+    def _texte_en_pixels(self):
+        if self.doc and self.doc.calque_actif.texte is not None and not self.doc.calque_actif.verrou:
+            self.historique.push(CommandeEtat(self.doc, self.doc.etat(), self.doc.etat_en_pixels(self.doc.actif),
+                                              tr("Convertir en image")))
 
     def _commande_calques(self, etat, texte: str):
         if self.doc and etat is not None:
@@ -435,6 +526,8 @@ class Fenetre(QMainWindow):
         self.canevas.definir_couleurs(c.canevas, c.discret, c.accent)
         if hasattr(self, "calques"):
             self.calques.appliquer_icones()
+        if hasattr(self, "panneau_texte"):
+            self.panneau_texte.appliquer_icones()
         self._peindre_pastille_moteur()
 
     def _actualiser(self):
@@ -455,7 +548,7 @@ class Fenetre(QMainWindow):
 
     def _aide(self):
         QMessageBox.information(self, tr("Raccourcis"), tr(
-            "Outils : H main, M rectangle, L lasso, B pinceau, E gomme de sélection, G gomme de calque\n"
+            "Outils : H main, M rectangle, L lasso, B pinceau, E gomme de sélection, G gomme de calque, T texte\n"
             "[ et ] : taille du pinceau\n"
             "Alt pendant le tracé : inverse Ajouter / Retirer\n"
             "Espace + glisser, ou bouton du milieu : déplacer la vue\n"
@@ -463,7 +556,8 @@ class Fenetre(QMainWindow):
             "Ctrl+A tout, Ctrl+D désélectionner, Ctrl+Shift+I inverser\n"
             "Ctrl+Z annuler, Ctrl+Y rétablir\n"
             "Shift+E Effacer, Shift+R Remplir, Shift+A Agrandir, Shift+U Upscale\n"
-            "Agrandir : Maj en tirant = les deux côtés ; Entrée lancer, Échap annuler\n\n"
+            "Agrandir : Maj en tirant = les deux côtés ; Entrée lancer, Échap annuler\n"
+            "Texte : clic = nouveau texte, glisser = déplacer, poignée ronde = tourner (Maj : par 15°)\n\n"
             "Le guide complet est dans docs\\{guide}.", guide=tr("GUIDE.md")))
 
     # ================================================================ moteur
@@ -515,10 +609,12 @@ class Fenetre(QMainWindow):
         self.doc = doc
         self.historique.clear()
         doc.change.connect(self._actualiser)
+        doc.calques_changes.connect(self._sync_texte)
         self.barre_agrandir.hide()
         self.canevas.cadre = None
         self.canevas.definir_document(doc)
         self.calques.definir_document(doc)
+        self._sync_texte()
         self._actualiser()
 
     def enregistrer(self) -> bool:
@@ -539,17 +635,17 @@ class Fenetre(QMainWindow):
     def enregistrer_sous(self) -> bool:
         if not self.doc:
             return False
-        plusieurs = len(self.doc.calques) > 1
+        plusieurs = len(self.doc.calques) > 1 or any(c.texte is not None for c in self.doc.calques)
         if self.doc.chemin:
-            ext = ".ora" if plusieurs else self.doc.chemin.suffix
+            ext = ".chr" if plusieurs else self.doc.chemin.suffix
             propose = str(self.doc.chemin.with_name(self.doc.chemin.stem + tr("_retouche") + ext))
         else:
-            propose = str(Path(self.reglages.value("dossier", str(Path.home()))) / ("image.ora" if plusieurs
+            propose = str(Path(self.reglages.value("dossier", str(Path.home()))) / ("image.chr" if plusieurs
                                                                                      else "image.jpg"))
-        formats = [tr("Projet à calques OpenRaster") + " (*.ora)", "JPEG (*.jpg)", "PNG (*.png)", "TIFF (*.tif)",
-                   "WebP (*.webp)"]
+        formats = [tr("Projet Chrypix") + " (*.chr)", tr("OpenRaster, pour Krita et GIMP") + " (*.ora)",
+                   "JPEG (*.jpg)", "PNG (*.png)", "TIFF (*.tif)", "WebP (*.webp)"]
         if not plusieurs:
-            formats.append(formats.pop(0))
+            formats = formats[2:] + formats[:2]
         chemin, _ = QFileDialog.getSaveFileName(self, tr("Enregistrer sous"), propose, ";;".join(formats),
                                                 formats[0])
         if not chemin:
@@ -567,9 +663,15 @@ class Fenetre(QMainWindow):
             return False
         finally:
             QApplication.restoreOverrideCursor()
-        if len(self.doc.calques) > 1 and chemin.suffix.lower() != ".ora":
+        ext = chemin.suffix.lower()
+        textes = any(c.texte is not None for c in self.doc.calques)
+        if len(self.doc.calques) > 1 and ext not in (".chr", ".ora"):
             self.statusBar().showMessage(tr("Enregistré à plat (sans les calques) : {chemin}  —  pour garder les "
-                                            "calques, enregistre aussi en .ora", chemin=chemin), 10000)
+                                            "calques, enregistre aussi en .chr", chemin=chemin), 10000)
+        elif ext == ".ora" and textes:
+            self.statusBar().showMessage(tr("Enregistré : {chemin}  —  dans un .ora, les textes sont des images ; "
+                                            "pour les garder modifiables, enregistre aussi en .chr",
+                                            chemin=chemin), 10000)
         else:
             self.statusBar().showMessage(tr("Enregistré : {chemin}", chemin=chemin), 5000)
         self._actualiser()
@@ -598,6 +700,7 @@ class Fenetre(QMainWindow):
             e.ignore()
             return
         self.moteur.arreter()
+        self.reglages.setValue("texte_defaut", json.dumps(self.panneau_texte.defaut.vers_dict(), ensure_ascii=False))
         e.accept()
 
     # ================================================================ sélection

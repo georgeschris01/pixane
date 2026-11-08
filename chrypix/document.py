@@ -8,6 +8,7 @@ immuables : une modification crée un nouveau Calque (les QImage sont partagées
 from __future__ import annotations
 
 import io
+import json
 import xml.etree.ElementTree as ET
 import zipfile
 from dataclasses import dataclass, replace
@@ -19,13 +20,15 @@ from PySide6.QtCore import QObject, QPoint, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QPainter
 
 from .langue import tr
+from .texte import Texte, nom_calque, rendre
 
 COULEUR_SELECTION = QColor(255, 40, 40)
 FORMAT_IMAGE = QImage.Format_RGBA8888
 FORMAT_SELECTION = QImage.Format_ARGB32_Premultiplied
 FORMAT_CALQUE = QImage.Format_ARGB32_Premultiplied
 
-EXTENSIONS_LECTURE = "*.jpg *.jpeg *.png *.tif *.tiff *.webp *.bmp *.ora"
+EXTENSIONS_LECTURE = "*.chr *.jpg *.jpeg *.png *.tif *.tiff *.webp *.bmp *.ora"
+EXTENSIONS_CALQUES = (".chr", ".ora")      # formats qui gardent les calques
 
 
 # ------------------------------------------------------------------ conversions
@@ -85,6 +88,7 @@ class Calque:
     visible: bool = True
     opacite: float = 1.0          # 0..1
     verrou: bool = False          # cadenas : ni gomme, ni suppression, ni fusion, ni opacité
+    texte: Texte | None = None    # calque de texte : ses réglages (l'image en est le dessin)
 
     @staticmethod
     def depuis(nom: str, image: QImage, **kw) -> "Calque":
@@ -154,7 +158,7 @@ class Document(QObject):
     @classmethod
     def ouvrir(cls, chemin: str | Path) -> "Document":
         chemin = Path(chemin)
-        if chemin.suffix.lower() == ".ora":
+        if chemin.suffix.lower() in EXTENSIONS_CALQUES:
             return cls(chemin=chemin, calques=lire_ora(chemin))
         with Image.open(chemin) as im:
             exif = im.info.get("exif")
@@ -168,8 +172,8 @@ class Document(QObject):
     def enregistrer(self, chemin: str | Path) -> None:
         chemin = Path(chemin)
         ext = chemin.suffix.lower()
-        if ext == ".ora":
-            ecrire_ora(chemin, self.calques, self.image)
+        if ext in EXTENSIONS_CALQUES:
+            ecrire_ora(chemin, self.calques, self.image, natif=ext == ".chr")
             self.chemin = chemin
             self.modifie = False
             return
@@ -227,10 +231,11 @@ class Document(QObject):
         self.calques_changes.emit()
         self.change.emit()
 
-    def apercu_calque(self, index: int, image: QImage) -> None:
-        """Remplace l'image d'un calque sans entrée dans Annuler (aperçu pendant un coup de gomme)."""
+    def apercu_calque(self, index: int, image: QImage, texte: Texte | None = None) -> None:
+        """Remplace l'image d'un calque sans entrée dans Annuler (aperçu pendant un coup de gomme ou un
+        déplacement de texte). Sans `texte`, un calque de texte devient un calque d'image (pixels)."""
         calques = list(self.calques)
-        calques[index] = replace(calques[index], image=image)
+        calques[index] = replace(calques[index], image=image, texte=texte)
         self.calques = tuple(calques)
         self._fusion = None
         self.change.emit()
@@ -265,6 +270,10 @@ class Document(QObject):
         dx, dy = decalage
         nouveaux = []
         for c in self.calques:
+            if c.texte is not None:                    # texte : redessiné à sa nouvelle place
+                t = c.texte.deplace(dx, dy)
+                nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
+                continue
             img = image_vide(W, H)
             p = QPainter(img)
             p.drawImage(QPoint(dx, dy), c.image)
@@ -277,8 +286,14 @@ class Document(QObject):
     def etat_redimensionne(self, titre: str, resultat: QImage):
         """Upscale : tous les calques sont agrandis (lissage) ; le résultat de l'IA, complet, va en haut."""
         W, H = resultat.width(), resultat.height()
-        nouveaux = [replace(c, image=c.image.scaled(W, H, Qt.IgnoreAspectRatio, Qt.SmoothTransformation))
-                    for c in self.calques]
+        w, h = self.taille()
+        nouveaux = []
+        for c in self.calques:
+            if c.texte is not None:                    # texte : redessiné net à la nouvelle taille
+                t = c.texte.mis_a_l_echelle(W / w, H / h)
+                nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
+            else:
+                nouveaux.append(replace(c, image=c.image.scaled(W, H, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)))
         calque = Calque.depuis(self.nom_libre(titre), resultat)
         return self.etat_avec(tuple(nouveaux) + (calque,), len(nouveaux))
 
@@ -286,6 +301,29 @@ class Document(QObject):
         calques = list(self.calques)
         calques[index] = replace(calques[index], **changements)
         return self.etat_avec(calques)
+
+    def etat_nouveau_texte(self, t: Texte):
+        """Nouveau calque de texte au-dessus du calque choisi."""
+        w, h = self.taille()
+        c = Calque(nom_calque(t, tr("Texte")), rendre(t, w, h), texte=t)
+        calques = list(self.calques)
+        calques.insert(self.actif + 1, c)
+        return self.etat_avec(calques, self.actif + 1)
+
+    def etat_texte_modifie(self, index: int, t: Texte):
+        """Texte modifié : redessiné ; le nom suit le texte tant qu'il n'a pas été renommé à la main."""
+        c = self.calques[index]
+        w, h = self.taille()
+        nom = c.nom
+        if c.texte is not None and c.nom == nom_calque(c.texte, tr("Texte")):
+            nom = nom_calque(t, tr("Texte"))
+        calques = list(self.calques)
+        calques[index] = replace(c, nom=nom, image=rendre(t, w, h), texte=t)
+        return self.etat_avec(calques)
+
+    def etat_en_pixels(self, index: int):
+        """Le calque de texte devient un calque d'image ordinaire (le texte n'est plus modifiable)."""
+        return self.etat_calque_modifie(index, texte=None)
 
     def etat_nouveau_calque(self):
         w, h = self.taille()
@@ -323,7 +361,7 @@ class Document(QObject):
         w, h = self.taille()
         dessous, dessus = self.calques[self.actif - 1], self.calque_actif
         img = fusionner([replace(dessous, opacite=1.0, visible=True), dessus], w, h)
-        fusion = replace(dessous, image=img)
+        fusion = replace(dessous, image=img, texte=None)
         calques = list(self.calques)
         calques[self.actif - 1:self.actif + 1] = [fusion]
         return self.etat_avec(calques, self.actif - 1)
@@ -373,13 +411,15 @@ class Document(QObject):
 # ------------------------------------------------------------------ format OpenRaster (.ora)
 # Format ouvert à calques (lu aussi par Krita, GIMP, MyPaint) : une archive zip avec un PNG par calque,
 # la liste des calques (stack.xml), l'image fusionnée et une vignette.
+# Le format de Chrypix (.chr) est le même, avec en plus les réglages des textes (attribut chrypix-texte) :
+# un .chr renommé en .ora s'ouvre donc aussi dans Krita ou GIMP (les textes y sont des images).
 def _png(img: QImage) -> bytes:
     tampon = io.BytesIO()
     qimage_vers_pil(img).save(tampon, "PNG", compress_level=6)
     return tampon.getvalue()
 
 
-def ecrire_ora(chemin: Path, calques, fusion: QImage) -> None:
+def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False) -> None:
     w, h = calques[0].image.width(), calques[0].image.height()
     pile = ET.Element("image", w=str(w), h=str(h), version="0.0.5")
     pile_calques = ET.SubElement(pile, "stack")
@@ -389,9 +429,11 @@ def ecrire_ora(chemin: Path, calques, fusion: QImage) -> None:
         for i, c in enumerate(reversed(calques)):          # stack.xml : du haut vers le bas
             nom_png = f"data/calque{len(calques) - 1 - i}.png"
             z.writestr(nom_png, _png(c.image), compress_type=zipfile.ZIP_STORED)
+            autres = {"edit-locked": "true"} if c.verrou else {}
+            if natif and c.texte is not None:
+                autres["chrypix-texte"] = json.dumps(c.texte.vers_dict(), ensure_ascii=False)
             ET.SubElement(pile_calques, "layer", name=c.nom, src=nom_png, x="0", y="0",
-                          opacity=f"{c.opacite:.3f}", visibility="visible" if c.visible else "hidden",
-                          **({"edit-locked": "true"} if c.verrou else {}))
+                          opacity=f"{c.opacite:.3f}", visibility="visible" if c.visible else "hidden", **autres)
         z.writestr("stack.xml", ET.tostring(pile, encoding="utf-8", xml_declaration=True),
                    compress_type=zipfile.ZIP_DEFLATED)
         z.writestr("mergedimage.png", _png(fusion), compress_type=zipfile.ZIP_STORED)
@@ -412,10 +454,16 @@ def lire_ora(chemin: Path) -> list[Calque]:
             p = QPainter(img)
             p.drawImage(QPoint(int(float(couche.get("x", 0))), int(float(couche.get("y", 0)))), morceau)
             p.end()
+            texte = None
+            if couche.get("chrypix-texte"):
+                try:
+                    texte = Texte.depuis_dict(json.loads(couche.get("chrypix-texte")))
+                except (ValueError, TypeError):
+                    texte = None                       # réglages illisibles : on garde l'image
             calques.append(Calque(couche.get("name") or tr("Calque"), img,
                                   visible=couche.get("visibility", "visible") != "hidden",
                                   opacite=float(couche.get("opacity", 1)),
-                                  verrou=couche.get("edit-locked", "false") == "true"))
+                                  verrou=couche.get("edit-locked", "false") == "true", texte=texte))
     if not calques:
-        raise ValueError(tr("Ce fichier .ora ne contient aucun calque."))
+        raise ValueError(tr("Ce fichier ne contient aucun calque."))
     return list(reversed(calques))

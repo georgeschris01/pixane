@@ -57,7 +57,8 @@ class LigneCalque(QWidget):
         lay.addLayout(textes, 1)
         lay.addWidget(self.cadenas)
 
-    def remplir(self, nom: str, visible: bool, opacite: float, vignette: QPixmap, verrou: bool = False):
+    def remplir(self, nom: str, visible: bool, opacite: float, vignette: QPixmap, verrou: bool = False,
+                texte: bool = False):
         self.oeil.setIcon(self.icones("oeil" if visible else "oeil_ferme"))
         self.cadenas.setIcon(self.icones("cadenas" if verrou else "cadenas_ouvert"))
         self.cadenas.setToolTip(tr("Calque verrouillé : cliquer pour le déverrouiller") if verrou else
@@ -69,8 +70,11 @@ class LigneCalque(QWidget):
         effet.setOpacity(1.0 if verrou else 0.35)        # cadenas ouvert discret
         self.nom.setText(nom)
         self.nom.setEnabled(visible)
-        self.details.setText("" if opacite >= 0.999 else tr("opacité {n} %", n=round(opacite * 100)))
-        self.details.setVisible(opacite < 0.999)
+        details = [tr("texte")] if texte else []
+        if opacite < 0.999:
+            details.append(tr("opacité {n} %", n=round(opacite * 100)))
+        self.details.setText(" · ".join(details))
+        self.details.setVisible(bool(details))
         self.vignette.setPixmap(vignette)
 
 
@@ -181,7 +185,7 @@ class PanneauCalques(QWidget):
             c = doc.calques[index]
             ligne = self.liste.itemWidget(self.liste.item(rang))
             ligne.index = index
-            ligne.remplir(c.nom, c.visible, c.opacite, self._vignette(c.image), c.verrou)
+            ligne.remplir(c.nom, c.visible, c.opacite, self._vignette(c.image), c.verrou, c.texte is not None)
         if doc:
             self.liste.setCurrentRow(n - 1 - doc.actif)
             if not self.curseur.isSliderDown():
@@ -207,7 +211,7 @@ class PanneauCalques(QWidget):
         """Changer de calque actif n'est pas une retouche : pas d'entrée dans Annuler."""
         if self.doc and rang >= 0:
             self.doc.actif = len(self.doc.calques) - 1 - rang
-            self.rafraichir()
+            self.doc.calques_changes.emit()        # panneau, canevas et panneau Texte suivent
 
     def _oeil(self, ligne: LigneCalque):
         c = self.doc.calques[ligne.index]

@@ -11,7 +11,8 @@ Ce guide explique chaque outil et chaque réglage. Il est complété à chaque n
 | Zone | Rôle |
 |---|---|
 | **Barre du haut** | Ouvrir, Enregistrer, Annuler / Rétablir, taille du pinceau, Ajouter / Retirer, zoom, thème clair / sombre |
-| **Outils (à gauche)** | Main, Rectangle, Lasso, Pinceau, Gomme |
+| **Outils (à gauche)** | Main, Rectangle, Lasso, Pinceau, Gommes, Texte |
+| **Panneau « Texte » (à gauche)** | Réglages du texte, visible avec l'outil Texte (voir chapitre 7) |
 | **Photo (au centre)** | La photo ; la zone sélectionnée apparaît en rouge transparent |
 | **Panneau « Intelligence artificielle » (à droite)** | Effacer, Remplir, Agrandir l'image, Upscale |
 | **Panneau « Calques » (à droite, en dessous)** | Les calques de l'image (voir chapitre 6) |
@@ -34,11 +35,16 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 
 ## 2. Ouvrir et enregistrer
 
-- **Fichier > Ouvrir** (Ctrl+O) : JPG, PNG, TIFF, WebP, BMP, et les projets à calques **.ora**.
+- **Fichier > Ouvrir** (Ctrl+O) : JPG, PNG, TIFF, WebP, BMP, et les projets à calques **.chr** et **.ora**.
   La photo est redressée selon son orientation d'appareil.
 - **Enregistrer** (Ctrl+S), **Enregistrer sous** (Ctrl+Maj+S) :
-  - **.ora** (OpenRaster) : garde **tous les calques** (noms, ordre, visibilité, opacité). Format ouvert, lisible
-    aussi par Krita, GIMP et MyPaint. Proposé d'office quand l'image a plusieurs calques.
+  - **.chr** (projet Chrypix) : le format de Chrypix. Garde **tout** : calques (noms, ordre, visibilité, opacité,
+    verrou) et **textes modifiables**. Proposé d'office quand l'image a plusieurs calques ou un texte.
+  - **.ora** (OpenRaster) : pour **partager avec Krita ou GIMP** (format ouvert). Garde les calques, mais les
+    textes y deviennent des images.
+  - Bon à savoir : un .chr est construit comme un .ora ; renommé en .ora, il s'ouvre aussi dans Krita ou GIMP.
+  - **Photoshop** n'ouvre pas les .ora : l'enregistrement en PSD (calques) est prévu dans une prochaine étape.
+    En attendant, enregistrez en PNG ou TIFF (image à plat).
   - **JPG** (qualité 95), **PNG**, **TIFF**, **WebP** : l'image **à plat** (ce que vous voyez, calques fusionnés).
     Un message le rappelle si l'image a plusieurs calques.
   Les informations de l'appareil (EXIF) et le profil de couleur sont conservés.
@@ -170,7 +176,7 @@ devant. Une photo ouverte a un seul calque, « Arrière-plan ».
 | **Vignette** | Aperçu du calque ; le damier gris montre les parties transparentes |
 | **Nom** | Double-clic pour renommer |
 | **Opacité** | Transparence du calque choisi, de 0 % (invisible) à 100 % ; affichée sous le nom quand < 100 % |
-| **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. Les actions IA sont refusées avec un message : Effacer et Remplir si le calque choisi est verrouillé, Agrandir et Upscale si un calque quelconque est verrouillé (ils changent la taille de tous les calques). On peut toujours le masquer, le renommer et le monter / descendre. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .ora |
+| **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. Les actions IA sont refusées avec un message : Effacer et Remplir si le calque choisi est verrouillé, Agrandir et Upscale si un calque quelconque est verrouillé (ils changent la taille de tous les calques). On peut toujours le masquer, le renommer et le monter / descendre. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .chr et .ora |
 
 ### Les boutons (de gauche à droite)
 | Bouton | Action |
@@ -193,11 +199,57 @@ Toutes les actions sur les calques s'annulent avec Ctrl+Z (changer de calque cho
 
 ---
 
-## 7. Raccourcis
+## 7. Le texte
+
+Outil **Texte** (touche **T**, icône « T » dans la barre d'outils). Le panneau **Texte** s'ouvre à gauche.
+
+### Écrire, déplacer, tourner
+- **Cliquer sur la photo** : un nouveau texte « Texte » apparaît à cet endroit, sur **son propre calque**.
+  Tapez directement : le mot proposé est remplacé. La case du panneau accepte plusieurs lignes (Entrée).
+- **Cliquer sur un texte existant** : il est choisi et ses réglages s'affichent ; on peut le modifier à tout
+  moment, même après avoir enregistré en **.chr** et rouvert.
+- **Glisser le texte** : le déplacer. Un cadre en pointillés entoure le texte choisi.
+- **Poignée ronde** au-dessus du cadre : tourner le texte (**Maj** : par pas de 15°), ou case *Rotation*.
+- Le nom du calque suit la première ligne du texte (tant qu'on ne l'a pas renommé à la main).
+- Sans texte choisi, les réglages du panneau servent pour le **prochain** texte ; Chrypix retient aussi le
+  dernier style utilisé (police, couleur, effets…). La taille du nouveau texte est calculée d'après la photo.
+
+### Réglages du panneau
+| Réglage | Effet |
+|---|---|
+| **Police** | Toutes les polices installées dans Windows |
+| **Taille** | Hauteur des lettres, en pixels de la photo |
+| **Couleur** (pastille) | Couleur des lettres, avec la transparence (canal alpha) |
+| **G / I / S / B** | Gras, italique, souligné, barré |
+| **Alignement** | À gauche, centré, à droite (pour plusieurs lignes) |
+| **Lettres** | Espace ajouté entre les lettres, en % de la taille (négatif = lettres serrées) |
+| **Lignes** | Écart entre les lignes, × la taille des lettres |
+| **Rotation** | Angle en degrés |
+| **Courbe** | Texte en arc : positif = en voûte, négatif = en creux, 360° = cercle complet |
+| **Contour** | Trait autour des lettres : couleur et épaisseur |
+| **Ombre portée** | Couleur, distance, direction (0° = vers la droite, 90° = vers le bas) et flou |
+| **Fond** | Rectangle coloré derrière le texte : couleur, marge et arrondi des coins |
+| **Convertir en image** | Le texte devient un calque d'image ordinaire (gomme, IA…) ; il n'est plus modifiable comme texte |
+
+Les tailles des effets (épaisseur, distance, flou, marge, arrondi) sont en **% de la taille des lettres** :
+ils restent proportionnés quand on change la taille du texte.
+**Transparence** du texte entier : curseur **Opacité** du panneau Calques.
+
+### Bon à savoir
+- Toutes les modifications s'annulent avec Ctrl+Z ; une saisie de plusieurs lettres s'annule d'un seul coup.
+- **Agrandir** et **Upscale** gardent les textes modifiables : ils sont décalés ou redessinés nets à la nouvelle taille.
+- La **Gomme de calque** sur un texte le transforme en image (un message le signale ; Ctrl+Z pour revenir).
+  **Fusionner** ou **Aplatir** aussi.
+- Un texte sur un calque **verrouillé** ne peut être ni déplacé ni modifié.
+- Pour garder les textes modifiables, enregistrez en **.chr** (dans un .ora, ils deviennent des images).
+
+---
+
+## 8. Raccourcis
 
 | Touche | Action |
 |---|---|
-| H, M, L, B, E, G | Main, Rectangle, Lasso, Pinceau, Gomme de sélection, Gomme de calque |
+| H, M, L, B, E, G, T | Main, Rectangle, Lasso, Pinceau, Gomme de sélection, Gomme de calque, Texte |
 | `[` / `]` | Pinceau plus petit / plus grand |
 | Espace (maintenu) | Déplacer la vue |
 | Alt (maintenu) | Inverser Ajouter / Retirer le temps d'un geste |
@@ -206,11 +258,12 @@ Toutes les actions sur les calques s'annulent avec Ctrl+Z (changer de calque cho
 | Ctrl+A, Ctrl+D, Ctrl+Maj+I | Tout sélectionner, Désélectionner, Inverser |
 | Ctrl+0, Ctrl+1 | Ajuster, 100 % |
 | Entrée / Échap | (Agrandir) Lancer / Annuler |
+| Maj (en tournant un texte) | Rotation par pas de 15° |
 | F1 | Liste des raccourcis |
 
 ---
 
-## 8. Matériel et licences
+## 9. Matériel et licences
 
 - Testé sur une carte graphique NVIDIA de 8 Go (RTX 3060 Ti). Les durées indiquées viennent de ce PC.
 - Modèles utilisés : Flux.1 Fill dev (**usage non commercial**), Flux.1 Schnell (Apache-2.0),

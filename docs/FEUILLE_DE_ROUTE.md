@@ -14,8 +14,9 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
 1. [ ] **Français / anglais** — fait le 08/11/2026, à valider par Christophe : tout le programme dans les deux langues ; par défaut la
    langue de Windows (choisie aussi par l'installateur), changeable dans le menu ; guide en anglais aussi.
    Fait : langue.py + langues\en.json, menu Affichage > Langue, Qt traduit, guide docs\GUIDE_en.md.
-2. [ ] **Toutes les fonctions de texte** (demandé le 08/11/2026, avant de reprendre la suite) : à préciser avec
-   Christophe avant de commencer.
+2. [ ] **Toutes les fonctions de texte** — fait le 08/11/2026, à valider par Christophe : outil T, police, taille,
+   couleur, gras / italique / souligné / barré, alignement, espacement, rotation, courbe, contour, ombre, fond ;
+   format .chr (textes modifiables). Guide chapitre 7.
 3. [ ] **Outils** : recadrer, pinceau de couleur, tampon (copier une zone sur une autre).
 4. [ ] **Réglages d'image** : luminosité, contraste, couleurs, netteté.
 5. [ ] **PSD** : ouvrir et enregistrer les fichiers Photoshop avec leurs calques.

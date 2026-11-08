@@ -12,7 +12,8 @@ This guide explains every tool and every setting. It is updated with each new fe
 | Area | Purpose |
 |---|---|
 | **Top bar** | Open, Save, Undo / Redo, brush size, Add / Remove, zoom, light / dark theme |
-| **Tools (left)** | Hand, Rectangle, Lasso, Brush, Eraser |
+| **Tools (left)** | Hand, Rectangle, Lasso, Brush, Erasers, Text |
+| **"Text" panel (left)** | Text settings, shown with the Text tool (see chapter 7) |
 | **Photo (centre)** | The photo; the selected area appears in transparent red |
 | **"Artificial intelligence" panel (right)** | Erase, Fill, Expand image, Upscale |
 | **"Layers" panel (right, below)** | The layers of the image (see chapter 6) |
@@ -35,11 +36,16 @@ Layer names that already exist keep their original language.
 
 ## 2. Opening and saving
 
-- **File > Open** (Ctrl+O): JPG, PNG, TIFF, WebP, BMP, and **.ora** layered projects.
+- **File > Open** (Ctrl+O): JPG, PNG, TIFF, WebP, BMP, and **.chr** and **.ora** layered projects.
   The photo is rotated according to the camera orientation.
 - **Save** (Ctrl+S), **Save as** (Ctrl+Shift+S):
-  - **.ora** (OpenRaster): keeps **all layers** (names, order, visibility, opacity, lock). An open format, also
-    readable by Krita, GIMP and MyPaint. Suggested automatically when the image has several layers.
+  - **.chr** (Chrypix project): Chrypix's own format. Keeps **everything**: layers (names, order, visibility,
+    opacity, lock) and **editable texts**. Suggested automatically when the image has several layers or a text.
+  - **.ora** (OpenRaster): to **share with Krita or GIMP** (open format). Keeps the layers, but texts become
+    images.
+  - Good to know: a .chr file is built like an .ora file; renamed to .ora, it also opens in Krita or GIMP.
+  - **Photoshop** does not open .ora files: saving as PSD (with layers) is planned in a later step.
+    Meanwhile, save as PNG or TIFF (flattened image).
   - **JPG** (quality 95), **PNG**, **TIFF**, **WebP**: the **flattened** image (what you see, layers merged).
     A message reminds you of this if the image has several layers.
   Camera information (EXIF) and the colour profile are kept.
@@ -169,7 +175,7 @@ An opened photo has a single layer, "Background".
 | **Thumbnail** | Preview of the layer; the grey checkerboard shows transparent parts |
 | **Name** | Double-click to rename |
 | **Opacity** | Transparency of the selected layer, from 0% (invisible) to 100%; shown under the name when < 100% |
-| **Padlock** (right of the name) | Locks the layer to protect it: it can no longer be erased, deleted or merged, and its opacity is fixed; Flatten is disabled while a layer is locked. AI actions are refused with a message: Erase and Fill if the selected layer is locked, Expand and Upscale if any layer is locked (they change the size of every layer). It can still be hidden, renamed and moved up / down. The open padlock is discreet, the closed padlock clearly visible. The lock is kept in .ora files |
+| **Padlock** (right of the name) | Locks the layer to protect it: it can no longer be erased, deleted or merged, and its opacity is fixed; Flatten is disabled while a layer is locked. AI actions are refused with a message: Erase and Fill if the selected layer is locked, Expand and Upscale if any layer is locked (they change the size of every layer). It can still be hidden, renamed and moved up / down. The open padlock is discreet, the closed padlock clearly visible. The lock is kept in .chr and .ora files |
 
 ### The buttons (left to right)
 | Button | Action |
@@ -192,11 +198,57 @@ All layer actions can be undone with Ctrl+Z (changing the selected layer does no
 
 ---
 
-## 7. Shortcuts
+## 7. Text
+
+**Text** tool (key **T**, "T" icon in the toolbar). The **Text** panel opens on the left.
+
+### Writing, moving, rotating
+- **Click on the photo**: a new text "Text" appears at that spot, on **its own layer**.
+  Just type: the suggested word is replaced. The panel's box accepts several lines (Enter).
+- **Click on an existing text**: it is selected and its settings are shown; it can be edited at any time,
+  even after saving as **.chr** and reopening.
+- **Drag the text**: move it. A dashed frame surrounds the selected text.
+- **Round handle** above the frame: rotate the text (**Shift**: in 15° steps), or the *Rotation* box.
+- The layer name follows the first line of the text (as long as you have not renamed it yourself).
+- With no text selected, the panel settings are used for the **next** text; Chrypix also remembers the last
+  style used (font, colour, effects…). The size of a new text is calculated from the photo.
+
+### Panel settings
+| Setting | Effect |
+|---|---|
+| **Font** | All fonts installed in Windows |
+| **Size** | Letter height, in pixels of the photo |
+| **Colour** (swatch) | Letter colour, with transparency (alpha channel) |
+| **B / I / U / S** | Bold, italic, underline, strikethrough |
+| **Alignment** | Left, centred, right (for several lines) |
+| **Letters** | Space added between letters, as a % of the size (negative = tighter letters) |
+| **Lines** | Space between lines, × the letter size |
+| **Rotation** | Angle in degrees |
+| **Curve** | Text on an arc: positive = arch, negative = dip, 360° = full circle |
+| **Outline** | Line around the letters: colour and thickness |
+| **Drop shadow** | Colour, distance, direction (0° = to the right, 90° = down) and blur |
+| **Background** | Coloured rectangle behind the text: colour, margin and corner rounding |
+| **Convert to image** | The text becomes an ordinary image layer (eraser, AI…); it can no longer be edited as text |
+
+Effect sizes (thickness, distance, blur, margin, rounding) are a **% of the letter size**:
+they stay in proportion when you change the text size.
+**Transparency** of the whole text: **Opacity** slider in the Layers panel.
+
+### Good to know
+- Every change can be undone with Ctrl+Z; typing several letters is undone in one go.
+- **Expand** and **Upscale** keep texts editable: they are shifted or redrawn sharp at the new size.
+- The **Layer eraser** on a text turns it into an image (a message says so; Ctrl+Z to go back).
+  So do **Merge** and **Flatten**.
+- A text on a **locked** layer can be neither moved nor edited.
+- To keep texts editable, save as **.chr** (in an .ora file, they become images).
+
+---
+
+## 8. Shortcuts
 
 | Key | Action |
 |---|---|
-| H, M, L, B, E, G | Hand, Rectangle, Lasso, Brush, Selection eraser, Layer eraser |
+| H, M, L, B, E, G, T | Hand, Rectangle, Lasso, Brush, Selection eraser, Layer eraser, Text |
 | `[` / `]` | Smaller / larger brush |
 | Space (held) | Move the view |
 | Alt (held) | Switch Add / Remove for one stroke |
@@ -205,11 +257,12 @@ All layer actions can be undone with Ctrl+Z (changing the selected layer does no
 | Ctrl+A, Ctrl+D, Ctrl+Shift+I | Select all, Deselect, Invert |
 | Ctrl+0, Ctrl+1 | Fit, 100% |
 | Enter / Esc | (Expand) Start / Cancel |
+| Shift (while rotating a text) | Rotate in 15° steps |
 | F1 | List of shortcuts |
 
 ---
 
-## 8. Hardware and licences
+## 9. Hardware and licences
 
 - Tested on an 8 GB NVIDIA graphics card (RTX 3060 Ti). The times given come from this PC.
 - Models used: Flux.1 Fill dev (**non-commercial use**), Flux.1 Schnell (Apache-2.0),

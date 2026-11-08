@@ -1,15 +1,20 @@
-"""Zone d'affichage : zoom, déplacement, outils de sélection (rectangle, lasso, pinceau, gomme)."""
+"""Zone d'affichage : zoom, déplacement, outils de sélection (rectangle, lasso, pinceau, gomme), texte."""
 from __future__ import annotations
 
-from PySide6.QtCore import QPointF, QRectF, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPainterPath, QPen, QPixmap, QTransform
+import math
+from dataclasses import replace
+
+from PySide6.QtCore import QLineF, QPointF, QRectF, Qt, Signal
+from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPainterPath, QPen, QPixmap, QPolygonF, QTransform
 from PySide6.QtWidgets import QWidget
 
 from .document import COULEUR_SELECTION, Document
 from .langue import tr
+from .texte import contient, contour_bloc, rendre
 
 MAIN, RECTANGLE, LASSO, PINCEAU, GOMME = "main", "rectangle", "lasso", "pinceau", "gomme"
 GOMME_CALQUE = "gomme_calque"                  # efface pour de vrai les pixels du calque actif
+TEXTE = "texte"                                # écrire, déplacer, tourner un texte
 OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE)   # outils au curseur rond (taille du pinceau)
 OPACITE_SELECTION = 0.45
 
@@ -21,6 +26,8 @@ class Canevas(QWidget):
     cadre_change = Signal(object, object)       # Agrandir : (ajout, bord abîmé), chacun (haut, bas, gauche, droite) px
     cadre_valide = Signal()                     # Entrée pendant Agrandir
     cadre_annule = Signal()                     # Échap pendant Agrandir
+    texte_nouveau = Signal(object)              # outil Texte : clic hors des textes -> point (image)
+    texte_choisi = Signal(int)                  # outil Texte : clic sur un calque de texte -> son index
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -45,6 +52,7 @@ class Canevas(QWidget):
         self.abime = [0, 0, 0, 0]    # Agrandir : px de bord abîmé à refaire [haut, bas, gauche, droite]
         self._poignee = None         # (cible « ext » / « int » / « ? », côtés parmi "h", "b", "g", "d")
         self._depart = None          # point (image) où le glisser du cadre a commencé
+        self._texte_glisse = None    # (index, « deplacer » / « tourner », départ, Texte d'origine, état d'avant)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMinimumSize(300, 200)
@@ -179,6 +187,7 @@ class Canevas(QWidget):
         p.setPen(QColor(0, 0, 0, 60))
         p.drawRect(QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
                                                                  self.doc.image.height()) * self.zoom))
+        self._dessiner_cadre_texte(p)
         # curseur du pinceau
         if self._souris is not None and self.outil in OUTILS_ROND and not self._espace and self.cadre is None:
             r = self.taille_pinceau * self.zoom / 2
@@ -350,6 +359,96 @@ class Canevas(QWidget):
         for pt in points(sain):
             p.drawEllipse(pt, 4.5, 4.5)
 
+    # ---------------------------------------------------------- outil Texte
+    def _texte_actif(self):
+        """Réglages du calque choisi s'il est un texte visible, sinon None."""
+        c = self.doc.calque_actif if self.doc else None
+        return c.texte if c is not None and c.texte is not None and c.visible else None
+
+    def _texte_sous(self, pt: QPointF):
+        """Index du calque de texte visible le plus haut sous le point (image), ou None."""
+        for i in range(len(self.doc.calques) - 1, -1, -1):
+            c = self.doc.calques[i]
+            if c.visible and c.texte is not None and contient(c.texte, pt):
+                return i
+        return None
+
+    def _cadre_texte_ecran(self, t):
+        """(polygone du bloc à l'écran, milieu du haut, poignée de rotation) pour le texte t."""
+        ecran = QPolygonF([self.vers_ecran(pt) for pt in contour_bloc(t)])
+        haut = (ecran[0] + ecran[1]) / 2
+        v = QLineF(self.vers_ecran(QPointF(t.x, t.y)), haut)
+        if v.length() < 1:
+            return ecran, haut, haut + QPointF(0, -28)
+        v.setLength(v.length() + 28)
+        return ecran, haut, v.p2()
+
+    def _dessiner_cadre_texte(self, p: QPainter):
+        if self.outil != TEXTE or self.cadre is not None:
+            return
+        t = self._texte_actif()
+        if t is None:
+            return
+        ecran, haut, poignee = self._cadre_texte_ecran(t)
+        p.save()
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setBrush(Qt.NoBrush)
+        p.setPen(QPen(QColor(0, 0, 0, 150), 1))
+        p.drawPolygon(ecran)
+        p.setPen(QPen(self.couleur_accent, 1.5, Qt.DashLine))
+        p.drawPolygon(ecran)
+        if not self.doc.calque_actif.verrou:
+            p.setPen(QPen(self.couleur_accent, 1.5))
+            p.drawLine(haut, poignee)
+            p.setPen(QPen(QColor(255, 255, 255), 1.5))
+            p.setBrush(self.couleur_accent)
+            p.drawEllipse(poignee, 6, 6)
+        p.restore()
+
+    def _sur_poignee_texte(self, pos: QPointF) -> bool:
+        t = self._texte_actif()
+        if t is None or self.doc.calque_actif.verrou:
+            return False
+        return QLineF(pos, self._cadre_texte_ecran(t)[2]).length() <= 10
+
+    def _presser_texte(self, pos: QPointF):
+        pt = self.vers_image(pos)
+        if self._sur_poignee_texte(pos):
+            index, mode = self.doc.actif, "tourner"
+        else:
+            index, mode = self._texte_sous(pt), "deplacer"
+            if index is None:
+                self.texte_nouveau.emit(pt)
+                return
+            self.texte_choisi.emit(index)
+        c = self.doc.calques[index]
+        if c.verrou:
+            self.refus.emit(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour pouvoir le "
+                               "modifier.", nom=c.nom))
+            return
+        self._texte_glisse = (index, mode, pt, c.texte, self.doc.etat())
+
+    def _glisser_texte(self, pos: QPointF, magnetique: bool):
+        index, mode, depart, t0, _ = self._texte_glisse
+        pt = self.vers_image(pos)
+        if mode == "deplacer":
+            t = t0.deplace(pt.x() - depart.x(), pt.y() - depart.y())
+        else:
+            angle = math.degrees(math.atan2(pt.y() - t0.y, pt.x() - t0.x)) + 90
+            if magnetique:                       # Maj : par pas de 15°
+                angle = round(angle / 15) * 15
+            angle = (angle + 180) % 360 - 180
+            t = replace(t0, angle=round(angle, 1))
+        w, h = self.doc.taille()
+        self.doc.apercu_calque(index, rendre(t, w, h), texte=t)
+
+    def _lacher_texte(self):
+        index, mode, _, t0, avant = self._texte_glisse
+        self._texte_glisse = None
+        if self.doc.calques[index].texte != t0:
+            self.selection_modifiee.emit(avant, tr("Déplacer le texte") if mode == "deplacer"
+                                         else tr("Tourner le texte"))
+
     def _damier(self) -> QPixmap:
         if getattr(self, "_motif_damier", None) is None:
             pm = QPixmap(16, 16)
@@ -431,6 +530,10 @@ class Canevas(QWidget):
             return
         if self.cadre is not None:
             return
+        if self.outil == TEXTE:
+            self._presser_texte(pos)
+            self.update()
+            return
         if self.outil == GOMME_CALQUE and self.doc.calque_actif.verrou:
             self.refus.emit(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour pouvoir le "
                                "gommer.", nom=self.doc.calque_actif.nom))
@@ -440,6 +543,9 @@ class Canevas(QWidget):
         pt = self.vers_image(pos)
         self._trace = [pt]
         if self.outil == GOMME_CALQUE:
+            if self.doc.calque_actif.texte is not None:
+                self.refus.emit(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme texte "
+                                   "(Ctrl+Z pour revenir).", nom=self.doc.calque_actif.nom))
             self._img_calque = self.doc.calque_actif.image.copy()   # copie : l'état d'avant reste intact
             self._coup_de_gomme_calque(pt, pt)
         elif self.outil in (PINCEAU, GOMME):
@@ -461,6 +567,16 @@ class Canevas(QWidget):
             else:
                 self._curseur_cadre(self._poignee_sous(pos))
             return
+        if self._texte_glisse is not None:
+            self._glisser_texte(pos, bool(e.modifiers() & Qt.ShiftModifier))
+            return
+        if self.outil == TEXTE and self.doc and not self._espace:
+            if self._sur_poignee_texte(pos):
+                self.setCursor(Qt.PointingHandCursor)
+            elif self._texte_sous(self.vers_image(pos)) is not None:
+                self.setCursor(Qt.SizeAllCursor)
+            else:
+                self.setCursor(Qt.IBeamCursor)
         if self._trace is not None:
             pt = self.vers_image(pos)
             if self.outil == GOMME_CALQUE:
@@ -482,6 +598,9 @@ class Canevas(QWidget):
             return
         if self.cadre is not None:
             self._poignee = None
+            return
+        if self._texte_glisse is not None:
+            self._lacher_texte()
             return
         if self._trace is None:
             return
@@ -554,4 +673,5 @@ class Canevas(QWidget):
             self.setCursor(Qt.ArrowCursor)
             return
         self.setCursor(Qt.OpenHandCursor if self.outil == MAIN else
-                       Qt.BlankCursor if self.outil in OUTILS_ROND else Qt.CrossCursor)
+                       Qt.BlankCursor if self.outil in OUTILS_ROND else
+                       Qt.IBeamCursor if self.outil == TEXTE else Qt.CrossCursor)

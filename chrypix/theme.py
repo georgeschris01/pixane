@@ -93,7 +93,25 @@ def choisir(mode: str) -> Couleurs:
     return SOMBRE_C if sombre else CLAIR_C
 
 
+def _fleches(couleur: str) -> tuple[str, str]:
+    """Petites flèches des cases à chiffres, dessinées dans la couleur du texte (fichiers SVG temporaires)."""
+    import tempfile
+    from pathlib import Path
+    dossier = Path(tempfile.gettempdir()) / "chrypix_theme"
+    dossier.mkdir(exist_ok=True)
+    chemins = []
+    for nom, trace in (("haut", "M2 7 5 3 8 7"), ("bas", "M2 3 5 7 8 3")):
+        f = dossier / f"fleche_{nom}_{couleur.lstrip('#')}.svg"
+        if not f.exists():
+            f.write_text(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="{trace}" '
+                         f'fill="none" stroke="{couleur}" stroke-width="1.6" stroke-linecap="round" '
+                         f'stroke-linejoin="round"/></svg>', encoding="utf-8")
+        chemins.append(f.as_posix())
+    return chemins[0], chemins[1]
+
+
 def feuille_de_style(c: Couleurs) -> str:
+    haut, bas = _fleches(c.texte)
     return f"""
 * {{ font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif; font-size: 10pt; }}
 QMainWindow, QDialog {{ background: {c.fond}; }}
@@ -148,6 +166,16 @@ QLineEdit, QSpinBox, QDoubleSpinBox {{ background: {c.panneau}; border: 1px soli
                                        padding: 5px 8px; selection-background-color: {c.accent}; }}
 QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {{ border-color: {c.accent}; }}
 QRadioButton, QCheckBox {{ spacing: 8px; }}
+QSpinBox, QDoubleSpinBox {{ padding-right: 22px; }}
+QSpinBox::up-button, QDoubleSpinBox::up-button, QSpinBox::down-button, QDoubleSpinBox::down-button {{
+    subcontrol-origin: border; width: 18px; border: none; border-left: 1px solid {c.bordure}; }}
+QSpinBox::up-button, QDoubleSpinBox::up-button {{ subcontrol-position: top right; border-top-right-radius: 6px; }}
+QSpinBox::down-button, QDoubleSpinBox::down-button {{ subcontrol-position: bottom right;
+                                                      border-bottom-right-radius: 6px; }}
+QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover, QSpinBox::down-button:hover,
+QDoubleSpinBox::down-button:hover {{ background: {c.survol}; }}
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {{ image: url("{haut}"); width: 9px; height: 9px; }}
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {{ image: url("{bas}"); width: 9px; height: 9px; }}
 
 /* curseur */
 QSlider::groove:horizontal {{ height: 4px; background: {c.pastille}; border-radius: 2px; }}
