@@ -1,0 +1,76 @@
+﻿======================================================================
+COURTESY TRANSLATION. This English text is provided for convenience only.
+It has no legal value: the French text (file LICENSE) is the only one
+that prevails.
+======================================================================
+
+======================================================================
+SOFTWARE LICENCE AGREEMENT: Chrypix ("Chrypix Licence 1.0")
+Free (open source) licence, inspired by the MIT licence
+AUTHOR: Georges Christophe (chrypox)
+Copyright (c) 2026 Georges Christophe.
+Contact: admin@chrypox.be
+======================================================================
+
+This software is a personal project shared to be useful to the community.
+By using, copying, modifying or sharing the software, you accept the
+following conditions:
+
+1. FREEDOM OF USE: The software is free of charge. Any person,
+   association, public body or company may use it freely, for any
+   purpose, including professional use.
+
+2. SHARING AND MODIFICATION: Anyone may copy, share and modify the
+   software and reuse its code, in whole or in part, in other projects,
+   under the conditions of article 3.
+
+3. AUTHOR'S NAME (MANDATORY CONDITION): Any copy, modified version or
+   reuse of a substantial part of the code must:
+   a) keep the notice "Copyright (c) 2026 Georges Christophe (chrypox)"
+      and this agreement, without removing or hiding them;
+   b) for a modified version: state clearly that it has been modified,
+      and not present itself as the official version of Chrypix
+      published by the author.
+
+4. PROPOSING A FIX (BUG OR IMPROVEMENT): A proposal can be made through an
+   "Issue" or a pull request on the official repository. The author
+   reviews it and, if accepted, integrates it into the project. By
+   proposing a fix, you agree that it is published under this agreement.
+   You will be credited in the list of contributors.
+
+5. OTHER DEVELOPERS' COMPONENTS AND AI MODELS: This agreement applies to
+   the Chrypix code only. The libraries shipped with the software, the AI
+   engine (ComfyUI) and the AI models remain under their own licences;
+   they are listed in the file docs/LICENCES_TIERS.md. The AI engine and
+   the models are not included in Chrypix: they are downloaded only if
+   the user chooses to. In particular, the FLUX.1 Fill [dev] model is
+   under the FLUX.1 [dev] Non-Commercial License: it may not be used
+   commercially, even though Chrypix itself allows it.
+
+6. RESPECT FOR OTHERS' RIGHTS: The author makes sure that Chrypix respects
+   the rights of other developers. If you believe that all or part of the
+   software uses code, an image or another protected element without
+   respecting its licence or your rights, contact the author at
+   admin@chrypox.be, stating the element concerned and the licence or
+   right at issue. The author undertakes to examine every request in good
+   faith and, if it is justified, to correct the situation as soon as
+   possible: adding the due notice, replacing or removing the element.
+
+7. NO WARRANTY: The software is provided "as is", without warranty of any
+   kind. To the fullest extent permitted by applicable law, and except in
+   cases of fraud or gross negligence, the author cannot be held liable
+   for any damage or data loss related to its use.
+
+8. TERMINATION: If article 3 is not respected, the rights granted end
+   automatically for the person concerned.
+
+9. GOVERNING LAW: This agreement is governed by Belgian law.
+
+10. LANGUAGE: Only the French text prevails. This English translation is
+    provided for convenience and has no legal value.
+
+----------------------------------------------------------------------
+IN SHORT:
+----------------------------------------------------------------------
+Free (use, share, modify, reuse) · the author's name must always be
+kept · no warranty. Only the French text prevails.

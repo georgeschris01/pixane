@@ -1,27 +1,73 @@
-MIT License
+﻿======================================================================
+CONTRAT DE LICENCE DU LOGICIEL : Chrypix (« Licence Chrypix 1.0 »)
+Licence libre (open source), inspirée de la licence MIT
+AUTEUR : Georges Christophe (chrypox)
+Copyright (c) 2026 Georges Christophe.
+Contact : admin@chrypox.be
+======================================================================
 
-Copyright (c) 2026 Georges Christophe (chrypox)
+Ce logiciel est un projet personnel partagé pour être utile à la communauté.
+En utilisant, copiant, modifiant ou partageant le logiciel, vous acceptez
+les conditions suivantes :
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. LIBERTÉ D'UTILISATION : Le logiciel est gratuit. Toute personne,
+   association, administration ou entreprise peut l'utiliser librement,
+   pour tout usage, y compris professionnel.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+2. PARTAGE ET MODIFICATION : Chacun peut copier, partager, modifier le
+   logiciel et réutiliser son code, en tout ou en partie, dans d'autres
+   projets, aux conditions de l'article 3.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+3. NOM DE L'AUTEUR (CONDITION OBLIGATOIRE) : Toute copie, version modifiée
+   ou réutilisation d'une partie importante du code doit :
+   a) garder la mention « Copyright (c) 2026 Georges Christophe (chrypox) »
+      et le présent contrat, sans les retirer ni les masquer ;
+   b) pour une version modifiée : indiquer clairement qu'elle a été
+      modifiée, et ne pas se présenter comme la version officielle de
+      Chrypix publiée par l'auteur.
+
+4. PROPOSER UNE CORRECTION (BUG OU AMÉLIORATION) : Une proposition peut être
+   faite par une « Issue » (ticket) ou une demande de fusion sur le dépôt
+   officiel. L'auteur l'analyse et, si elle est validée, l'intègre au
+   projet. En proposant une correction, vous acceptez qu'elle soit publiée
+   sous le présent contrat. Vous serez crédité dans la liste des
+   contributeurs.
+
+5. COMPOSANTS D'AUTRES DÉVELOPPEURS ET MODÈLES D'IA : Le présent contrat
+   s'applique au code de Chrypix uniquement. Les bibliothèques livrées avec
+   le logiciel, le moteur IA (ComfyUI) et les modèles d'IA restent sous leur
+   propre licence ; leur liste figure dans le fichier
+   docs/LICENCES_TIERS.md. Le moteur IA et les modèles ne sont pas inclus
+   dans Chrypix : ils ne sont téléchargés que si l'utilisateur le choisit.
+   En particulier, le modèle FLUX.1 Fill [dev] est sous licence
+   FLUX.1 [dev] non commerciale : il ne peut pas servir à un usage
+   commercial, même si Chrypix, lui, le permet.
+
+6. RESPECT DES DROITS D'AUTRUI : L'auteur veille à ce que Chrypix respecte
+   les droits des autres développeurs. Si vous estimez que tout ou partie
+   du logiciel reprend du code, une image ou un autre élément protégé sans
+   respecter sa licence ou vos droits, contactez l'auteur à l'adresse
+   admin@chrypox.be, en précisant l'élément concerné et la licence ou le
+   droit en cause. L'auteur s'engage à examiner chaque demande de bonne foi
+   et, si elle est fondée, à corriger la situation dans les meilleurs
+   délais : ajout de la mention due, remplacement ou retrait de l'élément.
+
+7. ABSENCE DE GARANTIE : Le logiciel est fourni « tel quel », sans garantie
+   d'aucune sorte. Dans toute la mesure permise par la loi applicable, et
+   sauf en cas de dol ou de faute lourde, l'auteur ne peut être tenu
+   responsable des dommages ou pertes de données liés à son utilisation.
+
+8. FIN DES DROITS : En cas de non-respect de l'article 3, les droits
+   accordés prennent fin automatiquement pour la personne concernée.
+
+9. DROIT APPLICABLE : Le présent contrat est soumis au droit belge.
+
+10. LANGUE : Seul le présent texte français fait foi. La traduction
+    anglaise (fichier LICENSE.en.txt) est donnée pour faciliter la lecture
+    et n'a pas de valeur juridique.
 
 ----------------------------------------------------------------------
-Chrypix does not include the AI engine or the AI models. When the user
-chooses to install them, they are downloaded from their official sources
-under their own licences (see docs/LICENCES_TIERS.md). In particular, the
-FLUX.1 Fill [dev] model is under the FLUX.1 [dev] Non-Commercial License.
+EN RÉSUMÉ :
+----------------------------------------------------------------------
+Libre (utiliser, partager, modifier, réutiliser) · le nom de l'auteur
+doit toujours rester · sans garantie. Seul le texte ci-dessus fait foi.

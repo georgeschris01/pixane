@@ -31,7 +31,8 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
      extensions, gguf, modèles GGUF Q8 sans compte Hugging Face), menu IA > Installer le moteur IA ;
      désinstalleur : propose de supprimer le moteur installé par Chrypix et les réglages ;
      vrai téléchargement complet (~19 Go) pas encore essayé ;
-   - [x] licence de Chrypix : MIT (open source, le nom de l'auteur doit être gardé), page dans l'installateur ;
+   - [x] licence de Chrypix : « Licence Chrypix 1.0 » (libre, inspirée de MIT, nom de l'auteur obligatoire, texte
+     français qui fait foi, droit belge, présentation comme TwinPanel), page dans l'installateur ;
    - [ ] essai sur un Windows vierge (Bac à sable Windows), avec le vrai téléchargement du moteur.
 7. [ ] **Publication** : guide complet, licences (Flux Fill dev = non commercial), dépôt public ou installateur.
 

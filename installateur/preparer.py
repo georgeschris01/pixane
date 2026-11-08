@@ -49,7 +49,7 @@ def main():
     (SORTIE / "docs").mkdir()
     for f in ("GUIDE.md", "GUIDE_en.md", "LICENCES_TIERS.md"):
         shutil.copy2(RACINE / "docs" / f, SORTIE / "docs" / f)
-    for f in ("LICENSE", "LICENSE.fr.txt"):              # licence MIT : le nom de l'auteur reste avec le programme
+    for f in ("LICENSE", "LICENSE.en.txt"):              # licence MIT : le nom de l'auteur reste avec le programme
         shutil.copy2(RACINE / f, SORTIE / f)
     shutil.copy2(RACINE / "chrypix" / "ressources" / "chrypix.ico", SORTIE / "chrypix.ico")
     # compilé d'avance : Program Files est en lecture seule, Python ne pourrait pas le faire au démarrage

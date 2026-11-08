@@ -298,7 +298,8 @@ Applications. Le désinstalleur pose deux questions (réponse « Non » par déf
   journaux ?
 
 
-- Chrypix : licence MIT, © 2026 Georges Christophe (chrypox) : libre, à condition de garder le nom de l'auteur.
+- Chrypix : Licence Chrypix 1.0, libre (inspirée de la licence MIT), © 2026 Georges Christophe (chrypox) :
+  à condition de garder le nom de l'auteur (fichier `LICENSE`).
   Éléments tiers : `docs\LICENCES_TIERS.md`.
 - Testé sur une carte graphique NVIDIA de 8 Go (RTX 3060 Ti). Les durées indiquées viennent de ce PC.
 - Modèles utilisés : Flux.1 Fill dev (**usage non commercial** ; version GGUF Q8 si installé par Chrypix, même
