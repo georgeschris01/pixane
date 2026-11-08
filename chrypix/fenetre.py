@@ -777,13 +777,12 @@ class Fenetre(QMainWindow):
 
     def ia_effacer(self):
         if self.doc and self._verifier_verrou(tr("Effacer")) and self._verifier_selection():
-            self._lancer(tr("Effacer"), True, lambda nom, **kw: recettes.effacer(nom, **kw), comparable=True)
+            self._lancer(tr("Effacer"), True, lambda nom: recettes.effacer(nom))
 
     def ia_remplir(self):
         if self.doc and self._verifier_verrou(tr("Remplir")) and self._verifier_selection():
             texte = self.texte_remplir.text().strip()
-            self._lancer(tr("Remplir"), True, lambda nom, **kw: recettes.remplir(nom, texte, **kw),
-                         comparable=True)
+            self._lancer(tr("Remplir"), True, lambda nom: recettes.remplir(nom, texte))
 
     def ia_agrandir(self):
         if not self.doc:
@@ -820,8 +819,8 @@ class Fenetre(QMainWindow):
 
         def placer(img: QImage):   # calques décalés ; l'ajout de l'IA dans un nouveau calque
             return doc.etat_agrandi(tr("Agrandir"), img, (ajout[2], ajout[0]))
-        self._lancer(tr("Agrandir"), False, lambda nom, **kw: recettes.agrandir(nom, **kw), apres=raccord, png=png,
-                     placer=placer, comparable=True)
+        self._lancer(tr("Agrandir"), False, lambda nom: recettes.agrandir(nom), apres=raccord, png=png,
+                     placer=placer)
 
     def ia_upscale(self):
         if not self.doc or not self._verifier_verrou(tr("Upscale"), tous=True):
@@ -842,7 +841,7 @@ class Fenetre(QMainWindow):
                 self._lancer(tr("Upscale"), False, lambda nom: recettes.upscale_rapide(nom, v["facteur"]))
 
     def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None,
-                placer=None, comparable: bool = False):
+                placer=None):
         """Envoie l'image au moteur, attend, puis propose les résultats."""
         doc = self.doc
         if png is None:
@@ -855,33 +854,16 @@ class Fenetre(QMainWindow):
         def calcul(progres):
             if "nom" not in nom_image:
                 nom_image["nom"] = self.moteur.envoyer_image(png)
-            # Comparaison de modèles (lanceur Chrypix-comparer.bat) : même tirage, Flux Fill complet puis GGUF
-            variantes = [("", {})]
-            if comparable and os.environ.get("CHRYPIX_COMPARER"):
-                g = recettes._graine()
-                variantes = [("complet", dict(graine=g, chargeur=recettes.chargeur_fill("complet", recettes.FILL_COMPLET))),
-                             ("GGUF Q8", dict(graine=g, chargeur=recettes.chargeur_fill("gguf", recettes.FILL_GGUF)))]
+            recette = fabriquer(nom_image["nom"])
+            prompt, sorties = recette[0], recette[1]
+            morceaux = recette[2] if len(recette) > 2 else 1
             res = []
-            dossier_cmp = None
-            if len(variantes) > 1:              # chaque essai est rangé pour être analysé ensuite
-                import datetime
-                dossier_cmp = Path(__file__).resolve().parents[1] / "comparaison" / (
-                    datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + titre)
-                dossier_cmp.mkdir(parents=True, exist_ok=True)
-                (dossier_cmp / "00-depart (zone a traiter en transparent).png").write_bytes(png)
-            for etiquette, reglages in variantes:
-                recette = fabriquer(nom_image["nom"], **reglages)
-                prompt, sorties = recette[0], recette[1]
-                morceaux = recette[2] if len(recette) > 2 else 1
-                bruts = self.moteur.executer(prompt, sorties, annuler, progres, morceaux)
-                for libelle, donnees in bruts:
-                    img = QImage.fromData(donnees)
-                    if img.isNull():
-                        raise ErreurMoteur(tr("Résultat illisible."))
-                    img = img.convertToFormat(FORMAT_IMAGE)
-                    res.append((f"{etiquette} · {libelle}" if etiquette else libelle, apres(img) if apres else img))
-                    if dossier_cmp is not None:
-                        res[-1][1].save(str(dossier_cmp / f"{len(res):02d}-{etiquette} - {libelle}.png"))
+            for libelle, donnees in self.moteur.executer(prompt, sorties, annuler, progres, morceaux):
+                img = QImage.fromData(donnees)
+                if img.isNull():
+                    raise ErreurMoteur(tr("Résultat illisible."))
+                img = img.convertToFormat(FORMAT_IMAGE)
+                res.append((libelle, apres(img) if apres else img))
             return res
 
         attente = Attente(titre, self)
