@@ -16,7 +16,7 @@ from .canevas import GOMME, LASSO, MAIN, PINCEAU, RECTANGLE, Canevas
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection, qimage_rgb, tableau
 from .moteur import Annule, ErreurMoteur, Moteur
-from .raccord import finaliser, preparer
+from .raccord import finaliser, lisere_auto, preparer
 
 NOM = "Chrypix"
 
@@ -408,7 +408,9 @@ class Fenetre(QMainWindow):
             "Molette : zoom ; Ctrl+0 : ajuster ; Ctrl+1 : 100 %\n"
             "Ctrl+A tout, Ctrl+D désélectionner, Ctrl+Shift+I inverser\n"
             "Ctrl+Z annuler, Ctrl+Y rétablir\n"
-            "Shift+E Effacer, Shift+R Remplir, Shift+A Agrandir, Shift+U Upscale"))
+            "Shift+E Effacer, Shift+R Remplir, Shift+A Agrandir, Shift+U Upscale\n"
+            "Agrandir : Maj en tirant = les deux côtés ; Entrée lancer, Échap annuler\n\n"
+            "Le guide complet est dans docs\\GUIDE.md."))
 
     # ================================================================ moteur
     def _demarrer_moteur(self):
@@ -565,32 +567,29 @@ class Fenetre(QMainWindow):
             return
         if self.canevas.cadre is not None:
             return
-        self.barre_agrandir.ouvrir(self.doc.image.width(), self.doc.image.height())
-        self.canevas.commencer_cadre()
+        # bord abîmé proposé d'office : le liseré clair ou foncé détecté sur chaque bord
+        abime = lisere_auto(tableau(self.doc.image)[:, :, :3])
+        self.barre_agrandir.ouvrir(self.doc.image.width(), self.doc.image.height(), abime)
+        self.canevas.commencer_cadre(abime)
 
     def _fin_agrandir(self):
         self.barre_agrandir.hide()
         self.canevas.finir_cadre()
 
     def _lancer_agrandir(self):
-        if self.canevas.cadre is None or not any(self.canevas.cadre):
+        if self.canevas.cadre is None or not self.barre_agrandir.b_lancer.isEnabled():
             return
-        if not self.barre_agrandir.b_lancer.isEnabled():
-            return
-        h, b, g, d = self.barre_agrandir.valeurs_px()
+        ajout, abime = self.barre_agrandir.valeurs_px()
         self._fin_agrandir()
-        # 1. recadrer : la partie gardée est celle qui sert de base à l'agrandissement
+        # 1. jeter le bord abîmé : la partie saine sert de base
         iw, ih = self.doc.image.width(), self.doc.image.height()
-        rh, rb, rg, rd = (max(0, -v) for v in (h, b, g, d))
-        image = self.doc.image.copy(rg, rh, iw - rg - rd, ih - rh - rb)
-        ajout = [max(0, v) for v in (h, b, g, d)]
-        if not any(ajout):
-            self._appliquer_resultat(self.doc, image, "Recadrer")
-            return
-        # 2. agrandir autour (pourcentages de la partie gardée)
-        w, hh = image.width(), image.height()
-        v = {cle: a * 100 / n for cle, a, n in zip(("haut", "bas", "gauche", "droite"), ajout, (hh, hh, w, w))}
-        png, geo, orig = preparer(tableau(image)[:, :, :3], **v)
+        ah, ab, ag, ad = abime
+        image = self.doc.image.copy(ag, ah, iw - ag - ad, ih - ah - ab)
+        # 2. l'IA redessine le bord jeté + l'agrandissement (taille finale = photo + ajout)
+        total = [a + m for a, m in zip(ajout, abime)]
+        w, h = image.width(), image.height()
+        v = {cle: t * 100 / n for cle, t, n in zip(("haut", "bas", "gauche", "droite"), total, (h, h, w, w))}
+        png, geo, orig = preparer(tableau(image)[:, :, :3], **v, enlever_lisere=False)
 
         def raccord(img: QImage) -> QImage:
             return qimage_rgb(finaliser(orig, tableau(img)[:, :, :3], geo))

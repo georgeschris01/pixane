@@ -52,13 +52,23 @@ def _lumi(rgb: np.ndarray) -> np.ndarray:
     return rgb[..., 0] * 0.299 + rgb[..., 1] * 0.587 + rgb[..., 2] * 0.114
 
 
-def preparer(original: np.ndarray, haut: float, bas: float, gauche: float, droite: float):
-    """original : (h, w, 3) uint8. Renvoie (png RGBA pour ComfyUI, géométrie, original sans liseré)."""
+def lisere_auto(original: np.ndarray) -> tuple[int, int, int, int]:
+    """Liseré clair ou foncé détecté sur chaque bord (haut, bas, gauche, droite), en px."""
     lum = _lumi(original.astype(np.float32))
-    ch = _lisere(lum.mean(axis=1)) if haut > 0 else 0
-    cb = _lisere(lum.mean(axis=1)[::-1]) if bas > 0 else 0
-    cg = _lisere(lum.mean(axis=0)) if gauche > 0 else 0
-    cd = _lisere(lum.mean(axis=0)[::-1]) if droite > 0 else 0
+    lignes, colonnes = lum.mean(axis=1), lum.mean(axis=0)
+    return _lisere(lignes), _lisere(lignes[::-1]), _lisere(colonnes), _lisere(colonnes[::-1])
+
+
+def preparer(original: np.ndarray, haut: float, bas: float, gauche: float, droite: float,
+             enlever_lisere: bool = True):
+    """original : (h, w, 3) uint8. Renvoie (png RGBA pour ComfyUI, géométrie, original sans liseré).
+    enlever_lisere=False quand le bord abîmé a déjà été choisi (et retiré) dans Chrypix."""
+    lum = _lumi(original.astype(np.float32))
+    auto = enlever_lisere
+    ch = _lisere(lum.mean(axis=1)) if auto and haut > 0 else 0
+    cb = _lisere(lum.mean(axis=1)[::-1]) if auto and bas > 0 else 0
+    cg = _lisere(lum.mean(axis=0)) if auto and gauche > 0 else 0
+    cd = _lisere(lum.mean(axis=0)[::-1]) if auto and droite > 0 else 0
     h0, w0 = original.shape[:2]
     orig = original[ch:h0 - cb, cg:w0 - cd]
     h, w = orig.shape[:2]

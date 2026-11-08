@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QSize, Qt, Signal
 from PySide6.QtGui import QIcon, QImage, QPixmap
-from PySide6.QtWidgets import (QButtonGroup, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QFrame, QHBoxLayout,
+from PySide6.QtWidgets import (QButtonGroup, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QFrame, QGridLayout, QHBoxLayout,
                                QLabel, QListWidget, QListWidgetItem, QProgressBar, QPushButton, QRadioButton, QSpinBox,
                                QVBoxLayout, QWidget)
 
@@ -133,41 +133,63 @@ class ChoixResultat(QDialog):
 
 
 class BarreAgrandir(QFrame):
-    """Petite barre posée sur la photo pendant Agrandir : côtés en %, taille finale, Lancer / Annuler.
-    Les côtés se règlent surtout en tirant le cadre à la souris ; les cases suivent (et l'inverse)."""
+    """Petite barre posée sur la photo pendant Agrandir.
+    Ligne « Agrandir » : % ajoutés par côté (cadre extérieur). Ligne « Bord abîmé » : px du bord de la photo
+    à jeter et faire redessiner par l'IA (cadre intérieur rouge). Les cases suivent le cadre, et l'inverse."""
     lancer = Signal()
     annuler = Signal()
-    valeurs_changees = Signal(object)   # (haut, bas, gauche, droite) en px
+    valeurs_changees = Signal(object, object)   # (ajout, bord abîmé) en px, (haut, bas, gauche, droite)
+
+    COTES = (("haut", "Haut"), ("bas", "Bas"), ("gauche", "Gauche"), ("droite", "Droite"))
 
     def __init__(self, parent: QWidget):
         super().__init__(parent)
         self.setObjectName("panneau")
         self.taille = (1, 1)
-        self.cotes = {}
+        self.ajout = {}
+        self.abime = {}
         colonne = QVBoxLayout(self)
         colonne.setContentsMargins(12, 6, 8, 8)
         colonne.setSpacing(4)
-        aide = QLabel("Tire les bords du cadre : vers l'extérieur = agrandir, vers l'intérieur = recadrer"
-                      "  (Maj : les deux côtés)")
+        aide = QLabel("Cadre carré : tire vers l'extérieur pour agrandir.  Cadre rond rouge : tire vers "
+                      "l'intérieur pour marquer un bord abîmé à refaire.  (Maj : les deux côtés)")
         aide.setObjectName("discret")
         colonne.addWidget(aide)
-        lay = QHBoxLayout()
-        lay.setSpacing(6)
-        colonne.addLayout(lay)
-        for cle, nom in (("haut", "Haut"), ("bas", "Bas"), ("gauche", "Gauche"), ("droite", "Droite")):
-            lay.addWidget(QLabel(nom))
-            c = QSpinBox()
-            c.setRange(-90, 200)
-            c.setSuffix(" %")
-            c.setToolTip("Positif : ajouté par l'IA. Négatif : rogné.")
-            c.valueChanged.connect(self._case_changee)
-            self.cotes[cle] = c
-            lay.addWidget(c)
-        lay.addSpacing(8)
+        bas = QHBoxLayout()
+        bas.setSpacing(12)
+        colonne.addLayout(bas)
+        grille = QGridLayout()
+        grille.setHorizontalSpacing(6)
+        grille.setVerticalSpacing(4)
+        bas.addLayout(grille)
+        grille.addWidget(QLabel("Agrandir"), 1, 0)
+        grille.addWidget(QLabel("Bord abîmé"), 2, 0)
+        for i, (cle, nom) in enumerate(self.COTES):
+            titre = QLabel(nom)
+            titre.setObjectName("discret")
+            titre.setAlignment(Qt.AlignCenter)
+            grille.addWidget(titre, 0, 1 + i)
+            a = QSpinBox()
+            a.setRange(0, 200)
+            a.setSuffix(" %")
+            a.setToolTip("Ce que l'IA ajoute de ce côté, en % de la photo.")
+            a.valueChanged.connect(self._case_changee)
+            self.ajout[cle] = a
+            grille.addWidget(a, 1, 1 + i)
+            m = QSpinBox()
+            m.setRange(0, 5000)
+            m.setSuffix(" px")
+            m.setToolTip("Bande abîmée au bord de la photo : jetée puis redessinée par l'IA.")
+            m.valueChanged.connect(self._case_changee)
+            self.abime[cle] = m
+            grille.addWidget(m, 2, 1 + i)
+        droite = QVBoxLayout()
+        droite.setSpacing(4)
         self.texte_taille = QLabel()
         self.texte_taille.setMinimumWidth(self.texte_taille.fontMetrics().horizontalAdvance("00000 × 00000 px"))
-        lay.addWidget(self.texte_taille)
-        lay.addSpacing(8)
+        self.texte_taille.setAlignment(Qt.AlignCenter)
+        droite.addWidget(self.texte_taille)
+        boutons = QHBoxLayout()
         b_annuler = QPushButton("Annuler")
         b_annuler.setAutoDefault(False)
         b_annuler.clicked.connect(self.annuler)
@@ -175,51 +197,63 @@ class BarreAgrandir(QFrame):
         self.b_lancer.setObjectName("principal")
         self.b_lancer.setAutoDefault(False)
         self.b_lancer.clicked.connect(self.lancer)
-        lay.addWidget(b_annuler)
-        lay.addWidget(self.b_lancer)
-        self._px = (0, 0, 0, 0)
+        boutons.addWidget(b_annuler)
+        boutons.addWidget(self.b_lancer)
+        droite.addLayout(boutons)
+        droite.addStretch()
+        bas.addLayout(droite)
+        self._px = ((0, 0, 0, 0), (0, 0, 0, 0))
         parent.installEventFilter(self)
         self.hide()
 
-    def ouvrir(self, largeur: int, hauteur: int):
+    def ouvrir(self, largeur: int, hauteur: int, abime=(0, 0, 0, 0)):
         self.taille = (largeur, hauteur)
-        self.definir_px((0, 0, 0, 0))
+        for c in self.abime.values():
+            c.setMaximum(max(0, max(largeur, hauteur) - 32))
+        self.definir_px((0, 0, 0, 0), abime)
         self.adjustSize()
         self._placer()
         self.show()
         self.raise_()
 
-    def definir_px(self, px):
-        """Valeurs venant du cadre tiré à la souris."""
-        self._px = tuple(int(v) for v in px)
+    def definir_px(self, ajout, abime):
+        """Valeurs venant des cadres tirés à la souris."""
+        self._px = (tuple(int(v) for v in ajout), tuple(int(v) for v in abime))
         w, h = self.taille
-        for (cle, c), v, n in zip(self.cotes.items(), self._px, (h, h, w, w)):
+        for c, v, n in zip(self.ajout.values(), self._px[0], (h, h, w, w)):
             c.blockSignals(True)
             c.setValue(round(v * 100 / n))
+            c.blockSignals(False)
+        for c, v in zip(self.abime.values(), self._px[1]):
+            c.blockSignals(True)
+            c.setValue(v)
             c.blockSignals(False)
         self._maj_texte()
 
     def _case_changee(self):
-        """Seul le côté modifié change (les autres gardent leur valeur exacte en px)."""
+        """Seule la case modifiée change (les autres gardent leur valeur exacte en px)."""
         w, h = self.taille
-        px = list(self._px)
-        for i, (c, n) in enumerate(zip(self.cotes.values(), (h, h, w, w))):
+        ajout, abime = list(self._px[0]), list(self._px[1])
+        for i, (c, n) in enumerate(zip(self.ajout.values(), (h, h, w, w))):
             if c is self.sender():
-                px[i] = round(c.value() * n / 100)
-        self._px = tuple(px)
+                ajout[i] = round(c.value() * n / 100)
+        for i, c in enumerate(self.abime.values()):
+            if c is self.sender():
+                ajout_n = (h, h, w, w)[i]
+                autre = abime[i ^ 1]
+                abime[i] = min(c.value(), max(0, ajout_n - autre - 32))
+        self._px = (tuple(ajout), tuple(abime))
         self._maj_texte()
-        self.valeurs_changees.emit(self._px)
+        self.valeurs_changees.emit(*self._px)
 
     def _maj_texte(self):
         w, h = self.taille
-        hh, bb, gg, dd = self._px
+        hh, bb, gg, dd = self._px[0]
         self.texte_taille.setText(f"{w + gg + dd} × {h + hh + bb} px")
-        self.b_lancer.setEnabled(any(self._px) and w + min(gg, 0) + min(dd, 0) >= 32
-                                 and h + min(hh, 0) + min(bb, 0) >= 32)
-        self.b_lancer.setText("Lancer" if any(v > 0 for v in self._px) else "Recadrer")
+        self.b_lancer.setEnabled(any(self._px[0]) or any(self._px[1]))
 
     def valeurs_px(self) -> tuple:
-        """(haut, bas, gauche, droite) en px : > 0 ajouté, < 0 rogné."""
+        """((ajout), (bord abîmé)), chacun (haut, bas, gauche, droite) en px."""
         return self._px
 
     def _placer(self):

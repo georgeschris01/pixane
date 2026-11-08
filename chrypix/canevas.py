@@ -14,7 +14,7 @@ OPACITE_SELECTION = 0.45
 class Canevas(QWidget):
     selection_modifiee = Signal(object, str)   # (état avant, nom de l'action) -> pour annuler
     infos = Signal(int, int, float)             # largeur, hauteur, zoom
-    cadre_change = Signal(object)               # Agrandir : (haut, bas, gauche, droite) en px, < 0 = rogné
+    cadre_change = Signal(object, object)       # Agrandir : (ajout, bord abîmé), chacun (haut, bas, gauche, droite) px
     cadre_valide = Signal()                     # Entrée pendant Agrandir
     cadre_annule = Signal()                     # Échap pendant Agrandir
 
@@ -37,8 +37,10 @@ class Canevas(QWidget):
         self.couleur_fond = QColor(40, 40, 40)
         self.couleur_texte = QColor(150, 150, 150)
         self.couleur_accent = QColor(0, 120, 215)
-        self.cadre = None            # Agrandir : [haut, bas, gauche, droite] en px (> 0 ajouté, < 0 rogné)
-        self._poignee = None         # côtés tirés : ensemble parmi "h", "b", "g", "d"
+        self.cadre = None            # Agrandir : px ajoutés [haut, bas, gauche, droite], sinon None
+        self.abime = [0, 0, 0, 0]    # Agrandir : px de bord abîmé à refaire [haut, bas, gauche, droite]
+        self._poignee = None         # (cible « ext » / « int » / « ? », côtés parmi "h", "b", "g", "d")
+        self._depart = None          # point (image) où le glisser du cadre a commencé
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMinimumSize(300, 200)
@@ -177,19 +179,25 @@ class Canevas(QWidget):
             p.setPen(QPen(QColor(255, 255, 255), 1))
             p.drawEllipse(self._souris, r, r)
 
-    # ---------------------------------------------------------- Agrandir : cadre à poignées
-    def commencer_cadre(self, valeurs=(0, 0, 0, 0)):
-        self.cadre = [int(v) for v in valeurs]
+    # ---------------------------------------------------------- Agrandir : deux cadres à poignées
+    # Cadre extérieur (accent, poignées carrées) : jusqu'où agrandir, en px ajoutés par côté.
+    # Cadre intérieur (rouge, poignées rondes) : limite de la partie saine ; la bande entre ce cadre et le bord
+    # de la photo est « abîmée » : elle est jetée et redessinée par l'IA avec l'agrandissement.
+    # Ordre des valeurs partout : (haut, bas, gauche, droite).
+    def commencer_cadre(self, abime=(0, 0, 0, 0)):
+        self.cadre = [0, 0, 0, 0]
+        self.abime = [int(v) for v in abime]
         self._poignee = None
         self.ajuster()
         self.setCursor(Qt.ArrowCursor)
         self.setFocus()
-        self.cadre_change.emit(tuple(self.cadre))
+        self._emettre_cadre()
 
-    def definir_cadre(self, valeurs):
-        """Valeurs venant des réglages chiffrés (sans changer le zoom)."""
+    def definir_cadre(self, ajout, abime):
+        """Valeurs venant des cases de la barre (sans changer le zoom)."""
         if self.cadre is not None:
-            self.cadre = [int(v) for v in valeurs]
+            self.cadre = [int(v) for v in ajout]
+            self.abime = [int(v) for v in abime]
             self.update()
 
     def finir_cadre(self):
@@ -198,15 +206,23 @@ class Canevas(QWidget):
         self._curseur()
         self.ajuster()
 
+    def _emettre_cadre(self):
+        self.cadre_change.emit(tuple(self.cadre), tuple(self.abime))
+
     def _rect_cadre(self) -> QRectF:
-        """Le cadre (photo + ajouts) en coordonnées écran."""
+        """Cadre extérieur (photo + ajouts) en coordonnées écran."""
         h, b, g, d = self.cadre
         iw, ih = self.doc.image.width(), self.doc.image.height()
         return QRectF(self.vers_ecran(QPointF(-g, -h)), self.vers_ecran(QPointF(iw + d, ih + b)))
 
-    def _poignee_sous(self, pos: QPointF) -> set:
-        r = self._rect_cadre()
-        tol = 10
+    def _rect_sain(self) -> QRectF:
+        """Cadre intérieur (partie saine de la photo) en coordonnées écran."""
+        h, b, g, d = self.abime
+        iw, ih = self.doc.image.width(), self.doc.image.height()
+        return QRectF(self.vers_ecran(QPointF(g, h)), self.vers_ecran(QPointF(iw - d, ih - b)))
+
+    @staticmethod
+    def _cotes_sous(r: QRectF, pos: QPointF, tol: float = 10) -> set:
         if not r.adjusted(-tol, -tol, tol, tol).contains(pos):
             return set()
         cotes = set()
@@ -220,7 +236,21 @@ class Canevas(QWidget):
             cotes.add("d")
         return cotes
 
-    def _curseur_cadre(self, cotes: set):
+    def _poignee_sous(self, pos: QPointF):
+        """(cible, côtés) : cible « ext », « int », ou « ? » si les deux cadres se touchent à cet endroit
+        (on choisit alors au premier mouvement : vers l'extérieur = agrandir, vers l'intérieur = bord abîmé)."""
+        ext = self._cotes_sous(self._rect_cadre(), pos)
+        sain = self._cotes_sous(self._rect_sain(), pos)
+        if ext and sain:
+            return ("?", ext)
+        if ext:
+            return ("ext", ext)
+        if sain:
+            return ("int", sain)
+        return None
+
+    def _curseur_cadre(self, poignee):
+        cotes = poignee[1] if poignee else set()
         if cotes in ({"h", "g"}, {"b", "d"}):
             self.setCursor(Qt.SizeFDiagCursor)
         elif cotes in ({"h", "d"}, {"b", "g"}):
@@ -235,67 +265,82 @@ class Canevas(QWidget):
     def _tirer_cadre(self, pos: QPointF, symetrique: bool):
         pt = self.vers_image(pos)
         iw, ih = self.doc.image.width(), self.doc.image.height()
-
-        h, b, g, d = self.cadre
-
-        def limite(v, n, oppose):
-            """Vers l'extérieur : jusqu'à 200 % ; vers l'intérieur : on garde au moins 32 px de photo."""
-            rogne_oppose = 0 if symetrique else max(0, -oppose)
-            mini = -((n - rogne_oppose - 32) // (2 if symetrique else 1))
-            return int(max(min(0, mini), min(2 * n, round(v))))
-        if "h" in self._poignee:
-            h = limite(-pt.y(), ih, b)
-            b = h if symetrique else b
-        if "b" in self._poignee:
-            b = limite(pt.y() - ih, ih, h)
-            h = b if symetrique else h
-        if "g" in self._poignee:
-            g = limite(-pt.x(), iw, d)
-            d = g if symetrique else d
-        if "d" in self._poignee:
-            d = limite(pt.x() - iw, iw, g)
-            g = d if symetrique else g
-        self.cadre = [h, b, g, d]
-        self.cadre_change.emit(tuple(self.cadre))
+        cible, cotes = self._poignee
+        # vecteur « vers l'extérieur » de chaque côté, en px image (positif = on sort de la photo)
+        dehors = {"h": -pt.y(), "b": pt.y() - ih, "g": -pt.x(), "d": pt.x() - iw}
+        if cible == "?":
+            depart = self._depart
+            dep = {"h": -depart.y(), "b": depart.y() - ih, "g": -depart.x(), "d": depart.x() - iw}
+            cote = next(iter(cotes))
+            if abs(dehors[cote] - dep[cote]) < 2 / self.zoom:
+                return                                   # pas encore assez bougé pour décider
+            cible = "ext" if dehors[cote] > dep[cote] else "int"
+            self._poignee = (cible, cotes)
+        index = {"h": 0, "b": 1, "g": 2, "d": 3}
+        oppose = {"h": "b", "b": "h", "g": "d", "d": "g"}
+        taille = {"h": ih, "b": ih, "g": iw, "d": iw}
+        for cote in cotes:
+            n = taille[cote]
+            if cible == "ext":   # agrandir : de 0 à 200 % de la photo
+                v = int(max(0, min(2 * n, round(dehors[cote]))))
+                self.cadre[index[cote]] = v
+                if symetrique:
+                    self.cadre[index[oppose[cote]]] = v
+            else:                # bord abîmé : on garde au moins 32 px de photo saine
+                autre = 0 if symetrique else self.abime[index[oppose[cote]]]
+                maxi = (n - 32) // 2 if symetrique else n - autre - 32
+                v = int(max(0, min(maxi, round(-dehors[cote]))))
+                self.abime[index[cote]] = v
+                if symetrique:
+                    self.abime[index[oppose[cote]]] = v
+        self._emettre_cadre()
         self.update()
 
     def _dessiner_cadre(self, p: QPainter):
         r = self._rect_cadre()
+        sain = self._rect_sain()
         photo = QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
                                                               self.doc.image.height()) * self.zoom)
-        garde = r.intersected(photo)          # la partie de la photo conservée
-        # partie rognée : assombrie
-        rognee = QPainterPath()
-        rognee.addRect(photo)
-        cadre = QPainterPath()
-        cadre.addRect(r)
-        p.fillPath(rognee.subtracted(cadre), QColor(0, 0, 0, 150))
+
+        def chemin(rect: QRectF) -> QPainterPath:
+            c = QPainterPath()
+            c.addRect(rect)
+            return c
         # zone ajoutée : damier gris (comme une zone vide)
-        zone = cadre
-        interieur = QPainterPath()
-        interieur.addRect(garde)
         damier = QPixmap(16, 16)
         damier.fill(QColor(205, 205, 205))
         pd = QPainter(damier)
         pd.fillRect(0, 0, 8, 8, QColor(240, 240, 240))
         pd.fillRect(8, 8, 8, 8, QColor(240, 240, 240))
         pd.end()
-        p.fillPath(zone.subtracted(interieur), QBrush(damier))
-        # contour de la photo, cadre en pointillés et poignées
-        p.setPen(QPen(self.couleur_accent, 2))
+        p.fillPath(chemin(r).subtracted(chemin(photo)), QBrush(damier))
+        # bord abîmé : rouge hachuré (sera redessiné)
+        bande = chemin(photo).subtracted(chemin(sain))
+        p.fillPath(bande, QColor(230, 40, 40, 90))
+        p.fillPath(bande, QBrush(QColor(255, 255, 255, 120), Qt.BDiagPattern))
+        # cadre intérieur (rouge, pointillés) et extérieur (accent, pointillés)
         p.setBrush(Qt.NoBrush)
-        p.drawRect(garde)
         p.setPen(QPen(QColor(0, 0, 0, 160), 1))
         p.drawRect(r)
         p.setPen(QPen(QColor(255, 255, 255), 1, Qt.DashLine))
         p.drawRect(r)
-        c = r.center()
-        points = [r.topLeft(), QPointF(c.x(), r.top()), r.topRight(), QPointF(r.right(), c.y()),
-                  r.bottomRight(), QPointF(c.x(), r.bottom()), r.bottomLeft(), QPointF(r.left(), c.y())]
+        if sain != photo:
+            p.setPen(QPen(QColor(230, 40, 40), 2, Qt.DashLine))
+            p.drawRect(sain)
+
+        def points(rect):
+            c = rect.center()
+            return [rect.topLeft(), QPointF(c.x(), rect.top()), rect.topRight(), QPointF(rect.right(), c.y()),
+                    rect.bottomRight(), QPointF(c.x(), rect.bottom()), rect.bottomLeft(), QPointF(rect.left(), c.y())]
+        p.setRenderHint(QPainter.Antialiasing)
         p.setPen(QPen(QColor(0, 0, 0, 180), 1))
         p.setBrush(self.couleur_accent)
-        for pt in points:
+        for pt in points(r):
             p.drawRect(QRectF(pt.x() - 5, pt.y() - 5, 10, 10))
+        p.setPen(QPen(QColor(255, 255, 255), 1.5))
+        p.setBrush(QColor(230, 40, 40))
+        for pt in points(sain):
+            p.drawEllipse(pt, 4.5, 4.5)
 
     # ---------------------------------------------------------- peinture de la sélection
     def _peintre_selection(self) -> QPainter:
@@ -339,8 +384,9 @@ class Canevas(QWidget):
             return
         pos = e.position()
         if self.cadre is not None and e.button() == Qt.LeftButton:   # Agrandir : les poignées d'abord
-            self._poignee = self._poignee_sous(pos) or None
+            self._poignee = self._poignee_sous(pos)
             if self._poignee:
+                self._depart = self.vers_image(pos)
                 return
         if e.button() == Qt.MiddleButton or (e.button() == Qt.LeftButton and (self.outil == MAIN or self._espace)):
             self._glisse = pos
