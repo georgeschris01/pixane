@@ -9,20 +9,21 @@ from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QProcess, QSettings, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QAction, QActionGroup, QIcon, QImage, QKeySequence, QUndoCommand, QUndoStack
-from PySide6.QtWidgets import (QApplication, QButtonGroup, QDockWidget, QFileDialog, QHBoxLayout, QLabel, QLineEdit,
-                               QMainWindow, QMessageBox, QPushButton, QSizePolicy, QSlider, QToolBar, QVBoxLayout,
-                               QWidget)
+from PySide6.QtGui import QAction, QActionGroup, QColor, QIcon, QImage, QKeySequence, QUndoCommand, QUndoStack
+from PySide6.QtWidgets import (QApplication, QButtonGroup, QComboBox, QDockWidget, QFileDialog, QHBoxLayout, QLabel,
+                               QLineEdit, QMainWindow, QMessageBox, QPushButton, QSizePolicy, QSlider, QSpinBox,
+                               QToolBar, QVBoxLayout, QWidget)
 
 from . import langue, recettes, theme
 from .icones import icone
 from .langue import tr
 from .calques import PanneauCalques
-from .canevas import DEPLACER, GOMME, GOMME_CALQUE, LASSO, MAIN, PINCEAU, RECTANGLE, TEXTE, Canevas
+from .canevas import (DEPLACER, GOMME, GOMME_CALQUE, LASSO, MAIN, OUTILS_ROND, PEINTURE, PINCEAU, RECADRER,
+                      RECTANGLE, TAMPON, TEXTE, Canevas)
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection, qimage_rgb, tableau
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
-from .panneau_texte import PanneauTexte
+from .panneau_texte import BoutonCouleur, PanneauTexte
 from .raccord import finaliser, lisere_auto, preparer
 from .texte import Texte
 
@@ -145,6 +146,10 @@ class Fenetre(QMainWindow):
         self.canevas.cadre_annule.connect(self._fin_agrandir)
         self.canevas.texte_nouveau.connect(self._nouveau_texte)
         self.canevas.texte_choisi.connect(self._texte_choisi)
+        self.canevas.message.connect(lambda m: self.statusBar().showMessage(m, 6000))
+        self.canevas.recadre_change.connect(self._recadre_change)
+        self.canevas.recadre_valide.connect(self._recadrer)
+        self.canevas.couleur_prise.connect(self._couleur_prise)
         self._session_texte = 0      # regroupe les changements d'un même texte dans Annuler
 
         self._menus()
@@ -155,6 +160,7 @@ class Fenetre(QMainWindow):
         self._panneau_texte()
         self._barre_etat()
         self._appliquer_theme()
+        self._choisir_outil(PINCEAU)
         self._actualiser()
         self._demarrer_moteur()
         # suivre les changements de couleur ou de thème faits dans Windows
@@ -205,6 +211,9 @@ class Fenetre(QMainWindow):
         self._action(m, tr("Désélectionner"), "Ctrl+D", lambda: self._modifier_selection("rien"), "a_rien")
         self._action(m, tr("Inverser la sélection"), "Ctrl+Shift+I", lambda: self._modifier_selection("inverser"),
                      "a_inverser")
+        m.addSeparator()
+        self._action(m, tr("Recadrer à la sélection"), None, self._recadrer_selection, "a_recadrer_selection",
+                     "recadrer")
 
         m = self.menuBar().addMenu(tr("&Affichage"))
         self._action(m, tr("Zoom avant"), "Ctrl++", lambda: self.canevas.zoomer(1.25), "a_zoom_plus", "zoom_plus")
@@ -245,6 +254,7 @@ class Fenetre(QMainWindow):
     def _barre_commandes(self):
         """Barre du haut : fichiers, annuler, options de l'outil, zoom, thème."""
         b = QToolBar(tr("Commandes"))
+        self.barre_haut = b
         b.setMovable(False)
         b.setIconSize(QSize(20, 20))
         self.addToolBar(Qt.TopToolBarArea, b)
@@ -255,10 +265,14 @@ class Fenetre(QMainWindow):
         b.addAction(self.a_retablir)
         b.addSeparator()
 
-        # options de l'outil (comme Photoshop)
+        # options de l'outil (comme Photoshop) : chaque groupe n'apparaît qu'avec les outils qui s'en servent
         self.options = QWidget()
-        lay = QHBoxLayout(self.options)
-        lay.setContentsMargins(6, 0, 6, 0)
+        tout = QHBoxLayout(self.options)
+        tout.setContentsMargins(6, 0, 6, 0)
+        tout.setSpacing(14)
+        self.opt_taille = QWidget()
+        lay = QHBoxLayout(self.opt_taille)
+        lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(8)
         lay.addWidget(QLabel(tr("Taille")))
         self.curseur_taille = QSlider(Qt.Horizontal)
@@ -271,7 +285,11 @@ class Fenetre(QMainWindow):
         self.canevas.taille_changee.connect(self._taille_changee)
         lay.addWidget(self.curseur_taille)
         lay.addWidget(self.valeur_taille)
-        lay.addSpacing(10)
+        tout.addWidget(self.opt_taille)
+        self.opt_selection = QWidget()
+        lay = QHBoxLayout(self.opt_selection)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(8)
         self.p_ajouter = QPushButton(tr("Ajouter"))
         self.p_retirer = QPushButton(tr("Retirer"))
         groupe = QButtonGroup(self)
@@ -284,6 +302,9 @@ class Fenetre(QMainWindow):
             groupe.addButton(p_)
             lay.addWidget(p_)
         self.p_ajouter.setChecked(True)
+        tout.addWidget(self.opt_selection)
+        self._options_retouche(tout)
+        self._options_recadrer(tout)
         b.addWidget(self.options)
 
         vide = QWidget()
@@ -301,6 +322,111 @@ class Fenetre(QMainWindow):
         self.a_theme.triggered.connect(self._basculer_theme)
         b.addAction(self.a_theme)
 
+    def _options_retouche(self, tout: QHBoxLayout):
+        """Pinceau de couleur et tampon : couleur, opacité, dureté."""
+        self.opt_couleur = BoutonCouleur(tr("Couleur du pinceau"))
+        self.opt_couleur.definir(self.reglages.value("peinture_couleur", "#ff000000"))
+        self.opt_couleur.change.connect(self._couleur_peinture)
+        self._couleur_peinture(self.opt_couleur.couleur, enregistrer=False)
+        tout.addWidget(self.opt_couleur)
+        self.opt_retouche = QWidget()
+        lay = QHBoxLayout(self.opt_retouche)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(6)
+        self.opt_opacite = QSpinBox()
+        self.opt_durete = QSpinBox()
+        for nom, case, cle, defaut, aide in (
+                (tr("Opacité"), self.opt_opacite, "outil_opacite", 100, tr("100 % = couvre tout ; moins = laisse "
+                                                                            "voir dessous")),
+                (tr("Dureté"), self.opt_durete, "outil_durete", 80, tr("100 % = bord net ; 0 % = bord très doux"))):
+            lay.addWidget(QLabel(nom))
+            case.setRange(1 if case is self.opt_opacite else 0, 100)
+            case.setSuffix(" %")
+            case.setToolTip(aide)
+            case.setValue(int(self.reglages.value(cle, defaut)))
+            case.valueChanged.connect(self._reglages_retouche)
+            lay.addWidget(case)
+            lay.addSpacing(6)
+        tout.addWidget(self.opt_retouche)
+        self._reglages_retouche()
+
+    def _options_recadrer(self, tout: QHBoxLayout):
+        self.opt_recadrer = QWidget()
+        lay = QHBoxLayout(self.opt_recadrer)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(8)
+        lay.addWidget(QLabel(tr("Proportions")))
+        self.opt_proportion = QComboBox()
+        for texte, valeur in ((tr("Libre"), None), (tr("Comme la photo"), "photo"), ("1:1", 1.0), ("4:3", 4 / 3),
+                              ("3:2", 1.5), ("16:9", 16 / 9), ("3:4", 3 / 4), ("2:3", 2 / 3), ("9:16", 9 / 16)):
+            self.opt_proportion.addItem(texte, valeur)
+        self.opt_proportion.currentIndexChanged.connect(self._proportion)
+        lay.addWidget(self.opt_proportion)
+        self.b_recadrer = QPushButton(tr("Recadrer"))
+        self.b_recadrer.setToolTip(tr("Garder seulement l'intérieur du cadre (Entrée, ou double-clic dans le cadre)"))
+        self.b_recadrer.clicked.connect(self._recadrer)
+        self.b_annuler_recadre = QPushButton(tr("Annuler"))
+        self.b_annuler_recadre.setToolTip(tr("Enlever le cadre (Échap)"))
+        self.b_annuler_recadre.clicked.connect(self.canevas.annuler_recadre)
+        lay.addWidget(self.b_recadrer)
+        lay.addWidget(self.b_annuler_recadre)
+        tout.addWidget(self.opt_recadrer)
+        self._recadre_change(None)
+
+    def _couleur_peinture(self, couleur: str, enregistrer: bool = True):
+        self.canevas.couleur_peinture = QColor(couleur)
+        if enregistrer:
+            self.reglages.setValue("peinture_couleur", couleur)
+
+    def _couleur_prise(self, couleur: str):
+        self.opt_couleur.definir(QColor(couleur).name(QColor.HexArgb))
+        self._couleur_peinture(self.opt_couleur.couleur)
+        self.statusBar().showMessage(tr("Couleur prise : {couleur}", couleur=couleur), 4000)
+
+    def _reglages_retouche(self, *_):
+        self.canevas.opacite = self.opt_opacite.value() / 100
+        self.canevas.durete = self.opt_durete.value() / 100
+        self.reglages.setValue("outil_opacite", self.opt_opacite.value())
+        self.reglages.setValue("outil_durete", self.opt_durete.value())
+
+    def _proportion(self, *_):
+        v = self.opt_proportion.currentData()
+        if v == "photo":
+            v = self.doc.image.width() / self.doc.image.height() if self.doc else None
+        self.canevas.definir_proportion(v)
+
+    def _recadre_change(self, r):
+        self.b_recadrer.setEnabled(r is not None)
+        self.b_annuler_recadre.setEnabled(r is not None)
+
+    def _recadrer(self):
+        r = self.canevas.rect_recadre()
+        if not self.doc or r is None:
+            return
+        if r == self.doc.image.rect():
+            self.canevas.annuler_recadre()
+            return
+        avant = self.doc.etat()
+        apres = self.doc.etat_recadre(r)
+        self.canevas.annuler_recadre()
+        self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Recadrer")))
+        self.statusBar().showMessage(tr("Recadré : {l} × {h} px (Ctrl+Z pour revenir)", l=r.width(), h=r.height()),
+                                     6000)
+
+    def _recadrer_selection(self):
+        if not self.doc:
+            return
+        r = self.doc.rect_selection()
+        if r is None:
+            QMessageBox.information(self, NOM, tr("Sélectionne d'abord la partie à garder (rectangle, lasso ou "
+                                                  "pinceau)."))
+            return
+        avant = self.doc.etat()
+        apres = self.doc.etat_recadre(r)
+        w, h = apres[0][0].image.width(), apres[0][0].image.height()
+        apres = (apres[0], apres[1], nouvelle_selection(w, h))
+        self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Recadrer à la sélection")))
+
     def _outils(self):
         barre = QToolBar(tr("Outils"))
         barre.setMovable(False)
@@ -317,7 +443,12 @@ class Fenetre(QMainWindow):
                                           (GOMME, tr("Gomme de sélection"), "E", "gomme"),
                                           (GOMME_CALQUE, tr("Gomme de calque : efface les pixels du calque choisi"),
                                            "G", "gomme_calque"),
-                                          (TEXTE, tr("Texte : écrire, déplacer, tourner"), "T", "texte")):
+                                          (TEXTE, tr("Texte : écrire, déplacer, tourner"), "T", "texte"),
+                                          (RECADRER, tr("Recadrer : garder une partie de la photo"), "C", "recadrer"),
+                                          (PEINTURE, tr("Pinceau de couleur : peint sur le calque choisi (Alt+clic : "
+                                                        "prendre une couleur)"), "P", "peinture"),
+                                          (TAMPON, tr("Tampon : recopie une zone (Alt+clic : endroit à copier)"),
+                                           "S", "tampon")):
             a = QAction(texte, self, checkable=True)
             a.setShortcut(touche)
             a.setToolTip(f"{texte}  ({touche})")
@@ -333,6 +464,23 @@ class Fenetre(QMainWindow):
         self.canevas.definir_outil(outil)
         self._actions_outils[outil].setChecked(True)
         self.options.setEnabled(outil not in (MAIN, TEXTE, DEPLACER))
+        self.opt_taille.setVisible(outil in OUTILS_ROND or outil in (MAIN, TEXTE, DEPLACER, RECTANGLE, LASSO))
+        self.opt_selection.setVisible(outil in (RECTANGLE, LASSO, PINCEAU, GOMME))
+        self.opt_couleur.setVisible(outil == PEINTURE)
+        self.opt_retouche.setVisible(outil in (PEINTURE, TAMPON))
+        self.opt_recadrer.setVisible(outil == RECADRER)
+        # la barre du haut se remet en page (sinon un groupe trop large la ferait déborder)
+        self.options.adjustSize()
+        self.barre_haut.layout().invalidate()
+        aides = {RECADRER: tr("Recadrer : tire un cadre sur la photo, ajuste-le, puis Entrée (ou double-clic). "
+                              "Échap pour annuler."),
+                 PEINTURE: tr("Pinceau de couleur : peint sur le calque choisi. Alt+clic sur la photo : prendre une "
+                              "couleur."),
+                 TAMPON: tr("Tampon : Alt+clic sur l'endroit à copier, puis peins là où il doit être recopié.")}
+        if outil in aides:
+            self.statusBar().showMessage(aides[outil], 10000)
+        if outil == RECADRER:
+            self._proportion()
         self.dock_texte.setVisible(outil == TEXTE)
         if outil == TEXTE:
             self._sync_texte()
@@ -536,7 +684,7 @@ class Fenetre(QMainWindow):
         a_doc = self.doc is not None
         pret = a_doc and self.moteur.etat == "prêt"
         for a in (self.a_enregistrer, self.a_enregistrer_sous, self.a_tout, self.a_rien, self.a_inverser,
-                  self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster):
+                  self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster, self.a_recadrer_selection):
             a.setEnabled(a_doc)
         for a in (self.a_effacer, self.a_remplir, self.a_agrandir, self.a_upscale):
             a.setEnabled(pret)
@@ -551,7 +699,9 @@ class Fenetre(QMainWindow):
     def _aide(self):
         QMessageBox.information(self, tr("Raccourcis"), tr(
             "Outils : H main, V déplacer, M rectangle, L lasso, B pinceau, E gomme de sélection, G gomme de calque, "
-            "T texte\n"
+            "T texte, C recadrer, P pinceau de couleur, S tampon\n"
+            "Recadrer : Entrée ou double-clic = valider, Échap = annuler\n"
+            "Pinceau de couleur : Alt+clic = prendre une couleur ; Tampon : Alt+clic = endroit à copier\n"
             "[ et ] : taille du pinceau\n"
             "Alt pendant le tracé : inverse Ajouter / Retirer\n"
             "Espace + glisser, ou bouton du milieu : déplacer la vue\n"

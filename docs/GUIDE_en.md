@@ -247,11 +247,52 @@ they stay in proportion when you change the text size.
 
 ---
 
-## 8. Shortcuts
+## 8. Crop, paint, clone
+
+Three manual editing tools, as in Photoshop. Everything can be undone with **Ctrl+Z**; a **locked** layer is
+protected.
+
+### Crop (C)
+1. Drag a frame on the photo: the part kept stays bright, the rest is darkened, and a rule-of-thirds grid helps
+   place the subject. The size of the result is shown below the frame.
+2. Adjust it: the **handles** (corners and middles of the sides) change its size, dragging **inside** the frame
+   moves it. The frame never goes beyond the photo (to enlarge, see *Expand image*).
+3. **Aspect ratio** (top bar): *Free*, *Same as the photo*, 1:1, 4:3, 3:2, 16:9, and the same in portrait.
+4. **Enter**, double-click inside the frame or the **Crop** button: done. **Esc** or **Cancel**: the frame goes
+   away without changing anything.
+
+All layers are cropped together; texts stay editable. **Selection > Crop to selection** menu: keeps the smallest
+rectangle containing the selection.
+
+### Colour brush (P)
+Paints on the **layer chosen** in the Layers panel (tip: an empty layer above the photo lets you correct without
+touching the photo).
+- **Colour**: swatch in the top bar. **Alt+click** on the photo picks the colour at that spot (eyedropper).
+- **Size** (or `[` and `]`), **Opacity** (100% fully covers, less lets what is below show through) and **Hardness**
+  (100% sharp edge, 0% very soft edge).
+- Going over the same spot during one stroke does not darken the colour; a new stroke does.
+
+### Clone stamp (S)
+Copies one part of the photo onto another: to remove a small defect by hand, duplicate a texture…
+1. **Alt+click** on the area to copy (a cross marks it).
+2. Paint where it should be copied: the cross follows, at the same distance.
+3. The next strokes keep the same offset (like Photoshop's "Aligned" option). A new Alt+click chooses another
+   area.
+
+The stamp copies the photo **as you see it** (all visible layers) and paints on the chosen layer. Size, opacity
+and hardness as for the brush.
+
+A **text** retouched with the brush or the stamp becomes an image (a message reminds you; Ctrl+Z to go back).
+
+---
+
+## 9. Shortcuts
 
 | Key | Action |
 |---|---|
 | H, V, M, L, B, E, G, T | Hand, Move, Rectangle, Lasso, Brush, Selection eraser, Layer eraser, Text |
+| C, P, S | Crop, Colour brush, Clone stamp |
+| Alt+click | (Colour brush) pick a colour; (Clone stamp) area to copy |
 | `[` / `]` | Smaller / larger brush |
 | Space (held) | Move the view |
 | Alt (held) | Switch Add / Remove for one stroke |
@@ -259,13 +300,13 @@ they stay in proportion when you change the text size.
 | Ctrl+Z, Ctrl+Y | Undo, Redo |
 | Ctrl+A, Ctrl+D, Ctrl+Shift+I | Select all, Deselect, Invert |
 | Ctrl+0, Ctrl+1 | Fit, 100% |
-| Enter / Esc | (Expand) Start / Cancel |
+| Enter / Esc | (Expand) Start / Cancel; (Crop) Apply / Cancel |
 | Shift (while rotating a text) | Rotate in 15° steps |
 | F1 | List of shortcuts |
 
 ---
 
-## 9. Hardware and licences
+## 10. Hardware and licences
 
 **Installation**: run `Chrypix-Setup-<version>.exe`.
 1. Installation language (it will also be Chrypix's language, which can be changed later in View > Language).

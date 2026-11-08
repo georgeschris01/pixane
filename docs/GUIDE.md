@@ -248,11 +248,52 @@ ils restent proportionnés quand on change la taille du texte.
 
 ---
 
-## 8. Raccourcis
+## 8. Recadrer, peindre, tamponner
+
+Trois outils de retouche à la main, comme dans Photoshop. Tout s'annule par **Ctrl+Z** ; un calque **verrouillé**
+est protégé.
+
+### Recadrer (C)
+1. Tirez un cadre sur la photo : la partie gardée reste claire, le reste est assombri, une grille des tiers aide à
+   placer le sujet. La taille du résultat s'affiche sous le cadre.
+2. Ajustez-le : les **poignées** (coins et milieux des côtés) changent sa taille, glisser **dans** le cadre le
+   déplace. Le cadre ne sort jamais de la photo (pour l'agrandir, voir *Agrandir l'image*).
+3. **Proportions** (barre du haut) : *Libre*, *Comme la photo*, 1:1, 4:3, 3:2, 16:9, et les mêmes en hauteur.
+4. **Entrée**, double-clic dans le cadre ou bouton **Recadrer** : c'est fait. **Échap** ou **Annuler** : le cadre
+   disparaît sans rien changer.
+
+Tous les calques sont recadrés ensemble ; les textes restent modifiables. Menu **Sélection > Recadrer à la
+sélection** : garde le plus petit rectangle qui contient la sélection.
+
+### Pinceau de couleur (P)
+Peint sur le **calque choisi** dans le panneau Calques (astuce : un calque vide au-dessus de la photo permet de
+corriger sans toucher à la photo).
+- **Couleur** : pastille de la barre du haut. **Alt+clic** sur la photo prend la couleur à cet endroit (pipette).
+- **Taille** (ou `[` et `]`), **Opacité** (100 % couvre tout, moins laisse voir dessous) et **Dureté** (100 % bord
+  net, 0 % bord très doux).
+- Repasser au même endroit pendant un même coup ne fonce pas la couleur ; un nouveau coup, si.
+
+### Tampon (S)
+Recopie une partie de la photo sur une autre : pour effacer un petit défaut à la main, dupliquer une texture…
+1. **Alt+clic** sur l'endroit à copier (une croix le marque).
+2. Peignez là où il doit être recopié : la croix suit, à la même distance.
+3. Les coups suivants gardent ce même décalage (comme l'option « Aligné » de Photoshop). Un nouvel Alt+clic choisit
+   un autre endroit.
+
+Le tampon copie la photo **telle qu'on la voit** (tous les calques visibles) et peint sur le calque choisi. Taille,
+opacité et dureté comme le pinceau.
+
+Un **texte** retouché au pinceau ou au tampon devient une image (un message le rappelle ; Ctrl+Z pour revenir).
+
+---
+
+## 9. Raccourcis
 
 | Touche | Action |
 |---|---|
 | H, V, M, L, B, E, G, T | Main, Déplacer, Rectangle, Lasso, Pinceau, Gomme de sélection, Gomme de calque, Texte |
+| C, P, S | Recadrer, Pinceau de couleur, Tampon |
+| Alt+clic | (Pinceau de couleur) prendre une couleur ; (Tampon) endroit à copier |
 | `[` / `]` | Pinceau plus petit / plus grand |
 | Espace (maintenu) | Déplacer la vue |
 | Alt (maintenu) | Inverser Ajouter / Retirer le temps d'un geste |
@@ -260,13 +301,13 @@ ils restent proportionnés quand on change la taille du texte.
 | Ctrl+Z, Ctrl+Y | Annuler, Rétablir |
 | Ctrl+A, Ctrl+D, Ctrl+Maj+I | Tout sélectionner, Désélectionner, Inverser |
 | Ctrl+0, Ctrl+1 | Ajuster, 100 % |
-| Entrée / Échap | (Agrandir) Lancer / Annuler |
+| Entrée / Échap | (Agrandir) Lancer / Annuler ; (Recadrer) Valider / Annuler |
 | Maj (en tournant un texte) | Rotation par pas de 15° |
 | F1 | Liste des raccourcis |
 
 ---
 
-## 9. Matériel et licences
+## 10. Matériel et licences
 
 **Installation** : lancer `Chrypix-Setup-<version>.exe`.
 1. Langue de l'installation (ce sera aussi la langue de Chrypix, modifiable ensuite dans Affichage > Langue).

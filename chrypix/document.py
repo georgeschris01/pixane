@@ -16,7 +16,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageOps
-from PySide6.QtCore import QObject, QPoint, Qt, Signal
+from PySide6.QtCore import QObject, QPoint, QRect, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QPainter
 
 from .langue import tr
@@ -296,6 +296,27 @@ class Document(QObject):
                 nouveaux.append(replace(c, image=c.image.scaled(W, H, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)))
         calque = Calque.depuis(self.nom_libre(titre), resultat)
         return self.etat_avec(tuple(nouveaux) + (calque,), len(nouveaux))
+
+    def etat_recadre(self, r: QRect):
+        """Recadrer : chaque calque (et la sélection) ne garde que le rectangle r ; les textes restent des textes."""
+        r = r.intersected(QRect(0, 0, *self.taille()))
+        W, H = r.width(), r.height()
+        nouveaux = []
+        for c in self.calques:
+            if c.texte is not None:
+                t = c.texte.deplace(-r.x(), -r.y())
+                nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
+            else:
+                nouveaux.append(replace(c, image=c.image.copy(r)))
+        return self.etat_avec(tuple(nouveaux), self.actif, self.selection.copy(r))
+
+    def rect_selection(self) -> QRect | None:
+        """Plus petit rectangle qui contient la sélection, ou None si elle est vide."""
+        m = masque(self.selection) > 0
+        if not m.any():
+            return None
+        ys, xs = np.nonzero(m)
+        return QRect(int(xs.min()), int(ys.min()), int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1))
 
     def etat_calque_modifie(self, index: int, **changements):
         calques = list(self.calques)

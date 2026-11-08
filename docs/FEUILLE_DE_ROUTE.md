@@ -17,7 +17,7 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
 2. [ ] **Toutes les fonctions de texte** — fait le 08/11/2026, à valider par Christophe : outil T, police, taille,
    couleur, gras / italique / souligné / barré, alignement, espacement, rotation, courbe, contour, ombre, fond ;
    format .chr (textes modifiables). Guide chapitre 7.
-3. [ ] **Outils** : recadrer, pinceau de couleur, tampon (copier une zone sur une autre).
+3. [x] **Outils** (08/11/2026, à essayer par Christophe) : recadrer (C, proportions, Recadrer à la sélection), pinceau de couleur (P, opacité, dureté, pipette Alt+clic), tampon (S, Alt+clic = source, aligné).
 4. [ ] **Réglages d'image** : luminosité, contraste, couleurs, netteté.
 5. [ ] **PSD** : ouvrir et enregistrer les fichiers Photoshop avec leurs calques.
 6. [ ] **Installateur** (même présentation que TwinPanel, Inno Setup 7) :

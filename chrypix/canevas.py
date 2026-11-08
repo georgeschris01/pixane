@@ -1,4 +1,5 @@
-"""Zone d'affichage : zoom, déplacement, outils de sélection (rectangle, lasso, pinceau, gomme), texte."""
+"""Zone d'affichage : zoom, déplacement, outils de sélection (rectangle, lasso, pinceau, gomme), texte,
+recadrage, pinceau de couleur et tampon."""
 from __future__ import annotations
 
 import math
@@ -10,13 +11,18 @@ from PySide6.QtWidgets import QWidget
 
 from .document import COULEUR_SELECTION, Document
 from .langue import tr
+from .retouche import Trait
 from .texte import contient, contour_bloc, rendre
 
 MAIN, RECTANGLE, LASSO, PINCEAU, GOMME = "main", "rectangle", "lasso", "pinceau", "gomme"
 GOMME_CALQUE = "gomme_calque"                  # efface pour de vrai les pixels du calque actif
 TEXTE = "texte"                                # écrire, déplacer, tourner un texte
 DEPLACER = "deplacer"                          # déplacer le contenu du calque choisi
-OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE)   # outils au curseur rond (taille du pinceau)
+RECADRER = "recadrer"                          # garder une partie de la photo
+PEINTURE = "peinture"                          # pinceau de couleur sur le calque choisi
+TAMPON = "tampon"                              # copier une zone de la photo sur une autre (Alt+clic : source)
+OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE, PEINTURE, TAMPON)   # outils au curseur rond (taille du pinceau)
+OUTILS_CALQUE = (GOMME_CALQUE, PEINTURE, TAMPON)                  # outils qui changent les pixels du calque
 OPACITE_SELECTION = 0.45
 
 
@@ -29,6 +35,10 @@ class Canevas(QWidget):
     cadre_annule = Signal()                     # Échap pendant Agrandir
     texte_nouveau = Signal(object)              # outil Texte : clic hors des textes -> point (image)
     texte_choisi = Signal(int)                  # outil Texte : clic sur un calque de texte -> son index
+    couleur_prise = Signal(str)                 # pinceau de couleur : Alt+clic (pipette) -> couleur « #rrggbb »
+    recadre_change = Signal(object)             # outil Recadrer : QRect (image) ou None
+    recadre_valide = Signal()                   # Entrée ou double-clic dans le cadre
+    message = Signal(str)                       # information (barre d'état)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -55,6 +65,17 @@ class Canevas(QWidget):
         self._depart = None          # point (image) où le glisser du cadre a commencé
         self._texte_glisse = None    # (index, « deplacer » / « tourner », départ, Texte d'origine, état d'avant)
         self._calque_glisse = None   # outil Déplacer : (index, départ, image d'origine, état d'avant)
+        # pinceau de couleur et tampon
+        self.couleur_peinture = QColor(0, 0, 0)
+        self.opacite = 1.0           # 0..1
+        self.durete = 0.8            # 0 = bord très doux, 1 = bord net
+        self._trait: Trait | None = None
+        self.source_tampon: QPointF | None = None    # point (image) choisi par Alt+clic
+        self._decalage_tampon: QPointF | None = None # source - point peint, fixé au premier coup (aligné)
+        # recadrage
+        self.recadre: QRectF | None = None           # cadre (image) à garder
+        self.proportion: float | None = None         # largeur / hauteur imposée, ou libre
+        self._recadre_glisse = None  # (mode « nouveau » / « deplacer » / côtés, point de départ, cadre d'origine)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMinimumSize(300, 200)
@@ -190,6 +211,19 @@ class Canevas(QWidget):
         p.drawRect(QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
                                                                  self.doc.image.height()) * self.zoom))
         self._dessiner_cadre_texte(p)
+        if self.outil == RECADRER and self.recadre is not None:
+            self._dessiner_recadre(p)
+        if self.outil == TAMPON and self.source_tampon is not None and not self._espace:
+            if self._trait is not None and self._souris is not None:
+                croix = self._souris + self._decalage_tampon * self.zoom
+            elif self._trait is None and self._decalage_tampon is not None and self._souris is not None:
+                croix = self._souris + self._decalage_tampon * self.zoom
+            else:
+                croix = self.vers_ecran(self.source_tampon)
+            for couleur, epaisseur in ((QColor(0, 0, 0), 3), (QColor(255, 255, 255), 1)):
+                p.setPen(QPen(couleur, epaisseur))
+                p.drawLine(croix + QPointF(-8, 0), croix + QPointF(8, 0))
+                p.drawLine(croix + QPointF(0, -8), croix + QPointF(0, 8))
         # curseur du pinceau
         if self._souris is not None and self.outil in OUTILS_ROND and not self._espace and self.cadre is None:
             r = self.taille_pinceau * self.zoom / 2
@@ -484,6 +518,217 @@ class Canevas(QWidget):
             self.selection_modifiee.emit(avant, tr("Déplacer le calque"))
         self._decalage_calque = (0, 0)
 
+    # ---------------------------------------------------------- pinceau de couleur et tampon
+    def _presser_retouche(self, pos: QPointF, alt: bool):
+        pt = self.vers_image(pos)
+        if alt and self.outil == PEINTURE:               # pipette : couleur de la photo visible
+            x, y = int(pt.x()), int(pt.y())
+            if 0 <= x < self.doc.image.width() and 0 <= y < self.doc.image.height():
+                self.couleur_prise.emit(QColor(self.doc.image.pixel(x, y)).name())
+            return
+        if alt and self.outil == TAMPON:                 # point source
+            self.source_tampon = pt
+            self._decalage_tampon = None
+            self.message.emit(tr("Endroit à copier choisi : peins maintenant là où il doit être recopié."))
+            self.update()
+            return
+        c = self.doc.calque_actif
+        if c.verrou:
+            self.refus.emit(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour pouvoir le "
+                               "modifier.", nom=c.nom))
+            return
+        if self.outil == TAMPON and self.source_tampon is None:
+            self.refus.emit(tr("Tampon : fais d'abord Alt+clic sur l'endroit à copier."))
+            return
+        if c.texte is not None:
+            self.refus.emit(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme texte "
+                               "(Ctrl+Z pour revenir).", nom=c.nom))
+        self._avant = self.doc.etat()
+        if self.outil == TAMPON:
+            if self._decalage_tampon is None:
+                self._decalage_tampon = self.source_tampon - pt
+            self._trait = Trait("tampon", c.image, self.taille_pinceau, self.durete, self.opacite,
+                                source=self.doc.image.copy(), decalage=self._decalage_tampon)
+        else:
+            self._trait = Trait("peinture", c.image, self.taille_pinceau, self.durete, self.opacite,
+                                couleur=self.couleur_peinture)
+        self._trait.ajouter(pt)
+        self.doc.apercu_calque(self.doc.actif, self._trait.image)
+
+    def _glisser_retouche(self, pos: QPointF):
+        self._trait.ajouter(self.vers_image(pos))
+        self.doc.apercu_calque(self.doc.actif, self._trait.image)
+
+    def _lacher_retouche(self):
+        nom = tr("Tampon") if self._trait.mode == "tampon" else tr("Pinceau de couleur")
+        self._trait = None
+        self.selection_modifiee.emit(self._avant, nom)
+        self._avant = None
+
+    # ---------------------------------------------------------- recadrer
+    def definir_proportion(self, proportion: float | None):
+        self.proportion = proportion
+        if self.recadre is not None and proportion:
+            c = self.recadre.center()
+            w = self.recadre.width()
+            h = w / proportion
+            if h > self.recadre.height():
+                h = self.recadre.height()
+                w = h * proportion
+            self.recadre = self._dans_image(QRectF(c.x() - w / 2, c.y() - h / 2, w, h))
+            self._emettre_recadre()
+        self.update()
+
+    def annuler_recadre(self):
+        self.recadre = None
+        self._recadre_glisse = None
+        self._emettre_recadre()
+        self.update()
+
+    def rect_recadre(self):
+        """Cadre arrondi au pixel (QRect), ou None."""
+        if self.recadre is None:
+            return None
+        r = self.recadre.toRect().intersected(self.doc.image.rect())
+        return r if r.width() >= 1 and r.height() >= 1 else None
+
+    def _emettre_recadre(self):
+        self.recadre_change.emit(self.rect_recadre())
+
+    def _dans_image(self, r: QRectF) -> QRectF:
+        """Garde le cadre dans la photo (le déplace, puis le réduit si besoin, en gardant la proportion)."""
+        iw, ih = self.doc.image.width(), self.doc.image.height()
+        w, h = min(r.width(), iw), min(r.height(), ih)
+        if self.proportion:
+            if w / max(h, 1e-6) > self.proportion:
+                w = h * self.proportion
+            else:
+                h = w / self.proportion
+        x = max(0.0, min(r.center().x() - w / 2, iw - w))
+        y = max(0.0, min(r.center().y() - h / 2, ih - h))
+        return QRectF(x, y, w, h)
+
+    def _depuis_coin(self, ancre: QPointF, pt: QPointF) -> QRectF:
+        """Cadre entre un coin fixe et la souris, avec la proportion, sans sortir de la photo."""
+        iw, ih = self.doc.image.width(), self.doc.image.height()
+        sx = 1 if pt.x() >= ancre.x() else -1
+        sy = 1 if pt.y() >= ancre.y() else -1
+        maxw = iw - ancre.x() if sx > 0 else ancre.x()
+        maxh = ih - ancre.y() if sy > 0 else ancre.y()
+        w = min(abs(pt.x() - ancre.x()), maxw)
+        h = min(abs(pt.y() - ancre.y()), maxh)
+        if self.proportion:
+            if w / max(h, 1e-6) > self.proportion:
+                h = w / self.proportion
+            else:
+                w = h * self.proportion
+            f = min(1.0, maxw / max(w, 1e-6), maxh / max(h, 1e-6))
+            w, h = w * f, h * f
+        return QRectF(ancre, ancre + QPointF(sx * w, sy * h)).normalized()
+
+    def _rect_recadre_ecran(self) -> QRectF:
+        return QRectF(self.vers_ecran(self.recadre.topLeft()), self.vers_ecran(self.recadre.bottomRight()))
+
+    def _presser_recadre(self, pos: QPointF):
+        pt = self.vers_image(pos)
+        if self.recadre is not None:
+            cotes = self._cotes_sous(self._rect_recadre_ecran(), pos)
+            if cotes:
+                self._recadre_glisse = (frozenset(cotes), pt, QRectF(self.recadre))
+                return
+            if self.recadre.contains(pt):
+                self._recadre_glisse = ("deplacer", pt, QRectF(self.recadre))
+                return
+        iw, ih = self.doc.image.width(), self.doc.image.height()
+        pt = QPointF(max(0.0, min(pt.x(), iw)), max(0.0, min(pt.y(), ih)))
+        self._recadre_glisse = ("nouveau", pt, None)
+        self.recadre = QRectF(pt, pt)
+
+    def _glisser_recadre(self, pos: QPointF):
+        mode, depart, r0 = self._recadre_glisse
+        pt = self.vers_image(pos)
+        if mode == "nouveau":
+            self.recadre = self._depuis_coin(depart, pt)
+        elif mode == "deplacer":
+            r = r0.translated(pt - depart)
+            self.recadre = self._dans_image(QRectF(r.topLeft(), r0.size()))
+        else:
+            cotes = set(mode)
+            if len(cotes) == 2:                          # coin : le coin opposé reste fixe
+                ancre = QPointF(r0.right() if "g" in cotes else r0.left(),
+                                r0.bottom() if "h" in cotes else r0.top())
+                self.recadre = self._depuis_coin(ancre, pt)
+            else:
+                iw, ih = self.doc.image.width(), self.doc.image.height()
+                g, h_, d, b = r0.left(), r0.top(), r0.right(), r0.bottom()
+                if "g" in cotes:
+                    g = max(0.0, min(pt.x(), d - 1))
+                elif "d" in cotes:
+                    d = min(float(iw), max(pt.x(), g + 1))
+                elif "h" in cotes:
+                    h_ = max(0.0, min(pt.y(), b - 1))
+                else:
+                    b = min(float(ih), max(pt.y(), h_ + 1))
+                r = QRectF(QPointF(g, h_), QPointF(d, b))
+                if self.proportion:                      # l'autre dimension suit, centrée
+                    c = r.center()
+                    if cotes & {"g", "d"}:
+                        hh = r.width() / self.proportion
+                        r = QRectF(r.left(), c.y() - hh / 2, r.width(), hh)
+                    else:
+                        ww = r.height() * self.proportion
+                        r = QRectF(c.x() - ww / 2, r.top(), ww, r.height())
+                    r = self._dans_image(r)
+                self.recadre = r
+        self._emettre_recadre()
+        self.update()
+
+    def _lacher_recadre(self):
+        self._recadre_glisse = None
+        if self.recadre is not None and (self.recadre.width() < 4 or self.recadre.height() < 4):
+            self.recadre = None
+        self._emettre_recadre()
+        self.update()
+
+    def _dessiner_recadre(self, p: QPainter):
+        r = self._rect_recadre_ecran()
+        photo = QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
+                                                              self.doc.image.height()) * self.zoom)
+        dehors = QPainterPath()
+        dehors.addRect(photo)
+        dedans = QPainterPath()
+        dedans.addRect(r)
+        p.save()
+        p.fillPath(dehors.subtracted(dedans), QColor(0, 0, 0, 140))       # partie coupée assombrie
+        p.setBrush(Qt.NoBrush)
+        p.setPen(QPen(QColor(255, 255, 255, 110), 1))                     # grille des tiers
+        for i in (1, 2):
+            x = r.left() + r.width() * i / 3
+            y = r.top() + r.height() * i / 3
+            p.drawLine(QPointF(x, r.top()), QPointF(x, r.bottom()))
+            p.drawLine(QPointF(r.left(), y), QPointF(r.right(), y))
+        p.setPen(QPen(QColor(0, 0, 0, 160), 1))
+        p.drawRect(r)
+        p.setPen(QPen(QColor(255, 255, 255), 1, Qt.DashLine))
+        p.drawRect(r)
+        c = r.center()
+        p.setPen(QPen(QColor(0, 0, 0, 180), 1))
+        p.setBrush(self.couleur_accent)
+        for pt in (r.topLeft(), QPointF(c.x(), r.top()), r.topRight(), QPointF(r.right(), c.y()),
+                   r.bottomRight(), QPointF(c.x(), r.bottom()), r.bottomLeft(), QPointF(r.left(), c.y())):
+            p.drawRect(QRectF(pt.x() - 5, pt.y() - 5, 10, 10))
+        rr = self.rect_recadre()
+        if rr is not None:                               # taille du résultat
+            texte = f"{rr.width()} × {rr.height()} px"
+            boite = p.fontMetrics().boundingRect(texte).adjusted(-6, -3, 6, 3)
+            boite.moveTopLeft(QPointF(r.left(), r.bottom() + 8).toPoint())
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(0, 0, 0, 170))
+            p.drawRoundedRect(QRectF(boite), 4, 4)
+            p.setPen(QColor(255, 255, 255))
+            p.drawText(boite, Qt.AlignCenter, texte)
+        p.restore()
+
     def _damier(self) -> QPixmap:
         if getattr(self, "_motif_damier", None) is None:
             pm = QPixmap(16, 16)
@@ -572,6 +817,14 @@ class Canevas(QWidget):
         if self.outil == DEPLACER:
             self._presser_deplacer(pos)
             return
+        if self.outil == RECADRER:
+            self._presser_recadre(pos)
+            self.update()
+            return
+        if self.outil in (PEINTURE, TAMPON):
+            self._presser_retouche(pos, bool(e.modifiers() & Qt.AltModifier))
+            self.update()
+            return
         if self.outil == GOMME_CALQUE and self.doc.calque_actif.verrou:
             self.refus.emit(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour pouvoir le "
                                "gommer.", nom=self.doc.calque_actif.nom))
@@ -611,6 +864,24 @@ class Canevas(QWidget):
         if self._calque_glisse is not None:
             self._glisser_calque(pos)
             return
+        if self._recadre_glisse is not None:
+            self._glisser_recadre(pos)
+            return
+        if self._trait is not None:
+            self._glisser_retouche(pos)
+            self.update()
+            return
+        if self.outil == RECADRER and self.doc and not self._espace:
+            if self.recadre is not None:
+                cotes = self._cotes_sous(self._rect_recadre_ecran(), pos)
+                if cotes:
+                    self._curseur_cadre((None, cotes))
+                elif self.recadre.contains(self.vers_image(pos)):
+                    self.setCursor(Qt.SizeAllCursor)
+                else:
+                    self.setCursor(Qt.CrossCursor)
+            else:
+                self.setCursor(Qt.CrossCursor)
         if self.outil == TEXTE and self.doc and not self._espace:
             if self._sur_poignee_texte(pos):
                 self.setCursor(Qt.PointingHandCursor)
@@ -646,6 +917,13 @@ class Canevas(QWidget):
         if self._calque_glisse is not None:
             self._lacher_calque()
             return
+        if self._recadre_glisse is not None:
+            self._lacher_recadre()
+            return
+        if self._trait is not None:
+            self._lacher_retouche()
+            self.update()
+            return
         if self._trace is None:
             return
         if self.outil in (RECTANGLE, LASSO) and len(self._trace) > 1:
@@ -657,6 +935,13 @@ class Canevas(QWidget):
         self.selection_modifiee.emit(self._avant, tr(noms[self.outil]))
         self._avant = None
         self.update()
+
+    def mouseDoubleClickEvent(self, e):
+        if (self.outil == RECADRER and self.recadre is not None and e.button() == Qt.LeftButton
+                and self.recadre.contains(self.vers_image(e.position()))):
+            self.recadre_valide.emit()
+            return
+        super().mouseDoubleClickEvent(e)
 
     def leaveEvent(self, e):
         self._souris = None
@@ -674,6 +959,10 @@ class Canevas(QWidget):
             self.cadre_valide.emit()
         elif self.cadre is not None and e.key() == Qt.Key_Escape:
             self.cadre_annule.emit()
+        elif self.outil == RECADRER and self.recadre is not None and e.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self.recadre_valide.emit()
+        elif self.outil == RECADRER and self.recadre is not None and e.key() == Qt.Key_Escape:
+            self.annuler_recadre()
         elif e.key() == Qt.Key_Space and not e.isAutoRepeat():
             self._espace = True
             self.setCursor(Qt.OpenHandCursor)
@@ -708,6 +997,8 @@ class Canevas(QWidget):
         self.mode_retirer = oui
 
     def definir_outil(self, outil: str):
+        if outil != RECADRER and self.recadre is not None:
+            self.annuler_recadre()
         self.outil = outil
         self._curseur()
         self.update()
