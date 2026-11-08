@@ -1,4 +1,4 @@
-"""Lancement : python -m retouche_ia [photo]"""
+"""Lancement : python -m chrypix [photo]"""
 import sys
 
 from PySide6.QtGui import QColor, QPalette

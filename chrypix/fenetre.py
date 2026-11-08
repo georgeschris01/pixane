@@ -1,4 +1,4 @@
-"""Fenêtre principale de Retouche IA."""
+"""Fenêtre principale de Chrypix."""
 from __future__ import annotations
 
 import threading
@@ -15,7 +15,7 @@ from .dialogues import Attente, ChoixResultat, ReglagesAgrandir, ReglagesUpscale
 from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection
 from .moteur import Annule, ErreurMoteur, Moteur
 
-NOM = "Retouche IA"
+NOM = "Chrypix"
 
 
 class Tache(QObject):
@@ -62,7 +62,7 @@ class Fenetre(QMainWindow):
         self.setWindowTitle(NOM)
         self.resize(1400, 900)
         self.setAcceptDrops(True)
-        self.reglages = QSettings("RetoucheIA", "RetoucheIA")
+        self.reglages = QSettings("Chrypix", "Chrypix")
         self.doc: Document | None = None
         self.historique = QUndoStack(self)
         self.historique.setUndoLimit(30)

@@ -18,7 +18,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-DOSSIER_APP = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "RetoucheIA"
+DOSSIER_APP = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "Chrypix"
 FICHIER_CONFIG = DOSSIER_APP / "config.json"
 PORT_EXTERNE = 8188   # ComfyUI Desktop, s'il est ouvert
 PORT_INTERNE = 8189   # notre moteur caché
@@ -171,7 +171,7 @@ class Moteur:
     # ------------------------------------------------------------ travail
     def envoyer_image(self, png: bytes) -> str:
         nom = f"{uuid.uuid4().hex}.png"
-        corps, type_contenu = _multipart({"subfolder": "retouche-ia", "type": "input", "overwrite": "true"},
+        corps, type_contenu = _multipart({"subfolder": "chrypix", "type": "input", "overwrite": "true"},
                                          {"image": (nom, png, "image/png")})
         rep = json.loads(self._requete("/upload/image", corps, type_contenu, delai=120))
         return f"{rep['subfolder']}/{rep['name']}" if rep.get("subfolder") else rep["name"]

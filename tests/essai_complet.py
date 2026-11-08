@@ -4,9 +4,9 @@ sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parents[1]
 from pathlib import Path
 from PySide6.QtCore import QPointF, QRectF
 from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPainterPath
-from retouche_ia.document import Document, COULEUR_SELECTION, FORMAT_IMAGE
-from retouche_ia.moteur import Moteur
-from retouche_ia import recettes
+from chrypix.document import Document, COULEUR_SELECTION, FORMAT_IMAGE
+from chrypix.moteur import Moteur
+from chrypix import recettes
 
 app = QGuiApplication(sys.argv)
 photo, sortie = Path(sys.argv[1]), Path(sys.argv[2])

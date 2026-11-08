@@ -4,9 +4,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from PySide6.QtCore import QPointF, QTimer
 from PySide6.QtWidgets import QApplication
-from retouche_ia.__main__ import theme_sombre
-from retouche_ia.fenetre import Fenetre
-from retouche_ia.moteur import Moteur
+from chrypix.__main__ import theme_sombre
+from chrypix.fenetre import Fenetre
+from chrypix.moteur import Moteur
 
 Moteur.demarrer = lambda self, signaler=None: (_ for _ in ()).throw(Exception("moteur désactivé pour l'essai"))
 app = QApplication(sys.argv); theme_sombre(app)
