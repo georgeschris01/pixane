@@ -12,7 +12,7 @@ This guide explains every tool and every setting. It is updated with each new fe
 | Area | Purpose |
 |---|---|
 | **Top bar** | Open, Save, Undo / Redo, brush size, Add / Remove, zoom, light / dark theme |
-| **Tools (left)** | Hand, Rectangle, Lasso, Brush, Erasers, Text |
+| **Tools (left)** | Hand, Move, Rectangle, Lasso, Brush, Erasers, Text |
 | **"Text" panel (left)** | Text settings, shown with the Text tool (see chapter 7) |
 | **Photo (centre)** | The photo; the selected area appears in transparent red |
 | **"Artificial intelligence" panel (right)** | Erase, Fill, Expand image, Upscale |
@@ -61,6 +61,7 @@ Layer names that already exist keep their original language.
 | Fit to window | Ctrl+0 |
 | Actual size (100%) | Ctrl+1 |
 | Move the view | **Hand** tool (H), or hold **Space** and drag, or drag with the **middle button** |
+| Move **a layer** | **Move** tool (V): only the selected layer moves (the Hand only moves the view) |
 
 ---
 
@@ -74,6 +75,7 @@ you can simply **paint over it**.
 | **Brush** | B | Paint the area. Ideal for an object, some text, a wire… |
 | **Eraser** | E | Remove from the selection by painting |
 | **Layer eraser** | G | **Really** erases the pixels of the selected layer (see chapter 6) |
+| **Move** | V | Moves the content of the **selected layer**; a moved text stays editable. What goes outside the image is cut off. Refused on a locked layer |
 | **Rectangle** | M | Rectangular selection |
 | **Lasso** | L | Draw an outline freehand; the shape is closed automatically |
 
@@ -207,7 +209,8 @@ All layer actions can be undone with Ctrl+Z (changing the selected layer does no
   Just type: the suggested word is replaced. The panel's box accepts several lines (Enter).
 - **Click on an existing text**: it is selected and its settings are shown; it can be edited at any time,
   even after saving as **.chr** and reopening.
-- **Drag the text**: move it. A dashed frame surrounds the selected text.
+- The text is applied **as you go**: nothing to confirm.
+- **Drag the text**: move it (also with the Move tool, V). A dashed frame surrounds the selected text.
 - **Round handle** above the frame: rotate the text (**Shift**: in 15° steps), or the *Rotation* box.
 - The layer name follows the first line of the text (as long as you have not renamed it yourself).
 - With no text selected, the panel settings are used for the **next** text; Chrypix also remembers the last
@@ -228,7 +231,6 @@ All layer actions can be undone with Ctrl+Z (changing the selected layer does no
 | **Outline** | Line around the letters: colour and thickness |
 | **Drop shadow** | Colour, distance, direction (0° = to the right, 90° = down) and blur |
 | **Background** | Coloured rectangle behind the text: colour, margin and corner rounding |
-| **Convert to image** | The text becomes an ordinary image layer (eraser, AI…); it can no longer be edited as text |
 
 Effect sizes (thickness, distance, blur, margin, rounding) are a **% of the letter size**:
 they stay in proportion when you change the text size.
@@ -248,7 +250,7 @@ they stay in proportion when you change the text size.
 
 | Key | Action |
 |---|---|
-| H, M, L, B, E, G, T | Hand, Rectangle, Lasso, Brush, Selection eraser, Layer eraser, Text |
+| H, V, M, L, B, E, G, T | Hand, Move, Rectangle, Lasso, Brush, Selection eraser, Layer eraser, Text |
 | `[` / `]` | Smaller / larger brush |
 | Space (held) | Move the view |
 | Alt (held) | Switch Add / Remove for one stroke |

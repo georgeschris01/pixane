@@ -173,8 +173,27 @@ verifier(doc.calque_actif.texte == t_v and messages, "verrouillé : pas de dépl
 pt_.styles["italique"].setChecked(True)
 verifier(not doc.calque_actif.texte.italique, "verrouillé : le panneau ne modifie rien")
 
-# 10. fusion -> image
+# 10. outil Déplacer (V) : texte (reste modifiable) puis calque d'image (seul le calque bouge)
+from chrypix.canevas import DEPLACER
+f.historique.undo()                            # déverrouille
+c.definir_outil(DEPLACER)
+doc.actif = 1
+t_d = doc.calque_actif.texte
+souris([(10, 10), (60, 30)])
+verifier(doc.calque_actif.texte is not None and abs(doc.calque_actif.texte.x - t_d.x - 50) < 1,
+         "Déplacer sur un texte -> déplacé, toujours modifiable")
+doc.actif = 0
+fond_avant = rgb(doc.calques[0].image.convertToFormat(doc.image.format()))
+autres = [x.image for x in doc.calques[1:]]
+souris([(300, 300), (340, 320)])
+fond_apres = rgb(doc.calques[0].image.convertToFormat(doc.image.format()))
+verifier(np.array_equal(fond_apres[100:200, 140:240], fond_avant[80:180, 100:200]), "Déplacer -> le calque d'image bouge de (40, 20)")
+verifier(all(a is b for a, b in zip(autres, [x.image for x in doc.calques[1:]])), "Déplacer -> les autres calques ne bougent pas")
+verifier(f.historique.undoText() == "Déplacer le calque", "déplacement du calque annulable")
 f.historique.undo()
+f.historique.undo()
+
+# 11. fusion -> image
 doc.actif = 1
 f.calques.rafraichir()
 f.calques.fusionner()

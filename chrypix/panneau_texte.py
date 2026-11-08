@@ -57,7 +57,6 @@ def _titre(texte: str) -> QLabel:
 
 class PanneauTexte(QScrollArea):
     modifie = Signal(object, str)        # (nouveau Texte, nom du réglage changé)
-    en_pixels = Signal()                 # « Convertir en image »
 
     def __init__(self, icones):
         super().__init__()
@@ -191,11 +190,6 @@ class PanneauTexte(QScrollArea):
         note.setWordWrap(True)
         lay.addSpacing(6)
         lay.addWidget(note)
-        self.b_pixels = QPushButton(tr("Convertir en image"))
-        self.b_pixels.setToolTip(tr("Le texte devient un calque d'image ordinaire (gomme, IA…) ; il n'est plus "
-                                    "modifiable comme texte"))
-        self.b_pixels.clicked.connect(self.en_pixels)
-        lay.addWidget(self.b_pixels)
         lay.addStretch(1)
         self.setWidget(w)
         self.appliquer_icones()
@@ -255,12 +249,11 @@ class PanneauTexte(QScrollArea):
             self._remplissage = False
         self.taille.setEnabled(self.lie)       # sans texte choisi, la taille est calculée d'après la photo
         self.angle.setEnabled(self.lie)
-        self.b_pixels.setEnabled(self.lie and not verrou)
         if verrou:
             self.aide.setText(tr("Ce calque de texte est verrouillé : clique sur son cadenas pour le modifier."))
         elif self.lie:
-            self.aide.setText(tr("Glisse le texte pour le déplacer, la poignée ronde pour le tourner. "
-                                 "Clique ailleurs sur la photo pour un autre texte."))
+            self.aide.setText(tr("Le texte s'applique au fur et à mesure, rien à valider. Glisse-le pour le "
+                                 "déplacer, la poignée ronde le tourne. Clique ailleurs pour un autre texte."))
         else:
             self.aide.setText(tr("Clique sur la photo pour écrire un texte, ou sur un texte existant pour le "
                                  "modifier. Les réglages ci-dessous serviront pour le prochain texte."))

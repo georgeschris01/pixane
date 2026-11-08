@@ -11,7 +11,7 @@ Ce guide explique chaque outil et chaque réglage. Il est complété à chaque n
 | Zone | Rôle |
 |---|---|
 | **Barre du haut** | Ouvrir, Enregistrer, Annuler / Rétablir, taille du pinceau, Ajouter / Retirer, zoom, thème clair / sombre |
-| **Outils (à gauche)** | Main, Rectangle, Lasso, Pinceau, Gommes, Texte |
+| **Outils (à gauche)** | Main, Déplacer, Rectangle, Lasso, Pinceau, Gommes, Texte |
 | **Panneau « Texte » (à gauche)** | Réglages du texte, visible avec l'outil Texte (voir chapitre 7) |
 | **Photo (au centre)** | La photo ; la zone sélectionnée apparaît en rouge transparent |
 | **Panneau « Intelligence artificielle » (à droite)** | Effacer, Remplir, Agrandir l'image, Upscale |
@@ -61,6 +61,7 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 | Ajuster à la fenêtre | Ctrl+0 |
 | Taille réelle (100 %) | Ctrl+1 |
 | Déplacer la vue | Outil **Main** (H), ou maintenir **Espace** et glisser, ou glisser avec le **bouton du milieu** |
+| Déplacer **un calque** | Outil **Déplacer** (V) : seul le calque choisi bouge (la Main, elle, ne déplace que la vue) |
 
 ---
 
@@ -74,6 +75,7 @@ on peut simplement **peindre dessus**.
 | **Pinceau** | B | Peindre la zone. Idéal pour un objet, un texte, un fil… |
 | **Gomme** | E | Retirer de la sélection en peignant |
 | **Gomme de calque** | G | Efface **pour de vrai** les pixels du calque choisi (voir chapitre 6) |
+| **Déplacer** | V | Bouge le contenu du **calque choisi** ; un texte déplacé reste modifiable. Ce qui sort de l'image est coupé. Refusé sur un calque verrouillé |
 | **Rectangle** | M | Sélection rectangulaire |
 | **Lasso** | L | Tracer un contour à main levée ; la forme est fermée automatiquement |
 
@@ -208,7 +210,8 @@ Outil **Texte** (touche **T**, icône « T » dans la barre d'outils). Le pannea
   Tapez directement : le mot proposé est remplacé. La case du panneau accepte plusieurs lignes (Entrée).
 - **Cliquer sur un texte existant** : il est choisi et ses réglages s'affichent ; on peut le modifier à tout
   moment, même après avoir enregistré en **.chr** et rouvert.
-- **Glisser le texte** : le déplacer. Un cadre en pointillés entoure le texte choisi.
+- Le texte s'applique **au fur et à mesure** : rien à valider.
+- **Glisser le texte** : le déplacer (aussi avec l'outil Déplacer, V). Un cadre en pointillés entoure le texte choisi.
 - **Poignée ronde** au-dessus du cadre : tourner le texte (**Maj** : par pas de 15°), ou case *Rotation*.
 - Le nom du calque suit la première ligne du texte (tant qu'on ne l'a pas renommé à la main).
 - Sans texte choisi, les réglages du panneau servent pour le **prochain** texte ; Chrypix retient aussi le
@@ -229,7 +232,6 @@ Outil **Texte** (touche **T**, icône « T » dans la barre d'outils). Le pannea
 | **Contour** | Trait autour des lettres : couleur et épaisseur |
 | **Ombre portée** | Couleur, distance, direction (0° = vers la droite, 90° = vers le bas) et flou |
 | **Fond** | Rectangle coloré derrière le texte : couleur, marge et arrondi des coins |
-| **Convertir en image** | Le texte devient un calque d'image ordinaire (gomme, IA…) ; il n'est plus modifiable comme texte |
 
 Les tailles des effets (épaisseur, distance, flou, marge, arrondi) sont en **% de la taille des lettres** :
 ils restent proportionnés quand on change la taille du texte.
@@ -249,7 +251,7 @@ ils restent proportionnés quand on change la taille du texte.
 
 | Touche | Action |
 |---|---|
-| H, M, L, B, E, G, T | Main, Rectangle, Lasso, Pinceau, Gomme de sélection, Gomme de calque, Texte |
+| H, V, M, L, B, E, G, T | Main, Déplacer, Rectangle, Lasso, Pinceau, Gomme de sélection, Gomme de calque, Texte |
 | `[` / `]` | Pinceau plus petit / plus grand |
 | Espace (maintenu) | Déplacer la vue |
 | Alt (maintenu) | Inverser Ajouter / Retirer le temps d'un geste |

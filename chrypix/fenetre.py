@@ -18,7 +18,7 @@ from . import langue, recettes, theme
 from .icones import icone
 from .langue import tr
 from .calques import PanneauCalques
-from .canevas import GOMME, GOMME_CALQUE, LASSO, MAIN, PINCEAU, RECTANGLE, TEXTE, Canevas
+from .canevas import DEPLACER, GOMME, GOMME_CALQUE, LASSO, MAIN, PINCEAU, RECTANGLE, TEXTE, Canevas
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection, qimage_rgb, tableau
 from .moteur import Annule, ErreurMoteur, Moteur
@@ -308,6 +308,7 @@ class Fenetre(QMainWindow):
         groupe = QActionGroup(self)
         self._actions_outils = {}
         for outil, texte, touche, nom in ((MAIN, tr("Main : déplacer la vue"), "H", "main"),
+                                          (DEPLACER, tr("Déplacer : bouge le calque choisi"), "V", "deplacer"),
                                           (RECTANGLE, tr("Sélection rectangle"), "M", "rectangle"),
                                           (LASSO, tr("Lasso"), "L", "lasso"),
                                           (PINCEAU, tr("Pinceau de sélection"), "B", "pinceau"),
@@ -329,7 +330,7 @@ class Fenetre(QMainWindow):
     def _choisir_outil(self, outil: str):
         self.canevas.definir_outil(outil)
         self._actions_outils[outil].setChecked(True)
-        self.options.setEnabled(outil not in (MAIN, TEXTE))
+        self.options.setEnabled(outil not in (MAIN, TEXTE, DEPLACER))
         self.dock_texte.setVisible(outil == TEXTE)
         if outil == TEXTE:
             self._sync_texte()
@@ -393,7 +394,6 @@ class Fenetre(QMainWindow):
         except (ValueError, TypeError):
             pass
         self.panneau_texte.modifie.connect(self._texte_modifie)
-        self.panneau_texte.en_pixels.connect(self._texte_en_pixels)
         self.dock_texte.setWidget(self.panneau_texte)
         self.dock_texte.setFixedWidth(290)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_texte)
@@ -548,7 +548,8 @@ class Fenetre(QMainWindow):
 
     def _aide(self):
         QMessageBox.information(self, tr("Raccourcis"), tr(
-            "Outils : H main, M rectangle, L lasso, B pinceau, E gomme de sélection, G gomme de calque, T texte\n"
+            "Outils : H main, V déplacer, M rectangle, L lasso, B pinceau, E gomme de sélection, G gomme de calque, "
+            "T texte\n"
             "[ et ] : taille du pinceau\n"
             "Alt pendant le tracé : inverse Ajouter / Retirer\n"
             "Espace + glisser, ou bouton du milieu : déplacer la vue\n"

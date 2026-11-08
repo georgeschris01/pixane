@@ -61,6 +61,8 @@ DESSINS = {
     "cadenas_ouvert": '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 7.6-1.7"/>',
     "gomme_calque": '<path d="M8.5 20 3.6 15.1a1.6 1.6 0 0 1 0-2.3L13 3.4a1.6 1.6 0 0 1 2.3 0l5.3 5.3a1.6 1.6 0 0 1 '
                     '0 2.3L11.2 20z"/><path d="M8.5 20H14"/><path stroke="A" d="M16.5 15.5l4 4M20.5 15.5l-4 4"/>',
+    "deplacer": '<path d="M12 3v18M3 12h18M12 3 9.5 5.5M12 3l2.5 2.5M12 21l-2.5-2.5M12 21l2.5-2.5'
+                'M3 12l2.5-2.5M3 12l2.5 2.5M21 12l-2.5-2.5M21 12l-2.5 2.5"/>',
     # texte
     "texte": '<path d="M5 6.5V4.5h14v2M12 4.5v15M9 19.5h6"/>',
     "aligner_gauche": '<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>',
