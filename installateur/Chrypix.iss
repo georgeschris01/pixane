@@ -64,6 +64,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"; LicenseFile: "..\LICENSE.
 [CustomMessages]
 french.PagePCTitre=Vérification du PC
 french.PagePCDescription=Chrypix vérifie ce dont son moteur d'intelligence artificielle a besoin.
+french.DossierProtege=Windows n'autorise pas Chrypix à écrire dans « %1 » : c'est un dossier protégé (comme Program Files), et l'installation se fait « pour moi seulement », sans droits administrateur.%n%nChoisissez un autre dossier, par exemple :%n%2%n%nou relancez l'installateur et choisissez « Installer pour tous les utilisateurs ».
 french.CarteOk=Carte graphique : %1 (%2 Go de mémoire) — convient.
 french.CartePetite=Carte graphique : %1 (%2 Go de mémoire) — il faut au moins 8 Go : les actions IA risquent d'être très lentes ou de ne pas fonctionner.
 french.CarteAutre=Carte graphique : %1 — ce n'est pas une carte NVIDIA : Chrypix s'installera, mais les actions IA (Effacer, Remplir, Agrandir, Upscale) ne fonctionneront pas.
@@ -96,6 +97,7 @@ french.DesinstMoteur=Supprimer aussi le moteur IA installé par Chrypix (ComfyUI
 french.DesinstReglages=Supprimer aussi les réglages de Chrypix (langue, thème, dernier dossier, style de texte, dossier du moteur) et ses journaux ?%n%nNon : ils resserviront si tu réinstalles Chrypix.
 english.PagePCTitre=Checking the PC
 english.PagePCDescription=Chrypix checks what its artificial intelligence engine needs.
+english.DossierProtege=Windows does not allow Chrypix to write to "%1": it is a protected folder (like Program Files), and the installation is "for me only", without administrator rights.%n%nChoose another folder, for example:%n%2%n%nor run the installer again and choose "Install for all users".
 english.CarteOk=Graphics card: %1 (%2 GB of memory) — suitable.
 english.CartePetite=Graphics card: %1 (%2 GB of memory) — at least 8 GB is needed: AI actions may be very slow or may not work.
 english.CarteAutre=Graphics card: %1 — this is not an NVIDIA card: Chrypix will install, but the AI actions (Erase, Fill, Expand, Upscale) will not work.
@@ -635,6 +637,25 @@ begin
   end;
 end;
 
+{ ---------------------------------------------------------------- dossier inscriptible ?
+  Sans droits administrateur, Windows refuse d'écrire dans un dossier protégé (C:\Program Files, mais aussi
+  D:\Program Files, la racine d'un disque…) : « erreur 5 : accès refusé » (constaté le 08/11/2026). On essaie
+  d'écrire un petit fichier dans le dossier choisi, ou dans le plus proche dossier qui existe déjà. }
+function DossierInscriptible(Dossier: String): Boolean;
+var
+  Essai: String;
+begin
+  Dossier := RemoveBackslashUnlessRoot(Dossier);
+  while not DirExists(Dossier) do
+  begin
+    if Length(ExtractFilePath(Dossier)) >= Length(Dossier) then Break;
+    Dossier := RemoveBackslashUnlessRoot(ExtractFilePath(Dossier));
+  end;
+  Essai := AddBackslash(Dossier) + 'chrypix-essai-ecriture.tmp';
+  Result := SaveStringToFile(Essai, 'essai', False);
+  if Result then DeleteFile(Essai);
+end;
+
 function NextButtonClick(CurPageID: Integer): Boolean;
 var
   Libre, Total: Int64;
@@ -642,6 +663,13 @@ var
   Besoin: Integer;
 begin
   Result := True;
+  if (CurPageID = wpSelectDir) and not IsAdminInstallMode and not DossierInscriptible(WizardDirValue) then
+  begin
+    MsgBox(FmtMessage(CustomMessage('DossierProtege'), [WizardDirValue,
+      ExpandConstant('{autopf}\Chrypix')]), mbError, MB_OK);
+    Result := False;
+    Exit;
+  end;
   if (CurPageID <> PageMoteur.ID) or not CaseMoteur.Checked then Exit;
   if not CaseLicence.Checked then
   begin
