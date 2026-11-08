@@ -4,6 +4,7 @@ Chaque fonction renvoie (prompt, sorties) : sorties = {numéro de nœud: libell�
 """
 from __future__ import annotations
 
+import math
 import random
 
 NB_EFFACER = 2      # propositions Flux (plus la version LaMa seule)
@@ -93,7 +94,12 @@ def upscale_rapide(image: str, facteur: float = 2.0):
     return p, {"14": "Upscale rapide"}
 
 
-def upscale_net(image: str, facteur: float = 2.0, force: float = 0.35):
+def nb_morceaux(largeur: int, hauteur: int, facteur: float, tuile: int = 1024) -> int:
+    """Nombre de morceaux de 1024 px que Flux redessine (pour la barre de progression)."""
+    return math.ceil(largeur * facteur / tuile) * math.ceil(hauteur * facteur / tuile)
+
+
+def upscale_net(image: str, facteur: float = 2.0, force: float = 0.35, taille: tuple[int, int] | None = None):
     p = {"10": _n("LoadImage", image=image),
          "11": _n("UpscaleModelLoader", model_name="RealESRGAN_x4plus.pth"),
          "20": _n("UNETLoader", unet_name="flux1-schnell.safetensors", weight_dtype="fp8_e4m3fn"),
@@ -110,4 +116,6 @@ def upscale_net(image: str, facteur: float = 2.0, force: float = 0.35):
                   seam_fix_width=64, seam_fix_mask_blur=8, seam_fix_padding=16, force_uniform_tiles=True,
                   tiled_decode=False, batch_size=1),
          "31": _n("PreviewImage", images=["30", 0])}
+    if taille:
+        return p, {"31": "Upscale net"}, nb_morceaux(*taille, facteur)
     return p, {"31": "Upscale net"}

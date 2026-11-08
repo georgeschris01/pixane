@@ -18,6 +18,8 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+import websocket
+
 DOSSIER_APP = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "Chrypix"
 FICHIER_CONFIG = DOSSIER_APP / "config.json"
 PORT_EXTERNE = 8188   # ComfyUI Desktop, s'il est ouvert
@@ -177,29 +179,50 @@ class Moteur:
         return f"{rep['subfolder']}/{rep['name']}" if rep.get("subfolder") else rep["name"]
 
     def executer(self, prompt: dict, sorties: dict[str, str], annuler: threading.Event,
-                 progres=lambda secondes: None) -> list[tuple[str, bytes]]:
-        """Lance une recette et renvoie [(libellé, png), ...] dans l'ordre de `sorties`."""
+                 progres=lambda info: None, nb_morceaux: int = 1) -> list[tuple[str, bytes]]:
+        """Lance une recette et renvoie [(libellé, png), ...] dans l'ordre de `sorties`.
+
+        `progres` reçoit un dict {secondes, etape, fraction (0..1 ou None), restant (s ou None)}.
+        """
         with self._verrou:
+            suivi = Suivi(prompt, nb_morceaux)
+            ws = self._ouvrir_ws()
             try:
-                rep = self._json("/prompt", {"prompt": prompt, "client_id": self.client_id})
-            except urllib.error.HTTPError as e:
-                raise ErreurMoteur("ComfyUI refuse la recette : " + e.read().decode(errors="replace")[:800])
-            pid = rep["prompt_id"]
-            debut = time.time()
-            while True:
-                if annuler.is_set():
+                try:
+                    rep = self._json("/prompt", {"prompt": prompt, "client_id": self.client_id})
+                except urllib.error.HTTPError as e:
+                    raise ErreurMoteur("ComfyUI refuse la recette : " + e.read().decode(errors="replace")[:800])
+                pid = rep["prompt_id"]
+                derniere_verif = 0.0
+                while True:
+                    if annuler.is_set():
+                        try:
+                            self._json("/queue", {"delete": [pid]})
+                            self._requete("/interrupt", b"{}")
+                        except OSError:
+                            pass
+                        raise Annule()
+                    fini = False
+                    if ws is not None:
+                        fini = self._lire_ws(ws, pid, suivi)
+                    else:
+                        time.sleep(1)
+                    # contrôle de secours par l'historique (toutes les 3 s)
+                    if not fini and time.time() - derniere_verif > 3:
+                        derniere_verif = time.time()
+                        fini = pid in self._json(f"/history/{pid}")
+                    progres(suivi.info())
+                    if fini:
+                        break
+            finally:
+                if ws is not None:
                     try:
-                        self._json("/queue", {"delete": [pid]})
-                        self._requete("/interrupt", b"{}")
-                    except OSError:
+                        ws.close()
+                    except Exception:
                         pass
-                    raise Annule()
-                histo = self._json(f"/history/{pid}")
-                if pid in histo:
-                    break
-                progres(int(time.time() - debut))
-                time.sleep(1)
-            entree = histo[pid]
+            entree = self._json(f"/history/{pid}").get(pid)
+            if entree is None:
+                raise ErreurMoteur("Le calcul s'est arrêté sans résultat.")
             statut = entree.get("status", {})
             if statut.get("status_str") != "success":
                 messages = [m for m in statut.get("messages", []) if m[0] == "execution_error"]
@@ -214,3 +237,110 @@ class Moteur:
                     donnees = self._requete(f"/view?{params}", delai=120)
                     resultats.append((f"{libelle} {i + 1}" if len(images) > 1 else libelle, donnees))
             return resultats
+
+    # ------------------------------------------------------------ suivi en direct (WebSocket)
+    def _ouvrir_ws(self):
+        try:
+            ws = websocket.create_connection(self.url.replace("http", "ws", 1) + f"/ws?clientId={self.client_id}",
+                                             timeout=5)
+            ws.settimeout(0.5)
+            return ws
+        except Exception:
+            return None  # sans suivi en direct : on se contente de l'historique
+
+    @staticmethod
+    def _lire_ws(ws, pid: str, suivi: "Suivi") -> bool:
+        """Lit les messages disponibles ; renvoie True quand le travail `pid` est terminé."""
+        while True:
+            try:
+                brut = ws.recv()
+            except Exception:  # délai dépassé ou connexion perdue : on rend la main
+                return False
+            if not isinstance(brut, str):
+                continue  # image d'aperçu : ignorée
+            try:
+                msg = json.loads(brut)
+            except ValueError:
+                continue
+            t, d = msg.get("type"), msg.get("data") or {}
+            if d.get("prompt_id") not in (None, pid):
+                continue
+            if t == "executing":
+                if d.get("node") is None and d.get("prompt_id") == pid:
+                    return True
+                suivi.noeud(d.get("node"))
+            elif t == "progress":
+                suivi.avance(d.get("node"), d.get("value", 0), d.get("max", 1))
+            elif t in ("execution_success", "execution_error", "execution_interrupted"):
+                return True
+
+
+ETAPES = {
+    "LoadImage": "Préparation de l'image", "InpaintCropImproved": "Découpe autour de la zone",
+    "INPAINT_LoadInpaintModel": "Chargement de LaMa", "INPAINT_InpaintWithModel": "LaMa efface",
+    "UNETLoader": "Chargement de Flux", "DualCLIPLoader": "Chargement de Flux", "VAELoader": "Chargement de Flux",
+    "CLIPTextEncode": "Préparation", "InpaintModelConditioning": "Préparation",
+    "KSampler": "Calcul Flux", "VAEDecode": "Décodage", "InpaintStitchImproved": "Assemblage",
+    "UpscaleModelLoader": "Chargement de RealESRGAN", "ImageUpscaleWithModel": "Agrandissement RealESRGAN",
+    "ImageScaleBy": "Mise à la taille", "UltimateSDUpscale": "Redessin des détails", "PreviewImage": "Finition",
+}
+LOURDS = ("KSampler", "UltimateSDUpscale")
+
+
+class Suivi:
+    """Transforme les messages de ComfyUI en étape, pourcentage et temps restant."""
+
+    def __init__(self, prompt: dict, nb_morceaux: int = 1):
+        self.classes = {k: v["class_type"] for k, v in prompt.items()}
+        self.lourd = next((k for k, c in self.classes.items() if c in LOURDS), None)
+        self.nb_morceaux = max(1, nb_morceaux)
+        self.debut = time.time()
+        self.etape = "En attente du moteur"
+        self.detail = ""
+        self.noeud_actuel = None
+        self.lourd_fini = False
+        self.morceau = 0
+        self._derniere_valeur = -1
+        self.fraction_lourd = 0.0
+        self.debut_calcul = None
+
+    def noeud(self, n):
+        if self.lourd is not None and self.noeud_actuel == self.lourd and n != self.lourd:
+            self.lourd_fini = True
+        self.noeud_actuel = n
+        self.etape = ETAPES.get(self.classes.get(n, ""), "Calcul")
+        self.detail = ""
+        if n == self.lourd and self.fraction_lourd == 0:
+            self.etape = "Chargement du modèle en mémoire"
+
+    def avance(self, n, valeur, maximum):
+        maximum = max(1, maximum)
+        if n is not None and n != self.noeud_actuel:
+            self.noeud(n)
+        if self.lourd is not None and self.noeud_actuel == self.lourd:
+            if self.debut_calcul is None:
+                self.debut_calcul = time.time()
+            if valeur < self._derniere_valeur:
+                self.morceau = min(self.morceau + 1, self.nb_morceaux - 1)
+            self._derniere_valeur = valeur
+            self.fraction_lourd = min(1.0, (self.morceau + valeur / maximum) / self.nb_morceaux)
+            self.etape = ETAPES.get(self.classes.get(self.lourd, ""), "Calcul")
+            self.detail = (f"morceau {self.morceau + 1} sur {self.nb_morceaux}" if self.nb_morceaux > 1
+                           else f"étape {valeur} sur {maximum}")
+        else:
+            self.detail = f"{valeur} / {maximum}"
+
+    def info(self) -> dict:
+        if self.lourd is None:
+            fraction = None
+        elif self.lourd_fini:
+            fraction = 0.97
+        else:
+            fraction = 0.05 + 0.9 * self.fraction_lourd
+        restant = None
+        if self.debut_calcul and 0.08 < self.fraction_lourd < 1 and not self.lourd_fini:
+            ecoule = time.time() - self.debut_calcul
+            restant = int(ecoule / self.fraction_lourd * (1 - self.fraction_lourd)) + 3
+        etape = f"{self.etape} — {self.detail}" if self.detail else self.etape
+        return {"secondes": int(time.time() - self.debut), "etape": etape, "fraction": fraction,
+                "restant": restant}

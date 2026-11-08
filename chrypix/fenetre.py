@@ -22,7 +22,7 @@ class Tache(QObject):
     """Exécute une fonction dans un fil secondaire et renvoie le résultat par signal."""
     fini = Signal(object)
     echec = Signal(str)
-    progres = Signal(int)
+    progres = Signal(object)
 
     def __init__(self, fonction):
         super().__init__()
@@ -385,7 +385,9 @@ class Fenetre(QMainWindow):
         if d.exec():
             v = d.valeurs()
             if v["net"]:
-                self._lancer("Upscale", False, lambda nom: recettes.upscale_net(nom, v["facteur"], v["force"]))
+                taille = (self.doc.image.width(), self.doc.image.height())
+                self._lancer("Upscale", False,
+                             lambda nom: recettes.upscale_net(nom, v["facteur"], v["force"], taille))
             else:
                 self._lancer("Upscale", False, lambda nom: recettes.upscale_rapide(nom, v["facteur"]))
 
@@ -401,8 +403,10 @@ class Fenetre(QMainWindow):
         def calcul(progres):
             if "nom" not in nom_image:
                 nom_image["nom"] = self.moteur.envoyer_image(png)
-            prompt, sorties = fabriquer(nom_image["nom"])
-            bruts = self.moteur.executer(prompt, sorties, annuler, progres)
+            recette = fabriquer(nom_image["nom"])
+            prompt, sorties = recette[0], recette[1]
+            morceaux = recette[2] if len(recette) > 2 else 1
+            bruts = self.moteur.executer(prompt, sorties, annuler, progres, morceaux)
             res = []
             for libelle, donnees in bruts:
                 img = QImage.fromData(donnees)
@@ -432,12 +436,12 @@ class Fenetre(QMainWindow):
             annuler.clear()
             t2 = self._tache(calcul, choix.ajouter,
                              lambda m: choix.occupe(False, m or "Annulé."))
-            t2.progres.connect(lambda s: choix.occupe(True, f"Calcul de nouvelles propositions… {s} s"))
+            t2.progres.connect(choix.progression)
             t2.lancer()
 
         choix.autres_demandees.connect(autres)
         t = self._tache(calcul, premier_ok, premier_echec)
-        t.progres.connect(attente.secondes)
+        t.progres.connect(attente.maj)
         t.lancer()
         attente.show()
 

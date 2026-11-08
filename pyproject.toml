@@ -3,7 +3,7 @@ name = "chrypix"
 version = "0.1.0"
 description = "Éditeur photo avec retouche par IA (ComfyUI en moteur caché)"
 requires-python = ">=3.11"
-dependencies = ["PySide6-Essentials>=6.8", "numpy>=2.0", "Pillow>=11.0"]
+dependencies = ["PySide6-Essentials>=6.8", "numpy>=2.0", "Pillow>=11.0", "websocket-client>=1.8"]
 
 [project.gui-scripts]
 chrypix = "chrypix.__main__:main"

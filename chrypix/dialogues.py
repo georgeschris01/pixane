@@ -4,7 +4,7 @@ from __future__ import annotations
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QIcon, QImage, QPixmap
 from PySide6.QtWidgets import (QButtonGroup, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QHBoxLayout,
-                               QLabel, QListWidget, QListWidgetItem, QPushButton, QRadioButton, QSpinBox,
+                               QLabel, QListWidget, QListWidgetItem, QProgressBar, QPushButton, QRadioButton, QSpinBox,
                                QVBoxLayout, QWidget)
 
 
@@ -75,9 +75,14 @@ class ChoixResultat(QDialog):
         annuler = QPushButton("Annuler")
         annuler.clicked.connect(self.reject)
         self.etat = QLabel("")
+        self.barre = QProgressBar()
+        self.barre.setFixedWidth(220)
+        self.barre.setFormat("%p %")
+        self.barre.hide()
         bas = QHBoxLayout()
         bas.addWidget(comparer)
         bas.addWidget(self.bouton_autres)
+        bas.addWidget(self.barre)
         bas.addWidget(self.etat, 1)
         bas.addWidget(annuler)
         bas.addWidget(garder)
@@ -100,6 +105,13 @@ class ChoixResultat(QDialog):
     def occupe(self, oui: bool, texte: str = ""):
         self.bouton_autres.setEnabled(not oui)
         self.etat.setText(texte)
+        if not oui:
+            self.barre.hide()
+
+    def progression(self, info: dict):
+        self.barre.show()
+        regler_barre(self.barre, info)
+        self.etat.setText(f"{info['etape']}  ·  {texte_progression(info)}")
 
     def _autres(self):
         self.occupe(True, "Calcul de nouvelles propositions…")
@@ -202,29 +214,59 @@ class ReglagesUpscale(QDialog):
         return {"net": self.net.isChecked(), "facteur": self.facteur.value(), "force": self.force.value()}
 
 
+def duree(s: int) -> str:
+    return f"{s // 60} min {s % 60:02d} s" if s >= 60 else f"{s} s"
+
+
+def texte_progression(info: dict) -> str:
+    texte = f"{duree(info['secondes'])} écoulées"
+    if info.get("restant") is not None:
+        texte += f"  —  encore environ {duree(info['restant'])}"
+    return texte
+
+
+def regler_barre(barre: QProgressBar, info: dict):
+    if info.get("fraction") is None:
+        barre.setRange(0, 0)  # barre animée sans pourcentage
+    else:
+        barre.setRange(0, 1000)
+        barre.setValue(int(info["fraction"] * 1000))
+
+
 class Attente(QDialog):
-    """Fenêtre « calcul en cours » avec bouton Annuler."""
+    """Fenêtre « calcul en cours » : étape, barre de progression, temps, bouton Annuler."""
     annuler = Signal()
 
     def __init__(self, titre: str, parent=None):
         super().__init__(parent)
         self.setWindowTitle(titre)
         self.setModal(True)
-        self.texte = QLabel(f"{titre} : calcul en cours…")
-        self.temps = QLabel("0 s")
-        bouton = QPushButton("Annuler")
-        bouton.clicked.connect(self._annuler)
+        self.titre = QLabel(f"<b>{titre}</b>")
+        self.etape = QLabel("Envoi de l'image au moteur…")
+        self.barre = QProgressBar()
+        self.barre.setTextVisible(True)
+        self.barre.setFormat("%p %")
+        self.barre.setRange(0, 0)
+        self.temps = QLabel("")
+        self.bouton = QPushButton("Annuler")
+        self.bouton.clicked.connect(self._annuler)
         lay = QVBoxLayout(self)
-        lay.addWidget(self.texte)
+        lay.setSpacing(10)
+        lay.addWidget(self.titre)
+        lay.addWidget(self.etape)
+        lay.addWidget(self.barre)
         lay.addWidget(self.temps)
-        lay.addWidget(bouton, alignment=Qt.AlignRight)
-        self.setFixedWidth(360)
+        lay.addWidget(self.bouton, alignment=Qt.AlignRight)
+        self.setFixedWidth(440)
 
-    def secondes(self, s: int):
-        self.temps.setText(f"{s // 60} min {s % 60:02d} s" if s >= 60 else f"{s} s")
+    def maj(self, info: dict):
+        self.etape.setText(info["etape"])
+        regler_barre(self.barre, info)
+        self.temps.setText(texte_progression(info))
 
     def _annuler(self):
-        self.texte.setText("Annulation…")
+        self.etape.setText("Annulation…")
+        self.bouton.setEnabled(False)
         self.annuler.emit()
 
     def closeEvent(self, e):
