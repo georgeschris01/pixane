@@ -100,7 +100,8 @@ jamais abîmée. L'IA travaille toujours sur l'image **telle qu'on la voit** (to
 - Cliquez sur une vignette pour la voir en grand.
 - **Maintenir pour voir l'original** : tant que le bouton est enfoncé, la photo d'avant s'affiche.
 - **Autres propositions** : relance l'IA pour de nouvelles versions (elles s'ajoutent aux précédentes).
-- **Garder ce résultat** : applique la version choisie (annulable par Ctrl+Z).
+- **Garder ce résultat** : applique la version choisie (annulable par Ctrl+Z). La sélection (pinceau, lasso,
+  rectangle) disparaît alors ; Ctrl+Z la fait revenir avec la photo d'avant.
 
 ### Pendant le calcul
 Une fenêtre affiche l'étape en cours, une **barre de progression**, le temps écoulé et le **temps restant estimé**.
@@ -274,11 +275,31 @@ ils restent proportionnés quand on change la taille du texte.
 4. **Vérification du PC** : carte graphique NVIDIA et sa mémoire (8 Go conseillés), place libre, moteur IA
    (ComfyUI) trouvé ou non. Si ComfyUI est installé ailleurs, bouton **Parcourir…** pour indiquer son dossier.
    Sans ComfyUI, Chrypix ouvre, retouche (calques, texte) et enregistre, mais les actions IA ne marchent pas.
-5. Options : icône sur le Bureau ; ouvrir les fichiers .chr avec Chrypix.
+5. **Moteur IA** (seulement si ComfyUI n'est pas trouvé) : liste de ce qui sera téléchargé, avec taille, site et
+   licence (19,4 Go à télécharger, environ 28 Go sur le disque) ; dossier du moteur (par défaut
+   `%LOCALAPPDATA%\Chrypix\moteur`) ; case facultative **Flux Schnell** pour « Upscale net » (11,8 Go de plus) ;
+   case **J'accepte la licence FLUX.1 [dev]** (usage non commercial) obligatoire pour installer le moteur.
+   On peut aussi décocher : Chrypix s'installe sans moteur.
+6. Options : icône sur le Bureau ; ouvrir les fichiers .chr avec Chrypix.
+7. À la fin, la fenêtre **Installer le moteur IA** télécharge et installe tout (ComfyUI portable, ses extensions,
+   les modèles). Elle montre l'avancement, la vitesse et le temps restant. **Arrêter** est possible à tout moment :
+   le téléchargement reprendra plus tard là où il s'était arrêté (même après une coupure). Chaque fichier est
+   vérifié (empreinte SHA-256).
+
+La même fenêtre s'ouvre par le menu **IA > Installer le moteur IA…** (par exemple pour ajouter Flux Schnell plus
+tard), et Chrypix la propose au démarrage s'il ne trouve pas de moteur. Si un ComfyUI installé autrement est déjà
+là, Chrypix l'utilise et n'installe rien.
+
 Une nouvelle version s'installe par-dessus l'ancienne (réglages gardés). Désinstaller : Paramètres de Windows >
-Applications.
+Applications. Le désinstalleur pose deux questions (réponse « Non » par défaut) :
+- supprimer aussi le **moteur IA installé par Chrypix** (ComfyUI, extensions, modèles) ? Un ComfyUI installé
+  autrement, par exemple ComfyUI Desktop, n'est jamais touché ;
+- supprimer aussi les **réglages** (langue, thème, dernier dossier, style de texte, dossier du moteur) et les
+  journaux ?
 
 
 - Testé sur une carte graphique NVIDIA de 8 Go (RTX 3060 Ti). Les durées indiquées viennent de ce PC.
-- Modèles utilisés : Flux.1 Fill dev (**usage non commercial**), Flux.1 Schnell (Apache-2.0),
-  LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3).
+- Modèles utilisés : Flux.1 Fill dev (**usage non commercial** ; version GGUF Q8 si installé par Chrypix, même
+  qualité), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3).
+- Moteur : ComfyUI (GPL-3.0) et ses extensions Inpaint nodes, Inpaint Crop and Stitch, Ultimate SD Upscale
+  (GPL-3.0), ComfyUI-GGUF (Apache-2.0).

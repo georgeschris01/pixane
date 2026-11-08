@@ -43,7 +43,12 @@ original = rgb(doc.image)
 # 1. résultat IA de même taille (Effacer simulé : un carré repeint)
 res = original.copy()
 res[100:300, 200:500] = [30, 200, 60]
+doc.tout_selectionner()
 f._appliquer_resultat(doc, qimage_rgb(res.astype(np.uint8)), "Effacer")
+verifier(doc.selection_vide(), "travail IA fini -> plus de sélection")
+f.historique.undo()
+verifier(not doc.selection_vide(), "Annuler -> la sélection revient")
+f.historique.redo()
 verifier(len(doc.calques) == 2 and doc.calques[1].nom == "Effacer 1", "Effacer -> nouveau calque « Effacer 1 »")
 alpha = tableau(doc.calques[1].image)[:, :, 3]
 verifier(alpha[100:300, 200:500].all() and alpha.sum() // 255 == 200 * 300, "le calque ne contient que la zone changée")

@@ -25,15 +25,14 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
    - [x] partie 1 (08/11/2026, à essayer par Christophe) : langue, pour moi / pour tous, dossier, vérification du PC
      (carte NVIDIA, place, ComfyUI trouvé ou dossier à indiquer), Python inclus, association .chr ;
      construire-installateur.bat -> publication\installateur\Chrypix-Setup-x.y.z.exe ;
-   - [ ] partie 2 : si ComfyUI absent, le télécharger avec les modèles (taille, provenance, licence affichées ;
-     case pour la licence non commerciale de Flux Fill dev ; téléchargement qui reprend après coupure).
-     Comparaison faite le 08/11/2026 : GGUF Q8 = même qualité que la version complète (PSNR 42-50 dB), ~20 s de plus
-     par Effacer -> GGUF Q8 pour l'installateur.
-     Tout existe sans compte Hugging Face : Flux Fill dev GGUF (YarvixPA, licence non commerciale, demande
-     l'extension ComfyUI-GGUF), encodeurs (comfyanonymous, Apache-2.0), Flux Schnell fp8 (Comfy-Org, Apache-2.0) ;
-     VAE sans compte : source à trouver ;
+   - [x] partie 2 (08/11/2026, à essayer par Christophe) : page « Moteur IA » si ComfyUI absent (liste taille /
+     site / licence, case licence FLUX.1 [dev] obligatoire, Flux Schnell facultatif), téléchargeur
+     chrypix\installation_moteur.py (reprise après coupure, SHA-256, ComfyUI portable 0.44 selon le pilote,
+     extensions, gguf, modèles GGUF Q8 sans compte Hugging Face), menu IA > Installer le moteur IA ;
+     désinstalleur : propose de supprimer le moteur installé par Chrypix et les réglages ;
+     vrai téléchargement complet (~19 Go) pas encore essayé ;
    - [ ] licence de Chrypix à choisir (page à accepter dans l'installateur) ;
-   - [ ] essai sur un Windows vierge (Bac à sable Windows).
+   - [ ] essai sur un Windows vierge (Bac à sable Windows), avec le vrai téléchargement du moteur.
 7. [ ] **Publication** : guide complet, licences (Flux Fill dev = non commercial), dépôt public ou installateur.
 
 ## Idées notées en passant

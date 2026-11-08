@@ -21,7 +21,7 @@ from .calques import PanneauCalques
 from .canevas import DEPLACER, GOMME, GOMME_CALQUE, LASSO, MAIN, PINCEAU, RECTANGLE, TEXTE, Canevas
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection, qimage_rgb, tableau
-from .moteur import Annule, ErreurMoteur, Moteur
+from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
 from .panneau_texte import PanneauTexte
 from .raccord import finaliser, lisere_auto, preparer
 from .texte import Texte
@@ -236,6 +236,8 @@ class Fenetre(QMainWindow):
         self._action(m, tr("Remplir"), "Shift+R", self.ia_remplir, "a_remplir", "remplir")
         self._action(m, tr("Agrandir l'image…"), "Shift+A", self.ia_agrandir, "a_agrandir", "agrandir")
         self._action(m, tr("Upscale…"), "Shift+U", self.ia_upscale, "a_upscale", "upscale")
+        m.addSeparator()
+        self._action(m, tr("Installer le moteur IA…"), None, self.installer_moteur, "a_installer_moteur")
 
         m = self.menuBar().addMenu(tr("&Aide"))
         self._action(m, tr("Raccourcis"), "F1", self._aide)
@@ -562,6 +564,30 @@ class Fenetre(QMainWindow):
             "Le guide complet est dans docs\\{guide}.", guide=tr("GUIDE.md")))
 
     # ================================================================ moteur
+    def installer_moteur(self):
+        """Télécharge ComfyUI portable, ses extensions et les modèles (fenêtre qui montre tout avant)."""
+        from .installation_moteur import PORTABLE, FenetreInstallation
+        install = trouver_comfyui()
+        dossier = None
+        if install is not None:
+            racine = Path(install["dir"]).parent
+            if racine.name != PORTABLE or not (racine / "chrypix.json").is_file():
+                QMessageBox.information(self, tr("Installer le moteur IA"),
+                                        tr("Un ComfyUI est déjà installé sur ce PC et Chrypix l'utilise :\n{dossier}"
+                                           "\n\nPour ajouter un modèle, mets-le dans son dossier « models ».",
+                                           dossier=install["dir"]))
+                return
+            dossier = str(racine.parent)        # installé par Chrypix : on complète (ex. Flux Schnell)
+        f = FenetreInstallation(self, dossier=dossier, schnell=dossier is not None)
+        f.installe.connect(lambda _d: self._redemarrer_moteur())
+        f.exec()
+
+    def _redemarrer_moteur(self):
+        self.moteur.arreter()
+        self.moteur = Moteur()
+        self.etat_moteur.emit(tr("démarrage…"))
+        self._demarrer_moteur()
+
     def _demarrer_moteur(self):
         def travail(_progres):
             self.moteur.demarrer(self.etat_moteur.emit)
@@ -571,6 +597,14 @@ class Fenetre(QMainWindow):
     def _moteur_en_echec(self, message: str):
         self.etat_moteur.emit(tr("indisponible"))
         self._actualiser()
+        if self.moteur.etat == "introuvable":
+            if QMessageBox.question(self, tr("Moteur IA"),
+                                    tr("Le moteur IA (ComfyUI) n'est pas installé sur ce PC.\n\nVeux-tu que Chrypix "
+                                       "l'installe maintenant ? Tu verras d'abord la liste des téléchargements "
+                                       "(taille, source, licence).\n\nSans lui, tu peux quand même ouvrir, "
+                                       "retoucher et enregistrer des photos.")) == QMessageBox.Yes:
+                self.installer_moteur()
+            return
         QMessageBox.warning(self, tr("Moteur IA"), tr("Le moteur IA n'a pas pu démarrer.\n\n{message}\n\n"
                                                       "Tu peux quand même ouvrir et enregistrer des photos.",
                                                       message=message))
@@ -795,6 +829,11 @@ class Fenetre(QMainWindow):
         d = ReglagesUpscale(self.doc.image.width(), self.doc.image.height(), self)
         if d.exec():
             v = d.valeurs()
+            if v["net"] and not recettes.schnell_disponible():
+                QMessageBox.information(self, tr("Upscale"), tr(
+                    "« Upscale net » a besoin du modèle Flux Schnell, qui n'est pas installé. Menu IA > Installer "
+                    "le moteur IA permet de l'ajouter ; l'upscale simple marche sans."))
+                return
             if v["net"]:
                 taille = (self.doc.image.width(), self.doc.image.height())
                 self._lancer(tr("Upscale"), False,
@@ -886,4 +925,7 @@ class Fenetre(QMainWindow):
             apres = doc.etat_resultat_ia(titre, image)      # seulement les pixels retouchés
         else:
             apres = doc.etat_redimensionne(titre, image)    # Upscale
+        # travail fini : la sélection disparaît (Ctrl+Z la fait revenir avec l'image d'avant)
+        calques, actif, _sel = apres
+        apres = (calques, actif, nouvelle_selection(calques[0].image.width(), calques[0].image.height()))
         self.historique.push(CommandeEtat(doc, avant, apres, titre))

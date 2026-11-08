@@ -19,6 +19,13 @@ FILL_COMPLET = "flux1-fill-dev.safetensors"
 FILL_GGUF = "flux1-fill-dev-Q8_0.gguf"
 PREFERENCE_FILL = ("complet", "gguf")    # ordre de préférence quand les deux sont présents
 _fill = {"type": "complet", "fichier": FILL_COMPLET}
+# Flux Schnell (Upscale net) : version complète si elle est là, sinon GGUF (installée par Chrypix, facultative)
+SCHNELL_COMPLET = "flux1-schnell.safetensors"
+_schnell: dict = {"type": "complet", "fichier": SCHNELL_COMPLET}
+
+
+class ModeleManquant(Exception):
+    pass
 
 
 def _options(infos: dict, noeud: str, entree: str) -> list:
@@ -36,11 +43,30 @@ def configurer(infos: dict) -> str | None:
     ggufs = [f for f in _options(infos, "UnetLoaderGGUF", "unet_name") if "fill" in f.lower()]
     if ggufs:
         trouves["gguf"] = FILL_GGUF if FILL_GGUF in ggufs else sorted(ggufs)[-1]
+    if SCHNELL_COMPLET in _options(infos, "UNETLoader", "unet_name"):
+        _schnell.update(type="complet", fichier=SCHNELL_COMPLET)
+    else:
+        schnells = sorted(f for f in _options(infos, "UnetLoaderGGUF", "unet_name") if "schnell" in f.lower())
+        _schnell.update(type="gguf" if schnells else None, fichier=schnells[-1] if schnells else None)
     for t in PREFERENCE_FILL:
         if t in trouves:
             _fill.update(type=t, fichier=trouves[t])
             return trouves[t]
     return None
+
+
+def schnell_disponible() -> bool:
+    return _schnell["type"] is not None
+
+
+def chargeur_schnell() -> dict:
+    if _schnell["type"] is None:
+        raise ModeleManquant(tr("« Upscale net » a besoin du modèle Flux Schnell, qui n'est pas installé. "
+                                "Menu IA > Installer le moteur IA permet de l'ajouter ; l'upscale simple marche "
+                                "sans."))
+    if _schnell["type"] == "gguf":
+        return _n("UnetLoaderGGUF", unet_name=_schnell["fichier"])
+    return _n("UNETLoader", unet_name=_schnell["fichier"], weight_dtype="fp8_e4m3fn")
 
 
 def chargeur_fill(type_: str | None = None, fichier: str | None = None) -> dict:
@@ -141,7 +167,7 @@ def nb_morceaux(largeur: int, hauteur: int, facteur: float, tuile: int = 1024) -
 def upscale_net(image: str, facteur: float = 2.0, force: float = 0.35, taille: tuple[int, int] | None = None):
     p = {"10": _n("LoadImage", image=image),
          "11": _n("UpscaleModelLoader", model_name="RealESRGAN_x4plus.pth"),
-         "20": _n("UNETLoader", unet_name="flux1-schnell.safetensors", weight_dtype="fp8_e4m3fn"),
+         "20": chargeur_schnell(),
          "21": _n("DualCLIPLoader", clip_name1="clip_l.safetensors",
                   clip_name2="t5xxl_fp8_e4m3fn_scaled.safetensors", type="flux", device="default"),
          "22": _n("VAELoader", vae_name="ae.safetensors"),

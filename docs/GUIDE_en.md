@@ -100,7 +100,8 @@ The AI always works on the image **as you see it** (all visible layers together)
 - Click a thumbnail to see it full size.
 - **Hold to see the original**: while the button is held down, the photo from before is shown.
 - **More options**: runs the AI again for new versions (they are added to the previous ones).
-- **Keep this result**: applies the chosen version (can be undone with Ctrl+Z).
+- **Keep this result**: applies the chosen version (can be undone with Ctrl+Z). The selection (brush, lasso,
+  rectangle) then disappears; Ctrl+Z brings it back with the previous photo.
 
 ### While computing
 A window shows the current step, a **progress bar**, the elapsed time and the **estimated time left**.
@@ -273,10 +274,29 @@ they stay in proportion when you change the text size.
 4. **PC check**: NVIDIA graphics card and its memory (8 GB recommended), free space, AI engine (ComfyUI) found or
    not. If ComfyUI is installed elsewhere, use **Browse…** to select its folder.
    Without ComfyUI, Chrypix opens, edits (layers, text) and saves photos, but the AI actions do not work.
-5. Options: desktop icon; open .chr files with Chrypix.
-A new version installs over the old one (settings kept). To uninstall: Windows Settings > Apps.
+5. **AI engine** (only if ComfyUI is not found): list of what will be downloaded, with size, site and licence
+   (19.4 GB to download, about 28 GB on disk); engine folder (default `%LOCALAPPDATA%\Chrypix\moteur`); optional
+   **Flux Schnell** box for "Sharp upscale" (11.8 GB more); the **I accept the FLUX.1 [dev] licence** box
+   (non-commercial use) is required to install the engine. You can also untick it: Chrypix installs without the
+   engine.
+6. Options: desktop icon; open .chr files with Chrypix.
+7. At the end, the **Install the AI engine** window downloads and installs everything (ComfyUI portable, its
+   extensions, the models). It shows progress, speed and time left. You can **Stop** at any time: the download
+   resumes later where it stopped (even after a connection loss). Each file is checked (SHA-256 checksum).
+
+The same window opens from **AI > Install the AI engine…** (for example to add Flux Schnell later), and Chrypix
+offers it at start-up if it finds no engine. If a ComfyUI installed another way is already there, Chrypix uses it
+and installs nothing.
+
+A new version installs over the old one (settings kept). To uninstall: Windows Settings > Apps. The uninstaller
+asks two questions (default answer "No"):
+- also delete the **AI engine installed by Chrypix** (ComfyUI, extensions, models)? A ComfyUI installed another
+  way, such as ComfyUI Desktop, is never touched;
+- also delete the **settings** (language, theme, last folder, text style, engine folder) and the logs?
 
 
 - Tested on an 8 GB NVIDIA graphics card (RTX 3060 Ti). The times given come from this PC.
-- Models used: Flux.1 Fill dev (**non-commercial use**), Flux.1 Schnell (Apache-2.0),
-  LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3).
+- Models used: Flux.1 Fill dev (**non-commercial use**; GGUF Q8 version when installed by Chrypix, same
+  quality), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3).
+- Engine: ComfyUI (GPL-3.0) and its extensions Inpaint nodes, Inpaint Crop and Stitch, Ultimate SD Upscale
+  (GPL-3.0), ComfyUI-GGUF (Apache-2.0).
