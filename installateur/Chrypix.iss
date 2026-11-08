@@ -54,7 +54,7 @@ RestartApplications=no
 ChangesAssociations=yes
 
 [Languages]
-; Page de licence (Licence Chrypix 1.0) : le texte français fait foi, l'anglais est une traduction de courtoisie.
+; Page de licence (Licence Chrypix 1.1) : le texte français fait foi, l'anglais est une traduction de courtoisie.
 Name: "french"; MessagesFile: "compiler:Languages\French.isl"; LicenseFile: "..\LICENSE"
 Name: "english"; MessagesFile: "compiler:Default.isl"; LicenseFile: "..\LICENSE.en.txt"
 

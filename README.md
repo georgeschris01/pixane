@@ -18,9 +18,10 @@ Double-clic sur `Chrypix.bat` (ou `.venv\Scripts\python -m chrypix photo.jpg`).
 
 ## Licence
 
-Chrypix : **Licence Chrypix 1.0**, libre (open source, inspirée de la licence MIT), © 2026 Georges Christophe
-(chrypox) — libre d'utiliser, partager, modifier et réutiliser, à condition de garder le nom de l'auteur et la licence
-(`LICENSE`, seul texte qui fait foi ; traduction anglaise : `LICENSE.en.txt`).
+Chrypix : **Licence Chrypix 1.1**, © 2026 Georges Christophe (chrypox) — gratuit, code source ouvert, **non
+commercial** : utilisable par tous (même au travail), modifiable et partageable (forks permis), à condition de garder
+le nom de l'auteur ; ni Chrypix ni une version modifiée ne peuvent être vendus, et les versions modifiées gardent ces
+règles (`LICENSE`, seul texte qui fait foi ; traduction anglaise : `LICENSE.en.txt`).
 
 Modèles : Flux.1 Fill dev : usage non commercial. Flux.1 Schnell : Apache-2.0. LaMa : Apache-2.0. RealESRGAN : BSD-3.
 Détail de tous les éléments tiers : `docs/LICENCES_TIERS.md`.

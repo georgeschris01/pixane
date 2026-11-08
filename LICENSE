@@ -1,7 +1,7 @@
 ﻿======================================================================
-CONTRAT DE LICENCE DU LOGICIEL : Chrypix (« Licence Chrypix 1.0 »)
-Licence libre (open source), inspirée de la licence MIT
-AUTEUR : Georges Christophe (chrypox)
+CONTRAT DE LICENCE DU LOGICIEL : Chrypix (« Licence Chrypix 1.1 »)
+Logiciel gratuit à code source ouvert, non commercial
+AUTEUR ET PROPRIÉTAIRE : Georges Christophe (chrypox)
 Copyright (c) 2026 Georges Christophe.
 Contact : admin@chrypox.be
 ======================================================================
@@ -10,21 +10,31 @@ Ce logiciel est un projet personnel partagé pour être utile à la communauté.
 En utilisant, copiant, modifiant ou partageant le logiciel, vous acceptez
 les conditions suivantes :
 
-1. LIBERTÉ D'UTILISATION : Le logiciel est gratuit. Toute personne,
-   association, administration ou entreprise peut l'utiliser librement,
-   pour tout usage, y compris professionnel.
+1. GRATUITÉ ET NON-COMMERCIALISATION : Ce logiciel est strictement gratuit.
+   Ni lui, ni une version modifiée, ni une partie de son code ne peuvent
+   être vendus, loués, monétisés ou intégrés dans un produit ou un service
+   payant, sous aucune forme, directe ou indirecte.
+   Toute personne, association, administration ou entreprise peut
+   l'utiliser gratuitement, y compris pour son travail et en interne.
+   Utiliser Chrypix comme outil de travail, y compris dans une entreprise
+   qui réalise un bénéfice, est permis.
 
-2. PARTAGE ET MODIFICATION : Chacun peut copier, partager, modifier le
-   logiciel et réutiliser son code, en tout ou en partie, dans d'autres
-   projets, aux conditions de l'article 3.
+2. PARTAGE : Le logiciel peut être copié et partagé gratuitement,
+   accompagné du présent contrat, sans retirer ni masquer le nom de
+   l'auteur et les mentions de licence.
 
-3. NOM DE L'AUTEUR (CONDITION OBLIGATOIRE) : Toute copie, version modifiée
-   ou réutilisation d'une partie importante du code doit :
-   a) garder la mention « Copyright (c) 2026 Georges Christophe (chrypox) »
-      et le présent contrat, sans les retirer ni les masquer ;
-   b) pour une version modifiée : indiquer clairement qu'elle a été
-      modifiée, et ne pas se présenter comme la version officielle de
-      Chrypix publiée par l'auteur.
+3. MODIFICATIONS ET VERSIONS DÉRIVÉES (« FORKS ») : Chacun peut modifier le
+   logiciel, publier et partager gratuitement sa version modifiée, et
+   réutiliser tout ou partie du code dans un autre projet, à condition :
+   a) de garder la mention « Copyright (c) 2026 Georges Christophe
+      (chrypox) » et le présent contrat, sans les retirer ni les masquer ;
+   b) d'indiquer clairement que la version a été modifiée, et de ne pas
+      la présenter comme la version officielle de Chrypix publiée par
+      l'auteur ;
+   c) de publier la version modifiée, ou le projet qui reprend le code,
+      sous le présent contrat : il reste donc gratuit et non commercial
+      (article 1), et les mêmes règles s'appliquent à ceux qui le
+      reprennent à leur tour.
 
 4. PROPOSER UNE CORRECTION (BUG OU AMÉLIORATION) : Une proposition peut être
    faite par une « Issue » (ticket) ou une demande de fusion sur le dépôt
@@ -39,9 +49,8 @@ les conditions suivantes :
    propre licence ; leur liste figure dans le fichier
    docs/LICENCES_TIERS.md. Le moteur IA et les modèles ne sont pas inclus
    dans Chrypix : ils ne sont téléchargés que si l'utilisateur le choisit.
-   En particulier, le modèle FLUX.1 Fill [dev] est sous licence
-   FLUX.1 [dev] non commerciale : il ne peut pas servir à un usage
-   commercial, même si Chrypix, lui, le permet.
+   Le modèle FLUX.1 Fill [dev] est sous licence FLUX.1 [dev] non
+   commerciale.
 
 6. RESPECT DES DROITS D'AUTRUI : L'auteur veille à ce que Chrypix respecte
    les droits des autres développeurs. Si vous estimez que tout ou partie
@@ -57,7 +66,7 @@ les conditions suivantes :
    sauf en cas de dol ou de faute lourde, l'auteur ne peut être tenu
    responsable des dommages ou pertes de données liés à son utilisation.
 
-8. FIN DES DROITS : En cas de non-respect de l'article 3, les droits
+8. FIN DES DROITS : En cas de non-respect du présent contrat, les droits
    accordés prennent fin automatiquement pour la personne concernée.
 
 9. DROIT APPLICABLE : Le présent contrat est soumis au droit belge.
@@ -69,5 +78,9 @@ les conditions suivantes :
 ----------------------------------------------------------------------
 EN RÉSUMÉ :
 ----------------------------------------------------------------------
-Libre (utiliser, partager, modifier, réutiliser) · le nom de l'auteur
-doit toujours rester · sans garantie. Seul le texte ci-dessus fait foi.
+Gratuit · utilisable par tous, y compris au travail · modifiable et
+partageable (forks permis) · nom de l'auteur obligatoire · aucune vente,
+ni de Chrypix ni d'une version modifiée · les versions modifiées gardent
+ces mêmes règles · sans garantie. Seul le texte ci-dessus fait foi.
+Ce contrat n'est pas une licence Creative Commons et n'est ni lié à
+Creative Commons ni approuvé par elle.

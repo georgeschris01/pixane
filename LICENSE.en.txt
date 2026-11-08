@@ -5,9 +5,9 @@ that prevails.
 ======================================================================
 
 ======================================================================
-SOFTWARE LICENCE AGREEMENT: Chrypix ("Chrypix Licence 1.0")
-Free (open source) licence, inspired by the MIT licence
-AUTHOR: Georges Christophe (chrypox)
+SOFTWARE LICENCE AGREEMENT: Chrypix ("Chrypix Licence 1.1")
+Free-of-charge, source-available, non-commercial software
+AUTHOR AND OWNER: Georges Christophe (chrypox)
 Copyright (c) 2026 Georges Christophe.
 Contact: admin@chrypox.be
 ======================================================================
@@ -16,21 +16,29 @@ This software is a personal project shared to be useful to the community.
 By using, copying, modifying or sharing the software, you accept the
 following conditions:
 
-1. FREEDOM OF USE: The software is free of charge. Any person,
-   association, public body or company may use it freely, for any
-   purpose, including professional use.
+1. FREE OF CHARGE AND NON-COMMERCIAL: This software is strictly free of
+   charge. Neither it, nor a modified version, nor any part of its code may
+   be sold, rented, monetised or included in a paid product or service, in
+   any form, direct or indirect.
+   Any person, association, public body or company may use it free of
+   charge, including for their work and internally. Using Chrypix as a
+   work tool, including in a company that makes a profit, is allowed.
 
-2. SHARING AND MODIFICATION: Anyone may copy, share and modify the
-   software and reuse its code, in whole or in part, in other projects,
-   under the conditions of article 3.
+2. SHARING: The software may be copied and shared free of charge, together
+   with this agreement, without removing or hiding the author's name and
+   the licence notices.
 
-3. AUTHOR'S NAME (MANDATORY CONDITION): Any copy, modified version or
-   reuse of a substantial part of the code must:
+3. MODIFICATIONS AND DERIVED VERSIONS ("FORKS"): Anyone may modify the
+   software, publish and share their modified version free of charge, and
+   reuse all or part of the code in another project, provided that they:
    a) keep the notice "Copyright (c) 2026 Georges Christophe (chrypox)"
       and this agreement, without removing or hiding them;
-   b) for a modified version: state clearly that it has been modified,
-      and not present itself as the official version of Chrypix
-      published by the author.
+   b) state clearly that the version has been modified, and do not present
+      it as the official version of Chrypix published by the author;
+   c) publish the modified version, or the project reusing the code, under
+      this agreement: it therefore stays free of charge and non-commercial
+      (article 1), and the same rules apply to anyone who reuses it in
+      turn.
 
 4. PROPOSING A FIX (BUG OR IMPROVEMENT): A proposal can be made through an
    "Issue" or a pull request on the official repository. The author
@@ -43,9 +51,8 @@ following conditions:
    engine (ComfyUI) and the AI models remain under their own licences;
    they are listed in the file docs/LICENCES_TIERS.md. The AI engine and
    the models are not included in Chrypix: they are downloaded only if
-   the user chooses to. In particular, the FLUX.1 Fill [dev] model is
-   under the FLUX.1 [dev] Non-Commercial License: it may not be used
-   commercially, even though Chrypix itself allows it.
+   the user chooses to. The FLUX.1 Fill [dev] model is under the
+   FLUX.1 [dev] Non-Commercial License.
 
 6. RESPECT FOR OTHERS' RIGHTS: The author makes sure that Chrypix respects
    the rights of other developers. If you believe that all or part of the
@@ -61,7 +68,7 @@ following conditions:
    cases of fraud or gross negligence, the author cannot be held liable
    for any damage or data loss related to its use.
 
-8. TERMINATION: If article 3 is not respected, the rights granted end
+8. TERMINATION: If this agreement is not respected, the rights granted end
    automatically for the person concerned.
 
 9. GOVERNING LAW: This agreement is governed by Belgian law.
@@ -72,5 +79,9 @@ following conditions:
 ----------------------------------------------------------------------
 IN SHORT:
 ----------------------------------------------------------------------
-Free (use, share, modify, reuse) · the author's name must always be
-kept · no warranty. Only the French text prevails.
+Free of charge · usable by everyone, including at work · may be modified
+and shared (forks allowed) · author's name required · no sale, neither of
+Chrypix nor of a modified version · modified versions keep these same
+rules · no warranty. Only the French text prevails.
+This agreement is not a Creative Commons licence and is neither linked to
+nor endorsed by Creative Commons.

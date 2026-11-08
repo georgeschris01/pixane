@@ -295,8 +295,9 @@ asks two questions (default answer "No"):
 - also delete the **settings** (language, theme, last folder, text style, engine folder) and the logs?
 
 
-- Chrypix: Chrypix Licence 1.0, free (inspired by the MIT licence), © 2026 Georges Christophe (chrypox):
-  provided the author's name is kept (file `LICENSE`, French text prevails; translation `LICENSE.en.txt`).
+- Chrypix: Chrypix Licence 1.1, © 2026 Georges Christophe (chrypox): free of charge, may be modified and shared,
+  author's name required, no sale (of Chrypix or a modified version); file `LICENSE` (French text prevails;
+  translation `LICENSE.en.txt`).
   Third-party items: `docs\LICENCES_TIERS.md`.
 - Tested on an 8 GB NVIDIA graphics card (RTX 3060 Ti). The times given come from this PC.
 - Models used: Flux.1 Fill dev (**non-commercial use**; GGUF Q8 version when installed by Chrypix, same

@@ -1,8 +1,9 @@
 # Licences des éléments tiers / Third-party licences
 
-Chrypix lui-même : Licence Chrypix 1.0 (libre, inspirée de la licence MIT), © 2026 Georges Christophe (chrypox) —
+Chrypix lui-même : Licence Chrypix 1.1 (gratuit, code ouvert, non commercial), © 2026 Georges Christophe (chrypox) —
 voir `LICENSE` (seul texte qui fait foi).
-Chrypix itself: Chrypix Licence 1.0 (free, inspired by the MIT licence) — see `LICENSE.en.txt` (courtesy translation).
+Chrypix itself: Chrypix Licence 1.1 (free of charge, source-available, non-commercial) — see `LICENSE.en.txt`
+(courtesy translation).
 
 ## Inclus dans l'installateur / Included in the installer
 
