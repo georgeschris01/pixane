@@ -35,7 +35,8 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 
 ## 2. Ouvrir et enregistrer
 
-- **Fichier > Ouvrir** (Ctrl+O) : JPG, PNG, TIFF, WebP, BMP, et les projets à calques **.chr** et **.ora**.
+- **Fichier > Ouvrir** (Ctrl+O) : JPG, PNG, TIFF, WebP, BMP, et les fichiers à calques **.chr**, **.ora** et
+  **.psd** (Photoshop).
   La photo est redressée selon son orientation d'appareil.
 - **Enregistrer** (Ctrl+S), **Enregistrer sous** (Ctrl+Maj+S) :
   - **.chr** (projet Chrypix) : le format de Chrypix. Garde **tout** : calques (noms, ordre, visibilité, opacité,
@@ -43,8 +44,13 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
   - **.ora** (OpenRaster) : pour **partager avec Krita ou GIMP** (format ouvert). Garde les calques, mais les
     textes y deviennent des images.
   - Bon à savoir : un .chr est construit comme un .ora ; renommé en .ora, il s'ouvre aussi dans Krita ou GIMP.
-  - **Photoshop** n'ouvre pas les .ora : l'enregistrement en PSD (calques) est prévu dans une prochaine étape.
-    En attendant, enregistrez en PNG ou TIFF (image à plat).
+  - **.psd** (Photoshop) : pour **travailler avec Photoshop**. Garde les calques (noms, ordre, visibilité,
+    opacité, verrou) ; les textes y deviennent des images. Une photo ouverte depuis un PSD est proposée en PSD.
+  - **PSD ouverts dans Chrypix** : RVB ou niveaux de gris, 8 ou 16 bits, avec les calques, les groupes (un groupe
+    masqué masque ses calques) et les masques de calque. Chrypix ne reproduit pas les modes de fusion autres que
+    *Normal*, les styles (ombre, contour…), les calques de réglage ni les masques d'écrêtage : un message le
+    signale à l'ouverture, car l'aspect peut alors différer de Photoshop. Un PSD en CMJN s'ouvre aplati (un seul
+    calque). Les grands documents .psb ne sont pas pris en charge.
   - **JPG** (qualité 95), **PNG**, **TIFF**, **WebP** : l'image **à plat** (ce que vous voyez, calques fusionnés).
     Un message le rappelle si l'image a plusieurs calques.
   Les informations de l'appareil (EXIF) et le profil de couleur sont conservés.
@@ -306,7 +312,30 @@ Un **texte** retouché au pinceau ou au tampon devient une image (un message le 
 
 ---
 
-## 9. Raccourcis
+## 9. Réglages de l'image
+
+Menu **Image > Réglages de l'image…** (Ctrl+U) : corriger la lumière, les couleurs et la netteté.
+
+| Réglage | De … à | Effet |
+|---|---|---|
+| **Luminosité** | -100 à +100 | Éclaircit ou assombrit, en gardant le noir et le blanc |
+| **Contraste** | -100 à +100 | Écarte ou rapproche les clairs et les sombres |
+| **Saturation** | -100 à +100 | Couleurs plus vives ou plus ternes ; -100 = noir et blanc |
+| **Teinte** | -180° à +180° | Fait tourner toutes les couleurs (le rouge devient orange, vert…) |
+| **Température** | -100 à +100 | Plus chaud (orangé) ou plus froid (bleuté) |
+| **Netteté** | 0 à 200 % | Renforce les détails |
+
+- Le réglage s'applique au **calque choisi** dans le panneau Calques ; s'il y a une **sélection**, seulement à
+  l'intérieur (avec ses bords doux). La fenêtre le rappelle en haut.
+- **Aperçu sur la photo** : on voit le résultat en direct en bougeant les curseurs (sur une grande photo, il
+  arrive après une fraction de seconde). Décochez pour comparer avec l'original.
+- **Réinitialiser** remet tout à zéro, **Appliquer** garde le résultat, **Annuler** (ou Échap) laisse la photo
+  comme avant. Après Appliquer, Ctrl+Z annule le réglage.
+- Un calque **verrouillé** est protégé ; un **texte** réglé devient une image.
+
+---
+
+## 10. Raccourcis
 
 | Touche | Action |
 |---|---|
@@ -321,6 +350,7 @@ Un **texte** retouché au pinceau ou au tampon devient une image (un message le 
 | Ctrl+Z, Ctrl+Y | Annuler, Rétablir |
 | Ctrl+A, Ctrl+D, Ctrl+Maj+I | Tout sélectionner, Désélectionner, Inverser |
 | Ctrl+X, Ctrl+C, Ctrl+V, Suppr | Couper, Copier, Coller (nouveau calque), Supprimer la sélection |
+| Ctrl+U | Réglages de l'image |
 | Clic droit sur un outil à petit triangle | Choisir un autre outil du groupe |
 | Ctrl+0, Ctrl+1 | Ajuster, 100 % |
 | Entrée / Échap | (Agrandir) Lancer / Annuler ; (Recadrer) Valider / Annuler |
@@ -329,7 +359,7 @@ Un **texte** retouché au pinceau ou au tampon devient une image (un message le 
 
 ---
 
-## 10. Matériel et licences
+## 11. Matériel et licences
 
 **Installation** : lancer `Chrypix-Setup-<version>-64bits.exe`.
 1. Langue de l'installation (ce sera aussi la langue de Chrypix, modifiable ensuite dans Affichage > Langue).

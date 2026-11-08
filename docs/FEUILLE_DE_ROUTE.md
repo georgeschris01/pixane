@@ -18,8 +18,8 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
    couleur, gras / italique / souligné / barré, alignement, espacement, rotation, courbe, contour, ombre, fond ;
    format .chr (textes modifiables). Guide chapitre 7.
 3. [x] **Outils** (08/11/2026, à essayer par Christophe) : recadrer (C, proportions, Recadrer à la sélection), pinceau de couleur (P, opacité, dureté, pipette Alt+clic), tampon (S, Alt+clic = source, aligné).
-4. [ ] **Réglages d'image** : luminosité, contraste, couleurs, netteté.
-5. [ ] **PSD** : ouvrir et enregistrer les fichiers Photoshop avec leurs calques.
+4. [x] **Réglages d'image** (08/11/2026, à essayer par Christophe) : menu Image > Réglages de l'image (Ctrl+U) : luminosité, contraste, saturation, teinte, température, netteté ; calque choisi, dans la sélection s'il y en a une ; aperçu en direct calculé en arrière-plan.
+5. [x] **PSD** (08/11/2026, à essayer par Christophe dans Photoshop) : ouvrir et enregistrer avec les calques, sans bibliothèque en plus (chrypix/psd.py) ; lu : RVB / gris 8-16 bits, groupes, masques de calque ; signalé : modes de fusion, styles, calques de réglage, écrêtage ; CMJN ouvert aplati.
 6. [ ] **Installateur** (même présentation que TwinPanel, Inno Setup 7) :
    - [x] images (validées le 08/11/2026) ;
    - [x] partie 1 (08/11/2026, à essayer par Christophe) : langue, pour moi / pour tous, dossier, vérification du PC

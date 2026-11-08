@@ -10,7 +10,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QBuffer, QMimeData, QObject, QPoint, QProcess, QSettings, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QColor, QIcon, QImage, QKeySequence, QUndoCommand, QUndoStack
-from PySide6.QtWidgets import (QApplication, QButtonGroup, QComboBox, QDockWidget, QFileDialog, QHBoxLayout, QLabel,
+from PySide6.QtWidgets import (QApplication, QButtonGroup, QComboBox, QDialog, QDockWidget, QFileDialog, QHBoxLayout, QLabel,
                                QLineEdit, QMainWindow, QMenu, QMessageBox, QPushButton, QSizePolicy, QSlider,
                                QSpinBox, QToolBar, QToolButton, QVBoxLayout, QWidget)
 
@@ -25,6 +25,7 @@ from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selec
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
 from .panneau_texte import BoutonCouleur, PanneauTexte
 from .raccord import finaliser, lisere_auto, preparer
+from .reglages_image import FenetreReglages, ajuster, neutre
 from .texte import Texte
 
 NOM = "Chrypix"
@@ -221,6 +222,9 @@ class Fenetre(QMainWindow):
         m.addSeparator()
         self._action(m, tr("Recadrer à la sélection"), None, self._recadrer_selection, "a_recadrer_selection",
                      "recadrer")
+
+        m = self.menuBar().addMenu(tr("I&mage"))
+        self._action(m, tr("Réglages de l'image…"), "Ctrl+U", self.reglages_image, "a_reglages_image", "reglages")
 
         m = self.menuBar().addMenu(tr("&Affichage"))
         self._action(m, tr("Zoom avant"), "Ctrl++", lambda: self.canevas.zoomer(1.25), "a_zoom_plus", "zoom_plus")
@@ -766,6 +770,7 @@ class Fenetre(QMainWindow):
             "Molette : zoom ; Ctrl+0 : ajuster ; Ctrl+1 : 100 %\n"
             "Ctrl+A tout, Ctrl+D désélectionner, Ctrl+Shift+I inverser\n"
             "Ctrl+X couper, Ctrl+C copier, Ctrl+V coller (nouveau calque), Suppr effacer la sélection\n"
+            "Ctrl+U réglages de l'image (luminosité, contraste, couleurs, netteté)\n"
             "Ctrl+Z annuler, Ctrl+Y rétablir\n"
             "Shift+E Effacer, Shift+R Remplir, Shift+A Agrandir, Shift+U Upscale\n"
             "Agrandir : Maj en tirant = les deux côtés ; Entrée lancer, Échap annuler\n"
@@ -860,6 +865,8 @@ class Fenetre(QMainWindow):
         self.calques.definir_document(doc)
         self._sync_texte()
         self._actualiser()
+        if doc.remarques:
+            self.statusBar().showMessage("  ".join(doc.remarques), 15000)
 
     def enregistrer(self) -> bool:
         if not self.doc:
@@ -881,15 +888,19 @@ class Fenetre(QMainWindow):
             return False
         plusieurs = len(self.doc.calques) > 1 or any(c.texte is not None for c in self.doc.calques)
         if self.doc.chemin:
-            ext = ".chr" if plusieurs else self.doc.chemin.suffix
+            garde = not plusieurs or self.doc.chemin.suffix.lower() in (".psd", ".ora")
+            ext = self.doc.chemin.suffix if garde else ".chr"
             propose = str(self.doc.chemin.with_name(self.doc.chemin.stem + tr("_retouche") + ext))
         else:
             propose = str(Path(self.reglages.value("dossier", str(Path.home()))) / ("image.chr" if plusieurs
                                                                                      else "image.jpg"))
-        formats = [tr("Projet Chrypix") + " (*.chr)", tr("OpenRaster, pour Krita et GIMP") + " (*.ora)",
+        formats = [tr("Projet Chrypix") + " (*.chr)", tr("Photoshop, avec les calques") + " (*.psd)",
+                   tr("OpenRaster, pour Krita et GIMP") + " (*.ora)",
                    "JPEG (*.jpg)", "PNG (*.png)", "TIFF (*.tif)", "WebP (*.webp)"]
-        if not plusieurs:
-            formats = formats[2:] + formats[:2]
+        if self.doc.chemin and self.doc.chemin.suffix.lower() == ".psd":
+            formats.insert(0, formats.pop(1))           # photo venue de Photoshop : PSD proposé d'abord
+        elif not plusieurs:
+            formats = formats[3:] + formats[:3]
         chemin, _ = QFileDialog.getSaveFileName(self, tr("Enregistrer sous"), propose, ";;".join(formats),
                                                 formats[0])
         if not chemin:
@@ -909,11 +920,11 @@ class Fenetre(QMainWindow):
             QApplication.restoreOverrideCursor()
         ext = chemin.suffix.lower()
         textes = any(c.texte is not None for c in self.doc.calques)
-        if len(self.doc.calques) > 1 and ext not in (".chr", ".ora"):
+        if len(self.doc.calques) > 1 and ext not in (".chr", ".ora", ".psd"):
             self.statusBar().showMessage(tr("Enregistré à plat (sans les calques) : {chemin}  —  pour garder les "
                                             "calques, enregistre aussi en .chr", chemin=chemin), 10000)
-        elif ext == ".ora" and textes:
-            self.statusBar().showMessage(tr("Enregistré : {chemin}  —  dans un .ora, les textes sont des images ; "
+        elif ext in (".ora", ".psd") and textes:
+            self.statusBar().showMessage(tr("Enregistré : {chemin}  —  dans ce format, les textes sont des images ; "
                                             "pour les garder modifiables, enregistre aussi en .chr",
                                             chemin=chemin), 10000)
         else:
@@ -1008,6 +1019,69 @@ class Fenetre(QMainWindow):
         apres = self.doc.etat_effacer_selection()
         if apres is not None:
             self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Supprimer la sélection")))
+
+    # ================================================================ réglages de l'image
+    def reglages_image(self):
+        """Luminosité, contraste, couleurs, netteté du calque choisi (dans la sélection s'il y en a une), avec un
+        aperçu en direct calculé en arrière-plan (la fenêtre reste fluide même sur une grande photo)."""
+        if not self.doc or not self._verifier_verrou(tr("Réglages de l'image")):
+            return
+        doc = self.doc
+        avant, modifie = doc.etat(), doc.modifie
+        index, calque = doc.actif, doc.calque_actif
+        selection = None if doc.selection_vide() else doc.selection.copy()
+        d = FenetreReglages(calque.nom, selection is not None, self)
+        d.adjustSize()                               # à droite, sur le panneau IA : la photo reste visible
+        coin = self.mapToGlobal(self.rect().topRight())
+        d.move(coin.x() - d.width() - 20, coin.y() + 110)
+        suivi = {"occupe": False, "attente": None, "ouvert": True}
+
+        def montrer(r, img):
+            if not suivi["ouvert"]:
+                return
+            if neutre(r) or img is None:
+                doc.apercu_calque(index, calque.image, calque.texte)
+            else:
+                doc.apercu_calque(index, img)
+
+        def calculer(r):
+            if suivi["occupe"]:
+                suivi["attente"] = r                 # on ne garde que la dernière demande
+                return
+            if neutre(r):
+                montrer(r, None)
+                return
+            suivi["occupe"] = True
+            t = Tache(lambda _progres: ajuster(calque.image, r, selection))
+            t.fini.connect(lambda img: fini(r, img))
+            t.echec.connect(lambda _m: fini(r, None))
+            suivi["tache"] = t                       # garde la tâche en vie
+            t.lancer()
+
+        def fini(r, img):
+            suivi["occupe"] = False
+            montrer(r, img)
+            if suivi["attente"] is not None:
+                r2, suivi["attente"] = suivi["attente"], None
+                calculer(r2)
+
+        d.change.connect(calculer)
+        ok = d.exec() == QDialog.Accepted
+        suivi["ouvert"] = False
+        r = d.valeurs()
+        doc.appliquer_etat(avant)
+        doc.modifie = modifie
+        if ok and not neutre(r):
+            if calque.texte is not None:
+                self.statusBar().showMessage(tr("Le texte « {nom} » devient une image : il n'est plus modifiable "
+                                                "comme texte (Ctrl+Z pour revenir).", nom=calque.nom), 6000)
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                img = ajuster(calque.image, r, selection)
+            finally:
+                QApplication.restoreOverrideCursor()
+            apres = doc.etat_calque_modifie(index, image=img, texte=None)
+            self.historique.push(CommandeEtat(doc, avant, apres, tr("Réglages de l'image")))
 
     def _verifier_selection_simple(self) -> bool:
         if self.doc.selection_vide():

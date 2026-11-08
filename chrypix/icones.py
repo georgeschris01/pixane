@@ -70,6 +70,8 @@ DESSINS = {
                 '<path stroke="A" d="M10.9 11.1C8.6 11 7 12.6 7 15c0 1.5-.8 2.4-2.5 3 3.7 1.6 9 .7 8.4-4.9z"/>',
     "tampon": '<path d="M9.5 3.5h5l-1 7h-3z"/><path d="M5 14.5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2H5z"/>'
               '<path stroke="A" d="M5 20.5h14"/>',
+    "reglages": '<path d="M4 6.5h9M17 6.5h3M4 12h3M11 12h9M4 17.5h11M19 17.5h1"/>'
+                '<path stroke="A" d="M15 4.5v4M9 10v4M17 15.5v4"/>',
     # texte
     "texte": '<path d="M5 6.5V4.5h14v2M12 4.5v15M9 19.5h6"/>',
     "aligner_gauche": '<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>',

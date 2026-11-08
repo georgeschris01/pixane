@@ -27,8 +27,8 @@ FORMAT_IMAGE = QImage.Format_RGBA8888
 FORMAT_SELECTION = QImage.Format_ARGB32_Premultiplied
 FORMAT_CALQUE = QImage.Format_ARGB32_Premultiplied
 
-EXTENSIONS_LECTURE = "*.chr *.jpg *.jpeg *.png *.tif *.tiff *.webp *.bmp *.ora"
-EXTENSIONS_CALQUES = (".chr", ".ora")      # formats qui gardent les calques
+EXTENSIONS_LECTURE = "*.chr *.jpg *.jpeg *.png *.tif *.tiff *.webp *.bmp *.ora *.psd"
+EXTENSIONS_CALQUES = (".chr", ".ora", ".psd")      # formats qui gardent les calques
 
 
 # ------------------------------------------------------------------ conversions
@@ -136,6 +136,7 @@ class Document(QObject):
         self.exif = exif
         self.icc = icc
         self.modifie = False
+        self.remarques: list[str] = []      # à montrer après l'ouverture (ex. effets d'un PSD non repris)
         self._fusion: QImage | None = None
 
     # ---------------------------------------------------------- image fusionnée
@@ -158,6 +159,12 @@ class Document(QObject):
     @classmethod
     def ouvrir(cls, chemin: str | Path) -> "Document":
         chemin = Path(chemin)
+        if chemin.suffix.lower() == ".psd":
+            from .psd import lire_psd
+            calques, icc, remarques = lire_psd(chemin)
+            doc = cls(chemin=chemin, calques=calques, icc=icc)
+            doc.remarques = remarques
+            return doc
         if chemin.suffix.lower() in EXTENSIONS_CALQUES:
             return cls(chemin=chemin, calques=lire_ora(chemin))
         with Image.open(chemin) as im:
@@ -172,6 +179,12 @@ class Document(QObject):
     def enregistrer(self, chemin: str | Path) -> None:
         chemin = Path(chemin)
         ext = chemin.suffix.lower()
+        if ext == ".psd":
+            from .psd import ecrire_psd
+            ecrire_psd(chemin, self.calques, self.image, self.icc)
+            self.chemin = chemin
+            self.modifie = False
+            return
         if ext in EXTENSIONS_CALQUES:
             ecrire_ora(chemin, self.calques, self.image, natif=ext == ".chr")
             self.chemin = chemin

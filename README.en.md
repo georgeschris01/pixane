@@ -83,7 +83,8 @@ Layer names that already exist keep their original language.
 
 ## 2. Opening and saving
 
-- **File > Open** (Ctrl+O): JPG, PNG, TIFF, WebP, BMP, and **.chr** and **.ora** layered projects.
+- **File > Open** (Ctrl+O): JPG, PNG, TIFF, WebP, BMP, and the **.chr**, **.ora** and **.psd** (Photoshop)
+  layered files.
   The photo is rotated according to the camera orientation.
 - **Save** (Ctrl+S), **Save as** (Ctrl+Shift+S):
   - **.chr** (Chrypix project): Chrypix's own format. Keeps **everything**: layers (names, order, visibility,
@@ -91,8 +92,12 @@ Layer names that already exist keep their original language.
   - **.ora** (OpenRaster): to **share with Krita or GIMP** (open format). Keeps the layers, but texts become
     images.
   - Good to know: a .chr file is built like an .ora file; renamed to .ora, it also opens in Krita or GIMP.
-  - **Photoshop** does not open .ora files: saving as PSD (with layers) is planned in a later step.
-    Meanwhile, save as PNG or TIFF (flattened image).
+  - **.psd** (Photoshop): to **work with Photoshop**. Keeps the layers (names, order, visibility, opacity, lock);
+    texts become images. A photo opened from a PSD is suggested as PSD.
+  - **PSD files opened in Chrypix**: RGB or greyscale, 8 or 16-bit, with layers, groups (a hidden group hides its
+    layers) and layer masks. Chrypix does not reproduce blend modes other than *Normal*, layer styles (shadow,
+    stroke…), adjustment layers or clipping masks: a message says so when opening, as the result may then look
+    different from Photoshop. A CMYK PSD opens flattened (a single layer). Large .psb documents are not supported.
   - **JPG** (quality 95), **PNG**, **TIFF**, **WebP**: the **flattened** image (what you see, layers merged).
     A message reminds you of this if the image has several layers.
   Camera information (EXIF) and the colour profile are kept.
@@ -352,7 +357,30 @@ A **text** retouched with the brush or the stamp becomes an image (a message rem
 
 ---
 
-## 9. Shortcuts
+## 9. Image adjustments
+
+**Image > Image adjustments…** menu (Ctrl+U): correct light, colours and sharpness.
+
+| Setting | From … to | Effect |
+|---|---|---|
+| **Brightness** | -100 to +100 | Lightens or darkens, keeping black and white |
+| **Contrast** | -100 to +100 | Spreads or brings together lights and darks |
+| **Saturation** | -100 to +100 | More vivid or duller colours; -100 = black and white |
+| **Hue** | -180° to +180° | Rotates all colours (red becomes orange, green…) |
+| **Temperature** | -100 to +100 | Warmer (orange) or cooler (blue) |
+| **Sharpness** | 0 to 200% | Enhances details |
+
+- The adjustment applies to the **layer chosen** in the Layers panel; if there is a **selection**, only inside it
+  (with its soft edges). The window reminds you at the top.
+- **Preview on the photo**: you see the result live while moving the sliders (on a large photo it arrives after a
+  fraction of a second). Untick to compare with the original.
+- **Reset** sets everything back to zero, **Apply** keeps the result, **Cancel** (or Esc) leaves the photo as it
+  was. After Apply, Ctrl+Z undoes the adjustment.
+- A **locked** layer is protected; an adjusted **text** becomes an image.
+
+---
+
+## 10. Shortcuts
 
 | Key | Action |
 |---|---|
@@ -367,6 +395,7 @@ A **text** retouched with the brush or the stamp becomes an image (a message rem
 | Ctrl+Z, Ctrl+Y | Undo, Redo |
 | Ctrl+A, Ctrl+D, Ctrl+Shift+I | Select all, Deselect, Invert |
 | Ctrl+X, Ctrl+C, Ctrl+V, Del | Cut, Copy, Paste (new layer), Delete selection |
+| Ctrl+U | Image adjustments |
 | Right-click on a tool with a small triangle | Choose another tool of the group |
 | Ctrl+0, Ctrl+1 | Fit, 100% |
 | Enter / Esc | (Expand) Start / Cancel; (Crop) Apply / Cancel |
@@ -375,7 +404,7 @@ A **text** retouched with the brush or the stamp becomes an image (a message rem
 
 ---
 
-## 10. Hardware and licences
+## 11. Hardware and licences
 
 **Installation**: run `Chrypix-Setup-<version>-64bits.exe`.
 1. Installation language (it will also be Chrypix's language, which can be changed later in View > Language).
