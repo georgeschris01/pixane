@@ -20,8 +20,18 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
 3. [ ] **Outils** : recadrer, pinceau de couleur, tampon (copier une zone sur une autre).
 4. [ ] **Réglages d'image** : luminosité, contraste, couleurs, netteté.
 5. [ ] **PSD** : ouvrir et enregistrer les fichiers Photoshop avec leurs calques.
-6. [ ] **Assistant d'installation** : installer Chrypix chez quelqu'un d'autre, et ComfyUI + modèles s'ils
-   sont absents (indispensable pour publier).
+6. [ ] **Installateur** (même présentation que TwinPanel, Inno Setup 7) :
+   - [x] images (validées le 08/11/2026) ;
+   - [x] partie 1 (08/11/2026, à essayer par Christophe) : langue, pour moi / pour tous, dossier, vérification du PC
+     (carte NVIDIA, place, ComfyUI trouvé ou dossier à indiquer), Python inclus, association .chr ;
+     construire-installateur.bat -> publication\installateur\Chrypix-Setup-x.y.z.exe ;
+   - [ ] partie 2 : si ComfyUI absent, le télécharger avec les modèles (taille, provenance, licence affichées ;
+     case pour la licence non commerciale de Flux Fill dev ; téléchargement qui reprend après coupure).
+     Tout existe sans compte Hugging Face : Flux Fill dev GGUF (YarvixPA, licence non commerciale, demande
+     l'extension ComfyUI-GGUF), encodeurs (comfyanonymous, Apache-2.0), Flux Schnell fp8 (Comfy-Org, Apache-2.0) ;
+     VAE sans compte : source à trouver ;
+   - [ ] licence de Chrypix à choisir (page à accepter dans l'installateur) ;
+   - [ ] essai sur un Windows vierge (Bac à sable Windows).
 7. [ ] **Publication** : guide complet, licences (Flux Fill dev = non commercial), dépôt public ou installateur.
 
 ## Idées notées en passant

@@ -45,16 +45,57 @@ def lire_config() -> dict:
         return {}
 
 
+def dossier_comfyui(d: Path) -> Path | None:
+    """Dossier qui contient main.py, à partir du dossier donné ou d'un dossier parent courant
+    (ComfyUI portable : <dossier>\\ComfyUI ; ComfyUI Desktop : <dossier de base>\\ComfyUI\\ComfyUI)."""
+    for c in (d, d / "ComfyUI", d / "ComfyUI" / "ComfyUI"):
+        if (c / "main.py").is_file():
+            return c
+    return None
+
+
+def python_comfyui(d: Path) -> Path | None:
+    """Python qui fait tourner ComfyUI (dossier de main.py donné)."""
+    for p in (d / ".venv" / "Scripts" / "python.exe",             # ComfyUI Desktop
+              d.parent / "python_embeded" / "python.exe",         # ComfyUI portable
+              d.parent / ".venv" / "Scripts" / "python.exe",
+              d.parent.parent / ".venv" / "Scripts" / "python.exe"):
+        if p.is_file():
+            return p
+    return None
+
+
+def candidats_comfyui() -> list[Path]:
+    """Endroits où chercher ComfyUI, du plus sûr au moins sûr."""
+    candidats = []
+    conf = lire_config()
+    if conf.get("comfyui_dir"):
+        candidats.append(Path(conf["comfyui_dir"]))
+    try:                                   # choisi dans l'installateur (registre, réglages de Chrypix)
+        from PySide6.QtCore import QSettings
+        choisi = QSettings("Chrypix", os.environ.get("CHRYPIX_REGLAGES", "Chrypix")).value("comfyui_dir")
+        if choisi:
+            candidats.append(Path(str(choisi)))
+    except Exception:
+        pass
+    try:                                   # ComfyUI Desktop : son dossier de base
+        base = json.loads((Path(os.environ.get("APPDATA", "")) / "ComfyUI" / "config.json")
+                          .read_text(encoding="utf-8")).get("basePath")
+        if base:
+            candidats.append(Path(base))
+    except (OSError, ValueError):
+        pass
+    candidats.append(DOSSIER_APP / "moteur" / "ComfyUI_windows_portable")   # installé par Chrypix
+    return candidats
+
+
 def trouver_comfyui() -> dict | None:
     """Renvoie {dir, python, chemins_modeles} ou None si ComfyUI n'est pas installé."""
     conf = lire_config()
-    candidats = []
-    if conf.get("comfyui_dir"):
-        candidats.append(Path(conf["comfyui_dir"]))
-    candidats.append(Path(r"D:\ComfyUI\ComfyUI\ComfyUI"))
-    for d in candidats:
-        python = d / ".venv" / "Scripts" / "python.exe"
-        if (d / "main.py").is_file() and python.is_file():
+    for c in candidats_comfyui():
+        d = dossier_comfyui(c)
+        python = python_comfyui(d) if d else None
+        if d and python:
             chemins = conf.get("extra_model_paths")
             if not chemins:
                 yamls = glob.glob(os.path.join(os.environ.get("APPDATA", ""), "Comfy Desktop",

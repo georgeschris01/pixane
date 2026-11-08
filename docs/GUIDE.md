@@ -265,6 +265,18 @@ ils restent proportionnés quand on change la taille du texte.
 
 ## 9. Matériel et licences
 
+**Installation** : lancer `Chrypix-Setup-<version>.exe`.
+1. Langue de l'installation (ce sera aussi la langue de Chrypix, modifiable ensuite dans Affichage > Langue).
+2. Pour moi seulement (par défaut, sans droits administrateur) ou pour tous les utilisateurs.
+3. Dossier d'installation.
+4. **Vérification du PC** : carte graphique NVIDIA et sa mémoire (8 Go conseillés), place libre, moteur IA
+   (ComfyUI) trouvé ou non. Si ComfyUI est installé ailleurs, bouton **Parcourir…** pour indiquer son dossier.
+   Sans ComfyUI, Chrypix ouvre, retouche (calques, texte) et enregistre, mais les actions IA ne marchent pas.
+5. Options : icône sur le Bureau ; ouvrir les fichiers .chr avec Chrypix.
+Une nouvelle version s'installe par-dessus l'ancienne (réglages gardés). Désinstaller : Paramètres de Windows >
+Applications.
+
+
 - Testé sur une carte graphique NVIDIA de 8 Go (RTX 3060 Ti). Les durées indiquées viennent de ce PC.
 - Modèles utilisés : Flux.1 Fill dev (**usage non commercial**), Flux.1 Schnell (Apache-2.0),
   LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3).

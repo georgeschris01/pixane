@@ -264,6 +264,17 @@ they stay in proportion when you change the text size.
 
 ## 9. Hardware and licences
 
+**Installation**: run `Chrypix-Setup-<version>.exe`.
+1. Installation language (it will also be Chrypix's language, which can be changed later in View > Language).
+2. Just for me (default, no administrator rights) or for all users.
+3. Installation folder.
+4. **PC check**: NVIDIA graphics card and its memory (8 GB recommended), free space, AI engine (ComfyUI) found or
+   not. If ComfyUI is installed elsewhere, use **Browse…** to select its folder.
+   Without ComfyUI, Chrypix opens, edits (layers, text) and saves photos, but the AI actions do not work.
+5. Options: desktop icon; open .chr files with Chrypix.
+A new version installs over the old one (settings kept). To uninstall: Windows Settings > Apps.
+
+
 - Tested on an 8 GB NVIDIA graphics card (RTX 3060 Ti). The times given come from this PC.
 - Models used: Flux.1 Fill dev (**non-commercial use**), Flux.1 Schnell (Apache-2.0),
   LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3).
