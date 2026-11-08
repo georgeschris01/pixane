@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+# jamais de photos ni de modèles dans le dépôt
+*.jpg
+*.jpeg
+*.png
+*.tif
+*.tiff
+*.webp
+*.safetensors
+*.pth
+*.pt
