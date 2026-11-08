@@ -16,7 +16,7 @@ from .canevas import GOMME, LASSO, MAIN, PINCEAU, RECTANGLE, Canevas
 from .dialogues import Attente, ChoixResultat, ReglagesAgrandir, ReglagesUpscale
 from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection, qimage_rgb, tableau
 from .moteur import Annule, ErreurMoteur, Moteur
-from .raccord import raccorder
+from .raccord import finaliser, preparer
 
 NOM = "Chrypix"
 
@@ -557,11 +557,11 @@ class Fenetre(QMainWindow):
         d = ReglagesAgrandir(self)
         if d.exec():
             v = d.valeurs()
-            original = tableau(self.doc.image)[:, :, :3]
+            png, geo, orig = preparer(tableau(self.doc.image)[:, :, :3], **v)
 
             def raccord(img: QImage) -> QImage:
-                return qimage_rgb(raccorder(original, tableau(img)[:, :, :3], **v))
-            self._lancer("Agrandir", False, lambda nom: recettes.agrandir(nom, **v), apres=raccord)
+                return qimage_rgb(finaliser(orig, tableau(img)[:, :, :3], geo))
+            self._lancer("Agrandir", False, lambda nom: recettes.agrandir(nom), apres=raccord, png=png)
 
     def ia_upscale(self):
         if not self.doc:
@@ -576,10 +576,11 @@ class Fenetre(QMainWindow):
             else:
                 self._lancer("Upscale", False, lambda nom: recettes.upscale_rapide(nom, v["facteur"]))
 
-    def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None):
+    def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None):
         """Envoie l'image au moteur, attend, puis propose les résultats."""
         doc = self.doc
-        png = doc.png_pour_ia(avec_selection)
+        if png is None:
+            png = doc.png_pour_ia(avec_selection)
         original = doc.image
         choix = ChoixResultat(titre, original, self)
         annuler = threading.Event()

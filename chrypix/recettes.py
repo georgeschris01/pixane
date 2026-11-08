@@ -50,8 +50,11 @@ def _flux_fill(p: dict, pixels, masque, assembleur, nb: int, texte: str = "", de
     p["29"] = _n("KSampler", model=["23", 0], seed=_graine(), steps=steps, cfg=1.0, sampler_name="euler",
                  scheduler="simple", positive=["27", 0], negative=["27", 1], latent_image=["28", 0], denoise=denoise)
     p["30"] = _n("VAEDecode", samples=["29", 0], vae=["22", 0])
-    p["31"] = _n("InpaintStitchImproved", stitcher=assembleur, inpainted_image=["30", 0])
-    p["32"] = _n("PreviewImage", images=["31", 0])
+    if assembleur is None:   # pas de découpe : on garde l'image entière
+        p["32"] = _n("PreviewImage", images=["30", 0])
+    else:
+        p["31"] = _n("InpaintStitchImproved", stitcher=assembleur, inpainted_image=["30", 0])
+        p["32"] = _n("PreviewImage", images=["31", 0])
 
 
 def effacer(image: str, nb: int = NB_EFFACER):
@@ -72,16 +75,10 @@ def remplir(image: str, texte: str = "", nb: int = NB_REMPLIR):
     return p, {"32": "Proposition"}
 
 
-def agrandir(image: str, haut: float, bas: float, gauche: float, droite: float, nb: int = NB_AGRANDIR):
-    """haut/bas/gauche/droite en pour cent (25 = +25 % de ce côté)."""
-    p = {"10": _n("LoadImage", image=image),
-         "9": _n("SolidMask", value=1.0, width=64, height=64),
-         "11": _n("InpaintCropImproved", image=["10", 0], mask=["10", 1], optional_context_mask=["9", 0],
-                  **_decoupe(extend_for_outpainting=True, extend_up_factor=1 + haut / 100,
-                             extend_down_factor=1 + bas / 100, extend_left_factor=1 + gauche / 100,
-                             extend_right_factor=1 + droite / 100, mask_expand_pixels=32, mask_blend_pixels=16,
-                             context_from_mask_extend_factor=1.2))}
-    _flux_fill(p, ["11", 1], ["11", 2], ["11", 0], nb, denoise=1.0)
+def agrandir(image: str, nb: int = NB_AGRANDIR):
+    """image : toile déjà préparée par Chrypix (raccord.preparer), zone à peindre en transparent."""
+    p = {"10": _n("LoadImage", image=image)}
+    _flux_fill(p, ["10", 0], ["10", 1], None, nb, denoise=1.0)
     return p, {"32": "Proposition"}
 
 
