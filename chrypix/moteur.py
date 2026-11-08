@@ -20,6 +20,7 @@ from pathlib import Path
 
 import websocket
 
+from . import recettes
 from .langue import tr
 
 DOSSIER_APP = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "Chrypix"
@@ -202,6 +203,7 @@ class Moteur:
         if manquants:
             self.etat = "incomplet"
             raise ErreurMoteur(tr("Extensions ComfyUI manquantes : {liste}", liste=", ".join(manquants)))
+        recettes.configurer(infos)          # Flux Fill : version complète ou GGUF, selon ce qui est installé
 
     def arreter(self):
         self._arret.set()

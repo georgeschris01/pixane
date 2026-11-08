@@ -13,6 +13,44 @@ NB_EFFACER = 2      # propositions Flux (plus la version LaMa seule)
 NB_REMPLIR = 3
 NB_AGRANDIR = 3
 
+# Modèle Flux Fill utilisé : version complète (.safetensors, réduite à 8 bits au chargement) ou version GGUF
+# (même modèle, compressé ; extension ComfyUI-GGUF). Choisi par configurer() selon ce qui est installé.
+FILL_COMPLET = "flux1-fill-dev.safetensors"
+FILL_GGUF = "flux1-fill-dev-Q8_0.gguf"
+PREFERENCE_FILL = ("complet", "gguf")    # ordre de préférence quand les deux sont présents
+_fill = {"type": "complet", "fichier": FILL_COMPLET}
+
+
+def _options(infos: dict, noeud: str, entree: str) -> list:
+    try:
+        return list(infos[noeud]["input"]["required"][entree][0])
+    except (KeyError, IndexError, TypeError):
+        return []
+
+
+def configurer(infos: dict) -> str | None:
+    """Choisit le modèle Flux Fill d'après /object_info de ComfyUI. Renvoie le fichier choisi (None si aucun)."""
+    trouves = {}
+    if FILL_COMPLET in _options(infos, "UNETLoader", "unet_name"):
+        trouves["complet"] = FILL_COMPLET
+    ggufs = [f for f in _options(infos, "UnetLoaderGGUF", "unet_name") if "fill" in f.lower()]
+    if ggufs:
+        trouves["gguf"] = FILL_GGUF if FILL_GGUF in ggufs else sorted(ggufs)[-1]
+    for t in PREFERENCE_FILL:
+        if t in trouves:
+            _fill.update(type=t, fichier=trouves[t])
+            return trouves[t]
+    return None
+
+
+def chargeur_fill(type_: str | None = None, fichier: str | None = None) -> dict:
+    """Nœud qui charge Flux Fill (type_ et fichier : pour forcer un choix, ex. comparaison)."""
+    type_ = type_ or _fill["type"]
+    fichier = fichier or _fill["fichier"]
+    if type_ == "gguf":
+        return _n("UnetLoaderGGUF", unet_name=fichier)
+    return _n("UNETLoader", unet_name=fichier, weight_dtype="fp8_e4m3fn")
+
 
 def _graine() -> int:
     return random.randint(1, 2**48)
@@ -36,9 +74,9 @@ def _n(classe: str, **entrees) -> dict:
 
 
 def _flux_fill(p: dict, pixels, masque, assembleur, nb: int, texte: str = "", denoise: float = 1.0,
-               steps: int = 24) -> None:
+               steps: int = 24, graine: int | None = None, chargeur: dict | None = None) -> None:
     """Ajoute la chaîne Flux Fill (nœuds 20 à 31) au prompt p."""
-    p["20"] = _n("UNETLoader", unet_name="flux1-fill-dev.safetensors", weight_dtype="fp8_e4m3fn")
+    p["20"] = chargeur or chargeur_fill()
     p["21"] = _n("DualCLIPLoader", clip_name1="clip_l.safetensors", clip_name2="t5xxl_fp8_e4m3fn_scaled.safetensors",
                  type="flux", device="default")
     p["22"] = _n("VAELoader", vae_name="ae.safetensors")
@@ -49,7 +87,7 @@ def _flux_fill(p: dict, pixels, masque, assembleur, nb: int, texte: str = "", de
     p["27"] = _n("InpaintModelConditioning", positive=["25", 0], negative=["26", 0], vae=["22", 0],
                  pixels=pixels, mask=masque, noise_mask=True)
     p["28"] = _n("RepeatLatentBatch", samples=["27", 2], amount=nb)
-    p["29"] = _n("KSampler", model=["23", 0], seed=_graine(), steps=steps, cfg=1.0, sampler_name="euler",
+    p["29"] = _n("KSampler", model=["23", 0], seed=graine or _graine(), steps=steps, cfg=1.0, sampler_name="euler",
                  scheduler="simple", positive=["27", 0], negative=["27", 1], latent_image=["28", 0], denoise=denoise)
     p["30"] = _n("VAEDecode", samples=["29", 0], vae=["22", 0])
     if assembleur is None:   # pas de découpe : on garde l'image entière
@@ -59,28 +97,30 @@ def _flux_fill(p: dict, pixels, masque, assembleur, nb: int, texte: str = "", de
         p["32"] = _n("PreviewImage", images=["31", 0])
 
 
-def effacer(image: str, nb: int = NB_EFFACER):
+def effacer(image: str, nb: int = NB_EFFACER, graine: int | None = None, chargeur: dict | None = None):
     p = {"10": _n("LoadImage", image=image),
          "11": _n("InpaintCropImproved", image=["10", 0], mask=["10", 1], **_decoupe()),
          "12": _n("INPAINT_LoadInpaintModel", model_name="big-lama.pt"),
-         "13": _n("INPAINT_InpaintWithModel", inpaint_model=["12", 0], image=["11", 1], mask=["11", 2], seed=_graine()),
+         "13": _n("INPAINT_InpaintWithModel", inpaint_model=["12", 0], image=["11", 1], mask=["11", 2],
+                  seed=graine or _graine()),
          "14": _n("InpaintStitchImproved", stitcher=["11", 0], inpainted_image=["13", 0]),
          "15": _n("PreviewImage", images=["14", 0])}
-    _flux_fill(p, ["13", 0], ["11", 2], ["11", 0], nb, denoise=0.6, steps=20)
+    _flux_fill(p, ["13", 0], ["11", 2], ["11", 0], nb, denoise=0.6, steps=20, graine=graine, chargeur=chargeur)
     return p, {"32": "Flux", "15": tr("LaMa seul")}
 
 
-def remplir(image: str, texte: str = "", nb: int = NB_REMPLIR):
+def remplir(image: str, texte: str = "", nb: int = NB_REMPLIR, graine: int | None = None,
+            chargeur: dict | None = None):
     p = {"10": _n("LoadImage", image=image),
          "11": _n("InpaintCropImproved", image=["10", 0], mask=["10", 1], **_decoupe())}
-    _flux_fill(p, ["11", 1], ["11", 2], ["11", 0], nb, texte=texte, denoise=1.0)
+    _flux_fill(p, ["11", 1], ["11", 2], ["11", 0], nb, texte=texte, denoise=1.0, graine=graine, chargeur=chargeur)
     return p, {"32": tr("Proposition")}
 
 
-def agrandir(image: str, nb: int = NB_AGRANDIR):
+def agrandir(image: str, nb: int = NB_AGRANDIR, graine: int | None = None, chargeur: dict | None = None):
     """image : toile déjà préparée par Chrypix (raccord.preparer), zone à peindre en transparent."""
     p = {"10": _n("LoadImage", image=image)}
-    _flux_fill(p, ["10", 0], ["10", 1], None, nb, denoise=1.0)
+    _flux_fill(p, ["10", 0], ["10", 1], None, nb, denoise=1.0, graine=graine, chargeur=chargeur)
     return p, {"32": tr("Proposition")}
 
 
