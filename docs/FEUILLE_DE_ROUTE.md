@@ -27,6 +27,8 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
      construire-installateur.bat -> publication\installateur\Chrypix-Setup-x.y.z.exe ;
    - [ ] partie 2 : si ComfyUI absent, le télécharger avec les modèles (taille, provenance, licence affichées ;
      case pour la licence non commerciale de Flux Fill dev ; téléchargement qui reprend après coupure).
+     Comparaison faite le 08/11/2026 : GGUF Q8 = même qualité que la version complète (PSNR 42-50 dB), ~20 s de plus
+     par Effacer -> GGUF Q8 pour l'installateur.
      Tout existe sans compte Hugging Face : Flux Fill dev GGUF (YarvixPA, licence non commerciale, demande
      l'extension ComfyUI-GGUF), encodeurs (comfyanonymous, Apache-2.0), Flux Schnell fp8 (Comfy-Org, Apache-2.0) ;
      VAE sans compte : source à trouver ;
