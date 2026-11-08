@@ -16,6 +16,7 @@ INDIRECTS = {
     "moteur.py": ["ETAPES"],         # étapes du calcul
     "dialogues.py": ["COTES"],       # noms des côtés
     "calques.py": [],                # bulles d'aide des boutons (relevées dans la boucle)
+    "aide.py": ["LIVRES", "TELECHARGES"],   # rôles des éléments tiers : Composant(nom, url, rôle, licence)
 }
 
 
@@ -32,6 +33,9 @@ def textes_du_code() -> set[str]:
                 noms = [t.id if isinstance(t, ast.Name) else getattr(t, "attr", "") for t in n.targets]
                 if any(x in INDIRECTS[f.name] for x in noms):
                     for c in ast.walk(n.value):
+                        if (isinstance(c, ast.Call) and getattr(c.func, "id", "") == "Composant"
+                                and len(c.args) > 2 and isinstance(c.args[2], ast.Constant)):
+                            cles.add(c.args[2].value)
                         if isinstance(c, ast.Dict):
                             for v in c.values:
                                 if isinstance(v, ast.Constant) and isinstance(v.value, str):

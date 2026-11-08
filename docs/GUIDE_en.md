@@ -397,7 +397,7 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+0, Ctrl+1 | Fit, 100% |
 | Enter / Esc | (Expand) Start / Cancel; (Crop) Apply / Cancel |
 | Shift (while rotating a text) | Rotate in 15° steps |
-| F1 | List of shortcuts |
+| F1 | Guide, opened at the shortcuts (Help > Chrypix guide: the whole guide, with a search) |
 
 ---
 

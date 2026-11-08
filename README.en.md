@@ -54,7 +54,7 @@ Welcome to all future Chrypix users!
 
 ## Guide
 
-What follows is the complete guide. It is the same text as the `docs\GUIDE_en.md` file shipped with the program (**Help** menu, **F1** key for the shortcuts).
+What follows is the complete guide. It is the same text as the `docs\GUIDE_en.md` file shipped with the program and shown in its **Help > Chrypix guide** window (with a search; **F1** opens it at the shortcuts).
 
 <!-- guide -->
 ## 1. The window
@@ -447,7 +447,7 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+0, Ctrl+1 | Fit, 100% |
 | Enter / Esc | (Expand) Start / Cancel; (Crop) Apply / Cancel |
 | Shift (while rotating a text) | Rotate in 15° steps |
-| F1 | List of shortcuts |
+| F1 | Guide, opened at the shortcuts (Help > Chrypix guide: the whole guide, with a search) |
 
 ---
 

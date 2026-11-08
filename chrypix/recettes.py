@@ -32,10 +32,16 @@ class ModeleManquant(Exception):
 
 
 def _options(infos: dict, noeud: str, entree: str) -> list:
+    """Choix possibles d'une entrée : ancien format [[...], {...}] ou nouveau ["COMBO", {"options": [...]}]."""
     try:
-        return list(infos[noeud]["input"]["required"][entree][0])
+        d = infos[noeud]["input"]["required"][entree]
     except (KeyError, IndexError, TypeError):
         return []
+    if d and isinstance(d[0], list):
+        return list(d[0])
+    if len(d) > 1 and isinstance(d[1], dict):
+        return list(d[1].get("options") or [])
+    return []
 
 
 def configurer(infos: dict) -> str | None:

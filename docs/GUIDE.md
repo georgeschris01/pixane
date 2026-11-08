@@ -399,7 +399,7 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+0, Ctrl+1 | Ajuster, 100 % |
 | Entrée / Échap | (Agrandir) Lancer / Annuler ; (Recadrer) Valider / Annuler |
 | Maj (en tournant un texte) | Rotation par pas de 15° |
-| F1 | Liste des raccourcis |
+| F1 | Guide, ouvert sur les raccourcis (menu Aide > Guide de Chrypix : tout le guide, avec une recherche) |
 
 ---
 

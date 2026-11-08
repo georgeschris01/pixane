@@ -196,8 +196,9 @@ class NouvelleImage(QDialog):
 
 
 class APropos(QDialog):
-    def __init__(self, icone: QPixmap | None, parent=None):
+    def __init__(self, icone: QPixmap | None, parent=None, couleurs=None):
         super().__init__(parent)
+        self.couleurs = couleurs
         self.setWindowTitle(tr("À propos de Chrypix"))
         lay = QVBoxLayout(self)
         haut = QHBoxLayout()
@@ -218,18 +219,22 @@ class APropos(QDialog):
         haut.addWidget(texte, 1)
         lay.addLayout(haut)
         liens = QHBoxLayout()
-        for nom, cible in ((tr("Licence"), RACINE / "LICENSE"),
-                           (tr("Éléments tiers"), RACINE / "docs" / "LICENCES_TIERS.md"),
-                           (tr("Guide"), RACINE / "docs" / tr("GUIDE.md")),
-                           (tr("Page GitHub"), DEPOT)):
+        from .aide import FenetreLicence, FenetreTiers
+        for nom, action in ((tr("Licence"), lambda: FenetreLicence(self).exec()),
+                            (tr("Éléments tiers"), lambda: FenetreTiers(self.couleurs, self).exec()),
+                            (tr("Guide"), self._guide),
+                            (tr("Page GitHub"), lambda: QDesktopServices.openUrl(QUrl(DEPOT)))):
             b = QPushButton(nom)
-            b.clicked.connect(lambda _=False, c=cible: QDesktopServices.openUrl(
-                QUrl(c) if isinstance(c, str) else QUrl.fromLocalFile(str(c))))
-            if isinstance(cible, Path) and not cible.exists():
-                b.setEnabled(False)
+            b.clicked.connect(lambda _=False, a=action: a())
             liens.addWidget(b)
         lay.addLayout(liens)
         b = QDialogButtonBox(QDialogButtonBox.Close)
         b.button(QDialogButtonBox.Close).setText(tr("Fermer"))
         b.rejected.connect(self.reject)
         lay.addWidget(b)
+
+    def _guide(self):
+        f = self.parent()
+        if f is not None and hasattr(f, "guide"):
+            self.accept()
+            f.guide()

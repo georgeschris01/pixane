@@ -298,7 +298,8 @@ class Fenetre(QMainWindow):
         self._action(m, tr("Installer le moteur IA…"), None, self.installer_moteur, "a_installer_moteur")
 
         m = self.menuBar().addMenu(tr("&Aide"))
-        self._action(m, tr("Raccourcis"), "F1", self._aide)
+        self._action(m, tr("Guide de Chrypix"), None, lambda: self.guide(), "a_guide")
+        self._action(m, tr("Raccourcis"), "F1", lambda: self.guide(tr("Raccourcis")), "a_raccourcis")
         m.addSeparator()
         self._action(m, tr("Rechercher une mise à jour…"), None, lambda: self.verifier_maj(False))
         a = self._action(m, tr("Vérifier les mises à jour au démarrage"), None, None, "a_maj_auto")
@@ -840,29 +841,12 @@ class Fenetre(QMainWindow):
             titre = f"{nom}{' •' if self.doc.modifie else ''} — {NOM}"
         self.setWindowTitle(titre)
 
-    def _aide(self):
-        QMessageBox.information(self, tr("Raccourcis"), tr(
-            "Outils : H main, V déplacer, M rectangle, L lasso, B pinceau, E gomme de sélection, G gomme de calque, "
-            "T texte, C recadrer, P pinceau de couleur, S tampon\n"
-            "Recadrer : Entrée ou double-clic = valider, Échap = annuler\n"
-            "Pinceau de couleur : Alt+clic = prendre une couleur ; Tampon : Alt+clic = endroit à copier\n"
-            "[ et ] : taille du pinceau\n"
-            "Rectangle et lasso : une nouvelle sélection remplace l'ancienne ; Maj = ajouter, Alt = retirer\n"
-            "Pinceau de sélection : Alt pendant le tracé = retirer\n"
-            "Outils groupés (petit triangle) : clic droit ou clic maintenu pour choisir\n"
-            "Espace + glisser, ou bouton du milieu : déplacer la vue\n"
-            "Molette : zoom ; Ctrl+0 : ajuster ; Ctrl+1 : 100 %\n"
-            "Ctrl+A tout, Ctrl+D désélectionner, Ctrl+Shift+I inverser\n"
-            "Ctrl+X couper, Ctrl+C copier, Ctrl+V coller (nouveau calque), Suppr effacer la sélection\n"
-            "Ctrl+U réglages de l'image (luminosité, contraste, couleurs, netteté)\n"
-            "Ctrl+N nouvelle image, Ctrl+Alt+V nouvelle image depuis le presse-papiers, Ctrl+Alt+I taille de l'image\n"
-            "Ctrl+T transformer le calque (coins = taille, dedans = déplacer, dehors = tourner ; Entrée / Échap)\n"
-            "Ctrl+Alt+S sélectionner le sujet (IA), Shift+B supprimer l'arrière-plan (IA)\n"
-            "Ctrl+Z annuler, Ctrl+Y rétablir\n"
-            "Shift+E Effacer, Shift+R Remplir, Shift+A Agrandir, Shift+U Upscale\n"
-            "Agrandir : Maj en tirant = les deux côtés ; Entrée lancer, Échap annuler\n"
-            "Texte : clic = nouveau texte, glisser = déplacer, poignée ronde = tourner (Maj : par 15°)\n\n"
-            "Le guide complet est dans docs\\{guide}.", guide=tr("GUIDE.md")))
+    def guide(self, chapitre: str | None = None):
+        """Guide de Chrypix dans sa propre fenêtre (comme TwinPanel) ; F1 l'ouvre sur les raccourcis."""
+        from .aide import FenetreGuide
+        if getattr(self, "_fenetre_guide", None) is None or self._fenetre_guide.c is not self.couleurs:
+            self._fenetre_guide = FenetreGuide(self.couleurs, self)
+        self._fenetre_guide.ouvrir(chapitre)
 
     # ================================================================ moteur
     def installer_moteur(self):
@@ -1444,7 +1428,7 @@ class Fenetre(QMainWindow):
     # ================================================================ aide : à propos, mises à jour
     def a_propos(self):
         icone_app = QApplication.instance().windowIcon()
-        APropos(icone_app.pixmap(96, 96) if not icone_app.isNull() else None, self).exec()
+        APropos(icone_app.pixmap(96, 96) if not icone_app.isNull() else None, self, self.couleurs).exec()
 
     def verifier_maj(self, silencieux: bool = False):
         def ok(info):

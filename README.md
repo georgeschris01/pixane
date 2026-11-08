@@ -54,7 +54,7 @@ Bienvenue à tous les futurs utilisateurs de Chrypix !
 
 ## Guide
 
-Ce qui suit est le guide complet. C'est le même texte que le fichier `docs\GUIDE.md` livré avec le programme (menu **Aide**, touche **F1** pour les raccourcis).
+Ce qui suit est le guide complet. C'est le même texte que le fichier `docs\GUIDE.md` livré avec le programme et affiché dans sa fenêtre **Aide > Guide de Chrypix** (avec une recherche ; **F1** l'ouvre sur les raccourcis).
 
 <!-- guide -->
 ## 1. La fenêtre
@@ -450,7 +450,7 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+0, Ctrl+1 | Ajuster, 100 % |
 | Entrée / Échap | (Agrandir) Lancer / Annuler ; (Recadrer) Valider / Annuler |
 | Maj (en tournant un texte) | Rotation par pas de 15° |
-| F1 | Liste des raccourcis |
+| F1 | Guide, ouvert sur les raccourcis (menu Aide > Guide de Chrypix : tout le guide, avec une recherche) |
 
 ---
 
