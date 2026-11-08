@@ -164,7 +164,7 @@ devant. Une photo ouverte a un seul calque, « Arrière-plan ».
 | **Vignette** | Aperçu du calque ; le damier gris montre les parties transparentes |
 | **Nom** | Double-clic pour renommer |
 | **Opacité** | Transparence du calque choisi, de 0 % (invisible) à 100 % ; affichée sous le nom quand < 100 % |
-| **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. On peut toujours le masquer, le renommer et le monter / descendre. Agrandir et Upscale le redimensionnent avec toute l'image. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .ora |
+| **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. Les actions IA sont refusées avec un message : Effacer et Remplir si le calque choisi est verrouillé, Agrandir et Upscale si un calque quelconque est verrouillé (ils changent la taille de tous les calques). On peut toujours le masquer, le renommer et le monter / descendre. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .ora |
 
 ### Les boutons (de gauche à droite)
 | Bouton | Action |

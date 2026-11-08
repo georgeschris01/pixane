@@ -587,19 +587,35 @@ class Fenetre(QMainWindow):
             return False
         return True
 
+    def _verifier_verrou(self, action: str, tous: bool = False) -> bool:
+        """Faux (avec un message) si le calque choisi, ou un calque quelconque (tous=True), est verrouillé."""
+        calques = self.doc.calques if tous else [self.doc.calque_actif]
+        bloques = [c.nom for c in calques if c.verrou]
+        if not bloques:
+            return True
+        noms = ", ".join(f"« {n} »" for n in bloques)
+        pluriel = len(bloques) > 1
+        raison = ("change la taille de tous les calques" if tous else "modifie le calque choisi")
+        QMessageBox.information(self, action,
+                                f"{'Les calques' if pluriel else 'Le calque'} {noms} "
+                                f"{'sont cadenassés' if pluriel else 'est cadenassé'} : {action} {raison}, "
+                                "c'est donc impossible.\n\nClique sur le cadenas du calque dans le panneau "
+                                "Calques pour le déverrouiller.")
+        return False
+
     def ia_effacer(self):
-        if self.doc and self._verifier_selection():
+        if self.doc and self._verifier_verrou("Effacer") and self._verifier_selection():
             self._lancer("Effacer", True, lambda nom: recettes.effacer(nom))
 
     def ia_remplir(self):
-        if self.doc and self._verifier_selection():
+        if self.doc and self._verifier_verrou("Remplir") and self._verifier_selection():
             texte = self.texte_remplir.text().strip()
             self._lancer("Remplir", True, lambda nom: recettes.remplir(nom, texte))
 
     def ia_agrandir(self):
         if not self.doc:
             return
-        if self.canevas.cadre is not None:
+        if self.canevas.cadre is not None or not self._verifier_verrou("Agrandir", tous=True):
             return
         # bord abîmé proposé d'office : le liseré clair ou foncé détecté sur chaque bord
         abime = lisere_auto(tableau(self.doc.image)[:, :, :3])
@@ -634,7 +650,7 @@ class Fenetre(QMainWindow):
         self._lancer("Agrandir", False, lambda nom: recettes.agrandir(nom), apres=raccord, png=png, placer=placer)
 
     def ia_upscale(self):
-        if not self.doc:
+        if not self.doc or not self._verifier_verrou("Upscale", tous=True):
             return
         d = ReglagesUpscale(self.doc.image.width(), self.doc.image.height(), self)
         if d.exec():

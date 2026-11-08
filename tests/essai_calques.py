@@ -135,6 +135,15 @@ for t in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease):
     b_ = Qt.NoButton if t == QEvent.MouseButtonRelease else Qt.LeftButton
     c.event(QMouseEvent(t, p0, p0, Qt.LeftButton, b_, Qt.NoModifier))
 verifier(np.array_equal(rgb(doc.image), avant_gomme) and messages, "verrouillé : la gomme refuse, avec un message")
+from PySide6.QtWidgets import QMessageBox
+infos, lances = [], []
+QMessageBox.information = staticmethod(lambda parent, titre, texte, *a: infos.append(texte))
+f._lancer = lambda *a, **kw: lances.append(a[0])
+doc.tout_selectionner()
+f.ia_effacer(); f.ia_remplir(); f.ia_upscale(); f.ia_agrandir()
+verifier(not lances and len(infos) == 4 and c.cadre is None, "verrouillé : Effacer, Remplir, Upscale, Agrandir refusés avec message")
+print("   message :", infos[0].replace(chr(10), " "))
+doc.deselectionner()
 doc.enregistrer(chemin)
 verifier(Document.ouvrir(chemin).calques[-1].verrou, ".ora : verrou gardé")
 f.historique.undo()
