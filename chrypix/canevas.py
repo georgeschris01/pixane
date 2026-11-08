@@ -13,7 +13,7 @@ OPACITE_SELECTION = 0.45
 
 class Canevas(QWidget):
     selection_modifiee = Signal(object, str)   # (état avant, nom de l'action) -> pour annuler
-    infos = Signal(str)                         # zoom, position
+    infos = Signal(int, int, float)             # largeur, hauteur, zoom
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -30,6 +30,9 @@ class Canevas(QWidget):
         self._souris = None
         self._cache = None           # (clé, pixmap réduite)
         self._ajuste = True          # l'image suit la taille de la fenêtre
+        self.mode_retirer = False    # pastilles Ajouter / Retirer
+        self.couleur_fond = QColor(40, 40, 40)
+        self.couleur_texte = QColor(150, 150, 150)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMinimumSize(300, 200)
@@ -94,7 +97,7 @@ class Canevas(QWidget):
 
     def _signaler(self):
         if self.doc:
-            self.infos.emit(f"{self.doc.image.width()} × {self.doc.image.height()} px   |   zoom {self.zoom * 100:.0f} %")
+            self.infos.emit(self.doc.image.width(), self.doc.image.height(), self.zoom)
 
     def resizeEvent(self, e):
         if self.doc and self._ajuste:
@@ -114,9 +117,9 @@ class Canevas(QWidget):
 
     def paintEvent(self, _):
         p = QPainter(self)
-        p.fillRect(self.rect(), QColor(40, 40, 40))
+        p.fillRect(self.rect(), self.couleur_fond)
         if not self.doc:
-            p.setPen(QColor(150, 150, 150))
+            p.setPen(self.couleur_texte)
             p.drawText(self.rect(), Qt.AlignCenter, "Fichier > Ouvrir…  (ou glisse une photo ici)")
             return
         if self.zoom < 1:
@@ -146,7 +149,7 @@ class Canevas(QWidget):
                 p.drawPath(chemin)
         p.restore()
         # contour de l'image
-        p.setPen(QColor(90, 90, 90))
+        p.setPen(QColor(0, 0, 0, 60))
         p.drawRect(QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
                                                                  self.doc.image.height()) * self.zoom))
         # curseur du pinceau
@@ -204,7 +207,7 @@ class Canevas(QWidget):
             return
         if e.button() != Qt.LeftButton:
             return
-        self._soustraire = bool(e.modifiers() & Qt.AltModifier)
+        self._soustraire = self.mode_retirer != bool(e.modifiers() & Qt.AltModifier)
         self._avant = self.doc.etat()
         pt = self.vers_image(pos)
         self._trace = [pt]
@@ -283,6 +286,13 @@ class Canevas(QWidget):
         self.taille_pinceau = int(max(2, min(2000, taille)))
         self.taille_changee.emit(self.taille_pinceau)
         self.update()
+
+    def definir_couleurs(self, fond: str, texte: str):
+        self.couleur_fond, self.couleur_texte = QColor(fond), QColor(texte)
+        self.update()
+
+    def definir_mode_retirer(self, oui: bool):
+        self.mode_retirer = oui
 
     def definir_outil(self, outil: str):
         self.outil = outil

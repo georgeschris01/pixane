@@ -249,6 +249,7 @@ class Attente(QDialog):
         self.barre.setRange(0, 0)
         self.temps = QLabel("")
         self.bouton = QPushButton("Annuler")
+        self.bouton.setAutoDefault(False)
         self.bouton.clicked.connect(self._annuler)
         lay = QVBoxLayout(self)
         lay.setSpacing(10)

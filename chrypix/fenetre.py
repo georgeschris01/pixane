@@ -4,12 +4,14 @@ from __future__ import annotations
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QSettings, Qt, QTimer, Signal
-from PySide6.QtGui import QAction, QActionGroup, QImage, QKeySequence, QUndoCommand, QUndoStack
-from PySide6.QtWidgets import (QApplication, QDockWidget, QFileDialog, QLabel, QLineEdit, QMainWindow,
-                               QMessageBox, QPushButton, QSlider, QToolBar, QVBoxLayout, QWidget)
+from PySide6.QtCore import QObject, QSettings, QSize, Qt, Signal
+from PySide6.QtGui import QAction, QActionGroup, QIcon, QImage, QKeySequence, QUndoCommand, QUndoStack
+from PySide6.QtWidgets import (QApplication, QButtonGroup, QDockWidget, QFileDialog, QHBoxLayout, QLabel, QLineEdit,
+                               QMainWindow, QMessageBox, QPushButton, QSizePolicy, QSlider, QToolBar, QVBoxLayout,
+                               QWidget)
 
-from . import recettes
+from . import recettes, theme
+from .icones import icone
 from .canevas import GOMME, LASSO, MAIN, PINCEAU, RECTANGLE, Canevas
 from .dialogues import Attente, ChoixResultat, ReglagesAgrandir, ReglagesUpscale
 from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection
@@ -54,13 +56,43 @@ class CommandeEtat(QUndoCommand):
         self.doc.appliquer_etat(self.avant)
 
 
+class Carte(QPushButton):
+    """Bouton large du panneau IA : icône, titre et une ligne d'explication."""
+
+    def __init__(self, titre: str, explication: str):
+        super().__init__()
+        self.setObjectName("carte")
+        self.setCursor(Qt.PointingHandCursor)
+        self.setFixedHeight(64)
+        self.image = QLabel()
+        self.image.setFixedSize(28, 28)
+        t = QLabel(f"<b>{titre}</b>")
+        e = QLabel(explication)
+        e.setObjectName("discret")
+        e.setWordWrap(True)
+        textes = QVBoxLayout()
+        textes.setSpacing(1)
+        textes.addWidget(t)
+        textes.addWidget(e)
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(12, 8, 12, 8)
+        lay.setSpacing(12)
+        lay.addWidget(self.image, 0, Qt.AlignVCenter)
+        lay.addLayout(textes, 1)
+        for w in (self.image, t, e):
+            w.setAttribute(Qt.WA_TransparentForMouseEvents)
+
+    def definir_icone(self, ic: QIcon):
+        self.image.setPixmap(ic.pixmap(28, 28))
+
+
 class Fenetre(QMainWindow):
     etat_moteur = Signal(str)
 
     def __init__(self):
         super().__init__()
         self.setWindowTitle(NOM)
-        self.resize(1400, 900)
+        self.resize(1440, 920)
         self.setAcceptDrops(True)
         self.reglages = QSettings("Chrypix", "Chrypix")
         self.doc: Document | None = None
@@ -68,51 +100,60 @@ class Fenetre(QMainWindow):
         self.historique.setUndoLimit(30)
         self.moteur = Moteur()
         self._taches = set()
+        self._icones = []            # (objet, nom d'icône) à redessiner quand le thème change
+        self.mode_theme = self.reglages.value("theme", theme.AUTO)
+        self.couleurs = theme.appliquer(QApplication.instance(), self.mode_theme)
+        self.texte_moteur = "démarrage…"
 
         self.canevas = Canevas()
         self.canevas.selection_modifiee.connect(self._selection_modifiee)
         self.setCentralWidget(self.canevas)
 
-        self.info_image = QLabel("")
-        self.info_moteur = QLabel("Moteur IA : démarrage…")
-        self.statusBar().addWidget(self.info_moteur)
-        self.statusBar().addPermanentWidget(self.info_image)
-        self.canevas.infos.connect(self.info_image.setText)
-        self.etat_moteur.connect(lambda t: self.info_moteur.setText("Moteur IA : " + t))
-
         self._menus()
+        self._barre_commandes()
         self._outils()
         self._panneau_ia()
+        self._barre_etat()
+        self._appliquer_theme()
         self._actualiser()
         self._demarrer_moteur()
 
     # ================================================================ interface
-    def _action(self, menu, texte, raccourci=None, fonction=None, cle=None):
+    def _icone(self, objet, nom: str):
+        self._icones.append((objet, nom))
+        return objet
+
+    def _action(self, menu, texte, raccourci=None, fonction=None, cle=None, icone=None):
         a = QAction(texte, self)
         if raccourci:
             a.setShortcut(QKeySequence(raccourci))
         if fonction:
             a.triggered.connect(fonction)
-        menu.addAction(a)
+        if menu is not None:
+            menu.addAction(a)
         if cle:
             setattr(self, cle, a)
+        if icone:
+            self._icone(a, icone)
         return a
 
     def _menus(self):
         m = self.menuBar().addMenu("&Fichier")
-        self._action(m, "Ouvrir…", QKeySequence.Open, self.ouvrir)
-        self._action(m, "Enregistrer", QKeySequence.Save, self.enregistrer, "a_enregistrer")
+        self._action(m, "Ouvrir…", QKeySequence.Open, self.ouvrir, "a_ouvrir", "ouvrir")
+        self._action(m, "Enregistrer", QKeySequence.Save, self.enregistrer, "a_enregistrer", "enregistrer")
         self._action(m, "Enregistrer sous…", "Ctrl+Shift+S", self.enregistrer_sous, "a_enregistrer_sous")
         m.addSeparator()
         self._action(m, "Quitter", "Ctrl+Q", self.close)
 
         m = self.menuBar().addMenu("&Édition")
-        annuler = self.historique.createUndoAction(self, "Annuler")
-        annuler.setShortcut(QKeySequence.Undo)
-        retablir = self.historique.createRedoAction(self, "Rétablir")
-        retablir.setShortcuts([QKeySequence("Ctrl+Y"), QKeySequence("Ctrl+Shift+Z")])
-        m.addAction(annuler)
-        m.addAction(retablir)
+        self.a_annuler = self.historique.createUndoAction(self, "Annuler")
+        self.a_annuler.setShortcut(QKeySequence.Undo)
+        self.a_retablir = self.historique.createRedoAction(self, "Rétablir")
+        self.a_retablir.setShortcuts([QKeySequence("Ctrl+Y"), QKeySequence("Ctrl+Shift+Z")])
+        self._icone(self.a_annuler, "annuler")
+        self._icone(self.a_retablir, "retablir")
+        m.addAction(self.a_annuler)
+        m.addAction(self.a_retablir)
 
         m = self.menuBar().addMenu("&Sélection")
         self._action(m, "Tout sélectionner", "Ctrl+A", lambda: self._modifier_selection("tout"), "a_tout")
@@ -121,85 +162,213 @@ class Fenetre(QMainWindow):
                      "a_inverser")
 
         m = self.menuBar().addMenu("&Affichage")
-        self._action(m, "Zoom avant", "Ctrl++", lambda: self.canevas.zoomer(1.25))
-        self._action(m, "Zoom arrière", "Ctrl+-", lambda: self.canevas.zoomer(0.8))
-        self._action(m, "Ajuster à la fenêtre", "Ctrl+0", self.canevas.ajuster)
+        self._action(m, "Zoom avant", "Ctrl++", lambda: self.canevas.zoomer(1.25), "a_zoom_plus", "zoom_plus")
+        self._action(m, "Zoom arrière", "Ctrl+-", lambda: self.canevas.zoomer(0.8), "a_zoom_moins", "zoom_moins")
+        self._action(m, "Ajuster à la fenêtre", "Ctrl+0", self.canevas.ajuster, "a_ajuster", "ajuster")
         self._action(m, "Taille réelle (100 %)", "Ctrl+1", self.canevas.zoom_100)
+        m.addSeparator()
+        sous = m.addMenu("Thème")
+        groupe = QActionGroup(self)
+        for mode, texte in ((theme.AUTO, "Comme Windows"), (theme.CLAIR, "Clair"), (theme.SOMBRE, "Sombre")):
+            a = QAction(texte, self, checkable=True)
+            a.setChecked(mode == self.mode_theme)
+            a.triggered.connect(lambda _=False, md=mode: self.changer_theme(md))
+            groupe.addAction(a)
+            sous.addAction(a)
+        self._actions_theme = groupe
 
         m = self.menuBar().addMenu("&IA")
-        self._action(m, "Effacer", "Shift+E", self.ia_effacer, "a_effacer")
-        self._action(m, "Remplir", "Shift+R", self.ia_remplir, "a_remplir")
-        self._action(m, "Agrandir l'image…", "Shift+A", self.ia_agrandir, "a_agrandir")
-        self._action(m, "Upscale…", "Shift+U", self.ia_upscale, "a_upscale")
+        self._action(m, "Effacer", "Shift+E", self.ia_effacer, "a_effacer", "effacer")
+        self._action(m, "Remplir", "Shift+R", self.ia_remplir, "a_remplir", "remplir")
+        self._action(m, "Agrandir l'image…", "Shift+A", self.ia_agrandir, "a_agrandir", "agrandir")
+        self._action(m, "Upscale…", "Shift+U", self.ia_upscale, "a_upscale", "upscale")
 
         m = self.menuBar().addMenu("&Aide")
-        self._action(m, "Raccourcis", None, self._aide)
+        self._action(m, "Raccourcis", "F1", self._aide)
+
+    def _barre_commandes(self):
+        """Barre du haut : fichiers, annuler, options de l'outil, zoom, thème."""
+        b = QToolBar("Commandes")
+        b.setMovable(False)
+        b.setIconSize(QSize(20, 20))
+        self.addToolBar(Qt.TopToolBarArea, b)
+        for a in (self.a_ouvrir, self.a_enregistrer):
+            b.addAction(a)
+        b.addSeparator()
+        b.addAction(self.a_annuler)
+        b.addAction(self.a_retablir)
+        b.addSeparator()
+
+        # options de l'outil (comme Photoshop)
+        self.options = QWidget()
+        lay = QHBoxLayout(self.options)
+        lay.setContentsMargins(6, 0, 6, 0)
+        lay.setSpacing(8)
+        lay.addWidget(QLabel("Taille"))
+        self.curseur_taille = QSlider(Qt.Horizontal)
+        self.curseur_taille.setRange(2, 600)
+        self.curseur_taille.setFixedWidth(160)
+        self.curseur_taille.setValue(self.canevas.taille_pinceau)
+        self.valeur_taille = QLabel(f"{self.canevas.taille_pinceau} px")
+        self.valeur_taille.setMinimumWidth(52)
+        self.curseur_taille.valueChanged.connect(self.canevas.definir_taille)
+        self.canevas.taille_changee.connect(self._taille_changee)
+        lay.addWidget(self.curseur_taille)
+        lay.addWidget(self.valeur_taille)
+        lay.addSpacing(10)
+        self.p_ajouter = QPushButton("Ajouter")
+        self.p_retirer = QPushButton("Retirer")
+        groupe = QButtonGroup(self)
+        for p_, retirer in ((self.p_ajouter, False), (self.p_retirer, True)):
+            p_.setObjectName("pastille")
+            p_.setCheckable(True)
+            p_.setCursor(Qt.PointingHandCursor)
+            p_.setToolTip("Mode de sélection (Alt inverse le mode pendant le tracé)")
+            p_.clicked.connect(lambda _=False, r=retirer: self.canevas.definir_mode_retirer(r))
+            groupe.addButton(p_)
+            lay.addWidget(p_)
+        self.p_ajouter.setChecked(True)
+        b.addWidget(self.options)
+
+        vide = QWidget()
+        vide.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        b.addWidget(vide)
+        b.addAction(self.a_zoom_moins)
+        self.valeur_zoom = QLabel("—")
+        self.valeur_zoom.setMinimumWidth(52)
+        self.valeur_zoom.setAlignment(Qt.AlignCenter)
+        b.addWidget(self.valeur_zoom)
+        b.addAction(self.a_zoom_plus)
+        b.addAction(self.a_ajuster)
+        b.addSeparator()
+        self.a_theme = QAction("Thème clair / sombre", self)
+        self.a_theme.triggered.connect(self._basculer_theme)
+        b.addAction(self.a_theme)
 
     def _outils(self):
         barre = QToolBar("Outils")
         barre.setMovable(False)
-        barre.setToolButtonStyle(Qt.ToolButtonTextOnly)
+        barre.setIconSize(QSize(22, 22))
+        barre.setToolButtonStyle(Qt.ToolButtonIconOnly)
         self.addToolBar(Qt.LeftToolBarArea, barre)
         groupe = QActionGroup(self)
-        for outil, texte, touche in ((MAIN, "Main", "H"), (RECTANGLE, "Rectangle", "M"), (LASSO, "Lasso", "L"),
-                                     (PINCEAU, "Pinceau", "B"), (GOMME, "Gomme", "E")):
+        for outil, texte, touche, nom in ((MAIN, "Main : déplacer la vue", "H", "main"),
+                                          (RECTANGLE, "Sélection rectangle", "M", "rectangle"),
+                                          (LASSO, "Lasso", "L", "lasso"),
+                                          (PINCEAU, "Pinceau de sélection", "B", "pinceau"),
+                                          (GOMME, "Gomme de sélection", "E", "gomme")):
             a = QAction(texte, self, checkable=True)
             a.setShortcut(touche)
-            a.setToolTip(f"{texte} ({touche})")
-            a.triggered.connect(lambda _=False, o=outil: self.canevas.definir_outil(o))
+            a.setToolTip(f"{texte}  ({touche})")
+            a.triggered.connect(lambda _=False, o=outil: self._choisir_outil(o))
+            self._icone(a, nom)
             groupe.addAction(a)
             barre.addAction(a)
             if outil == PINCEAU:
                 a.setChecked(True)
-        barre.addSeparator()
-        barre.addWidget(QLabel(" Taille"))
-        self.curseur_taille = QSlider(Qt.Vertical)
-        self.curseur_taille.setRange(2, 600)
-        self.curseur_taille.setValue(self.canevas.taille_pinceau)
-        self.curseur_taille.setFixedHeight(160)
-        self.curseur_taille.valueChanged.connect(self.canevas.definir_taille)
-        self.canevas.taille_changee.connect(lambda v: (self.curseur_taille.blockSignals(True),
-                                                       self.curseur_taille.setValue(min(v, 600)),
-                                                       self.curseur_taille.blockSignals(False)))
-        barre.addWidget(self.curseur_taille)
+
+    def _choisir_outil(self, outil: str):
+        self.canevas.definir_outil(outil)
+        self.options.setEnabled(outil != MAIN)
+
+    def _taille_changee(self, v: int):
+        self.curseur_taille.blockSignals(True)
+        self.curseur_taille.setValue(min(v, 600))
+        self.curseur_taille.blockSignals(False)
+        self.valeur_taille.setText(f"{v} px")
 
     def _panneau_ia(self):
-        dock = QDockWidget("IA", self)
-        dock.setFeatures(QDockWidget.DockWidgetMovable)
+        dock = QDockWidget("INTELLIGENCE ARTIFICIELLE", self)
+        dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
         w = QWidget()
         lay = QVBoxLayout(w)
-        aide = QLabel("1. Entoure la zone (pinceau, lasso…)\n2. Clique sur une action.\n"
-                      "Alt + outil = retirer de la sélection.")
+        lay.setContentsMargins(10, 4, 10, 10)
+        lay.setSpacing(8)
+        aide = QLabel("Entoure la zone avec le pinceau ou le lasso, puis choisis une action.")
+        aide.setObjectName("discret")
         aide.setWordWrap(True)
         lay.addWidget(aide)
-        self.b_effacer = QPushButton("Effacer")
-        self.b_effacer.clicked.connect(self.ia_effacer)
+        self.b_effacer = Carte("Effacer", "Enlève l'objet entouré")
+        self.b_remplir = Carte("Remplir", "Remplace la zone entourée")
         self.texte_remplir = QLineEdit()
         self.texte_remplir.setPlaceholderText("Texte facultatif (laisser vide)")
-        self.b_remplir = QPushButton("Remplir")
-        self.b_remplir.clicked.connect(self.ia_remplir)
-        self.b_agrandir = QPushButton("Agrandir l'image…")
-        self.b_agrandir.clicked.connect(self.ia_agrandir)
-        self.b_upscale = QPushButton("Upscale…")
-        self.b_upscale.clicked.connect(self.ia_upscale)
-        for b in (self.b_effacer, self.b_remplir, self.b_agrandir, self.b_upscale):
-            b.setMinimumHeight(38)
+        self.b_agrandir = Carte("Agrandir l'image", "Étend la photo au-delà des bords")
+        self.b_upscale = Carte("Upscale", "Augmente la définition")
+        for carte, fonction, nom in ((self.b_effacer, self.ia_effacer, "effacer"),
+                                     (self.b_remplir, self.ia_remplir, "remplir"),
+                                     (self.b_agrandir, self.ia_agrandir, "agrandir"),
+                                     (self.b_upscale, self.ia_upscale, "upscale")):
+            carte.clicked.connect(fonction)
+            self._icone(carte, nom)
         lay.addWidget(self.b_effacer)
-        lay.addSpacing(8)
-        lay.addWidget(self.texte_remplir)
         lay.addWidget(self.b_remplir)
-        lay.addSpacing(8)
+        lay.addWidget(self.texte_remplir)
+        lay.addSpacing(6)
         lay.addWidget(self.b_agrandir)
         lay.addWidget(self.b_upscale)
         lay.addStretch(1)
         dock.setWidget(w)
-        dock.setMinimumWidth(230)
+        dock.setFixedWidth(290)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
+
+    def _barre_etat(self):
+        self.pastille_moteur = QLabel()
+        self.pastille_image = QLabel()
+        for p_ in (self.pastille_moteur, self.pastille_image):
+            p_.setObjectName("pastille_etat")
+        self.statusBar().addWidget(self.pastille_moteur)
+        self.statusBar().addPermanentWidget(self.pastille_image)
+        self.statusBar().setSizeGripEnabled(False)
+        self.canevas.infos.connect(self._infos_image)
+        self.etat_moteur.connect(self._moteur_change)
+        self.pastille_image.hide()
+
+    def _infos_image(self, largeur: int, hauteur: int, zoom: float):
+        self.pastille_image.setText(f"{largeur} × {hauteur} px")
+        self.pastille_image.show()
+        self.valeur_zoom.setText(f"{zoom * 100:.0f} %")
+
+    def _moteur_change(self, texte: str):
+        self.texte_moteur = texte
+        self._peindre_pastille_moteur()
+
+    def _peindre_pastille_moteur(self):
+        c = self.couleurs
+        etat = self.moteur.etat
+        couleur = c.vert if etat == "prêt" else c.rouge if etat in ("introuvable", "erreur", "incomplet") \
+            else c.orange
+        self.pastille_moteur.setText(f'<span style="color:{couleur}">●</span>&nbsp; Moteur IA : {self.texte_moteur}')
+
+    # ---------------------------------------------------------- thème
+    def changer_theme(self, mode: str):
+        self.mode_theme = mode
+        self.reglages.setValue("theme", mode)
+        self.couleurs = theme.appliquer(QApplication.instance(), mode)
+        self._appliquer_theme()
+
+    def _basculer_theme(self):
+        mode = theme.CLAIR if self.couleurs.sombre else theme.SOMBRE
+        for a in self._actions_theme.actions():
+            a.setChecked(a.text() == ("Clair" if mode == theme.CLAIR else "Sombre"))
+        self.changer_theme(mode)
+
+    def _appliquer_theme(self):
+        c = self.couleurs
+        for objet, nom in self._icones:
+            ic = icone(nom, c.texte, c.accent)
+            if isinstance(objet, Carte):
+                objet.definir_icone(ic)
+            else:
+                objet.setIcon(ic)
+        self.a_theme.setIcon(icone("soleil" if c.sombre else "lune", c.texte, c.accent))
+        self.canevas.definir_couleurs(c.canevas, c.discret)
+        self._peindre_pastille_moteur()
 
     def _actualiser(self):
         a_doc = self.doc is not None
         pret = a_doc and self.moteur.etat == "prêt"
-        for a in (self.a_enregistrer, self.a_enregistrer_sous, self.a_tout, self.a_rien, self.a_inverser):
+        for a in (self.a_enregistrer, self.a_enregistrer_sous, self.a_tout, self.a_rien, self.a_inverser,
+                  self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster):
             a.setEnabled(a_doc)
         for a in (self.a_effacer, self.a_remplir, self.a_agrandir, self.a_upscale):
             a.setEnabled(pret)
@@ -208,14 +377,14 @@ class Fenetre(QMainWindow):
         titre = NOM
         if self.doc:
             nom = self.doc.chemin.name if self.doc.chemin else "sans titre"
-            titre = f"{nom}{' *' if self.doc.modifie else ''} — {NOM}"
+            titre = f"{nom}{' •' if self.doc.modifie else ''} — {NOM}"
         self.setWindowTitle(titre)
 
     def _aide(self):
         QMessageBox.information(self, "Raccourcis", (
             "Outils : H main, M rectangle, L lasso, B pinceau, E gomme\n"
             "[ et ] : taille du pinceau\n"
-            "Alt + outil : retirer de la sélection\n"
+            "Alt pendant le tracé : inverse Ajouter / Retirer\n"
             "Espace + glisser, ou bouton du milieu : déplacer la vue\n"
             "Molette : zoom ; Ctrl+0 : ajuster ; Ctrl+1 : 100 %\n"
             "Ctrl+A tout, Ctrl+D désélectionner, Ctrl+Shift+I inverser\n"
