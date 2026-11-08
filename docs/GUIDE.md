@@ -40,7 +40,7 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
   La photo est redressée selon son orientation d'appareil.
 - **Enregistrer** (Ctrl+S), **Enregistrer sous** (Ctrl+Maj+S) :
   - **.chr** (projet Chrypix) : le format de Chrypix. Garde **tout** : calques (noms, ordre, visibilité, opacité,
-    verrou) et **textes modifiables**. Proposé d'office quand l'image a plusieurs calques ou un texte.
+    verrou), **textes modifiables** et **styles de calque modifiables**. Proposé d'office quand l'image a plusieurs calques ou un texte.
   - **.ora** (OpenRaster) : pour **partager avec Krita ou GIMP** (format ouvert). Garde les calques, mais les
     textes y deviennent des images.
   - Bon à savoir : un .chr est construit comme un .ora ; renommé en .ora, il s'ouvre aussi dans Krita ou GIMP.
@@ -254,19 +254,55 @@ devant. Une photo ouverte a un seul calque, « Arrière-plan ».
 | **Liste** | Le calque du haut est en haut. Cliquez sur un calque pour le choisir (il est surligné) |
 | **Œil** | Afficher / masquer le calque (pratique pour comparer avant / après une retouche IA) |
 | **Vignette** | Aperçu du calque ; le damier gris montre les parties transparentes |
-| **Nom** | Double-clic pour renommer |
+| **Nom** | Double-clic sur le nom pour renommer ; double-clic ailleurs sur la ligne : style du calque |
 | **Opacité** | Transparence du calque choisi, de 0 % (invisible) à 100 % ; affichée sous le nom quand < 100 % |
 | **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. Les actions IA sont refusées avec un message : Effacer et Remplir si le calque choisi est verrouillé, Agrandir et Upscale si un calque quelconque est verrouillé (ils changent la taille de tous les calques). On peut toujours le masquer, le renommer et le monter / descendre. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .chr et .ora |
 
 ### Les boutons (de gauche à droite)
 | Bouton | Action |
 |---|---|
-| **Nouveau calque** | Ajoute un calque vide au-dessus du calque choisi |
-| **Dupliquer** | Copie le calque choisi |
+| **Nouveau calque** | Ajoute un calque vide au-dessus du calque choisi (Ctrl+Maj+N) |
+| **Dupliquer** | Copie le calque choisi (Ctrl+J) |
+| **fx** | Style du calque (voir plus bas) |
 | **Monter / Descendre** | Change la place du calque dans la pile |
 | **Fusionner** | Réunit le calque choisi avec celui du dessous (l'opacité est appliquée) |
 | **Aplatir** | Réunit tous les calques visibles en un seul « Arrière-plan » |
 | **Supprimer** | Supprime le calque choisi (le dernier calque ne peut pas être supprimé) |
+
+### Style du calque : ombres, contour, lueur, relief… (Ctrl+Alt+F)
+Des **effets ajoutés au calque**, toujours modifiables : les pixels du calque ne sont pas touchés. Pour l'ouvrir :
+**double-clic** sur un calque (ailleurs que sur son nom), bouton **fx** du panneau, ou menu **Calque > Style du
+calque…**. La photo montre le résultat en direct ; **OK** garde le style (une seule étape dans Annuler),
+**Annuler** remet tout comme avant.
+
+| Effet | Ce qu'il fait |
+|---|---|
+| **Ombre portée** | Ombre décalée sous le calque. Case **Ombre réaliste** : nette près de l'objet, de plus en plus floue en s'éloignant, comme une vraie ombre |
+| **Ombre interne** | Ombre à l'intérieur des bords (effet creusé) |
+| **Lueur externe / interne** | Halo de couleur autour du calque, ou depuis ses bords (ou son centre) vers l'intérieur |
+| **Contour** | Trait autour du calque : à l'extérieur, au centre ou à l'intérieur, épaisseur au choix |
+| **Biseau et relief** | Donne du volume : biseau interne, externe ou estampage ; vers le haut ou le bas ; hauteur de la lumière |
+| **Incrustation couleur** | Recouvre le calque d'une couleur (modes Normal, Produit, Écran, Incrustation) |
+| **Incrustation dégradé** | Recouvre le calque d'un dégradé linéaire ou radial, angle et échelle au choix |
+| **Ombre au sol** | Pour un objet détouré : ombre couchée sur le sol, en perspective, nette au pied et floue au bout. **Tirez le point rond sur la photo** pour choisir sa direction et sa longueur |
+
+- **Styles tout prêts** (en haut) : Ombre douce, Ombre réaliste, Ombre au sol, Autocollant, Contour noir, Contour
+  seul, Néon, Or, Chrome, Relief, Gravé, Feu, Bonbon, Verre. Les vignettes sont calculées **sur votre calque**. Un
+  clic l'essaie, puis chaque effet reste réglable.
+- **Plusieurs fois le même effet** (deux contours, trois ombres…) : bouton ⧉. Le premier de la liste passe devant.
+  ▲ / ▼ changent l'ordre, ✕ supprime, la case à cocher éteint un effet sans le perdre.
+- **Remplissage** : opacité du contenu seul, les effets restent. À 0 % : il ne reste que le contour ou l'ombre
+  (texte en contour, verre…).
+- **Lumière commune** (cochée par défaut) : tous les calques ont la même lumière ; changer son angle sur un calque
+  le change partout.
+- **Enregistrer ce style…** : il rejoint les styles tout prêts (clic droit dessus pour le supprimer).
+- Les effets **suivent le calque** : Ctrl+T, Taille de l'image et Upscale les agrandissent ou les réduisent avec lui.
+  Ils suivent aussi un texte modifié ou un calque déplacé.
+- Menu **Calque** : **Copier le style** / **Coller le style** (sur un autre calque), **Enlever le style**, **Mettre
+  le style dans les pixels** (pour gommer ou peindre le calque avec ses effets).
+- Enregistrement : en **.chr**, les styles restent modifiables. En **.psd** et **.ora**, ils sont mis dans les pixels
+  (visibles dans Photoshop, Krita, GIMP, mais plus modifiables). Les effets d'un PSD ouvert ne sont pas repris.
+- Fusionner ou aplatir met aussi les effets dans les pixels.
 
 ### Gomme de calque (G)
 Efface les pixels du **calque choisi** avec le pinceau rond (taille : curseur « Taille » ou `[` `]`).
@@ -428,6 +464,8 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+N, Ctrl+Alt+V | Nouvelle image, Nouvelle image depuis le presse-papiers |
 | Ctrl+Alt+I | Taille de l'image |
 | Ctrl+T | Transformer le calque (Entrée valider, Échap annuler) |
+| Ctrl+Alt+F | Style du calque |
+| Ctrl+Maj+N, Ctrl+J | Nouveau calque, Dupliquer le calque |
 | Ctrl+Alt+S, Maj+B | Sélectionner le sujet, Supprimer l'arrière-plan (IA) |
 | O, Q, W | Sélection d'objet (IA), Sélection rapide (IA), Baguette magique |
 | Glisser après un clic de baguette | Régler la tolérance en direct |

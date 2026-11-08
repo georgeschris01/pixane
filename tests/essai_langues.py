@@ -43,6 +43,21 @@ def textes_du_code() -> set[str]:
                         if isinstance(c, ast.Tuple) and len(c.elts) == 2 and all(
                                 isinstance(e, ast.Constant) for e in c.elts):
                             cles.add(c.elts[1].value)
+            # styles de calque : noms des effets et des modes, libellés et choix des réglages, styles tout prêts
+            if f.name == "styles.py":
+                if isinstance(n, ast.Assign) and any(getattr(t, "id", "") in ("TYPES", "MODES", "REGLAGES")
+                                                     for t in n.targets):
+                    for c in ast.walk(n.value):
+                        if isinstance(c, ast.Dict):
+                            cles.update(v.value for v in c.values if isinstance(v, ast.Constant))
+                        if (isinstance(c, ast.Tuple) and len(c.elts) >= 4 and isinstance(c.elts[1], ast.Constant)
+                                and isinstance(c.elts[1].value, str)):
+                            cles.add(c.elts[1].value)
+                if isinstance(n, ast.FunctionDef) and n.name == "styles_prets":
+                    for c in ast.walk(n):
+                        if (isinstance(c, ast.Tuple) and len(c.elts) == 2 and isinstance(c.elts[0], ast.Constant)
+                                and isinstance(c.elts[1], ast.Call) and getattr(c.elts[1].func, "id", "") == "_s"):
+                            cles.add(c.elts[0].value)
             # bulles d'aide des boutons du panneau Calques : for nom, aide, action in ((…, "texte", …), …)
             if isinstance(n, ast.For) and f.name == "calques.py" and isinstance(n.iter, ast.Tuple):
                 for e in n.iter.elts:

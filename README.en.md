@@ -10,6 +10,7 @@ Free photo editor for Windows, with artificial intelligence retouching **on your
 - **Upscale**: increase the resolution (×1.5 to ×4), fast or sharper
 - Several proposals each time: you pick the best one, as in Photoshop
 - Layers: visibility, opacity, lock, order, merge; each AI result arrives in its own layer
+- Non-destructive **layer styles**: drop shadow (including a realistic shadow), perspective ground shadow, glows, multiple outlines, bevel, overlays; 14 ready-made styles, saved styles
 - Rectangle, lasso or brush selection; AI object selection and quick selection (SAM 3.1); magic wand adjusted by dragging; cut, copy, paste, delete
 - Retouching tools: crop, colour brush, clone stamp, layer eraser, move
 - Editable text: font, size, colour, outline, shadow, background, rotation
@@ -91,7 +92,7 @@ Layer names that already exist keep their original language.
   The photo is rotated according to the camera orientation.
 - **Save** (Ctrl+S), **Save as** (Ctrl+Shift+S):
   - **.chr** (Chrypix project): Chrypix's own format. Keeps **everything**: layers (names, order, visibility,
-    opacity, lock) and **editable texts**. Suggested automatically when the image has several layers or a text.
+    opacity, lock), **editable texts** and **editable layer styles**. Suggested automatically when the image has several layers or a text.
   - **.ora** (OpenRaster): to **share with Krita or GIMP** (open format). Keeps the layers, but texts become
     images.
   - Good to know: a .chr file is built like an .ora file; renamed to .ora, it also opens in Krita or GIMP.
@@ -299,19 +300,54 @@ An opened photo has a single layer, "Background".
 | **List** | The top layer is at the top. Click a layer to select it (it is highlighted) |
 | **Eye** | Show / hide the layer (handy to compare before / after an AI edit) |
 | **Thumbnail** | Preview of the layer; the grey checkerboard shows transparent parts |
-| **Name** | Double-click to rename |
+| **Name** | Double-click the name to rename; double-click elsewhere on the row: layer style |
 | **Opacity** | Transparency of the selected layer, from 0% (invisible) to 100%; shown under the name when < 100% |
 | **Padlock** (right of the name) | Locks the layer to protect it: it can no longer be erased, deleted or merged, and its opacity is fixed; Flatten is disabled while a layer is locked. AI actions are refused with a message: Erase and Fill if the selected layer is locked, Expand and Upscale if any layer is locked (they change the size of every layer). It can still be hidden, renamed and moved up / down. The open padlock is discreet, the closed padlock clearly visible. The lock is kept in .chr and .ora files |
 
 ### The buttons (left to right)
 | Button | Action |
 |---|---|
-| **New layer** | Adds an empty layer above the selected layer |
-| **Duplicate** | Copies the selected layer |
+| **New layer** | Adds an empty layer above the selected layer (Ctrl+Shift+N) |
+| **Duplicate** | Copies the selected layer (Ctrl+J) |
+| **fx** | Layer style (see below) |
 | **Move up / down** | Changes the layer's place in the stack |
 | **Merge** | Combines the selected layer with the one below (opacity is applied) |
 | **Flatten** | Combines all visible layers into a single "Background" |
 | **Delete** | Deletes the selected layer (the last layer cannot be deleted) |
+
+### Layer style: shadows, outline, glow, bevel… (Ctrl+Alt+F)
+**Effects added to the layer**, always editable: the layer's pixels are not touched. To open it: **double-click** a
+layer (anywhere but on its name), the **fx** button in the panel, or **Layer > Layer style…**. The photo shows the
+result live; **OK** keeps the style (a single step in Undo), **Cancel** puts everything back.
+
+| Effect | What it does |
+|---|---|
+| **Drop shadow** | Offset shadow under the layer. **Realistic shadow** box: sharp near the object, blurrier further away, like a real shadow |
+| **Inner shadow** | Shadow inside the edges (carved look) |
+| **Outer / inner glow** | Colour halo around the layer, or from its edges (or centre) inwards |
+| **Outline** | Line around the layer: outside, centre or inside, any thickness |
+| **Bevel and emboss** | Adds volume: inner bevel, outer bevel or emboss; up or down; light altitude |
+| **Colour overlay** | Covers the layer with a colour (Normal, Multiply, Screen, Overlay modes) |
+| **Gradient overlay** | Covers the layer with a linear or radial gradient, any angle and scale |
+| **Ground shadow** | For a cut-out object: shadow lying on the ground, in perspective, sharp at the base and blurred at the end. **Drag the round dot on the photo** to choose its direction and length |
+
+- **Ready-made styles** (at the top): Soft shadow, Realistic shadow, Ground shadow, Sticker, Black outline, Outline
+  only, Neon, Gold, Chrome, Emboss, Engraved, Fire, Candy, Glass. Thumbnails are computed **on your layer**. One
+  click tries it, then every effect can still be adjusted.
+- **The same effect several times** (two outlines, three shadows…): ⧉ button. The first in the list is in front.
+  ▲ / ▼ change the order, ✕ deletes, the tick box turns an effect off without losing it.
+- **Fill**: opacity of the content only, effects stay. At 0%: only the outline or shadow remains (outlined text,
+  glass…).
+- **Same light** (ticked by default): all layers share one light; changing its angle on one layer changes it
+  everywhere.
+- **Save this style…**: it joins the ready-made styles (right-click it to delete it).
+- Effects **follow the layer**: Ctrl+T, Image size and Upscale enlarge or shrink them with it. They also follow an
+  edited text or a moved layer.
+- **Layer** menu: **Copy style** / **Paste style** (onto another layer), **Remove style**, **Merge style into pixels**
+  (to erase or paint the layer with its effects).
+- Saving: in **.chr**, styles stay editable. In **.psd** and **.ora** they are merged into the pixels (visible in
+  Photoshop, Krita, GIMP, but no longer editable). Effects of an opened PSD are not imported.
+- Merge and Flatten also put the effects into the pixels.
 
 ### Layer eraser (G)
 Erases the pixels of the **selected layer** with the round brush (size: "Size" slider or `[` `]`).
@@ -473,6 +509,8 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+N, Ctrl+Alt+V | New image, New image from clipboard |
 | Ctrl+Alt+I | Image size |
 | Ctrl+T | Transform layer (Enter apply, Esc cancel) |
+| Ctrl+Alt+F | Layer style |
+| Ctrl+Shift+N, Ctrl+J | New layer, Duplicate layer |
 | Ctrl+Alt+S, Shift+B | Select subject, Remove background (AI) |
 | O, Q, W | Object selection (AI), Quick selection (AI), Magic wand |
 | Drag after a magic wand click | Adjust the tolerance live |

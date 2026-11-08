@@ -3,7 +3,7 @@ descendre / fusionner / aplatir. Chaque action passe par `demande(etat, texte)` 
 from __future__ import annotations
 
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QColor, QImage, QPainter, QPixmap
+from PySide6.QtGui import QColor, QCursor, QImage, QPainter, QPixmap
 from PySide6.QtWidgets import (QGraphicsOpacityEffect, QHBoxLayout, QInputDialog, QLabel, QListWidget, QListWidgetItem, QSlider, QToolButton,
                                QVBoxLayout, QWidget)
 
@@ -58,7 +58,7 @@ class LigneCalque(QWidget):
         lay.addWidget(self.cadenas)
 
     def remplir(self, nom: str, visible: bool, opacite: float, vignette: QPixmap, verrou: bool = False,
-                texte: bool = False):
+                texte: bool = False, style: bool = False):
         self.oeil.setIcon(self.icones("oeil" if visible else "oeil_ferme"))
         self.cadenas.setIcon(self.icones("cadenas" if verrou else "cadenas_ouvert"))
         self.cadenas.setToolTip(tr("Calque verrouillé : cliquer pour le déverrouiller") if verrou else
@@ -71,6 +71,8 @@ class LigneCalque(QWidget):
         self.nom.setText(nom)
         self.nom.setEnabled(visible)
         details = [tr("texte")] if texte else []
+        if style:
+            details.append(tr("fx · style"))
         if opacite < 0.999:
             details.append(tr("opacité {n} %", n=round(opacite * 100)))
         self.details.setText(" · ".join(details))
@@ -80,6 +82,7 @@ class LigneCalque(QWidget):
 
 class PanneauCalques(QWidget):
     demande = Signal(object, str)      # (nouvel état, texte pour Annuler)
+    style_demande = Signal()           # double-clic sur un calque (hors du nom) ou bouton fx
 
     def __init__(self, icones):
         super().__init__()
@@ -95,7 +98,7 @@ class PanneauCalques(QWidget):
         self.liste.setObjectName("calques")
         self.liste.setIconSize(VIGNETTE)
         self.liste.currentRowChanged.connect(self._ligne_choisie)
-        self.liste.itemDoubleClicked.connect(lambda _: self.renommer())
+        self.liste.itemDoubleClicked.connect(self._double_clic)
         lay.addWidget(self.liste, 1)
 
         opacite = QHBoxLayout()
@@ -118,6 +121,7 @@ class PanneauCalques(QWidget):
         # tr("Aplatir l'image (un seul calque)") ; les autres sont déjà traduites ailleurs
         for nom, aide, action in (("calque_nouveau", "Nouveau calque vide", self.nouveau),
                                   ("dupliquer", tr("Dupliquer le calque"), self.dupliquer),
+                                  ("style", tr("Style du calque (ombre, contour, lueur…)"), self.style_demande.emit),
                                   ("monter", tr("Monter le calque"), lambda: self.deplacer(+1)),
                                   ("descendre", tr("Descendre le calque"), lambda: self.deplacer(-1)),
                                   ("fusionner", "Fusionner avec le calque du dessous", self.fusionner),
@@ -185,7 +189,8 @@ class PanneauCalques(QWidget):
             c = doc.calques[index]
             ligne = self.liste.itemWidget(self.liste.item(rang))
             ligne.index = index
-            ligne.remplir(c.nom, c.visible, c.opacite, self._vignette(c.image), c.verrou, c.texte is not None)
+            ligne.remplir(c.nom, c.visible, c.opacite, self._vignette(c.image), c.verrou, c.texte is not None,
+                          c.style is not None and not c.style.vide())
         if doc:
             self.liste.setCurrentRow(n - 1 - doc.actif)
             if not self.curseur.isSliderDown():
@@ -268,6 +273,16 @@ class PanneauCalques(QWidget):
         etat = self.doc.etat_supprimer()
         if etat:
             self.demande.emit(etat, tr("Supprimer le calque"))
+
+    def _double_clic(self, item):
+        """Comme Photoshop : double-clic sur le nom = renommer ; ailleurs sur la ligne = style du calque."""
+        ligne = self.liste.itemWidget(item)
+        p = ligne.nom.mapFromGlobal(QCursor.pos()) if ligne is not None else None
+        largeur = ligne.nom.fontMetrics().horizontalAdvance(ligne.nom.text()) + 10 if ligne is not None else 0
+        if p is not None and 0 <= p.y() < ligne.nom.height() and p.x() < largeur:
+            self.renommer()
+        else:
+            self.style_demande.emit()
 
     def renommer(self):
         if not self.doc:

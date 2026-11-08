@@ -53,6 +53,7 @@ class Canevas(QWidget):
     trait_ia = Signal(list, bool, bool)         # sélection rapide : points (image), Alt (retirer), Maj (nouvel objet)
     objet_ia = Signal(object, str)              # sélection d'objet : QRectF (cadre) ou QPointF (clic), mode
     fin_session_ia = Signal()                   # Échap avec la sélection rapide : l'objet suivant repart de zéro
+    poignee_sol_bouge = Signal(object)          # style « ombre au sol » : bout de l'ombre tiré (point image)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -102,6 +103,10 @@ class Canevas(QWidget):
         self.trait_en_attente = None                 # trait ou cadre envoyé à l'IA, montré pendant le calcul
         self._auto = None                            # geste en cours : (outil, départ écran, données)
         self._transfo_glisse = False
+        # fenêtre Style du calque ouverte : seuls le zoom, la main et la poignée de l'ombre au sol répondent
+        self.style_ouvert = False
+        self.poignee_sol = None                      # ((x, y) du pied, (x, y) du bout), en pixels image
+        self._sol_glisse = False
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMinimumSize(300, 200)
@@ -240,6 +245,9 @@ class Canevas(QWidget):
         p.setPen(QColor(0, 0, 0, 60))
         p.drawRect(QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
                                                                  self.doc.image.height()) * self.zoom))
+        if self.style_ouvert:
+            self._dessiner_poignee_sol(p)
+            return
         self._dessiner_cadre_texte(p)
         if self.transfo is not None:
             self._dessiner_transfo(p)
@@ -956,10 +964,40 @@ class Canevas(QWidget):
     def _deplacement_actif(self, e) -> bool:
         return self.outil == MAIN or self._espace or e.buttons() & Qt.MiddleButton
 
+    def definir_poignee_sol(self, points):
+        self.poignee_sol = points
+        self.update()
+
+    def _bout_sol_ecran(self):
+        if self.poignee_sol is None:
+            return None
+        return self.vers_ecran(QPointF(*self.poignee_sol[1]))
+
+    def _dessiner_poignee_sol(self, p: QPainter):
+        if self.poignee_sol is None:
+            return
+        a, b = self.vers_ecran(QPointF(*self.poignee_sol[0])), self._bout_sol_ecran()
+        for couleur, epaisseur in ((QColor(0, 0, 0, 160), 3), (QColor(255, 255, 255), 1)):
+            p.setPen(QPen(couleur, epaisseur, Qt.DashLine))
+            p.drawLine(a, b)
+        p.setPen(QPen(QColor(255, 255, 255), 2))
+        p.setBrush(self.couleur_accent)
+        p.drawEllipse(b, 7, 7)
+        p.setBrush(Qt.NoBrush)
+
     def mousePressEvent(self, e):
         if not self.doc:
             return
         pos = e.position()
+        if self.style_ouvert:
+            b = self._bout_sol_ecran()
+            if e.button() == Qt.LeftButton and b is not None and (pos - b).manhattanLength() < 16:
+                self._sol_glisse = True
+                return
+            if e.button() == Qt.MiddleButton or e.button() == Qt.LeftButton:
+                self._glisse = pos                     # pendant le style : glisser = se déplacer dans la photo
+                self.setCursor(Qt.ClosedHandCursor)
+            return
         if self.cadre is not None and e.button() == Qt.LeftButton:   # Agrandir : les poignées d'abord
             self._poignee = self._poignee_sous(pos)
             if self._poignee:
@@ -1024,6 +1062,14 @@ class Canevas(QWidget):
     def mouseMoveEvent(self, e):
         pos = e.position()
         self._souris = pos
+        if self.style_ouvert and self._sol_glisse:
+            self.poignee_sol_bouge.emit(self.vers_image(pos))
+            return
+        if self.style_ouvert and self._glisse is None:
+            b = self._bout_sol_ecran()
+            self.setCursor(Qt.SizeAllCursor if b is not None and (pos - b).manhattanLength() < 16
+                           else Qt.OpenHandCursor)
+            return
         if self._glisse is not None:
             self.decalage += pos - self._glisse
             self._glisse = pos
@@ -1094,6 +1140,9 @@ class Canevas(QWidget):
         self.update()
 
     def mouseReleaseEvent(self, e):
+        if self.style_ouvert and self._sol_glisse:
+            self._sol_glisse = False
+            return
         if self._glisse is not None:
             self._glisse = None
             self._curseur()
@@ -1141,6 +1190,8 @@ class Canevas(QWidget):
         self.update()
 
     def mouseDoubleClickEvent(self, e):
+        if self.style_ouvert:
+            return
         if self.transfo is not None and e.button() == Qt.LeftButton:
             if self.transfo.dedans(self.vers_image(e.position())):
                 self.transfo_valide.emit()
@@ -1218,6 +1269,9 @@ class Canevas(QWidget):
         self.update()
 
     def _curseur(self):
+        if self.style_ouvert:
+            self.setCursor(Qt.OpenHandCursor)
+            return
         if self.cadre is not None:
             self.setCursor(Qt.ArrowCursor)
             return

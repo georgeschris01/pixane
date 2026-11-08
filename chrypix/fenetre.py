@@ -265,6 +265,18 @@ class Fenetre(QMainWindow):
                      "a_miroir_v")
         self._action(m, tr("Redresser…"), None, self.redresser, "a_redresser")
 
+        m = self.menuBar().addMenu(tr("&Calque"))
+        self._action(m, tr("Style du calque…"), "Ctrl+Alt+F", self.style_calque, "a_style", "style")
+        self._action(m, tr("Copier le style"), None, self.copier_style, "a_copier_style")
+        self._action(m, tr("Coller le style"), None, self.coller_style, "a_coller_style")
+        self._action(m, tr("Enlever le style"), None, self.enlever_style, "a_enlever_style")
+        self._action(m, tr("Mettre le style dans les pixels"), None, self.figer_style, "a_figer_style")
+        m.addSeparator()
+        self._action(m, tr("Nouveau calque"), "Ctrl+Shift+N", lambda: self.calques.nouveau() if self.doc else None,
+                     "a_nouveau_calque")
+        self._action(m, tr("Dupliquer le calque"), "Ctrl+J", lambda: self.calques.dupliquer() if self.doc else None,
+                     "a_dupliquer_calque")
+
         m = self.menuBar().addMenu(tr("&Affichage"))
         self._action(m, tr("Zoom avant"), "Ctrl++", lambda: self.canevas.zoomer(1.25), "a_zoom_plus", "zoom_plus")
         self._action(m, tr("Zoom arrière"), "Ctrl+-", lambda: self.canevas.zoomer(0.8), "a_zoom_moins", "zoom_moins")
@@ -709,6 +721,7 @@ class Fenetre(QMainWindow):
         dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
         self.calques = PanneauCalques(lambda nom: icone(nom, self.couleurs.texte, self.couleurs.accent, 20))
         self.calques.demande.connect(self._commande_calques)
+        self.calques.style_demande.connect(self.style_calque)
         dock.setWidget(self.calques)
         dock.setFixedWidth(290)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
@@ -881,7 +894,9 @@ class Fenetre(QMainWindow):
                   self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster, self.a_recadrer_selection, self.a_taille,
                   self.a_pivoter_d, self.a_pivoter_g, self.a_pivoter_180, self.a_miroir_h, self.a_miroir_v,
                   self.a_redresser, self.a_transformer, self.a_reglages_image, self.a_sel_agrandir,
-                  self.a_sel_reduire, self.a_sel_adoucir, self.a_couper, self.a_copier, self.a_supprimer_selection):
+                  self.a_sel_reduire, self.a_sel_adoucir, self.a_couper, self.a_copier, self.a_supprimer_selection,
+                  self.a_style, self.a_copier_style, self.a_coller_style, self.a_enlever_style, self.a_figer_style,
+                  self.a_nouveau_calque, self.a_dupliquer_calque):
             a.setEnabled(a_doc)
         for a in (self.a_effacer, self.a_remplir, self.a_agrandir, self.a_upscale, self.a_arriere_plan,
                   self.a_sujet):
@@ -1055,7 +1070,8 @@ class Fenetre(QMainWindow):
     def enregistrer_sous(self) -> bool:
         if not self.doc:
             return False
-        plusieurs = len(self.doc.calques) > 1 or any(c.texte is not None for c in self.doc.calques)
+        plusieurs = len(self.doc.calques) > 1 or any(c.texte is not None or c.style is not None
+                                                      for c in self.doc.calques)
         if self.doc.chemin:
             garde = not plusieurs or self.doc.chemin.suffix.lower() in (".psd", ".ora")
             ext = self.doc.chemin.suffix if garde else ".chr"
@@ -1092,12 +1108,17 @@ class Fenetre(QMainWindow):
         self._ajouter_recent(str(chemin))
         ext = chemin.suffix.lower()
         textes = any(c.texte is not None for c in self.doc.calques)
+        styles = any(c.style is not None and not c.style.vide() for c in self.doc.calques)
         if len(self.doc.calques) > 1 and ext not in (".chr", ".ora", ".psd"):
             self.statusBar().showMessage(tr("Enregistré à plat (sans les calques) : {chemin}  —  pour garder les "
                                             "calques, enregistre aussi en .chr", chemin=chemin), 10000)
         elif ext in (".ora", ".psd") and textes:
             self.statusBar().showMessage(tr("Enregistré : {chemin}  —  dans ce format, les textes sont des images ; "
                                             "pour les garder modifiables, enregistre aussi en .chr",
+                                            chemin=chemin), 10000)
+        elif ext in (".ora", ".psd") and styles:
+            self.statusBar().showMessage(tr("Enregistré : {chemin}  —  dans ce format, les styles de calque sont mis "
+                                            "dans les pixels ; pour les garder modifiables, enregistre aussi en .chr",
                                             chemin=chemin), 10000)
         else:
             self.statusBar().showMessage(tr("Enregistré : {chemin}", chemin=chemin), 5000)
@@ -1360,6 +1381,62 @@ class Fenetre(QMainWindow):
             self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Redresser")))
 
     # ================================================================ transformer un calque (Ctrl+T)
+    # ================================================================ style du calque
+    def style_calque(self):
+        if not self.doc or getattr(self, "_dialogue_style", None) is not None:
+            return
+        if self.canevas.transfo is not None:
+            self._valider_transfo()
+        from .dialogue_style import DialogueStyle
+        d = DialogueStyle(self, self.doc.actif)
+        self._dialogue_style = d
+        self.canevas.style_ouvert = True
+        self.canevas._curseur()
+
+        def fin():
+            self.canevas.style_ouvert = False
+            self.canevas._curseur()
+            self.canevas.update()
+            self._dialogue_style = None
+            d.deleteLater()
+        d.fini.connect(fin)
+        d.show()
+
+    def copier_style(self):
+        if not self.doc:
+            return
+        st = self.doc.calque_actif.style
+        if st is None or st.vide():
+            self.statusBar().showMessage(tr("Ce calque n'a pas de style à copier."), 5000)
+            return
+        self._style_copie = st
+        self.statusBar().showMessage(tr("Style copié : choisis un autre calque, puis Calque > Coller le style."), 6000)
+
+    def coller_style(self):
+        st = getattr(self, "_style_copie", None)
+        if not self.doc or st is None:
+            self.statusBar().showMessage(tr("Aucun style copié (Calque > Copier le style)."), 5000)
+            return
+        self._commande_calques(self.doc.etat_calque_modifie(self.doc.actif, style=st), tr("Coller le style"))
+
+    def enlever_style(self):
+        if self.doc and self.doc.calque_actif.style is not None:
+            self._commande_calques(self.doc.etat_calque_modifie(self.doc.actif, style=None), tr("Enlever le style"))
+
+    def figer_style(self):
+        """Les effets deviennent des pixels du calque (pour le gommer, le peindre… avec ses effets)."""
+        if not self.doc:
+            return
+        c = self.doc.calque_actif
+        if c.style is None or c.style.vide():
+            self.statusBar().showMessage(tr("Ce calque n'a pas de style."), 5000)
+            return
+        if not self._verifier_verrou(tr("Mettre le style dans les pixels")):
+            return
+        from .styles import image_rendue
+        self._commande_calques(self.doc.etat_calque_modifie(self.doc.actif, image=image_rendue(c), style=None,
+                                                            texte=None), tr("Mettre le style dans les pixels"))
+
     def transformer(self):
         if not self.doc or self.canevas.transfo is not None or self.canevas.cadre is not None:
             return
@@ -1410,7 +1487,9 @@ class Fenetre(QMainWindow):
         self._transfo_avant = None
         self.doc.appliquer_etat(avant)
         self.doc.modifie = _modifie
-        apres = self.doc.etat_calque_modifie(index, image=img, texte=None)
+        c = self.doc.calques[index]
+        style = c.style.mis_a_l_echelle(abs(t.sx * t.sy) ** 0.5) if c.style is not None else None
+        apres = self.doc.etat_calque_modifie(index, image=img, texte=None, style=style)
         self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Transformer le calque")))
 
     def _annuler_transfo(self):

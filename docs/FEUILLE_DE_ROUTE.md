@@ -25,6 +25,7 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
      supprimer l'arrière-plan (BiRefNet), fichiers récents, nouvelle image (vide ou presse-papiers), panneau
      Historique, bouton Auto des réglages, À propos, recherche de mise à jour (sur demande ou option).
    - [x] **Sélections automatiques** (08/11/2026, à essayer par Christophe) : sélection d'objet (O) et sélection rapide (Q) avec SAM 3.1, baguette magique (W).
+   - [x] **Styles de calque** (08/11/2026, à essayer par Christophe) : ombres (dont réaliste et au sol), lueurs, contours multiples, biseau, incrustations, 14 styles tout prêts, styles enregistrés, menu Calque.
 6. [ ] **Installateur** (même présentation que TwinPanel, Inno Setup 7) :
    - [x] images (validées le 08/11/2026) ;
    - [x] partie 1 (08/11/2026, à essayer par Christophe) : langue, pour moi / pour tous, dossier, vérification du PC

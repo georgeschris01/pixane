@@ -20,6 +20,7 @@ from PySide6.QtCore import QObject, QPoint, QPointF, QRect, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QPainter, QTransform
 
 from .langue import tr
+from .styles import Style, image_rendue
 from .texte import Texte, nom_calque, rendre
 
 COULEUR_SELECTION = QColor(255, 40, 40)
@@ -89,6 +90,7 @@ class Calque:
     opacite: float = 1.0          # 0..1
     verrou: bool = False          # cadenas : ni gomme, ni suppression, ni fusion, ni opacité
     texte: Texte | None = None    # calque de texte : ses réglages (l'image en est le dessin)
+    style: Style | None = None    # style de calque (ombres, contour…) : appliqué à l'affichage, pixels intacts
 
     @staticmethod
     def depuis(nom: str, image: QImage, **kw) -> "Calque":
@@ -102,9 +104,19 @@ def fusionner(calques, largeur: int, hauteur: int, seulement_visibles: bool = Tr
     for c in calques:
         if c.visible or not seulement_visibles:
             p.setOpacity(c.opacite)
-            p.drawImage(0, 0, c.image)
+            p.drawImage(0, 0, image_rendue(c))
     p.end()
     return res
+
+
+def calques_figes(calques) -> list:
+    """Pour les autres logiciels : les effets de style sont mis dans les pixels de chaque calque."""
+    return [replace(c, image=image_rendue(c), style=None) if c.style is not None and not c.style.vide() else c
+            for c in calques]
+
+
+def _styles_a_l_echelle(calques, k: float) -> list:
+    return [replace(c, style=c.style.mis_a_l_echelle(k)) if c.style is not None else c for c in calques]
 
 
 def calque_des_changements(nom: str, resultat: QImage, base: QImage) -> Calque:
@@ -181,12 +193,13 @@ class Document(QObject):
         ext = chemin.suffix.lower()
         if ext == ".psd":
             from .psd import ecrire_psd
-            ecrire_psd(chemin, self.calques, self.image, self.icc)
+            ecrire_psd(chemin, calques_figes(self.calques), self.image, self.icc)
             self.chemin = chemin
             self.modifie = False
             return
         if ext in EXTENSIONS_CALQUES:
-            ecrire_ora(chemin, self.calques, self.image, natif=ext == ".chr")
+            natif = ext == ".chr"           # .chr : styles modifiables ; .ora (Krita, GIMP) : effets figés
+            ecrire_ora(chemin, self.calques if natif else calques_figes(self.calques), self.image, natif=natif)
             self.chemin = chemin
             self.modifie = False
             return
@@ -253,6 +266,14 @@ class Document(QObject):
         self._fusion = None
         self.change.emit()
 
+    def apercu_style(self, index: int, style) -> None:
+        """Style essayé (fenêtre Style du calque), sans entrée dans Annuler."""
+        calques = list(self.calques)
+        calques[index] = replace(calques[index], style=style)
+        self.calques = tuple(calques)
+        self._fusion = None
+        self.change.emit()
+
     def etat_avec(self, calques, actif: int | None = None, selection: QImage | None = None):
         """Nouvel état construit à partir de l'actuel (pour les commandes annulables)."""
         calques = tuple(calques)
@@ -307,6 +328,7 @@ class Document(QObject):
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
             else:
                 nouveaux.append(replace(c, image=c.image.scaled(W, H, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)))
+        nouveaux = _styles_a_l_echelle(nouveaux, ((W / w) * (H / h)) ** 0.5)
         calque = Calque.depuis(self.nom_libre(titre), resultat)
         return self.etat_avec(tuple(nouveaux) + (calque,), len(nouveaux))
 
@@ -372,6 +394,7 @@ class Document(QObject):
             else:
                 im = qimage_vers_pil(c.image).resize((W, H), Image.LANCZOS)
                 nouveaux.append(replace(c, image=pil_vers_qimage(im).convertToFormat(FORMAT_CALQUE)))
+        nouveaux = _styles_a_l_echelle(nouveaux, ((W / w) * (H / h)) ** 0.5)
         sel = self.selection.scaled(W, H, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
         return self.etat_avec(tuple(nouveaux), self.actif, sel.convertToFormat(FORMAT_SELECTION))
 
@@ -502,7 +525,7 @@ class Document(QObject):
         w, h = self.taille()
         dessous, dessus = self.calques[self.actif - 1], self.calque_actif
         img = fusionner([replace(dessous, opacite=1.0, visible=True), dessus], w, h)
-        fusion = replace(dessous, image=img, texte=None)
+        fusion = replace(dessous, image=img, texte=None, style=None)    # effets des deux calques : dans les pixels
         calques = list(self.calques)
         calques[self.actif - 1:self.actif + 1] = [fusion]
         return self.etat_avec(calques, self.actif - 1)
@@ -606,6 +629,8 @@ def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False) -> No
             autres = {"edit-locked": "true"} if c.verrou else {}
             if natif and c.texte is not None:
                 autres["chrypix-texte"] = json.dumps(c.texte.vers_dict(), ensure_ascii=False)
+            if natif and c.style is not None and (c.style.effets or c.style.remplissage < 1):
+                autres["chrypix-style"] = c.style.vers_json()
             ET.SubElement(pile_calques, "layer", name=c.nom, src=nom_png, x="0", y="0",
                           opacity=f"{c.opacite:.3f}", visibility="visible" if c.visible else "hidden", **autres)
         z.writestr("stack.xml", ET.tostring(pile, encoding="utf-8", xml_declaration=True),
@@ -634,7 +659,13 @@ def lire_ora(chemin: Path) -> list[Calque]:
                     texte = Texte.depuis_dict(json.loads(couche.get("chrypix-texte")))
                 except (ValueError, TypeError):
                     texte = None                       # réglages illisibles : on garde l'image
-            calques.append(Calque(couche.get("name") or tr("Calque"), img,
+            style = None
+            if couche.get("chrypix-style"):
+                try:
+                    style = Style.depuis_json(couche.get("chrypix-style"))
+                except (ValueError, TypeError):
+                    style = None
+            calques.append(Calque(couche.get("name") or tr("Calque"), img, style=style,
                                   visible=couche.get("visibility", "visible") != "hidden",
                                   opacite=float(couche.get("opacity", 1)),
                                   verrou=couche.get("edit-locked", "false") == "true", texte=texte))
