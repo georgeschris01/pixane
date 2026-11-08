@@ -14,7 +14,7 @@ OPACITE_SELECTION = 0.45
 class Canevas(QWidget):
     selection_modifiee = Signal(object, str)   # (état avant, nom de l'action) -> pour annuler
     infos = Signal(int, int, float)             # largeur, hauteur, zoom
-    cadre_change = Signal(object)               # Agrandir : (haut, bas, gauche, droite) en px
+    cadre_change = Signal(object)               # Agrandir : (haut, bas, gauche, droite) en px, < 0 = rogné
     cadre_valide = Signal()                     # Entrée pendant Agrandir
     cadre_annule = Signal()                     # Échap pendant Agrandir
 
@@ -37,7 +37,7 @@ class Canevas(QWidget):
         self.couleur_fond = QColor(40, 40, 40)
         self.couleur_texte = QColor(150, 150, 150)
         self.couleur_accent = QColor(0, 120, 215)
-        self.cadre = None            # Agrandir : [haut, bas, gauche, droite] en px de l'image, sinon None
+        self.cadre = None            # Agrandir : [haut, bas, gauche, droite] en px (> 0 ajouté, < 0 rogné)
         self._poignee = None         # côtés tirés : ensemble parmi "h", "b", "g", "d"
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.StrongFocus)
@@ -236,20 +236,24 @@ class Canevas(QWidget):
         pt = self.vers_image(pos)
         iw, ih = self.doc.image.width(), self.doc.image.height()
 
-        def limite(v, n):   # de 0 à 200 % de la photo
-            return int(max(0, min(2 * n, round(v))))
         h, b, g, d = self.cadre
+
+        def limite(v, n, oppose):
+            """Vers l'extérieur : jusqu'à 200 % ; vers l'intérieur : on garde au moins 32 px de photo."""
+            rogne_oppose = 0 if symetrique else max(0, -oppose)
+            mini = -((n - rogne_oppose - 32) // (2 if symetrique else 1))
+            return int(max(min(0, mini), min(2 * n, round(v))))
         if "h" in self._poignee:
-            h = limite(-pt.y(), ih)
+            h = limite(-pt.y(), ih, b)
             b = h if symetrique else b
         if "b" in self._poignee:
-            b = limite(pt.y() - ih, ih)
+            b = limite(pt.y() - ih, ih, h)
             h = b if symetrique else h
         if "g" in self._poignee:
-            g = limite(-pt.x(), iw)
+            g = limite(-pt.x(), iw, d)
             d = g if symetrique else d
         if "d" in self._poignee:
-            d = limite(pt.x() - iw, iw)
+            d = limite(pt.x() - iw, iw, g)
             g = d if symetrique else g
         self.cadre = [h, b, g, d]
         self.cadre_change.emit(tuple(self.cadre))
@@ -259,11 +263,17 @@ class Canevas(QWidget):
         r = self._rect_cadre()
         photo = QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
                                                               self.doc.image.height()) * self.zoom)
+        garde = r.intersected(photo)          # la partie de la photo conservée
+        # partie rognée : assombrie
+        rognee = QPainterPath()
+        rognee.addRect(photo)
+        cadre = QPainterPath()
+        cadre.addRect(r)
+        p.fillPath(rognee.subtracted(cadre), QColor(0, 0, 0, 150))
         # zone ajoutée : damier gris (comme une zone vide)
-        zone = QPainterPath()
-        zone.addRect(r)
+        zone = cadre
         interieur = QPainterPath()
-        interieur.addRect(photo)
+        interieur.addRect(garde)
         damier = QPixmap(16, 16)
         damier.fill(QColor(205, 205, 205))
         pd = QPainter(damier)
@@ -274,7 +284,7 @@ class Canevas(QWidget):
         # contour de la photo, cadre en pointillés et poignées
         p.setPen(QPen(self.couleur_accent, 2))
         p.setBrush(Qt.NoBrush)
-        p.drawRect(photo)
+        p.drawRect(garde)
         p.setPen(QPen(QColor(0, 0, 0, 160), 1))
         p.drawRect(r)
         p.setPen(QPen(QColor(255, 255, 255), 1, Qt.DashLine))

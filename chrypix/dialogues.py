@@ -144,18 +144,22 @@ class BarreAgrandir(QFrame):
         self.setObjectName("panneau")
         self.taille = (1, 1)
         self.cotes = {}
-        lay = QHBoxLayout(self)
-        lay.setContentsMargins(12, 8, 8, 8)
-        lay.setSpacing(6)
-        aide = QLabel("Tire les bords du cadre  (Maj : les deux côtés)")
+        colonne = QVBoxLayout(self)
+        colonne.setContentsMargins(12, 6, 8, 8)
+        colonne.setSpacing(4)
+        aide = QLabel("Tire les bords du cadre : vers l'extérieur = agrandir, vers l'intérieur = recadrer"
+                      "  (Maj : les deux côtés)")
         aide.setObjectName("discret")
-        lay.addWidget(aide)
-        lay.addSpacing(8)
+        colonne.addWidget(aide)
+        lay = QHBoxLayout()
+        lay.setSpacing(6)
+        colonne.addLayout(lay)
         for cle, nom in (("haut", "Haut"), ("bas", "Bas"), ("gauche", "Gauche"), ("droite", "Droite")):
             lay.addWidget(QLabel(nom))
             c = QSpinBox()
-            c.setRange(0, 200)
+            c.setRange(-90, 200)
             c.setSuffix(" %")
+            c.setToolTip("Positif : ajouté par l'IA. Négatif : rogné.")
             c.valueChanged.connect(self._case_changee)
             self.cotes[cle] = c
             lay.addWidget(c)
@@ -210,12 +214,13 @@ class BarreAgrandir(QFrame):
         w, h = self.taille
         hh, bb, gg, dd = self._px
         self.texte_taille.setText(f"{w + gg + dd} × {h + hh + bb} px")
-        self.b_lancer.setEnabled(any(self._px))
+        self.b_lancer.setEnabled(any(self._px) and w + min(gg, 0) + min(dd, 0) >= 32
+                                 and h + min(hh, 0) + min(bb, 0) >= 32)
+        self.b_lancer.setText("Lancer" if any(v > 0 for v in self._px) else "Recadrer")
 
-    def valeurs(self) -> dict:
-        """Pourcentages exacts (pour raccord.preparer)."""
-        w, h = self.taille
-        return {cle: v * 100 / n for cle, v, n in zip(self.cotes, self._px, (h, h, w, w))}
+    def valeurs_px(self) -> tuple:
+        """(haut, bas, gauche, droite) en px : > 0 ajouté, < 0 rogné."""
+        return self._px
 
     def _placer(self):
         p = self.parentWidget()

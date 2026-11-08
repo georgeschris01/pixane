@@ -575,9 +575,22 @@ class Fenetre(QMainWindow):
     def _lancer_agrandir(self):
         if self.canevas.cadre is None or not any(self.canevas.cadre):
             return
-        v = self.barre_agrandir.valeurs()
+        if not self.barre_agrandir.b_lancer.isEnabled():
+            return
+        h, b, g, d = self.barre_agrandir.valeurs_px()
         self._fin_agrandir()
-        png, geo, orig = preparer(tableau(self.doc.image)[:, :, :3], **v)
+        # 1. recadrer : la partie gardée est celle qui sert de base à l'agrandissement
+        iw, ih = self.doc.image.width(), self.doc.image.height()
+        rh, rb, rg, rd = (max(0, -v) for v in (h, b, g, d))
+        image = self.doc.image.copy(rg, rh, iw - rg - rd, ih - rh - rb)
+        ajout = [max(0, v) for v in (h, b, g, d)]
+        if not any(ajout):
+            self._appliquer_resultat(self.doc, image, "Recadrer")
+            return
+        # 2. agrandir autour (pourcentages de la partie gardée)
+        w, hh = image.width(), image.height()
+        v = {cle: a * 100 / n for cle, a, n in zip(("haut", "bas", "gauche", "droite"), ajout, (hh, hh, w, w))}
+        png, geo, orig = preparer(tableau(image)[:, :, :3], **v)
 
         def raccord(img: QImage) -> QImage:
             return qimage_rgb(finaliser(orig, tableau(img)[:, :, :3], geo))
