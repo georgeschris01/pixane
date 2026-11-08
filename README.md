@@ -166,9 +166,12 @@ seconde par demande (quelques secondes la première fois).
 - **Sélection d'objet (O)** : tirer un **cadre** autour de l'objet, ou **cliquer** dessus. Comme le rectangle : la
   nouvelle sélection remplace l'ancienne ; **Maj** ajoute, **Alt** retire (ou les pastilles Nouvelle / Ajouter /
   Retirer).
-- **Sélection rapide (Q)** : **peindre** grossièrement sur l'objet. Chaque coup de pinceau précise l'objet ; des points
-  verts montrent ce que l'IA doit garder. **Alt + peindre** sur une partie à enlever (points rouges) : l'IA corrige.
-  **Maj** au début d'un trait : commencer un **autre objet** (ajouté). **Échap** : repartir de zéro.
+- **Sélection rapide (Q)** : **peindre** grossièrement sur l'objet (dessus, ou en
+  suivant son contour). Comme dans Photoshop, chaque trait trouve **son** objet, qui s'**ajoute** à la sélection : un
+  trait sur un titre puis un trait autour d'une personne donnent le titre + la personne entière. Des points verts
+  montrent ce que l'IA doit garder. **Alt + peindre** sur une partie à enlever (points rouges) : l'IA corrige les
+  objets déjà trouvés. Une sélection vidée (Ctrl+D) ou changée par un autre outil fait repartir de zéro ; **Échap**
+  aussi.
 - Ctrl+Z annule chaque étape. Le résultat se règle ensuite avec *Modifier la sélection* (agrandir, adoucir…).
 
 ### Baguette magique (W)
@@ -225,11 +228,14 @@ Une fenêtre affiche l'étape en cours, une **barre de progression**, le temps �
 Enlève ce qui est peint en rouge et reconstruit le fond.
 - Deux méthodes combinées : **LaMa** (rapide, efface proprement) puis une finition par **Flux Fill** (plus réaliste).
 - Résultats proposés : 2 versions Flux + la version « LaMa seul ».
+- Marche aussi sur une sélection fine (lettres prises à la baguette magique) : tout pixel touché par la sélection est
+  effacé, même sur un bord adouci.
 - Durée indicative : environ 2 minutes (carte graphique 8 Go).
 
 ### Remplir (Maj+R)
 Redessine la zone peinte en rouge.
-- **Sans texte** (recommandé) : l'IA invente ce qui va bien avec le reste de la photo.
+- **Sans texte** (recommandé) : l'IA invente ce qui va bien avec le reste de la photo. Elle part du fond nettoyé
+  par LaMa : même près d'un titre, elle ne réinvente pas de lettres.
 - **Avec un texte** (champ « Texte facultatif », en anglais de préférence) : décrit ce qu'on veut voir à la place.
 - 3 propositions, environ 1 minute chacune.
 

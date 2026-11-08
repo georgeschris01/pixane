@@ -179,6 +179,20 @@ attendre()
 verifier(len(demandes[-1][2]) >= 1 and len(demandes[-1][1]) == avant, "Alt + peindre : points à retirer ajoutés")
 c.event(QKeyEvent(QEvent.KeyPress, Qt.Key_Escape, Qt.NoModifier))
 verifier(c.points_ia == [], "Échap : nouvel objet")
+souris([(150, 300), (250, 300)])                  # 1er trait : un objet
+attendre()
+premier = demandes[-1][1]
+n = len(demandes)
+souris([(500, 100), (560, 120)])                  # 2e trait ailleurs : SON objet, pas mélangé au premier
+attendre()
+calculs = [d for d in demandes[n:] if d[0] == "calcul"]
+verifier(len(calculs) == 1 and all(p not in calculs[0][1] for p in premier),
+         "2e trait : demande séparée, sans les points du 1er trait")
+verifier(sel()[300, 200], "2e trait : le 1er objet reste sélectionné")
+f.doc.selection.fill(0)                            # sélection vidée ailleurs (comme Ctrl+D)
+souris([(150, 300), (250, 300)])
+attendre()
+verifier(len(f.selection_auto._session["groupes"]) == 1, "sélection vidée : la sélection rapide repart de zéro")
 f.grab().save(str(sortie / "selection_auto.png"))
 
 print("ERREURS :", erreurs if erreurs else "aucune")

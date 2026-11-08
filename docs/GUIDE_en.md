@@ -112,9 +112,11 @@ They use Meta's **SAM 3.1** model (1.6 GB, installed with the AI engine). The AI
 per request (a few seconds the first time).
 - **Object selection (O)**: drag a **frame** around the object, or **click** on it. Like the rectangle: the new
   selection replaces the old one; **Shift** adds, **Alt** removes (or the New / Add / Remove pills).
-- **Quick selection (Q)**: roughly **paint** over the object. Each stroke refines the object; green dots show what the
-  AI must keep. **Alt + paint** over a part to leave out (red dots): the AI corrects. **Shift** at the start of a
-  stroke: begin **another object** (added). **Esc**: start from scratch.
+- **Quick selection (Q)**: roughly **paint** over the object (on it, or along its outline). As in
+  Photoshop, each stroke finds **its own** object, which is **added** to the selection: a stroke on a title then a
+  stroke around a person give the title + the whole person. Green dots show what the AI must keep. **Alt + paint**
+  over a part to leave out (red dots): the AI corrects the objects already found. A selection cleared (Ctrl+D) or
+  changed by another tool starts again from scratch; so does **Esc**.
 - Ctrl+Z undoes each step. Fine-tune the result afterwards with *Modify selection* (expand, soften…).
 
 ### Magic wand (W)
@@ -171,11 +173,14 @@ A window shows the current step, a **progress bar**, the elapsed time and the **
 Removes what is painted in red and rebuilds the background.
 - Two combined methods: **LaMa** (fast, erases cleanly), then a finishing pass with **Flux Fill** (more realistic).
 - Results offered: 2 Flux versions + the "LaMa only" version.
+- Also works on a thin selection (letters picked with the magic wand): every pixel touched by the selection is
+  erased, even on a soft edge.
 - Typical time: about 2 minutes (8 GB graphics card).
 
 ### Fill (Shift+R)
 Redraws the area painted in red.
-- **Without text** (recommended): the AI invents something that fits the rest of the photo.
+- **Without text** (recommended): the AI invents something that fits the rest of the photo. It starts from the
+  background cleaned by LaMa: even next to a title, it does not invent letters again.
 - **With text** ("Optional text" field, preferably in English): describes what you want to see instead.
 - 3 options, about 1 minute each.
 

@@ -20,6 +20,12 @@ COTE_IA = 1536            # l'image envoyée à SAM : au plus 1536 px de côté 
 MAX_POINTS = 40
 
 
+def _empreinte(selection: QImage) -> tuple:
+    """Pour savoir si la sélection a changé depuis le dernier trait (Ctrl+D, Ctrl+Z, autre outil…)."""
+    m = masque(selection)
+    return m.shape, int(m.sum(dtype=np.int64)), int(m[::7, ::5].sum(dtype=np.int64))
+
+
 def _selection(a: np.ndarray) -> QImage:
     return _masque_vers_selection(a).convertToFormat(QImage.Format_ARGB32_Premultiplied)
 
@@ -121,6 +127,9 @@ class SelectionAuto(QObject):
         return True
 
     def trait_rapide(self, points: list, retirer: bool, nouveau: bool):
+        """Comme Photoshop : chaque trait trouve SON objet, qui s'ajoute à la sélection (un trait sur un titre puis
+        un trait autour d'une personne = le titre + la personne, pas un mélange des deux). Un trait avec Alt donne
+        des points à exclure, appliqués à tous les objets de la sélection en cours."""
         titre = tr("Sélection rapide")
         if not points or not self._verifier(titre):
             self.c.trait_en_attente = None
@@ -128,24 +137,26 @@ class SelectionAuto(QObject):
             return
         doc = self.f.doc
         s = self._session
-        cle = doc.selection.cacheKey()
-        if s is None or nouveau or s["doc"] is not doc or s["cle"] != cle or s["taille"] != doc.taille():
+        if (s is None or nouveau or s["doc"] is not doc or s["taille"] != doc.taille()
+                or s["empreinte"] != _empreinte(doc.selection)):
+            # sélection changée ailleurs (Ctrl+D, Ctrl+Z, autre outil…) : nouvel objet
             mode = "ajouter" if nouveau else self.c.mode_forme
-            s = self._session = {"doc": doc, "mode": mode, "pos": [], "neg": [], "cle": cle, "taille": doc.taille(),
+            s = self._session = {"doc": doc, "mode": mode, "groupes": [], "neg": [], "taille": doc.taille(),
+                                 "empreinte": _empreinte(doc.selection),
                                  "base": None if mode == "nouvelle" else masque(doc.selection)}
         pas = max(8.0, self.c.taille_pinceau / 2)
-        nouveaux = points_du_trait(points, pas)
-        (s["neg"] if retirer else s["pos"]).extend(nouveaux)
-        if not s["pos"]:                        # rien à garder encore : un trait Alt seul ne fait rien
-            s["neg"].clear()
-            self.c.trait_en_attente = None
-            self.c.update()
-            return
-        s["pos"], s["neg"] = s["pos"][-MAX_POINTS:], s["neg"][-MAX_POINTS:]
-        self.c.points_ia = [(QPointF(x, y), True) for x, y in s["pos"]] + \
+        nouveaux = points_du_trait(points, pas, 16)
+        if retirer:
+            if not s["groupes"]:                # rien à corriger encore : un trait Alt seul ne fait rien
+                self.c.trait_en_attente = None
+                self.c.update()
+                return
+            s["neg"] = (s["neg"] + nouveaux)[-MAX_POINTS:]
+        else:
+            s["groupes"].append({"pos": nouveaux, "masque": None, "neg_n": 0})
+        self.c.points_ia = [(QPointF(x, y), True) for g in s["groupes"] for x, y in g["pos"]] + \
                            [(QPointF(x, y), False) for x, y in s["neg"]]
-        self._demander({"titre": titre, "doc": doc, "pos": list(s["pos"]), "neg": list(s["neg"]), "cadre": None,
-                        "session": s, "mode": s["mode"], "base": s["base"]})
+        self._demander({"titre": titre, "doc": doc, "session": s, "mode": s["mode"], "base": s["base"]})
 
     def fin_session(self):
         """Échap, autre outil, autre photo : la prochaine sélection rapide commence un nouvel objet."""
@@ -163,10 +174,12 @@ class SelectionAuto(QObject):
         base = None if mode == "nouvelle" else masque(doc.selection)
         if isinstance(quoi, QRectF):
             r = quoi.normalized()
-            dem = {"pos": [], "neg": [], "cadre": (r.x(), r.y(), r.width(), r.height())}
+            g = {"pos": [], "cadre": (r.x(), r.y(), r.width(), r.height())}
         else:
-            dem = {"pos": [(int(quoi.x()), int(quoi.y()))], "neg": [], "cadre": None}
-        self._demander({"titre": titre, "doc": doc, "session": None, "mode": mode, "base": base, **dem})
+            g = {"pos": [(int(quoi.x()), int(quoi.y()))]}
+        g.update(masque=None, neg_n=0)
+        session = {"doc": doc, "groupes": [g], "neg": []}       # demande seule, sans suite
+        self._demander({"titre": titre, "doc": doc, "session": session, "mode": mode, "base": base, "seule": True})
 
     def _image(self, doc):
         """Image visible envoyée au moteur (une fois par version de l'image), réduite pour aller vite."""
@@ -206,26 +219,43 @@ class SelectionAuto(QObject):
         doc = d["doc"]
         w, h = doc.taille()
 
+        session = d["session"]
+        # à calculer : les objets nouveaux, et ceux qui n'ont pas encore les derniers points à exclure
+        neg_n = len(session["neg"])
+        a_faire = [(k, dict(g)) for k, g in enumerate(session["groupes"])
+                   if g["masque"] is None or (g["neg_n"] != neg_n and k >= len(session["groupes"]) - 8)]
+        deja = [g["masque"] for g in session["groupes"]]
+        neg_tous = list(session["neg"])
+
         def calcul(_progres):
             nom, e = self._image(doc)
-            pos = [(x * e, y * e) for x, y in d["pos"]]
-            neg = [(x * e, y * e) for x, y in d["neg"]]
-            cadre = None if d["cadre"] is None else tuple(v * e for v in d["cadre"])
-            prompt, sorties = recettes.segmenter(nom, pos, neg, cadre)
-            res = self.f.moteur.executer(prompt, sorties, threading.Event(), lambda *a: None)
-            if not res:
-                raise ErreurMoteur(tr("Le calcul s'est arrêté sans résultat."))
-            img = QImage.fromData(res[0][1])
-            if img.isNull():
-                raise ErreurMoteur(tr("Résultat illisible."))
-            m = tableau(img.convertToFormat(FORMAT_IMAGE))[:, :, 0] > 127
-            sh, sw = m.shape
-            fx, fy = sw / (w * e), sh / (h * e)
-            m = nettoyer(m, [(int(x * fx), int(y * fy)) for x, y in pos])
+            neg = [(x * e, y * e) for x, y in neg_tous]
+            nouveaux = {}
+            for k, g in a_faire:
+                pos = [(x * e, y * e) for x, y in g["pos"]]
+                cadre = None if g.get("cadre") is None else tuple(v * e for v in g["cadre"])
+                prompt, sorties = recettes.segmenter(nom, pos, neg if pos else [], cadre)
+                res = self.f.moteur.executer(prompt, sorties, threading.Event(), lambda *a: None)
+                if not res:
+                    raise ErreurMoteur(tr("Le calcul s'est arrêté sans résultat."))
+                img = QImage.fromData(res[0][1])
+                if img.isNull():
+                    raise ErreurMoteur(tr("Résultat illisible."))
+                m = tableau(img.convertToFormat(FORMAT_IMAGE))[:, :, 0] > 127
+                sh, sw = m.shape
+                fx, fy = sw / (w * e), sh / (h * e)
+                nouveaux[k] = nettoyer(m, [(int(x * fx), int(y * fy)) for x, y in pos])
+            masques = [nouveaux.get(k, m) for k, m in enumerate(deja)]
+            masques = [m for m in masques if m is not None]
+            union = masques[0].copy()
+            for m in masques[1:]:
+                if m.shape == union.shape:
+                    union |= m
+            sh, sw = union.shape
             # retour à la taille de la photo, bord adouci par l'agrandissement
-            q = QImage(np.ascontiguousarray(m.astype(np.uint8) * 255).data, sw, sh, sw, QImage.Format_Grayscale8)
+            q = QImage(np.ascontiguousarray(union.astype(np.uint8) * 255).data, sw, sh, sw, QImage.Format_Grayscale8)
             q = q.scaled(w, h, Qt.IgnoreAspectRatio, Qt.SmoothTransformation).convertToFormat(FORMAT_IMAGE)
-            return tableau(q)[:, :, 0].copy()
+            return nouveaux, tableau(q)[:, :, 0].copy()
 
         def fini():
             self._occupe = False
@@ -237,11 +267,15 @@ class SelectionAuto(QObject):
                 self.c.trait_en_attente = None
                 self.c.update()
 
-        def ok(a):
+        def ok(resultat):
+            nouveaux, a = resultat
+            for k, m in nouveaux.items():
+                if k < len(session["groupes"]):
+                    session["groupes"][k]["masque"] = m
+                    session["groupes"][k]["neg_n"] = neg_n
             if doc is self.f.doc and a.any():
                 self._historique(combiner(d["base"], a, d["mode"]), d["titre"])
-                if d["session"] is not None:
-                    d["session"]["cle"] = doc.selection.cacheKey()
+                session["empreinte"] = _empreinte(doc.selection)
                 self.f.statusBar().showMessage(tr("{titre} : fait. Ctrl+Z pour revenir.", titre=d["titre"]), 5000)
             elif doc is self.f.doc:
                 self.f.statusBar().showMessage(tr("L'IA n'a rien trouvé à cet endroit."), 6000)

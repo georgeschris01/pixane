@@ -184,7 +184,10 @@ def effacer(image: str, nb: int = NB_EFFACER, graine: int | None = None, chargeu
     p = {"10": _n("LoadImage", image=image),
          "11": _n("InpaintCropImproved", image=["10", 0], mask=["10", 1], **_decoupe()),
          "12": _n("INPAINT_LoadInpaintModel", model_name="big-lama.pt"),
-         "13": _n("INPAINT_InpaintWithModel", inpaint_model=["12", 0], image=["11", 1], mask=["11", 2],
+         # LaMa ne traite que les pixels sélectionnés à 100 % : sur une zone fine (lettres), le bord adouci
+         # laissait une partie du texte, que LaMa redessinait. Zone franche : tout pixel touché compte.
+         "16": _n("ThresholdMask", mask=["11", 2], value=0.02),
+         "13": _n("INPAINT_InpaintWithModel", inpaint_model=["12", 0], image=["11", 1], mask=["16", 0],
                   seed=graine or _graine()),
          "14": _n("InpaintStitchImproved", stitcher=["11", 0], inpainted_image=["13", 0]),
          "15": _n("PreviewImage", images=["14", 0])}
@@ -194,6 +197,14 @@ def effacer(image: str, nb: int = NB_EFFACER, graine: int | None = None, chargeu
 
 def remplir(image: str, texte: str = "", nb: int = NB_REMPLIR, graine: int | None = None,
             chargeur: dict | None = None):
+    if not texte.strip():
+        # Sans texte, Flux devine d'après les alentours : près d'un titre, il réinventait des lettres. On part
+        # donc du fond nettoyé par LaMa, que Flux refait presque entièrement (0,85) : vrai remplissage, sans texte.
+        p, _ = effacer(image, nb, graine, chargeur)
+        del p["15"]
+        p["29"]["inputs"]["denoise"] = 0.85
+        p["29"]["inputs"]["steps"] = 24
+        return p, {"32": tr("Proposition")}
     p = {"10": _n("LoadImage", image=image),
          "11": _n("InpaintCropImproved", image=["10", 0], mask=["10", 1], **_decoupe())}
     _flux_fill(p, ["11", 1], ["11", 2], ["11", 0], nb, texte=texte, denoise=1.0, graine=graine, chargeur=chargeur)
