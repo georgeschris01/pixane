@@ -43,5 +43,8 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
    - [ ] essai sur un Windows vierge (Bac à sable Windows), avec le vrai téléchargement du moteur.
 7. [ ] **Publication** : guide complet, licences (Flux Fill dev = non commercial), dépôt public ou installateur.
 
+## Numérotation des versions (décidée le 08/11/2026)
+A.B.C : A = 0 tant que Chrypix n'est pas fini (1.0.0 = première version finie) ; B = +1 pour un lot de nouvelles fonctions (C repart à 0) ; C = +1 pour des corrections seulement. Le numéro se change dans chrypix\__init__.py avant de fabriquer l'installateur. Dernière version d'essai : 0.2.0.
+
 ## Idées notées en passant
 - Nettoyer les images d'essai dans les dossiers de sortie de ComfyUI (proposé, pas encore fait).
