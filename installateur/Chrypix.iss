@@ -12,9 +12,17 @@
   #define AppVersion "0.0.0"
 #endif
 
+; ESSAIS SUR LE PC DE CHRISTOPHE : compiler avec /DEssai (identifiant et nom à part). Un essai fait avec le vrai
+; AppId puis désinstallé efface l'inscription de la vraie installation (registre, menu Démarrer, raccourci Bureau) :
+; arrivé le 08/11/2026.
 [Setup]
+#ifdef Essai
+AppId={{5D0E3B7A-2C41-4E8B-9F6A-0E55A1000001}
+AppName=Chrypix essai
+#else
 AppId={{89EBA9CC-CDC6-468F-A638-3F71B48EE9A3}
 AppName=Chrypix
+#endif
 AppVersion={#AppVersion}
 AppVerName=Chrypix {#AppVersion}
 AppPublisher=chrypox
@@ -23,15 +31,27 @@ ShowLanguageDialog=yes
 VersionInfoVersion={#AppVersion}
 VersionInfoDescription=Installation de Chrypix
 DefaultDirName={autopf}\Chrypix
+#ifdef Essai
+DefaultGroupName=Chrypix essai
+#else
 DefaultGroupName=Chrypix
+#endif
 DisableProgramGroupPage=yes
 UsePreviousAppDir=yes
 DisableDirPage=no
 OutputDir=..\publication\installateur
+#ifdef Essai
+OutputBaseFilename=Chrypix-Setup-{#AppVersion}-64bits-ESSAI
+#else
 OutputBaseFilename=Chrypix-Setup-{#AppVersion}-64bits
+#endif
 SetupIconFile=..\chrypix\ressources\chrypix.ico
 UninstallDisplayIcon={app}\chrypix.ico
+#ifdef Essai
+UninstallDisplayName=Chrypix essai
+#else
 UninstallDisplayName=Chrypix
+#endif
 WizardStyle=modern
 ; Présentation : bande bleu nuit à gauche des pages d'accueil et de fin (logo, nom, petite capture), bandeau bleu nuit
 ; en haut des autres pages (voir [Code]). Images fabriquées par images\fabrique_images.py, une par réglage d'affichage
@@ -785,3 +805,4 @@ begin
   StyleBanner(UninstallProgressForm.MainPanel, UninstallProgressForm.Bevel1, UninstallProgressForm.WizardSmallBitmapImage,
     UninstallProgressForm.PageNameLabel, UninstallProgressForm.PageDescriptionLabel);
 end;
+
