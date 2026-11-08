@@ -81,8 +81,8 @@ Layer names that already exist keep their original language.
 The selected area appears in **transparent red**. You do not need to "outline" an object:
 you can simply **paint over it**.
 
-The four selection tools share **one button** in the left bar (small triangle): **right-click** it, or click and
-hold, to choose; or press their key directly.
+The selection tools share **two buttons** in the left bar (small triangle): the "by hand" tools and the
+"automatic" tools. **Right-click** the button, or click and hold, to choose; or press their key directly.
 
 | Tool | Key | Use |
 |---|---|---|
@@ -90,6 +90,9 @@ hold, to choose; or press their key directly.
 | **Lasso** | L | Draw an outline freehand, button held down; the shape is closed automatically |
 | **Selection brush** | B | Paint the area. Ideal for an object, some text, a wire… |
 | **Selection eraser** | E | Remove from the selection by painting |
+| **Object selection** (AI) | O | Drag a frame around an object, or click on it: the AI cuts it out |
+| **Quick selection** (AI) | Q | Roughly paint over the object: the AI finds its outline |
+| **Magic wand** | W | One click on a colour: the whole area of similar colour (no AI) |
 
 - **Rectangle and lasso**, as in Photoshop: a new selection **replaces** the old one. Holding **Shift** when you
   start drawing **adds** to the selection, **Alt** **removes**. A single click without drawing **deselects**.
@@ -102,6 +105,29 @@ hold, to choose; or press their key directly.
   useful for image adjustments).
 - **Select > Select subject (AI)** (Ctrl+Alt+S): the AI finds the main subject (person, animal, object) and selects
   it. See chapter 5, "Subject and background".
+
+### Object selection and quick selection (AI)
+They use Meta's **SAM 3.1** model (1.6 GB, installed with the AI engine). The AI understands the **whole object**
+(a person, a car, a piece of furniture…), even when its colours vary, and follows its real outline. About one second
+per request (a few seconds the first time).
+- **Object selection (O)**: drag a **frame** around the object, or **click** on it. Like the rectangle: the new
+  selection replaces the old one; **Shift** adds, **Alt** removes (or the New / Add / Remove pills).
+- **Quick selection (Q)**: roughly **paint** over the object. Each stroke refines the object; green dots show what the
+  AI must keep. **Alt + paint** over a part to leave out (red dots): the AI corrects. **Shift** at the start of a
+  stroke: begin **another object** (added). **Esc**: start from scratch.
+- Ctrl+Z undoes each step. Fine-tune the result afterwards with *Modify selection* (expand, soften…).
+
+### Magic wand (W)
+One click on a colour selects the area of similar colour. No AI, instant.
+- **Adjust by dragging**: after the click, **keep the button down and drag right** (wider) **or left** (narrower): the
+  selection follows live. The tolerance found is kept for the next click.
+- **Tolerance** (0 to 255, 32 by default): accepted colour difference. Colours are compared the way the eye sees
+  them, and the starting colour is taken over 3 × 3 pixels: photo noise matters less.
+- **Contiguous** (ticked): only the area clicked; unticked: all similar colours in the image.
+- **Soft edges** (ticked): gradual edge, no jaggies.
+- **Fill holes**: adds what is completely surrounded (birds in a sky, reflections on an object…).
+- **Visible image** or **Chosen layer**: what the colours are compared on.
+- Shift adds, Alt removes, like the rectangle.
 
 ### Cut, copy, paste, delete (Edit menu)
 They work on the **layer chosen** in the Layers panel:
@@ -393,6 +419,8 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+Alt+I | Image size |
 | Ctrl+T | Transform layer (Enter apply, Esc cancel) |
 | Ctrl+Alt+S, Shift+B | Select subject, Remove background (AI) |
+| O, Q, W | Object selection (AI), Quick selection (AI), Magic wand |
+| Drag after a magic wand click | Adjust the tolerance live |
 | Right-click on a tool with a small triangle | Choose another tool of the group |
 | Ctrl+0, Ctrl+1 | Fit, 100% |
 | Enter / Esc | (Expand) Start / Cancel; (Crop) Apply / Cancel |
@@ -411,7 +439,7 @@ Everything can be undone with Ctrl+Z.
    not. If ComfyUI is installed elsewhere, use **Browse…** to select its folder.
    Without ComfyUI, Chrypix opens, edits (layers, text) and saves photos, but the AI actions do not work.
 5. **AI engine** (only if ComfyUI is not found): list of what will be downloaded, with size, site and licence
-   (19.8 GB to download, about 29 GB on disk); engine folder (default `%LOCALAPPDATA%\Chrypix\moteur`); optional
+   (21.4 GB to download, about 31 GB on disk); engine folder (default `%LOCALAPPDATA%\Chrypix\moteur`); optional
    **Flux Schnell** box for "Sharp upscale" (11.8 GB more); the **I accept the FLUX.1 [dev] licence** box
    (non-commercial use) is required to install the engine. You can also untick it: Chrypix installs without the
    engine.
@@ -445,6 +473,6 @@ asks two questions (default answer "No"):
   Third-party items: `docs\LICENCES_TIERS.md`.
 - Tested on an 8 GB NVIDIA graphics card (RTX 3060 Ti). The times given come from this PC.
 - Models used: Flux.1 Fill dev (**non-commercial use**; GGUF Q8 version when installed by Chrypix, same
-  quality), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3), BiRefNet (MIT).
+  quality), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3), BiRefNet (MIT), SAM 3.1 (Meta SAM License).
 - Engine: ComfyUI (GPL-3.0) and its extensions Inpaint nodes, Inpaint Crop and Stitch, Ultimate SD Upscale
   (GPL-3.0), ComfyUI-GGUF (Apache-2.0).

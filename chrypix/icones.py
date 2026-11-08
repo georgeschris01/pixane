@@ -70,6 +70,14 @@ DESSINS = {
                 '<path stroke="A" d="M10.9 11.1C8.6 11 7 12.6 7 15c0 1.5-.8 2.4-2.5 3 3.7 1.6 9 .7 8.4-4.9z"/>',
     "tampon": '<path d="M9.5 3.5h5l-1 7h-3z"/><path d="M5 14.5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2H5z"/>'
               '<path stroke="A" d="M5 20.5h14"/>',
+    "baguette": '<path d="M4 20 14.5 9.5"/><path d="M13 8l3 3"/>'
+                '<path stroke="A" d="M17 3v3M15.5 4.5h3M20.5 8v2.5M19.2 9.2h2.6M11 3.5v2M10 4.5h2"/>',
+    "rapide": '<path d="M5 15c2-4 5-6 9-6 2.5 0 4 1.3 4 3s-2 3.5-5 4.5"/>'
+              '<circle cx="12" cy="17.5" r="3.2" stroke-dasharray="2 1.8"/>'
+              '<path stroke="A" d="M18.5 3.5v3M17 5h3"/>',
+    "objet": '<rect x="3.5" y="4.5" width="17" height="15" rx="1.5" stroke-dasharray="3 2.4"/>'
+             '<path stroke="A" d="M9 16.5c-1.5 0-2-1.2-1.5-2.4l1.6-3.6c.6-1.3 2.4-1.6 3.4-.4l3.3 3.9c.9 1.1.2 2.5-1.2 '
+             '2.5z"/>',
     "arriere_plan": '<rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke-dasharray="2.5 2.2"/>'
                     '<path stroke="A" d="M12 8a2.3 2.3 0 1 1 0 4.6A2.3 2.3 0 0 1 12 8zM7.5 19.5c.6-3 2.3-4.6 4.5-4.6s3.9 1.6 4.5 4.6"/>',
     "reglages": '<path d="M4 6.5h9M17 6.5h3M4 12h3M11 12h9M4 17.5h11M19 17.5h1"/>'

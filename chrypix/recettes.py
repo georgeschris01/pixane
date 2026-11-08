@@ -25,6 +25,9 @@ _schnell: dict = {"type": "complet", "fichier": SCHNELL_COMPLET}
 # Détourage (sujet / arrière-plan) : nœuds intégrés à ComfyUI + modèle BiRefNet (MIT)
 BIREFNET = "birefnet.safetensors"
 _detourage = {"ok": False}
+# Sélection rapide et sélection d'objet : nœud SAM3_Detect intégré à ComfyUI + modèle SAM 3.1 (SAM License, Meta)
+SAM = "sam3.1_multiplex_fp16.safetensors"
+_sam: dict = {"fichier": None}
 
 
 class ModeleManquant(Exception):
@@ -59,6 +62,9 @@ def configurer(infos: dict) -> str | None:
         _schnell.update(type="gguf" if schnells else None, fichier=schnells[-1] if schnells else None)
     _detourage["ok"] = ("RemoveBackground" in infos
                         and BIREFNET in _options(infos, "LoadBackgroundRemovalModel", "bg_removal_name"))
+    sams = [f for f in _options(infos, "CheckpointLoaderSimple", "ckpt_name") if "sam3" in f.lower()]
+    _sam["fichier"] = (SAM if SAM in sams else sorted(sams)[-1] if sams else None) if "SAM3_Detect" in infos \
+        else None
     for t in PREFERENCE_FILL:
         if t in trouves:
             _fill.update(type=t, fichier=trouves[t])
@@ -78,6 +84,32 @@ def detourer(image: str):
          "13": _n("MaskToImage", mask=["12", 0]),
          "14": _n("PreviewImage", images=["13", 0])}
     return p, {"14": tr("Sujet")}
+
+
+def sam_disponible() -> bool:
+    return _sam["fichier"] is not None
+
+
+def segmenter(image: str, positifs=(), negatifs=(), cadre=None):
+    """Masque de l'objet désigné (blanc = objet) par des points (x, y) à garder ou à exclure, et / ou par un
+    cadre (x, y, largeur, hauteur), en pixels de l'image envoyée."""
+    import json
+    det = {"model": ["11", 0], "image": ["10", 0], "threshold": 0.5, "refine_iterations": 2,
+           "individual_masks": False}
+    if positifs:
+        det["positive_coords"] = json.dumps([{"x": int(x), "y": int(y)} for x, y in positifs])
+    if negatifs:
+        det["negative_coords"] = json.dumps([{"x": int(x), "y": int(y)} for x, y in negatifs])
+    p = {"10": _n("LoadImage", image=image),
+         "11": _n("CheckpointLoaderSimple", ckpt_name=_sam["fichier"] or SAM)}
+    if cadre is not None:
+        x, y, w, h = (int(v) for v in cadre)
+        p["15"] = _n("PrimitiveBoundingBox", x=max(0, x), y=max(0, y), width=max(1, w), height=max(1, h))
+        det["bboxes"] = ["15", 0]
+    p["12"] = _n("SAM3_Detect", **det)
+    p["13"] = _n("MaskToImage", mask=["12", 0])
+    p["14"] = _n("PreviewImage", images=["13", 0])
+    return p, {"14": tr("Objet")}
 
 
 def schnell_disponible() -> bool:

@@ -82,8 +82,9 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 La zone sélectionnée apparaît en **rouge transparent**. Il n'est pas nécessaire d'« entourer » un objet :
 on peut simplement **peindre dessus**.
 
-Les quatre outils de sélection sont rangés sous **un seul bouton** de la barre de gauche (petit triangle) :
-**clic droit** dessus, ou clic maintenu, pour choisir ; ou directement leur touche.
+Les outils de sélection sont rangés sous **deux boutons** de la barre de gauche (petit triangle) : les outils
+« à la main » et les outils « automatiques ». **Clic droit** sur le bouton, ou clic maintenu, pour choisir ; ou
+directement leur touche.
 
 | Outil | Touche | Usage |
 |---|---|---|
@@ -91,6 +92,9 @@ Les quatre outils de sélection sont rangés sous **un seul bouton** de la barre
 | **Lasso** | L | Tracer un contour à main levée, bouton appuyé ; la forme est fermée automatiquement |
 | **Pinceau de sélection** | B | Peindre la zone. Idéal pour un objet, un texte, un fil… |
 | **Gomme de sélection** | E | Retirer de la sélection en peignant |
+| **Sélection d'objet** (IA) | O | Tirer un cadre autour d'un objet, ou cliquer dessus : l'IA le détoure |
+| **Sélection rapide** (IA) | Q | Peindre grossièrement sur l'objet : l'IA trouve ses contours |
+| **Baguette magique** | W | Un clic sur une couleur : toute la zone de couleur proche (sans IA) |
 
 - **Rectangle et lasso**, comme dans Photoshop : une nouvelle sélection **remplace** l'ancienne. Maintenir **Maj** en
   commençant le tracé **ajoute** à la sélection, **Alt** **retire**. Un simple clic sans tracer **désélectionne**.
@@ -103,6 +107,30 @@ Les quatre outils de sélection sont rangés sous **un seul bouton** de la barre
   (bord progressif, utile pour les réglages de l'image).
 - **Sélection > Sélectionner le sujet (IA)** (Ctrl+Alt+S) : l'IA trouve le sujet principal (personne, animal,
   objet) et le sélectionne. Voir chapitre 5, « Sujet et arrière-plan ».
+
+### Sélection d'objet et sélection rapide (IA)
+Elles utilisent le modèle **SAM 3.1** de Meta (1,6 Go, installé avec le moteur IA). L'IA comprend l'**objet entier**
+(une personne, une voiture, un meuble…), même quand ses couleurs varient, et suit ses vrais contours. Environ une
+seconde par demande (quelques secondes la première fois).
+- **Sélection d'objet (O)** : tirer un **cadre** autour de l'objet, ou **cliquer** dessus. Comme le rectangle : la
+  nouvelle sélection remplace l'ancienne ; **Maj** ajoute, **Alt** retire (ou les pastilles Nouvelle / Ajouter /
+  Retirer).
+- **Sélection rapide (Q)** : **peindre** grossièrement sur l'objet. Chaque coup de pinceau précise l'objet ; des points
+  verts montrent ce que l'IA doit garder. **Alt + peindre** sur une partie à enlever (points rouges) : l'IA corrige.
+  **Maj** au début d'un trait : commencer un **autre objet** (ajouté). **Échap** : repartir de zéro.
+- Ctrl+Z annule chaque étape. Le résultat se règle ensuite avec *Modifier la sélection* (agrandir, adoucir…).
+
+### Baguette magique (W)
+Un clic sur une couleur sélectionne la zone de couleur proche. Sans IA, instantané.
+- **Régler en glissant** : après le clic, **garder le bouton appuyé et glisser à droite** (plus large) **ou à gauche**
+  (plus étroit) : la sélection suit en direct. La tolérance trouvée reste pour le clic suivant.
+- **Tolérance** (0 à 255, 32 par défaut) : écart de couleur accepté. Les couleurs sont comparées comme l'œil les
+  voit, et la couleur de départ est prise sur 3 × 3 pixels : le bruit d'une photo gêne moins.
+- **Contiguë** (coché) : seulement la zone touchée ; décoché : toutes les couleurs proches de l'image.
+- **Bords doux** (coché) : bord progressif, sans escalier.
+- **Boucher les trous** : ajoute ce qui est entièrement entouré (oiseaux dans un ciel, reflets sur un objet…).
+- **Image visible** ou **Calque choisi** : sur quoi les couleurs sont comparées.
+- Maj ajoute, Alt retire, comme le rectangle.
 
 ### Couper, copier, coller, supprimer (menu Édition)
 Ils agissent sur le **calque choisi** dans le panneau Calques :
@@ -395,6 +423,8 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+Alt+I | Taille de l'image |
 | Ctrl+T | Transformer le calque (Entrée valider, Échap annuler) |
 | Ctrl+Alt+S, Maj+B | Sélectionner le sujet, Supprimer l'arrière-plan (IA) |
+| O, Q, W | Sélection d'objet (IA), Sélection rapide (IA), Baguette magique |
+| Glisser après un clic de baguette | Régler la tolérance en direct |
 | Clic droit sur un outil à petit triangle | Choisir un autre outil du groupe |
 | Ctrl+0, Ctrl+1 | Ajuster, 100 % |
 | Entrée / Échap | (Agrandir) Lancer / Annuler ; (Recadrer) Valider / Annuler |
@@ -413,7 +443,7 @@ Tout s'annule par Ctrl+Z.
    (ComfyUI) trouvé ou non. Si ComfyUI est installé ailleurs, bouton **Parcourir…** pour indiquer son dossier.
    Sans ComfyUI, Chrypix ouvre, retouche (calques, texte) et enregistre, mais les actions IA ne marchent pas.
 5. **Moteur IA** (seulement si ComfyUI n'est pas trouvé) : liste de ce qui sera téléchargé, avec taille, site et
-   licence (19,8 Go à télécharger, environ 29 Go sur le disque) ; dossier du moteur (par défaut
+   licence (21,4 Go à télécharger, environ 31 Go sur le disque) ; dossier du moteur (par défaut
    `%LOCALAPPDATA%\Chrypix\moteur`) ; case facultative **Flux Schnell** pour « Upscale net » (11,8 Go de plus) ;
    case **J'accepte la licence FLUX.1 [dev]** (usage non commercial) obligatoire pour installer le moteur.
    On peut aussi décocher : Chrypix s'installe sans moteur.
@@ -448,6 +478,6 @@ Applications. Le désinstalleur pose deux questions (réponse « Non » par déf
   Éléments tiers : `docs\LICENCES_TIERS.md`.
 - Testé sur une carte graphique NVIDIA de 8 Go (RTX 3060 Ti). Les durées indiquées viennent de ce PC.
 - Modèles utilisés : Flux.1 Fill dev (**usage non commercial** ; version GGUF Q8 si installé par Chrypix, même
-  qualité), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3), BiRefNet (MIT).
+  qualité), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3), BiRefNet (MIT), SAM 3.1 (SAM License de Meta).
 - Moteur : ComfyUI (GPL-3.0) et ses extensions Inpaint nodes, Inpaint Crop and Stitch, Ultimate SD Upscale
   (GPL-3.0), ComfyUI-GGUF (Apache-2.0).

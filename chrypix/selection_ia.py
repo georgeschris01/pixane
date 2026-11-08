@@ -1,0 +1,247 @@
+"""Baguette magique (W), sélection rapide (Q) et sélection d'objet (O) : ce que font ces outils quand le canevas
+signale un clic, un trait ou un cadre. Le calcul de la baguette est local (selection_auto) ; les deux autres
+demandent l'objet au modèle SAM 3.1 par le moteur IA (environ 1 s par demande, 3 s la première fois)."""
+from __future__ import annotations
+
+import threading
+
+import numpy as np
+from PySide6.QtCore import QObject, QPointF, QRectF, Qt
+from PySide6.QtGui import QImage
+from PySide6.QtWidgets import QApplication, QMessageBox
+
+from . import recettes
+from .document import FORMAT_IMAGE, _masque_vers_selection, masque, tableau
+from .langue import tr
+from .moteur import ErreurMoteur
+from .selection_auto import apercu_baguette, baguette, combiner, nettoyer, points_du_trait
+
+COTE_IA = 1536            # l'image envoyée à SAM : au plus 1536 px de côté (SAM travaille de toute façon en ~1000 px)
+MAX_POINTS = 40
+
+
+def _selection(a: np.ndarray) -> QImage:
+    return _masque_vers_selection(a).convertToFormat(QImage.Format_ARGB32_Premultiplied)
+
+
+class SelectionAuto(QObject):
+    def __init__(self, fenetre):
+        super().__init__(fenetre)
+        self.f = fenetre
+        self.c = fenetre.canevas
+        # baguette
+        self._b = None               # dict : source, point, mode, base, tolérance de départ
+        # IA
+        self._image_ia = None        # (clé de l'image, nom chez ComfyUI, échelle)
+        self._session = None         # sélection rapide : base, mode, points +/-, clé de la sélection produite
+        self._occupe = False
+        self._en_attente = None      # dernière demande arrivée pendant un calcul
+        self.c.baguette_clic.connect(self.baguette_clic)
+        self.c.baguette_glisse.connect(self.baguette_glisse)
+        self.c.baguette_lache.connect(self.baguette_lache)
+        self.c.trait_ia.connect(self.trait_rapide)
+        self.c.objet_ia.connect(self.objet)
+
+    # ------------------------------------------------------------------ outils communs
+    def _historique(self, a: np.ndarray, titre: str):
+        doc = self.f.doc
+        from .fenetre import CommandeEtat
+        avant = doc.etat()
+        self.f.historique.push(CommandeEtat(doc, avant, (doc.calques, doc.actif, _selection(a)), titre))
+
+    def options(self) -> dict:
+        f = self.f
+        return {"contigu": f.opt_contigu.isChecked(), "doux": f.opt_doux.isChecked(),
+                "trous": f.opt_trous.isChecked()}
+
+    def _source(self) -> np.ndarray:
+        doc = self.f.doc
+        img = doc.calque_actif.image if self.f.opt_echantillon.currentData() == "calque" else doc.image
+        return tableau(img.convertToFormat(FORMAT_IMAGE))
+
+    # ------------------------------------------------------------------ baguette magique
+    def baguette_clic(self, pt: QPointF, mode: str):
+        doc = self.f.doc
+        if doc is None:
+            return
+        rgba = self._source()
+        h, w = rgba.shape[:2]
+        x, y = int(pt.x()), int(pt.y())
+        if not (0 <= x < w and 0 <= y < h):
+            return
+        base = None if mode == "nouvelle" else masque(doc.selection)
+        self._b = {"rgba": rgba, "x": x, "y": y, "mode": mode, "base": base,
+                   "tol0": self.f.opt_tolerance.value(), "tol": self.f.opt_tolerance.value(), "bouge": False}
+        self._apercu()
+
+    def _apercu(self):
+        b = self._b
+        petit, fct = apercu_baguette(b["rgba"], b["x"], b["y"], b["tol"], **self.options())
+        base = b["base"][::fct, ::fct][:petit.shape[0], :petit.shape[1]] if b["base"] is not None else None
+        self.c.apercu_selection = _selection(combiner(base, petit, b["mode"]))
+        self.c.update()
+
+    def baguette_glisse(self, dx: float):
+        if self._b is None:
+            return
+        tol = int(max(0, min(255, self._b["tol0"] + dx / 2)))
+        if tol != self._b["tol"]:
+            self._b["tol"], self._b["bouge"] = tol, True
+            self.f.opt_tolerance.blockSignals(True)
+            self.f.opt_tolerance.setValue(tol)
+            self.f.opt_tolerance.blockSignals(False)
+            self._apercu()
+        self.f.statusBar().showMessage(tr("Tolérance : {t} (glisse à droite pour agrandir, à gauche pour réduire)",
+                                          t=tol), 3000)
+
+    def baguette_lache(self):
+        b, self._b = self._b, None
+        if b is None:
+            return
+        if b["bouge"]:
+            self.f.reglages.setValue("baguette_tolerance", b["tol"])
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            a = baguette(b["rgba"], b["x"], b["y"], b["tol"], **self.options())
+            self._historique(combiner(b["base"], a, b["mode"]), tr("Baguette magique"))
+        finally:
+            QApplication.restoreOverrideCursor()
+            self.c.apercu_selection = None
+            self.c.update()
+
+    # ------------------------------------------------------------------ IA (SAM 3.1)
+    def _verifier(self, titre: str) -> bool:
+        if self.f.doc is None:
+            return False
+        if not recettes.sam_disponible():
+            QMessageBox.information(self.f, titre, tr(
+                "Cet outil a besoin du modèle SAM 3.1 (1,75 Go), qui n'est pas installé, ou le moteur IA n'est pas "
+                "encore prêt. Menu IA > Installer le moteur IA permet de l'ajouter."))
+            return False
+        return True
+
+    def trait_rapide(self, points: list, retirer: bool, nouveau: bool):
+        titre = tr("Sélection rapide")
+        if not points or not self._verifier(titre):
+            self.c.trait_en_attente = None
+            self.c.update()
+            return
+        doc = self.f.doc
+        s = self._session
+        cle = doc.selection.cacheKey()
+        if s is None or nouveau or s["doc"] is not doc or s["cle"] != cle or s["taille"] != doc.taille():
+            mode = "ajouter" if nouveau else self.c.mode_forme
+            s = self._session = {"doc": doc, "mode": mode, "pos": [], "neg": [], "cle": cle, "taille": doc.taille(),
+                                 "base": None if mode == "nouvelle" else masque(doc.selection)}
+        pas = max(8.0, self.c.taille_pinceau / 2)
+        nouveaux = points_du_trait(points, pas)
+        (s["neg"] if retirer else s["pos"]).extend(nouveaux)
+        if not s["pos"]:                        # rien à garder encore : un trait Alt seul ne fait rien
+            s["neg"].clear()
+            self.c.trait_en_attente = None
+            self.c.update()
+            return
+        s["pos"], s["neg"] = s["pos"][-MAX_POINTS:], s["neg"][-MAX_POINTS:]
+        self.c.points_ia = [(QPointF(x, y), True) for x, y in s["pos"]] + \
+                           [(QPointF(x, y), False) for x, y in s["neg"]]
+        self._demander({"titre": titre, "doc": doc, "pos": list(s["pos"]), "neg": list(s["neg"]), "cadre": None,
+                        "session": s, "mode": s["mode"], "base": s["base"]})
+
+    def fin_session(self):
+        """Échap, autre outil, autre photo : la prochaine sélection rapide commence un nouvel objet."""
+        self._session = None
+        self.c.points_ia = []
+        self.c.update()
+
+    def objet(self, quoi, mode: str):
+        titre = tr("Sélection d'objet")
+        if not self._verifier(titre):
+            self.c.trait_en_attente = None
+            self.c.update()
+            return
+        doc = self.f.doc
+        base = None if mode == "nouvelle" else masque(doc.selection)
+        if isinstance(quoi, QRectF):
+            r = quoi.normalized()
+            dem = {"pos": [], "neg": [], "cadre": (r.x(), r.y(), r.width(), r.height())}
+        else:
+            dem = {"pos": [(int(quoi.x()), int(quoi.y()))], "neg": [], "cadre": None}
+        self._demander({"titre": titre, "doc": doc, "session": None, "mode": mode, "base": base, **dem})
+
+    def _image(self, doc):
+        """Image visible envoyée au moteur (une fois par version de l'image), réduite pour aller vite."""
+        img = doc.image
+        cle = (doc, doc.calques)                 # mêmes calques (objets fixes) = même image visible
+        if self._image_ia is not None and self._image_ia[0][0] is doc and len(self._image_ia[0][1]) == len(
+                doc.calques) and all(a is b for a, b in zip(self._image_ia[0][1], doc.calques)):
+            return self._image_ia[1], self._image_ia[2]
+        w, h = img.width(), img.height()
+        e = min(1.0, COTE_IA / max(w, h))
+        petit = img if e >= 1 else img.scaled(round(w * e), round(h * e), Qt.IgnoreAspectRatio,
+                                              Qt.SmoothTransformation)
+        import io
+        from PIL import Image
+        t = tableau(petit.convertToFormat(FORMAT_IMAGE))[:, :, :3]
+        buf = io.BytesIO()
+        Image.fromarray(np.ascontiguousarray(t), "RGB").save(buf, "PNG", compress_level=1)
+        nom = self.f.moteur.envoyer_image(buf.getvalue())
+        self._image_ia = (cle, nom, e)
+        return nom, e
+
+    def _demander(self, d: dict):
+        if self._occupe:
+            self._en_attente = d
+            return
+        self._occupe = True
+        self.f.statusBar().showMessage(tr("L'IA cherche l'objet…"))
+        QApplication.setOverrideCursor(Qt.BusyCursor)
+        doc = d["doc"]
+        w, h = doc.taille()
+
+        def calcul(_progres):
+            nom, e = self._image(doc)
+            pos = [(x * e, y * e) for x, y in d["pos"]]
+            neg = [(x * e, y * e) for x, y in d["neg"]]
+            cadre = None if d["cadre"] is None else tuple(v * e for v in d["cadre"])
+            prompt, sorties = recettes.segmenter(nom, pos, neg, cadre)
+            res = self.f.moteur.executer(prompt, sorties, threading.Event(), lambda *a: None)
+            if not res:
+                raise ErreurMoteur(tr("Le calcul s'est arrêté sans résultat."))
+            img = QImage.fromData(res[0][1])
+            if img.isNull():
+                raise ErreurMoteur(tr("Résultat illisible."))
+            m = tableau(img.convertToFormat(FORMAT_IMAGE))[:, :, 0] > 127
+            sh, sw = m.shape
+            fx, fy = sw / (w * e), sh / (h * e)
+            m = nettoyer(m, [(int(x * fx), int(y * fy)) for x, y in pos])
+            # retour à la taille de la photo, bord adouci par l'agrandissement
+            q = QImage(np.ascontiguousarray(m.astype(np.uint8) * 255).data, sw, sh, sw, QImage.Format_Grayscale8)
+            q = q.scaled(w, h, Qt.IgnoreAspectRatio, Qt.SmoothTransformation).convertToFormat(FORMAT_IMAGE)
+            return tableau(q)[:, :, 0].copy()
+
+        def fini():
+            self._occupe = False
+            QApplication.restoreOverrideCursor()
+            suivant, self._en_attente = self._en_attente, None
+            if suivant is not None:
+                self._demander(suivant)
+            else:
+                self.c.trait_en_attente = None
+                self.c.update()
+
+        def ok(a):
+            if doc is self.f.doc and a.any():
+                self._historique(combiner(d["base"], a, d["mode"]), d["titre"])
+                if d["session"] is not None:
+                    d["session"]["cle"] = doc.selection.cacheKey()
+                self.f.statusBar().showMessage(tr("{titre} : fait. Ctrl+Z pour revenir.", titre=d["titre"]), 5000)
+            elif doc is self.f.doc:
+                self.f.statusBar().showMessage(tr("L'IA n'a rien trouvé à cet endroit."), 6000)
+            fini()
+
+        def echec(message):
+            fini()
+            if message:
+                QMessageBox.warning(self.f, d["titre"], message)
+
+        self.f._tache(calcul, ok, echec).lancer()

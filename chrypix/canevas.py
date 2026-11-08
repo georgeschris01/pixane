@@ -1,5 +1,5 @@
-"""Zone d'affichage : zoom, déplacement, outils de sélection (rectangle, lasso, pinceau, gomme), texte,
-recadrage, pinceau de couleur et tampon."""
+"""Zone d'affichage : zoom, déplacement, outils de sélection (rectangle, lasso, pinceau, gomme, baguette
+magique, sélection rapide, sélection d'objet), texte, recadrage, pinceau de couleur et tampon."""
 from __future__ import annotations
 
 import math
@@ -22,7 +22,11 @@ DEPLACER = "deplacer"                          # déplacer le contenu du calque 
 RECADRER = "recadrer"                          # garder une partie de la photo
 PEINTURE = "peinture"                          # pinceau de couleur sur le calque choisi
 TAMPON = "tampon"                              # copier une zone de la photo sur une autre (Alt+clic : source)
-OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE, PEINTURE, TAMPON)   # outils au curseur rond (taille du pinceau)
+BAGUETTE = "baguette"                          # baguette magique : zone de couleur proche (glisser = tolérance)
+RAPIDE = "rapide"                              # sélection rapide (IA) : peindre sur l'objet
+OBJET = "objet"                                # sélection d'objet (IA) : cadre autour, ou clic dessus
+OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE, PEINTURE, TAMPON, RAPIDE)   # outils au curseur rond (taille)
+OUTILS_AUTO = (BAGUETTE, RAPIDE, OBJET)                                  # sélections calculées
 OUTILS_CALQUE = (GOMME_CALQUE, PEINTURE, TAMPON)                  # outils qui changent les pixels du calque
 OPACITE_SELECTION = 0.45
 
@@ -43,6 +47,12 @@ class Canevas(QWidget):
     transfo_valide = Signal()                   # Entrée ou double-clic dans le cadre
     transfo_annule = Signal()                   # Échap
     message = Signal(str)                       # information (barre d'état)
+    baguette_clic = Signal(object, str)         # point (image), mode « nouvelle » / « ajouter » / « retirer »
+    baguette_glisse = Signal(float)             # écart horizontal (écran) depuis le clic -> tolérance
+    baguette_lache = Signal()
+    trait_ia = Signal(list, bool, bool)         # sélection rapide : points (image), Alt (retirer), Maj (nouvel objet)
+    objet_ia = Signal(object, str)              # sélection d'objet : QRectF (cadre) ou QPointF (clic), mode
+    fin_session_ia = Signal()                   # Échap avec la sélection rapide : l'objet suivant repart de zéro
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -85,6 +95,12 @@ class Canevas(QWidget):
         # transformer un calque (Ctrl+T)
         self.transfo: Transformation | None = None
         self._transfo_index = 0
+        self._transfo_glisse = False
+        # sélections calculées
+        self.apercu_selection: QImage | None = None  # baguette pendant le glisser (petite image, étirée)
+        self.points_ia: list = []                    # sélection rapide : (point image, garder ?)
+        self.trait_en_attente = None                 # trait ou cadre envoyé à l'IA, montré pendant le calcul
+        self._auto = None                            # geste en cours : (outil, départ écran, données)
         self._transfo_glisse = False
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.StrongFocus)
@@ -198,9 +214,12 @@ class Canevas(QWidget):
         p.save()
         p.setTransform(QTransform(self.zoom, 0, 0, self.zoom, self.decalage.x(), self.decalage.y()))
         p.setOpacity(OPACITE_SELECTION)
-        if not (self._trace and self._nouvelle):     # nouvelle sélection en cours : l'ancienne va disparaître
+        if self.apercu_selection is not None:
+            p.drawImage(QRectF(0, 0, self.doc.image.width(), self.doc.image.height()), self.apercu_selection)
+        elif not (self._trace and self._nouvelle):   # nouvelle sélection en cours : l'ancienne va disparaître
             p.drawImage(QPointF(0, 0), self.doc.selection)
         p.setOpacity(1)
+        self._dessiner_auto(p)
         # tracé en cours
         if self._trace and self.outil in (RECTANGLE, LASSO):
             stylo = QPen(QColor(255, 255, 255), 0, Qt.DashLine)
@@ -846,6 +865,80 @@ class Canevas(QWidget):
             p.drawLine(a, b)
         p.end()
 
+    def _dessiner_auto(self, p: QPainter):
+        """Trait de la sélection rapide, cadre de la sélection d'objet (en cours ou en calcul), points de l'IA.
+        Appelé avec la transformation de l'image (coordonnées image)."""
+        trait = None
+        if self._auto is not None and self._auto[0] in (RAPIDE, OBJET):
+            trait = (self._auto[0], self._auto[2])
+        elif self.trait_en_attente is not None:
+            trait = self.trait_en_attente
+        if trait is not None:
+            genre, d = trait
+            if genre == RAPIDE and len(d["points"]) > 0:
+                c = QColor(self.couleur_accent)
+                c.setAlpha(110)
+                if d.get("alt"):
+                    c = QColor(255, 255, 255, 130)
+                p.setPen(QPen(c, self.taille_pinceau, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+                if len(d["points"]) == 1:
+                    p.drawPoint(d["points"][0])
+                else:
+                    p.drawPolyline(QPolygonF(d["points"]))
+            elif genre == OBJET and d.get("fin") is not None:
+                r = QRectF(d["debut"], d["fin"]).normalized()
+                for couleur, style in ((QColor(0, 0, 0), Qt.SolidLine), (QColor(255, 255, 255), Qt.DashLine)):
+                    stylo = QPen(couleur, 0, style)
+                    stylo.setCosmetic(True)
+                    stylo.setWidth(2 if style == Qt.SolidLine else 1)
+                    p.setPen(stylo)
+                    p.drawRect(r)
+        if self.points_ia:
+            rayon = 5 / self.zoom
+            for pt, garder in self.points_ia:
+                p.setPen(QPen(QColor(255, 255, 255), 1.5 / self.zoom))
+                p.setBrush(QColor(40, 180, 90) if garder else QColor(220, 50, 50))
+                p.drawEllipse(pt, rayon, rayon)
+            p.setBrush(Qt.NoBrush)
+
+    def _presser_auto(self, e, pos: QPointF):
+        mods = e.modifiers()
+        pt = self.vers_image(pos)
+        alt, maj = bool(mods & Qt.AltModifier), bool(mods & Qt.ShiftModifier)
+        mode = "retirer" if alt else "ajouter" if maj else self.mode_forme
+        if self.outil == BAGUETTE:
+            self._auto = (BAGUETTE, pos, {})
+            self.baguette_clic.emit(pt, mode)
+        elif self.outil == RAPIDE:
+            self._auto = (RAPIDE, pos, {"points": [pt], "alt": alt, "maj": maj})
+        else:
+            self._auto = (OBJET, pos, {"debut": pt, "fin": None, "mode": mode})
+        self.update()
+
+    def _glisser_auto(self, pos: QPointF):
+        outil, depart, d = self._auto
+        if outil == BAGUETTE:
+            self.baguette_glisse.emit(pos.x() - depart.x())
+        elif outil == RAPIDE:
+            d["points"].append(self.vers_image(pos))
+        elif (pos - depart).manhattanLength() > 4:
+            d["fin"] = self.vers_image(pos)
+        self.update()
+
+    def _lacher_auto(self):
+        outil, depart, d = self._auto
+        self._auto = None
+        if outil == BAGUETTE:
+            self.baguette_lache.emit()
+        elif outil == RAPIDE:
+            self.trait_en_attente = (RAPIDE, d)
+            self.trait_ia.emit([(pt.x(), pt.y()) for pt in d["points"]], d["alt"], d["maj"])
+        else:
+            self.trait_en_attente = (OBJET, d)
+            quoi = QRectF(d["debut"], d["fin"]).normalized() if d["fin"] is not None else d["debut"]
+            self.objet_ia.emit(quoi, d["mode"])
+        self.update()
+
     def _remplir_forme(self):
         chemin = QPainterPath()
         if self.outil == RECTANGLE:
@@ -898,6 +991,9 @@ class Canevas(QWidget):
         if self.outil in (PEINTURE, TAMPON):
             self._presser_retouche(pos, bool(e.modifiers() & Qt.AltModifier))
             self.update()
+            return
+        if self.outil in OUTILS_AUTO:
+            self._presser_auto(e, pos)
             return
         if self.outil == GOMME_CALQUE and self.doc.calque_actif.verrou:
             self.refus.emit(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour pouvoir le "
@@ -962,6 +1058,9 @@ class Canevas(QWidget):
             self._glisser_retouche(pos)
             self.update()
             return
+        if self._auto is not None:
+            self._glisser_auto(pos)
+            return
         if self.outil == RECADRER and self.doc and not self._espace:
             if self.recadre is not None:
                 cotes = self._cotes_sous(self._rect_recadre_ecran(), pos)
@@ -1022,6 +1121,9 @@ class Canevas(QWidget):
             self._lacher_retouche()
             self.update()
             return
+        if self._auto is not None:
+            self._lacher_auto()
+            return
         if self._trace is None:
             return
         if self.outil in (RECTANGLE, LASSO):
@@ -1073,6 +1175,8 @@ class Canevas(QWidget):
             self.recadre_valide.emit()
         elif self.outil == RECADRER and self.recadre is not None and e.key() == Qt.Key_Escape:
             self.annuler_recadre()
+        elif self.outil == RAPIDE and e.key() == Qt.Key_Escape:
+            self.fin_session_ia.emit()
         elif e.key() == Qt.Key_Space and not e.isAutoRepeat():
             self._espace = True
             self.setCursor(Qt.OpenHandCursor)

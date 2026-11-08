@@ -12,7 +12,7 @@ from PySide6.QtCore import QBuffer, QMimeData, QObject, QPoint, QProcess, QSetti
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import (QAction, QActionGroup, QColor, QDesktopServices, QIcon, QImage, QKeySequence, QUndoCommand,
                            QUndoStack)
-from PySide6.QtWidgets import (QApplication, QButtonGroup, QComboBox, QDialog, QDockWidget, QFileDialog, QHBoxLayout, QLabel,
+from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QComboBox, QDialog, QDockWidget, QFileDialog, QHBoxLayout, QLabel,
                                QLineEdit, QMainWindow, QMenu, QMessageBox, QPushButton, QSizePolicy, QSlider,
                                QSpinBox, QToolBar, QToolButton, QUndoView, QVBoxLayout, QWidget, QInputDialog)
 
@@ -20,8 +20,8 @@ from . import langue, recettes, theme
 from .icones import icone
 from .langue import tr
 from .calques import PanneauCalques
-from .canevas import (DEPLACER, GOMME, GOMME_CALQUE, LASSO, MAIN, OUTILS_ROND, PEINTURE, PINCEAU, RECADRER,
-                      RECTANGLE, TAMPON, TEXTE, Canevas)
+from .canevas import (BAGUETTE, DEPLACER, GOMME, GOMME_CALQUE, LASSO, MAIN, OBJET, OUTILS_AUTO, OUTILS_ROND,
+                      PEINTURE, PINCEAU, RAPIDE, RECADRER, RECTANGLE, TAMPON, TEXTE, Canevas)
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection, qimage_rgb, tableau
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
@@ -172,6 +172,9 @@ class Fenetre(QMainWindow):
         self._panneau_historique()
         self._panneau_texte()
         self._barre_etat()
+        from .selection_ia import SelectionAuto
+        self.selection_auto = SelectionAuto(self)
+        self.canevas.fin_session_ia.connect(self.selection_auto.fin_session)
         self._appliquer_theme()
         self._choisir_outil(PINCEAU)
         self._actualiser()
@@ -448,6 +451,39 @@ class Fenetre(QMainWindow):
         lay.addWidget(self.b_annuler_recadre)
         tout.addWidget(self.opt_recadrer)
         self._recadre_change(None)
+        # baguette magique
+        self.opt_baguette = QWidget()
+        lay = QHBoxLayout(self.opt_baguette)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(8)
+        lay.addWidget(QLabel(tr("Tolérance")))
+        self.opt_tolerance = QSpinBox()
+        self.opt_tolerance.setRange(0, 255)
+        self.opt_tolerance.setValue(self.reglages.value("baguette_tolerance", 32, type=int))
+        self.opt_tolerance.setToolTip(tr("Écart de couleur accepté. Astuce : après le clic, glisse la souris à droite "
+                                         "ou à gauche pour régler la tolérance en voyant le résultat."))
+        self.opt_tolerance.valueChanged.connect(lambda v: self.reglages.setValue("baguette_tolerance", v))
+        lay.addWidget(self.opt_tolerance)
+        self.opt_contigu = QCheckBox(tr("Contiguë"))
+        self.opt_contigu.setToolTip(tr("Coché : seulement la zone touchée. Décoché : toutes les couleurs proches de "
+                                       "l'image."))
+        self.opt_doux = QCheckBox(tr("Bords doux"))
+        self.opt_doux.setToolTip(tr("Bord progressif, selon l'écart de couleur (pas d'escalier)"))
+        self.opt_trous = QCheckBox(tr("Boucher les trous"))
+        self.opt_trous.setToolTip(tr("Ajoute ce qui est entièrement entouré par la zone (oiseaux dans un ciel, "
+                                     "reflets…)"))
+        for case, cle, defaut in ((self.opt_contigu, "baguette_contigu", True), (self.opt_doux, "baguette_doux", True),
+                                  (self.opt_trous, "baguette_trous", False)):
+            case.setChecked(self.reglages.value(cle, defaut, type=bool))
+            case.toggled.connect(lambda v, c=cle: self.reglages.setValue(c, v))
+            lay.addWidget(case)
+        self.opt_echantillon = QComboBox()
+        self.opt_echantillon.addItem(tr("Image visible"), "image")
+        self.opt_echantillon.addItem(tr("Calque choisi"), "calque")
+        self.opt_echantillon.setToolTip(tr("Couleurs comparées sur l'image telle qu'on la voit, ou sur le calque "
+                                           "choisi seulement"))
+        lay.addWidget(self.opt_echantillon)
+        tout.addWidget(self.opt_baguette)
 
     def _couleur_peinture(self, couleur: str, enregistrer: bool = True):
         self.canevas.couleur_peinture = QColor(couleur)
@@ -517,6 +553,12 @@ class Fenetre(QMainWindow):
                                           (LASSO, tr("Lasso"), "L", "lasso"),
                                           (PINCEAU, tr("Pinceau de sélection"), "B", "pinceau"),
                                           (GOMME, tr("Gomme de sélection"), "E", "gomme"),
+                                          (BAGUETTE, tr("Baguette magique : zone de couleur proche (glisser après "
+                                                        "le clic : tolérance)"), "W", "baguette"),
+                                          (RAPIDE, tr("Sélection rapide (IA) : peins sur l'objet, Alt pour "
+                                                      "retirer"), "Q", "rapide"),
+                                          (OBJET, tr("Sélection d'objet (IA) : cadre autour de l'objet, ou clic "
+                                                     "dessus"), "O", "objet"),
                                           (GOMME_CALQUE, tr("Gomme de calque : efface les pixels du calque choisi"),
                                            "G", "gomme_calque"),
                                           (TEXTE, tr("Texte : écrire, déplacer, tourner"), "T", "texte"),
@@ -538,7 +580,7 @@ class Fenetre(QMainWindow):
         # comme Photoshop : un bouton par famille d'outils ; clic droit (ou clic maintenu) pour choisir dans la
         # famille ; le bouton montre le dernier outil choisi. Main et Déplacer restent seuls.
         self._bouton_groupe = {}
-        for famille in ((MAIN,), (DEPLACER,), (RECTANGLE, LASSO, PINCEAU, GOMME),
+        for famille in ((MAIN,), (DEPLACER,), (RECTANGLE, LASSO, PINCEAU, GOMME), (OBJET, RAPIDE, BAGUETTE),
                         (PEINTURE, TAMPON, GOMME_CALQUE), (RECADRER,), (TEXTE,)):
             if len(famille) == 1:
                 barre.addAction(self._actions_outils[famille[0]])
@@ -562,7 +604,7 @@ class Fenetre(QMainWindow):
             barre.addWidget(bouton)
 
     def _mode_selection(self, mode: str):
-        if self.canevas.outil in (RECTANGLE, LASSO):
+        if self.canevas.outil in (RECTANGLE, LASSO) + OUTILS_AUTO:
             self.canevas.mode_forme = mode
         else:
             self.canevas.definir_mode_retirer(mode == "retirer")
@@ -570,6 +612,8 @@ class Fenetre(QMainWindow):
     def _choisir_outil(self, outil: str):
         if getattr(self.canevas, "transfo", None) is not None:
             self._valider_transfo()
+        if self.canevas.outil != outil and hasattr(self, "selection_auto"):
+            self.selection_auto.fin_session()
         self.canevas.definir_outil(outil)
         self._actions_outils[outil].setChecked(True)
         if outil in self._bouton_groupe:
@@ -577,15 +621,18 @@ class Fenetre(QMainWindow):
             menu = bouton.menu()
             bouton.setDefaultAction(self._actions_outils[outil])
             bouton.setMenu(menu)
-        if outil in (RECTANGLE, LASSO):
+        if outil in (RECTANGLE, LASSO) + OUTILS_AUTO:
             {"nouvelle": self.p_nouvelle, "ajouter": self.p_ajouter,
              "retirer": self.p_retirer}[self.canevas.mode_forme].setChecked(True)
         elif outil == PINCEAU:
             (self.p_retirer if self.canevas.mode_retirer else self.p_ajouter).setChecked(True)
-        self.p_nouvelle.setVisible(outil in (RECTANGLE, LASSO))
+        self.p_nouvelle.setVisible(outil in (RECTANGLE, LASSO) + OUTILS_AUTO)
         self.options.setEnabled(outil not in (MAIN, TEXTE, DEPLACER))
         self.opt_taille.setVisible(outil in OUTILS_ROND or outil in (MAIN, TEXTE, DEPLACER, RECTANGLE, LASSO))
-        self.opt_selection.setVisible(outil in (RECTANGLE, LASSO, PINCEAU))
+        if outil in (BAGUETTE, OBJET):
+            self.opt_taille.setVisible(False)
+        self.opt_selection.setVisible(outil in (RECTANGLE, LASSO, PINCEAU) + OUTILS_AUTO)
+        self.opt_baguette.setVisible(outil == BAGUETTE)
         self.opt_couleur.setVisible(outil == PEINTURE)
         self.opt_retouche.setVisible(outil in (PEINTURE, TAMPON))
         self.opt_recadrer.setVisible(outil == RECADRER)
@@ -595,6 +642,12 @@ class Fenetre(QMainWindow):
         aides = {RECTANGLE: tr("Rectangle : la nouvelle sélection remplace l'ancienne. Maj : ajouter, Alt : retirer. "
                                "Un simple clic désélectionne."),
                  LASSO: tr("Lasso : entoure la zone en gardant le bouton appuyé. Maj : ajouter, Alt : retirer."),
+                 BAGUETTE: tr("Baguette magique : clic sur une couleur ; garde le bouton appuyé et glisse à droite ou "
+                              "à gauche pour régler la tolérance. Maj : ajouter, Alt : retirer."),
+                 RAPIDE: tr("Sélection rapide (IA) : peins grossièrement sur l'objet, l'IA trouve ses contours. "
+                            "Alt + peindre : retirer une partie. Maj : objet suivant. Échap : recommencer."),
+                 OBJET: tr("Sélection d'objet (IA) : tire un cadre autour de l'objet, ou clique dessus. "
+                           "Maj : ajouter, Alt : retirer."),
                  RECADRER: tr("Recadrer : tire un cadre sur la photo, ajuste-le, puis Entrée (ou double-clic). "
                               "Échap pour annuler."),
                  PEINTURE: tr("Pinceau de couleur : peint sur le calque choisi. Alt+clic sur la photo : prendre une "
@@ -975,6 +1028,8 @@ class Fenetre(QMainWindow):
         doc.calques_changes.connect(self._sync_texte)
         self.barre_agrandir.hide()
         self.canevas.cadre = None
+        if hasattr(self, "selection_auto"):
+            self.selection_auto.fin_session()
         self.canevas.definir_document(doc)
         self.calques.definir_document(doc)
         self._sync_texte()

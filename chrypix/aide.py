@@ -285,6 +285,8 @@ TELECHARGES = [
     Composant("LaMa", "https://github.com/advimman/lama", "Effacer (premier passage)", "Apache-2.0"),
     Composant("RealESRGAN x4plus", "https://github.com/xinntao/Real-ESRGAN", "Upscale", "BSD-3-Clause"),
     Composant("BiRefNet", "https://github.com/ZhengPeng7/BiRefNet", "Sujet, arrière-plan", "MIT"),
+    Composant("SAM 3.1", "https://huggingface.co/facebook/sam3.1", "Sélection d'objet, sélection rapide",
+              "SAM License (Meta)"),
 ]
 
 
