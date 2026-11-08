@@ -15,3 +15,4 @@ __pycache__/
 publication/
 # images de l'installateur : fabriquées par Chrypix (aucune photo personnelle), à garder
 !installateur/images/*.png
+comparaison/

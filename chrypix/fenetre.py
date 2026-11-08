@@ -822,6 +822,13 @@ class Fenetre(QMainWindow):
                 variantes = [("complet", dict(graine=g, chargeur=recettes.chargeur_fill("complet", recettes.FILL_COMPLET))),
                              ("GGUF Q8", dict(graine=g, chargeur=recettes.chargeur_fill("gguf", recettes.FILL_GGUF)))]
             res = []
+            dossier_cmp = None
+            if len(variantes) > 1:              # chaque essai est rangé pour être analysé ensuite
+                import datetime
+                dossier_cmp = Path(__file__).resolve().parents[1] / "comparaison" / (
+                    datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + titre)
+                dossier_cmp.mkdir(parents=True, exist_ok=True)
+                (dossier_cmp / "00-depart (zone a traiter en transparent).png").write_bytes(png)
             for etiquette, reglages in variantes:
                 recette = fabriquer(nom_image["nom"], **reglages)
                 prompt, sorties = recette[0], recette[1]
@@ -833,6 +840,8 @@ class Fenetre(QMainWindow):
                         raise ErreurMoteur(tr("Résultat illisible."))
                     img = img.convertToFormat(FORMAT_IMAGE)
                     res.append((f"{etiquette} · {libelle}" if etiquette else libelle, apres(img) if apres else img))
+                    if dossier_cmp is not None:
+                        res[-1][1].save(str(dossier_cmp / f"{len(res):02d}-{etiquette} - {libelle}.png"))
             return res
 
         attente = Attente(titre, self)
