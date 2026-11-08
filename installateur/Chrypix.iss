@@ -41,6 +41,9 @@ WizardImageFile=images\accueil-fr-202x386.png,images\accueil-fr-269x515.png,imag
 WizardSmallImageFile=images\logo-58.png,images\logo-77.png,images\logo-97.png,images\logo-116.png,images\logo-124.png,images\logo-143.png,images\logo-159.png
 Compression=lzma2/max
 SolidCompression=yes
+; Installateur 64 bits : il voit le vrai C:\Windows\System32 (nvidia-smi du pilote NVIDIA). Un installateur
+; 32 bits ne le voyait pas et annonçait « aucune carte graphique » (constaté le 08/11/2026).
+SetupArchitecture=x64
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
@@ -63,6 +66,8 @@ french.PagePCTitre=Vérification du PC
 french.PagePCDescription=Chrypix vérifie ce dont son moteur d'intelligence artificielle a besoin.
 french.CarteOk=Carte graphique : %1 (%2 Go de mémoire) — convient.
 french.CartePetite=Carte graphique : %1 (%2 Go de mémoire) — il faut au moins 8 Go : les actions IA risquent d'être très lentes ou de ne pas fonctionner.
+french.CarteAutre=Carte graphique : %1 — ce n'est pas une carte NVIDIA : Chrypix s'installera, mais les actions IA (Effacer, Remplir, Agrandir, Upscale) ne fonctionneront pas.
+french.CarteSansMemoire=Carte graphique : %1 (mémoire inconnue : il faut au moins 8 Go).
 french.CarteAucune=Aucune carte graphique NVIDIA trouvée : Chrypix s'installera, mais les actions IA (Effacer, Remplir, Agrandir, Upscale) ne fonctionneront pas.
 french.Place=Place libre sur %1 : %2 Go.
 french.ComfyTrouve=Moteur IA (ComfyUI) trouvé : %1
@@ -93,6 +98,8 @@ english.PagePCTitre=Checking the PC
 english.PagePCDescription=Chrypix checks what its artificial intelligence engine needs.
 english.CarteOk=Graphics card: %1 (%2 GB of memory) — suitable.
 english.CartePetite=Graphics card: %1 (%2 GB of memory) — at least 8 GB is needed: AI actions may be very slow or may not work.
+english.CarteAutre=Graphics card: %1 — this is not an NVIDIA card: Chrypix will install, but the AI actions (Erase, Fill, Expand, Upscale) will not work.
+english.CarteSansMemoire=Graphics card: %1 (memory unknown: at least 8 GB is needed).
 english.CarteAucune=No NVIDIA graphics card found: Chrypix will install, but the AI actions (Erase, Fill, Expand, Upscale) will not work.
 english.Place=Free space on %1: %2 GB.
 english.ComfyTrouve=AI engine (ComfyUI) found: %1
@@ -174,6 +181,7 @@ var
   CarteLue: Boolean;
   CarteNom: String;
   CarteMo: Integer;
+  CarteAutre: String;           { carte qui n'est pas NVIDIA (AMD, Intel…), pour le message }
   PageMoteur: TWizardPage;
   CaseMoteur, CaseSchnell, CaseLicence: TNewCheckBox;
   EditMoteur: TNewEdit;
@@ -314,25 +322,103 @@ begin
   if Result = '' then Result := ComfyValide(ExpandConstant('{localappdata}\Chrypix\moteur\ComfyUI_windows_portable'));
 end;
 
-{ ---------------------------------------------------------------- carte graphique (nvidia-smi, fourni avec le pilote) }
-procedure LireCarte;
+{ ---------------------------------------------------------------- carte graphique
+  D'abord nvidia-smi (installé avec le pilote NVIDIA) ; en secours, le registre de Windows (nom et mémoire de
+  chaque carte, lus avec reg.exe). }
+function Sortie(Programme, Parametres: String; var Lignes: TArrayOfString): Boolean;
 var
-  Fichier, Ligne: String;
-  Lignes: TArrayOfString;
-  Code, P: Integer;
+  Fichier: String;
+  Code: Integer;
 begin
-  CarteLue := True;
-  CarteNom := '';
-  CarteMo := 0;
-  Fichier := ExpandConstant('{tmp}\carte.txt');
-  if not Exec(ExpandConstant('{cmd}'), '/C nvidia-smi --query-gpu=name,memory.total --format=csv,noheader,nounits > "'
-      + Fichier + '"', '', SW_HIDE, ewWaitUntilTerminated, Code) then Exit;
-  if (Code <> 0) or not LoadStringsFromFile(Fichier, Lignes) or (GetArrayLength(Lignes) = 0) then Exit;
+  Fichier := ExpandConstant('{tmp}\sortie.txt');
+  DeleteFile(Fichier);
+  Result := Exec(ExpandConstant('{cmd}'), '/C ""' + Programme + '" ' + Parametres + ' > "' + Fichier + '""', '',
+    SW_HIDE, ewWaitUntilTerminated, Code) and (Code = 0) and LoadStringsFromFile(Fichier, Lignes)
+    and (GetArrayLength(Lignes) > 0);
+end;
+
+procedure CarteParNvidiaSmi;
+var
+  Lignes: TArrayOfString;
+  Ligne, Programme: String;
+  P: Integer;
+begin
+  Programme := ExpandConstant('{sys}\nvidia-smi.exe');
+  if not FileExists(Programme) then
+    Programme := ExpandConstant('{commonpf64}\NVIDIA Corporation\NVSMI\nvidia-smi.exe');
+  if not FileExists(Programme) then Exit;
+  if not Sortie(Programme, '--query-gpu=name,memory.total --format=csv,noheader,nounits', Lignes) then Exit;
   Ligne := Lignes[0];
   P := Pos(',', Ligne);
   if P = 0 then Exit;
   CarteNom := Trim(Copy(Ligne, 1, P - 1));
   CarteMo := StrToIntDef(Trim(Copy(Ligne, P + 1, Length(Ligne))), 0);
+end;
+
+{ Valeur d'une ligne « nom    REG_xxx    valeur » de reg.exe }
+function ValeurReg(Ligne, Type_: String): String;
+var
+  P: Integer;
+begin
+  Result := '';
+  P := Pos(Type_, Ligne);
+  if P > 0 then Result := Trim(Copy(Ligne, P + Length(Type_), Length(Ligne)));
+end;
+
+procedure CarteParRegistre;
+var
+  Noms, Memoires: TArrayOfString;
+  Classe, Cle, CleNvidia, Nom, Autre, V, Reg: String;
+  I: Integer;
+  Octets: Int64;
+begin
+  Classe := 'HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}';
+  Reg := ExpandConstant('{sys}\reg.exe');
+  if not Sortie(Reg, 'query "' + Classe + '" /s /v DriverDesc', Noms) then Exit;
+  CleNvidia := '';
+  Autre := '';
+  for I := 0 to GetArrayLength(Noms) - 1 do
+  begin
+    if Pos('HKEY_', Noms[I]) = 1 then Cle := Trim(Noms[I])
+    else
+    begin
+      Nom := ValeurReg(Noms[I], 'REG_SZ');
+      if Nom <> '' then
+      begin
+        if (CleNvidia = '') and (Pos('NVIDIA', Uppercase(Nom)) > 0) then
+        begin
+          CleNvidia := Cle;
+          CarteNom := Nom;
+        end
+        else if Autre = '' then Autre := Nom;
+      end;
+    end;
+  end;
+  if CleNvidia = '' then
+  begin
+    CarteAutre := Autre;
+    Exit;
+  end;
+  if not Sortie(Reg, 'query "' + Classe + '" /s /v HardwareInformation.qwMemorySize', Memoires) then Exit;
+  for I := 0 to GetArrayLength(Memoires) - 1 do
+    if (Pos('HKEY_', Memoires[I]) = 1) then Cle := Trim(Memoires[I])
+    else if Cle = CleNvidia then
+    begin
+      V := ValeurReg(Memoires[I], 'REG_QWORD');
+      if Pos('0x', V) = 1 then V := '$' + Copy(V, 3, Length(V));
+      Octets := StrToInt64Def(V, 0);
+      if Octets > 0 then CarteMo := Octets div (1024 * 1024);
+    end;
+end;
+
+procedure LireCarte;
+begin
+  CarteLue := True;
+  CarteNom := '';
+  CarteAutre := '';
+  CarteMo := 0;
+  CarteParNvidiaSmi;
+  if CarteNom = '' then CarteParRegistre;
 end;
 
 { ---------------------------------------------------------------- page « Vérification du PC » }
@@ -344,7 +430,10 @@ var
 begin
   if not CarteLue then LireCarte;
   Go := (CarteMo + 512) div 1024;
-  if CarteNom = '' then TexteCarte.Caption := CustomMessage('CarteAucune')
+  if (CarteNom = '') and (CarteAutre <> '') then
+    TexteCarte.Caption := FmtMessage(CustomMessage('CarteAutre'), [CarteAutre])
+  else if CarteNom = '' then TexteCarte.Caption := CustomMessage('CarteAucune')
+  else if CarteMo = 0 then TexteCarte.Caption := FmtMessage(CustomMessage('CarteSansMemoire'), [CarteNom])
   else if CarteMo < 7900 then TexteCarte.Caption := FmtMessage(CustomMessage('CartePetite'), [CarteNom, IntToStr(Go)])
   else TexteCarte.Caption := FmtMessage(CustomMessage('CarteOk'), [CarteNom, IntToStr(Go)]);
 
