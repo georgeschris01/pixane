@@ -11,8 +11,8 @@ This guide explains every tool and every setting. It is updated with each new fe
 
 | Area | Purpose |
 |---|---|
-| **Top bar** | Open, Save, Undo / Redo, brush size, Add / Remove, zoom, light / dark theme |
-| **Tools (left)** | Hand, Move, Rectangle, Lasso, Brush, Erasers, Text |
+| **Top bar** | Open, Save, Undo / Redo, settings of the chosen tool (size, New / Add / Remove…), zoom |
+| **Tools (left)** | Hand, Move, selection tools, retouching tools, Crop, Text. A small triangle on a button = several tools: **right-click** (or click and hold) to choose |
 | **"Text" panel (left)** | Text settings, shown with the Text tool (see chapter 7) |
 | **Photo (centre)** | The photo; the selected area appears in transparent red |
 | **"Artificial intelligence" panel (right)** | Erase, Fill, Expand image, Upscale |
@@ -70,19 +70,38 @@ Layer names that already exist keep their original language.
 The selected area appears in **transparent red**. You do not need to "outline" an object:
 you can simply **paint over it**.
 
+The four selection tools share **one button** in the left bar (small triangle): **right-click** it, or click and
+hold, to choose; or press their key directly.
+
 | Tool | Key | Use |
 |---|---|---|
-| **Brush** | B | Paint the area. Ideal for an object, some text, a wire… |
-| **Eraser** | E | Remove from the selection by painting |
-| **Layer eraser** | G | **Really** erases the pixels of the selected layer (see chapter 6) |
-| **Move** | V | Moves the content of the **selected layer**; a moved text stays editable. What goes outside the image is cut off. Refused on a locked layer |
 | **Rectangle** | M | Rectangular selection |
-| **Lasso** | L | Draw an outline freehand; the shape is closed automatically |
+| **Lasso** | L | Draw an outline freehand, button held down; the shape is closed automatically |
+| **Selection brush** | B | Paint the area. Ideal for an object, some text, a wire… |
+| **Selection eraser** | E | Remove from the selection by painting |
 
+- **Rectangle and lasso**, as in Photoshop: a new selection **replaces** the old one. Holding **Shift** when you
+  start drawing **adds** to the selection, **Alt** **removes**. A single click without drawing **deselects**.
+  The **New / Add / Remove** pills in the top bar choose the mode without a key.
+- **Selection brush**: it always adds to the selection; **Remove** pill or holding **Alt**: it removes (like the
+  selection eraser).
 - **Brush size**: "Size" slider in the top bar, or the `[` and `]` keys.
-- **Add / Remove** (pills in the top bar): with *Remove*, Rectangle, Lasso and Brush take away from the selection
-  instead of adding. Holding **Alt** switches the mode for one stroke.
 - **Select** menu: *Select all* (Ctrl+A), *Deselect* (Ctrl+D), *Invert* (Ctrl+Shift+I).
+
+### Cut, copy, paste, delete (Edit menu)
+They work on the **layer chosen** in the Layers panel:
+- **Copy** (Ctrl+C): copies what is selected (the whole layer if there is no selection). The copy keeps its
+  transparency; it can also be pasted into another program.
+- **Cut** (Ctrl+X): copies, then erases the selected area (it becomes transparent).
+- **Paste** (Ctrl+V): puts the copied image in a **new layer**, at **the same place** if it comes from Chrypix, in the
+  centre if it comes from elsewhere (screenshot, another program…). Then move it with the Move tool (V).
+- **Delete selection** (Del): erases the selected area of the layer (transparent).
+
+A **locked** layer is protected; a **text** that is cut or deleted becomes an image. Ctrl+Z undoes everything.
+
+The other tools: **Move** (V) moves the content of the **chosen layer** (a moved text stays editable; what goes
+outside the image is cut off; refused on a locked layer). The **Layer eraser** (G) **really** erases the pixels of the
+chosen layer (see chapter 6); it is grouped with the colour brush and the clone stamp.
 
 **Tip (text, cursive, thin objects)**: cover each letter completely, edges included, with a brush slightly wider
 than the stroke; don't forget the shadow or outline if there is one. Chrypix already enlarges the area a little
@@ -295,10 +314,13 @@ A **text** retouched with the brush or the stamp becomes an image (a message rem
 | Alt+click | (Colour brush) pick a colour; (Clone stamp) area to copy |
 | `[` / `]` | Smaller / larger brush |
 | Space (held) | Move the view |
-| Alt (held) | Switch Add / Remove for one stroke |
+| Shift / Alt (when starting a rectangle or a lasso) | Add / Remove |
+| Alt (held, selection brush) | Remove for one stroke |
 | Shift+E, Shift+R, Shift+A, Shift+U | Erase, Fill, Expand, Upscale |
 | Ctrl+Z, Ctrl+Y | Undo, Redo |
 | Ctrl+A, Ctrl+D, Ctrl+Shift+I | Select all, Deselect, Invert |
+| Ctrl+X, Ctrl+C, Ctrl+V, Del | Cut, Copy, Paste (new layer), Delete selection |
+| Right-click on a tool with a small triangle | Choose another tool of the group |
 | Ctrl+0, Ctrl+1 | Fit, 100% |
 | Enter / Esc | (Expand) Start / Cancel; (Crop) Apply / Cancel |
 | Shift (while rotating a text) | Rotate in 15° steps |

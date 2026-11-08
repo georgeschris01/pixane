@@ -55,7 +55,9 @@ class Canevas(QWidget):
         self._souris = None
         self._cache = None           # (clé, pixmap réduite)
         self._ajuste = True          # l'image suit la taille de la fenêtre
-        self.mode_retirer = False    # pastilles Ajouter / Retirer
+        self.mode_retirer = False    # pinceau de sélection : pastilles Ajouter / Retirer
+        self.mode_forme = "nouvelle" # rectangle et lasso : « nouvelle » (remplace), « ajouter » ou « retirer »
+        self._nouvelle = False       # tracé en cours qui remplacera la sélection
         self.couleur_fond = QColor(40, 40, 40)
         self.couleur_texte = QColor(150, 150, 150)
         self.couleur_accent = QColor(0, 120, 215)
@@ -188,7 +190,8 @@ class Canevas(QWidget):
         p.save()
         p.setTransform(QTransform(self.zoom, 0, 0, self.zoom, self.decalage.x(), self.decalage.y()))
         p.setOpacity(OPACITE_SELECTION)
-        p.drawImage(QPointF(0, 0), self.doc.selection)
+        if not (self._trace and self._nouvelle):     # nouvelle sélection en cours : l'ancienne va disparaître
+            p.drawImage(QPointF(0, 0), self.doc.selection)
         p.setOpacity(1)
         # tracé en cours
         if self._trace and self.outil in (RECTANGLE, LASSO):
@@ -829,7 +832,15 @@ class Canevas(QWidget):
             self.refus.emit(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour pouvoir le "
                                "gommer.", nom=self.doc.calque_actif.nom))
             return
-        self._soustraire = self.mode_retirer != bool(e.modifiers() & Qt.AltModifier)
+        mods = e.modifiers()
+        self._nouvelle = False
+        if self.outil in (RECTANGLE, LASSO):           # comme Photoshop : Maj ajoute, Alt retire
+            mode = ("retirer" if mods & Qt.AltModifier else "ajouter" if mods & Qt.ShiftModifier
+                    else self.mode_forme)
+            self._soustraire = mode == "retirer"
+            self._nouvelle = mode == "nouvelle"
+        else:
+            self._soustraire = self.mode_retirer != bool(mods & Qt.AltModifier)
         self._avant = self.doc.etat()
         pt = self.vers_image(pos)
         self._trace = [pt]
@@ -926,8 +937,12 @@ class Canevas(QWidget):
             return
         if self._trace is None:
             return
-        if self.outil in (RECTANGLE, LASSO) and len(self._trace) > 1:
-            self._remplir_forme()
+        if self.outil in (RECTANGLE, LASSO):
+            if self._nouvelle:                         # un simple clic, sans tracé, désélectionne
+                self.doc.selection.fill(0)
+            if len(self._trace) > 1:
+                self._remplir_forme()
+        self._nouvelle = False
         noms = {PINCEAU: "Pinceau de sélection", GOMME: "Gomme de sélection", RECTANGLE: "Sélection rectangle",
                 LASSO: "Lasso", GOMME_CALQUE: "Gomme de calque"}
         self._img_calque = None

@@ -10,8 +10,8 @@ Ce guide explique chaque outil et chaque réglage. Il est complété à chaque n
 
 | Zone | Rôle |
 |---|---|
-| **Barre du haut** | Ouvrir, Enregistrer, Annuler / Rétablir, taille du pinceau, Ajouter / Retirer, zoom, thème clair / sombre |
-| **Outils (à gauche)** | Main, Déplacer, Rectangle, Lasso, Pinceau, Gommes, Texte |
+| **Barre du haut** | Ouvrir, Enregistrer, Annuler / Rétablir, réglages de l'outil choisi (taille, Nouvelle / Ajouter / Retirer…), zoom |
+| **Outils (à gauche)** | Main, Déplacer, outils de sélection, outils de retouche, Recadrer, Texte. Un petit triangle sur un bouton = plusieurs outils : **clic droit** (ou clic maintenu) pour choisir |
 | **Panneau « Texte » (à gauche)** | Réglages du texte, visible avec l'outil Texte (voir chapitre 7) |
 | **Photo (au centre)** | La photo ; la zone sélectionnée apparaît en rouge transparent |
 | **Panneau « Intelligence artificielle » (à droite)** | Effacer, Remplir, Agrandir l'image, Upscale |
@@ -70,19 +70,38 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 La zone sélectionnée apparaît en **rouge transparent**. Il n'est pas nécessaire d'« entourer » un objet :
 on peut simplement **peindre dessus**.
 
+Les quatre outils de sélection sont rangés sous **un seul bouton** de la barre de gauche (petit triangle) :
+**clic droit** dessus, ou clic maintenu, pour choisir ; ou directement leur touche.
+
 | Outil | Touche | Usage |
 |---|---|---|
-| **Pinceau** | B | Peindre la zone. Idéal pour un objet, un texte, un fil… |
-| **Gomme** | E | Retirer de la sélection en peignant |
-| **Gomme de calque** | G | Efface **pour de vrai** les pixels du calque choisi (voir chapitre 6) |
-| **Déplacer** | V | Bouge le contenu du **calque choisi** ; un texte déplacé reste modifiable. Ce qui sort de l'image est coupé. Refusé sur un calque verrouillé |
 | **Rectangle** | M | Sélection rectangulaire |
-| **Lasso** | L | Tracer un contour à main levée ; la forme est fermée automatiquement |
+| **Lasso** | L | Tracer un contour à main levée, bouton appuyé ; la forme est fermée automatiquement |
+| **Pinceau de sélection** | B | Peindre la zone. Idéal pour un objet, un texte, un fil… |
+| **Gomme de sélection** | E | Retirer de la sélection en peignant |
 
+- **Rectangle et lasso**, comme dans Photoshop : une nouvelle sélection **remplace** l'ancienne. Maintenir **Maj** en
+  commençant le tracé **ajoute** à la sélection, **Alt** **retire**. Un simple clic sans tracer **désélectionne**.
+  Les pastilles **Nouvelle / Ajouter / Retirer** de la barre du haut choisissent le mode sans touche.
+- **Pinceau de sélection** : il ajoute toujours à la sélection ; pastille **Retirer** ou **Alt** maintenu : il retire
+  (comme la gomme de sélection).
 - **Taille du pinceau** : curseur « Taille » de la barre du haut, ou touches `[` et `]`.
-- **Ajouter / Retirer** (pastilles de la barre du haut) : avec *Retirer*, Rectangle, Lasso et Pinceau enlèvent de la
-  sélection au lieu d'ajouter. Maintenir **Alt** inverse le mode le temps d'un geste.
 - Menu **Sélection** : *Tout sélectionner* (Ctrl+A), *Désélectionner* (Ctrl+D), *Inverser* (Ctrl+Maj+I).
+
+### Couper, copier, coller, supprimer (menu Édition)
+Ils agissent sur le **calque choisi** dans le panneau Calques :
+- **Copier** (Ctrl+C) : copie ce qui est sélectionné (tout le calque s'il n'y a pas de sélection). La copie garde sa
+  transparence ; on peut aussi la coller dans un autre logiciel.
+- **Couper** (Ctrl+X) : copie, puis efface la zone sélectionnée (elle devient transparente).
+- **Coller** (Ctrl+V) : met l'image copiée dans un **nouveau calque**, à **la même place** si elle vient de Chrypix,
+  au centre si elle vient d'ailleurs (capture d'écran, autre logiciel…). Bougez-la ensuite avec l'outil Déplacer (V).
+- **Supprimer la sélection** (Suppr) : efface la zone sélectionnée du calque (transparente).
+
+Un calque **verrouillé** est protégé ; un **texte** coupé ou supprimé devient une image. Ctrl+Z annule tout.
+
+Les autres outils : **Déplacer** (V) bouge le contenu du **calque choisi** (un texte déplacé reste modifiable ; ce qui
+sort de l'image est coupé ; refusé sur un calque verrouillé). La **Gomme de calque** (G) efface **pour de vrai** les
+pixels du calque choisi (voir chapitre 6) ; elle est rangée avec le pinceau de couleur et le tampon.
 
 **Conseil (texte, cursive, objet fin)** : couvrez bien chaque lettre, bords compris, avec un pinceau un peu plus large
 que le trait ; n'oubliez pas l'ombre ou le contour s'il y en a. Chrypix élargit déjà un peu la zone (environ 16 px)
@@ -296,10 +315,13 @@ Un **texte** retouché au pinceau ou au tampon devient une image (un message le 
 | Alt+clic | (Pinceau de couleur) prendre une couleur ; (Tampon) endroit à copier |
 | `[` / `]` | Pinceau plus petit / plus grand |
 | Espace (maintenu) | Déplacer la vue |
-| Alt (maintenu) | Inverser Ajouter / Retirer le temps d'un geste |
+| Maj / Alt (en commençant un rectangle ou un lasso) | Ajouter / Retirer |
+| Alt (maintenu, pinceau de sélection) | Retirer le temps d'un geste |
 | Maj+E, Maj+R, Maj+A, Maj+U | Effacer, Remplir, Agrandir, Upscale |
 | Ctrl+Z, Ctrl+Y | Annuler, Rétablir |
 | Ctrl+A, Ctrl+D, Ctrl+Maj+I | Tout sélectionner, Désélectionner, Inverser |
+| Ctrl+X, Ctrl+C, Ctrl+V, Suppr | Couper, Copier, Coller (nouveau calque), Supprimer la sélection |
+| Clic droit sur un outil à petit triangle | Choisir un autre outil du groupe |
 | Ctrl+0, Ctrl+1 | Ajuster, 100 % |
 | Entrée / Échap | (Agrandir) Lancer / Annuler ; (Recadrer) Valider / Annuler |
 | Maj (en tournant un texte) | Rotation par pas de 15° |

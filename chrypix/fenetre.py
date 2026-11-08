@@ -8,11 +8,11 @@ import threading
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QProcess, QSettings, QSize, Qt, QTimer, Signal
+from PySide6.QtCore import QBuffer, QMimeData, QObject, QPoint, QProcess, QSettings, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QColor, QIcon, QImage, QKeySequence, QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QComboBox, QDockWidget, QFileDialog, QHBoxLayout, QLabel,
-                               QLineEdit, QMainWindow, QMessageBox, QPushButton, QSizePolicy, QSlider, QSpinBox,
-                               QToolBar, QVBoxLayout, QWidget)
+                               QLineEdit, QMainWindow, QMenu, QMessageBox, QPushButton, QSizePolicy, QSlider,
+                               QSpinBox, QToolBar, QToolButton, QVBoxLayout, QWidget)
 
 from . import langue, recettes, theme
 from .icones import icone
@@ -28,6 +28,7 @@ from .raccord import finaliser, lisere_auto, preparer
 from .texte import Texte
 
 NOM = "Chrypix"
+MIME_PLACE = "application/x-chrypix-place"   # presse-papiers : place d'origine de ce qui a été copié dans Chrypix
 
 
 def reglages() -> QSettings:
@@ -205,6 +206,12 @@ class Fenetre(QMainWindow):
         self._icone(self.a_retablir, "retablir")
         m.addAction(self.a_annuler)
         m.addAction(self.a_retablir)
+        m.addSeparator()
+        self._action(m, tr("Couper"), QKeySequence.Cut, self.couper, "a_couper")
+        self._action(m, tr("Copier"), QKeySequence.Copy, self.copier, "a_copier")
+        self._action(m, tr("Coller"), QKeySequence.Paste, self.coller, "a_coller")
+        self._action(m, tr("Supprimer la sélection"), QKeySequence.Delete, self.supprimer_selection,
+                     "a_supprimer_selection")
 
         m = self.menuBar().addMenu(tr("&Sélection"))
         self._action(m, tr("Tout sélectionner"), "Ctrl+A", lambda: self._modifier_selection("tout"), "a_tout")
@@ -290,18 +297,22 @@ class Fenetre(QMainWindow):
         lay = QHBoxLayout(self.opt_selection)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(8)
+        self.p_nouvelle = QPushButton(tr("Nouvelle"))
         self.p_ajouter = QPushButton(tr("Ajouter"))
         self.p_retirer = QPushButton(tr("Retirer"))
+        self.p_nouvelle.setToolTip(tr("Nouvelle : la sélection tracée remplace l'ancienne (un simple clic "
+                                      "désélectionne). Pendant le tracé : Maj ajoute, Alt retire."))
+        self.p_ajouter.setToolTip(tr("Ajouter à la sélection (Maj pendant le tracé du rectangle ou du lasso)"))
+        self.p_retirer.setToolTip(tr("Retirer de la sélection (Alt pendant le tracé)"))
         groupe = QButtonGroup(self)
-        for p_, retirer in ((self.p_ajouter, False), (self.p_retirer, True)):
+        for p_, mode in ((self.p_nouvelle, "nouvelle"), (self.p_ajouter, "ajouter"), (self.p_retirer, "retirer")):
             p_.setObjectName("pastille")
             p_.setCheckable(True)
             p_.setCursor(Qt.PointingHandCursor)
-            p_.setToolTip(tr("Mode de sélection (Alt inverse le mode pendant le tracé)"))
-            p_.clicked.connect(lambda _=False, r=retirer: self.canevas.definir_mode_retirer(r))
+            p_.clicked.connect(lambda _=False, m=mode: self._mode_selection(m))
             groupe.addButton(p_)
             lay.addWidget(p_)
-        self.p_ajouter.setChecked(True)
+        self.p_nouvelle.setChecked(True)
         tout.addWidget(self.opt_selection)
         self._options_retouche(tout)
         self._options_recadrer(tout)
@@ -455,24 +466,69 @@ class Fenetre(QMainWindow):
             a.triggered.connect(lambda _=False, o=outil: self._choisir_outil(o))
             self._icone(a, nom)
             groupe.addAction(a)
-            barre.addAction(a)
+            self.addAction(a)                  # raccourci actif même quand l'outil est caché dans son groupe
             self._actions_outils[outil] = a
             if outil == PINCEAU:
                 a.setChecked(True)
+        # comme Photoshop : un bouton par famille d'outils ; clic droit (ou clic maintenu) pour choisir dans la
+        # famille ; le bouton montre le dernier outil choisi. Main et Déplacer restent seuls.
+        self._bouton_groupe = {}
+        for famille in ((MAIN,), (DEPLACER,), (RECTANGLE, LASSO, PINCEAU, GOMME),
+                        (PEINTURE, TAMPON, GOMME_CALQUE), (RECADRER,), (TEXTE,)):
+            if len(famille) == 1:
+                barre.addAction(self._actions_outils[famille[0]])
+                continue
+            bouton = QToolButton()
+            bouton.setPopupMode(QToolButton.DelayedPopup)
+            bouton.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            bouton.setIconSize(barre.iconSize())
+            bouton.setAutoRaise(True)
+            menu = QMenu(bouton)
+            for o in famille:
+                a = self._actions_outils[o]
+                a.setToolTip(a.toolTip() + "\n" + tr("Clic droit (ou clic maintenu) : les autres outils de ce groupe"))
+                menu.addAction(a)
+                self._bouton_groupe[o] = bouton
+            bouton.setMenu(menu)
+            bouton.setDefaultAction(self._actions_outils[famille[0]])
+            bouton.setContextMenuPolicy(Qt.CustomContextMenu)
+            bouton.customContextMenuRequested.connect(
+                lambda _p, b=bouton: b.menu().exec(b.mapToGlobal(b.rect().topRight())))
+            barre.addWidget(bouton)
+
+    def _mode_selection(self, mode: str):
+        if self.canevas.outil in (RECTANGLE, LASSO):
+            self.canevas.mode_forme = mode
+        else:
+            self.canevas.definir_mode_retirer(mode == "retirer")
 
     def _choisir_outil(self, outil: str):
         self.canevas.definir_outil(outil)
         self._actions_outils[outil].setChecked(True)
+        if outil in self._bouton_groupe:
+            bouton = self._bouton_groupe[outil]
+            menu = bouton.menu()
+            bouton.setDefaultAction(self._actions_outils[outil])
+            bouton.setMenu(menu)
+        if outil in (RECTANGLE, LASSO):
+            {"nouvelle": self.p_nouvelle, "ajouter": self.p_ajouter,
+             "retirer": self.p_retirer}[self.canevas.mode_forme].setChecked(True)
+        elif outil == PINCEAU:
+            (self.p_retirer if self.canevas.mode_retirer else self.p_ajouter).setChecked(True)
+        self.p_nouvelle.setVisible(outil in (RECTANGLE, LASSO))
         self.options.setEnabled(outil not in (MAIN, TEXTE, DEPLACER))
         self.opt_taille.setVisible(outil in OUTILS_ROND or outil in (MAIN, TEXTE, DEPLACER, RECTANGLE, LASSO))
-        self.opt_selection.setVisible(outil in (RECTANGLE, LASSO, PINCEAU, GOMME))
+        self.opt_selection.setVisible(outil in (RECTANGLE, LASSO, PINCEAU))
         self.opt_couleur.setVisible(outil == PEINTURE)
         self.opt_retouche.setVisible(outil in (PEINTURE, TAMPON))
         self.opt_recadrer.setVisible(outil == RECADRER)
         # la barre du haut se remet en page (sinon un groupe trop large la ferait déborder)
         self.options.adjustSize()
         self.barre_haut.layout().invalidate()
-        aides = {RECADRER: tr("Recadrer : tire un cadre sur la photo, ajuste-le, puis Entrée (ou double-clic). "
+        aides = {RECTANGLE: tr("Rectangle : la nouvelle sélection remplace l'ancienne. Maj : ajouter, Alt : retirer. "
+                               "Un simple clic désélectionne."),
+                 LASSO: tr("Lasso : entoure la zone en gardant le bouton appuyé. Maj : ajouter, Alt : retirer."),
+                 RECADRER: tr("Recadrer : tire un cadre sur la photo, ajuste-le, puis Entrée (ou double-clic). "
                               "Échap pour annuler."),
                  PEINTURE: tr("Pinceau de couleur : peint sur le calque choisi. Alt+clic sur la photo : prendre une "
                               "couleur."),
@@ -703,10 +759,13 @@ class Fenetre(QMainWindow):
             "Recadrer : Entrée ou double-clic = valider, Échap = annuler\n"
             "Pinceau de couleur : Alt+clic = prendre une couleur ; Tampon : Alt+clic = endroit à copier\n"
             "[ et ] : taille du pinceau\n"
-            "Alt pendant le tracé : inverse Ajouter / Retirer\n"
+            "Rectangle et lasso : une nouvelle sélection remplace l'ancienne ; Maj = ajouter, Alt = retirer\n"
+            "Pinceau de sélection : Alt pendant le tracé = retirer\n"
+            "Outils groupés (petit triangle) : clic droit ou clic maintenu pour choisir\n"
             "Espace + glisser, ou bouton du milieu : déplacer la vue\n"
             "Molette : zoom ; Ctrl+0 : ajuster ; Ctrl+1 : 100 %\n"
             "Ctrl+A tout, Ctrl+D désélectionner, Ctrl+Shift+I inverser\n"
+            "Ctrl+X couper, Ctrl+C copier, Ctrl+V coller (nouveau calque), Suppr effacer la sélection\n"
             "Ctrl+Z annuler, Ctrl+Y rétablir\n"
             "Shift+E Effacer, Shift+R Remplir, Shift+A Agrandir, Shift+U Upscale\n"
             "Agrandir : Maj en tirant = les deux côtés ; Entrée lancer, Échap annuler\n"
@@ -891,6 +950,71 @@ class Fenetre(QMainWindow):
     # ================================================================ sélection
     def _selection_modifiee(self, avant, texte):
         self.historique.push(CommandeEtat(self.doc, avant, self.doc.etat(), texte))
+
+    # ================================================================ couper, copier, coller, supprimer
+    def copier(self) -> bool:
+        """Copie les pixels sélectionnés du calque choisi (tout le calque sans sélection) ; ils gardent leur
+        transparence et leur place (pour Coller), et vont aussi aux autres logiciels (PNG)."""
+        if not self.doc:
+            return False
+        img, place = self.doc.pixels_choisis()
+        donnees = QMimeData()
+        donnees.setImageData(img)
+        tampon = QBuffer()
+        tampon.open(QBuffer.WriteOnly)
+        img.save(tampon, "PNG")
+        donnees.setData("image/png", tampon.data())
+        donnees.setData(MIME_PLACE, f"{place.x()},{place.y()}".encode())
+        QApplication.clipboard().setMimeData(donnees)
+        self.statusBar().showMessage(tr("Copié : {l} × {h} px (calque « {nom} »).", l=img.width(), h=img.height(),
+                                        nom=self.doc.calque_actif.nom), 5000)
+        return True
+
+    def couper(self):
+        if not self.doc or not self._verifier_selection_simple() or not self._verifier_verrou(tr("Couper")):
+            return
+        avant = self.doc.etat()
+        apres = self.doc.etat_effacer_selection()
+        if apres is not None and self.copier():
+            self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Couper")))
+
+    def coller(self):
+        if not self.doc:
+            return
+        donnees = QApplication.clipboard().mimeData()
+        img = QApplication.clipboard().image()
+        if donnees is None or img.isNull():
+            self.statusBar().showMessage(tr("Le presse-papiers ne contient pas d'image."), 5000)
+            return
+        place = None
+        if donnees.hasFormat(MIME_PLACE):
+            try:
+                x, y = (int(v) for v in bytes(donnees.data(MIME_PLACE)).decode().split(","))
+                place = QPoint(x, y)
+            except ValueError:
+                pass
+        avant = self.doc.etat()
+        apres = self.doc.etat_coller(img.convertToFormat(QImage.Format_ARGB32_Premultiplied), place)
+        self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Coller")))
+
+    def supprimer_selection(self):
+        if not self.doc or not self._verifier_selection_simple() or \
+                not self._verifier_verrou(tr("Supprimer la sélection")):
+            return
+        if self.doc.calque_actif.texte is not None:
+            self.statusBar().showMessage(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme "
+                                            "texte (Ctrl+Z pour revenir).", nom=self.doc.calque_actif.nom), 6000)
+        avant = self.doc.etat()
+        apres = self.doc.etat_effacer_selection()
+        if apres is not None:
+            self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Supprimer la sélection")))
+
+    def _verifier_selection_simple(self) -> bool:
+        if self.doc.selection_vide():
+            self.statusBar().showMessage(tr("Sélectionne d'abord une zone (rectangle, lasso ou pinceau de "
+                                            "sélection)."), 6000)
+            return False
+        return True
 
     def _modifier_selection(self, quoi):
         if not self.doc:

@@ -318,6 +318,46 @@ class Document(QObject):
         ys, xs = np.nonzero(m)
         return QRect(int(xs.min()), int(ys.min()), int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1))
 
+    def pixels_choisis(self) -> tuple[QImage, QPoint]:
+        """Copier : pixels du calque choisi dans la sélection (tout le calque si rien n'est sélectionné), réduits au
+        rectangle qui les contient, et la place de ce rectangle dans l'image."""
+        img = self.calque_actif.image.copy()
+        r = self.rect_selection()
+        if r is None:
+            r = QRect(0, 0, *self.taille())
+        else:
+            p = QPainter(img)
+            p.setCompositionMode(QPainter.CompositionMode_DestinationIn)
+            p.drawImage(0, 0, self.selection)
+            p.end()
+        return img.copy(r), r.topLeft()
+
+    def etat_effacer_selection(self):
+        """Supprimer : les pixels sélectionnés du calque choisi deviennent transparents (un texte devient une
+        image). None si rien n'est sélectionné ou si le calque est verrouillé."""
+        if self.selection_vide() or self.calque_actif.verrou:
+            return None
+        img = self.calque_actif.image.copy()
+        p = QPainter(img)
+        p.setCompositionMode(QPainter.CompositionMode_DestinationOut)
+        p.drawImage(0, 0, self.selection)
+        p.end()
+        return self.etat_calque_modifie(self.actif, image=img, texte=None)
+
+    def etat_coller(self, img: QImage, place: QPoint | None = None):
+        """Coller : nouveau calque au-dessus du calque choisi, l'image à sa place d'origine (copiée dans Chrypix)
+        ou au centre (venue d'ailleurs). La sélection est vidée."""
+        w, h = self.taille()
+        if place is None:
+            place = QPoint((w - img.width()) // 2, (h - img.height()) // 2)
+        fond = image_vide(w, h)
+        p = QPainter(fond)
+        p.drawImage(place, img)
+        p.end()
+        calques = list(self.calques)
+        calques.insert(self.actif + 1, Calque(self.nom_libre(tr("Collage")), fond))
+        return self.etat_avec(calques, self.actif + 1, nouvelle_selection(w, h))
+
     def etat_calque_modifie(self, index: int, **changements):
         calques = list(self.calques)
         calques[index] = replace(calques[index], **changements)
