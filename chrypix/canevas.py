@@ -16,6 +16,7 @@ OPACITE_SELECTION = 0.45
 class Canevas(QWidget):
     selection_modifiee = Signal(object, str)   # (état avant, nom de l'action) -> pour annuler (sélection ou calque)
     infos = Signal(int, int, float)             # largeur, hauteur, zoom
+    refus = Signal(str)                         # action impossible (ex. calque verrouillé) : message
     cadre_change = Signal(object, object)       # Agrandir : (ajout, bord abîmé), chacun (haut, bas, gauche, droite) px
     cadre_valide = Signal()                     # Entrée pendant Agrandir
     cadre_annule = Signal()                     # Échap pendant Agrandir
@@ -428,6 +429,10 @@ class Canevas(QWidget):
         if e.button() != Qt.LeftButton:
             return
         if self.cadre is not None:
+            return
+        if self.outil == GOMME_CALQUE and self.doc.calque_actif.verrou:
+            self.refus.emit(f"Le calque « {self.doc.calque_actif.nom} » est verrouillé : "
+                            "clique sur son cadenas pour pouvoir le gommer.")
             return
         self._soustraire = self.mode_retirer != bool(e.modifiers() & Qt.AltModifier)
         self._avant = self.doc.etat()

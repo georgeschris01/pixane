@@ -56,6 +56,9 @@ DESSINS = {
     "oeil": '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/>'
             '<circle cx="12" cy="12" r="3"/>',
     "oeil_ferme": '<path d="M4 9.5c2 2.2 4.8 3.5 8 3.5s6-1.3 8-3.5M6.5 12.2 5 14.5M12 13v2.8M17.5 12.2l1.5 2.3"/>',
+    "cadenas": '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>'
+               '<path stroke="A" d="M12 14.5v2"/>',
+    "cadenas_ouvert": '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 7.6-1.7"/>',
     "gomme_calque": '<path d="M8.5 20 3.6 15.1a1.6 1.6 0 0 1 0-2.3L13 3.4a1.6 1.6 0 0 1 2.3 0l5.3 5.3a1.6 1.6 0 0 1 '
                     '0 2.3L11.2 20z"/><path d="M8.5 20H14"/><path stroke="A" d="M16.5 15.5l4 4M20.5 15.5l-4 4"/>',
 }

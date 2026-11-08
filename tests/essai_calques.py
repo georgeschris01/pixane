@@ -117,6 +117,29 @@ verifier([x.nom for x in relu.calques] == [x.nom for x in doc.calques], ".ora : 
 verifier(abs(relu.calques[1].opacite - 0.7) < 0.01, ".ora : opacité gardée")
 verifier(np.abs(rgb(relu.image) - rgb(doc.image)).max() <= 2, ".ora : même image")
 
+# 8. verrou (cadenas)
+messages = []
+c.refus.connect(messages.append)
+ligne_haut = f.calques.liste.itemWidget(f.calques.liste.item(0))
+f.calques._cadenas(ligne_haut)
+verifier(doc.calque_actif.verrou, "cadenas -> calque verrouillé")
+verifier(not f.calques.boutons["supprimer"].isEnabled() and not f.calques.boutons["fusionner"].isEnabled()
+         and not f.calques.boutons["aplatir"].isEnabled() and not f.calques.curseur.isEnabled(),
+         "verrouillé : supprimer, fusionner, aplatir et opacité désactivés")
+verifier(doc.etat_supprimer() is None and doc.etat_fusionner_bas() is None and doc.etat_aplatir() is None,
+         "verrouillé : le document refuse aussi")
+avant_gomme = rgb(doc.image)
+c.definir_outil(GOMME_CALQUE)
+p0 = c.vers_ecran(QPointF(300, 200))
+for t in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease):
+    b_ = Qt.NoButton if t == QEvent.MouseButtonRelease else Qt.LeftButton
+    c.event(QMouseEvent(t, p0, p0, Qt.LeftButton, b_, Qt.NoModifier))
+verifier(np.array_equal(rgb(doc.image), avant_gomme) and messages, "verrouillé : la gomme refuse, avec un message")
+doc.enregistrer(chemin)
+verifier(Document.ouvrir(chemin).calques[-1].verrou, ".ora : verrou gardé")
+f.historique.undo()
+verifier(not doc.calque_actif.verrou, "Annuler -> déverrouillé")
+
 c.definir_outil("pinceau")
 c.repaint()
 f.grab().save(str(sortie / "calques.png"))

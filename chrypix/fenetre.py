@@ -111,6 +111,7 @@ class Fenetre(QMainWindow):
 
         self.canevas = Canevas()
         self.canevas.selection_modifiee.connect(self._selection_modifiee)
+        self.canevas.refus.connect(lambda m: self.statusBar().showMessage(m, 6000))
         self.setCentralWidget(self.canevas)
         self.barre_agrandir = BarreAgrandir(self.canevas)
         self.barre_agrandir.lancer.connect(self._lancer_agrandir)

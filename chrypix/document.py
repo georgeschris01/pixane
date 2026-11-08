@@ -82,6 +82,7 @@ class Calque:
     image: QImage                 # FORMAT_CALQUE, taille du document
     visible: bool = True
     opacite: float = 1.0          # 0..1
+    verrou: bool = False          # cadenas : ni gomme, ni suppression, ni fusion, ni opacité
 
     @staticmethod
     def depuis(nom: str, image: QImage, **kw) -> "Calque":
@@ -299,7 +300,7 @@ class Document(QObject):
         return self.etat_avec(calques, self.actif + 1)
 
     def etat_supprimer(self):
-        if len(self.calques) <= 1:
+        if len(self.calques) <= 1 or self.calque_actif.verrou:
             return None
         calques = list(self.calques)
         del calques[self.actif]
@@ -315,7 +316,7 @@ class Document(QObject):
         return self.etat_avec(calques, actif)
 
     def etat_fusionner_bas(self):
-        if self.actif == 0:
+        if self.actif == 0 or self.calque_actif.verrou or self.calques[self.actif - 1].verrou:
             return None
         w, h = self.taille()
         dessous, dessus = self.calques[self.actif - 1], self.calque_actif
@@ -326,7 +327,7 @@ class Document(QObject):
         return self.etat_avec(calques, self.actif - 1)
 
     def etat_aplatir(self):
-        if len(self.calques) <= 1:
+        if len(self.calques) <= 1 or any(c.verrou for c in self.calques):
             return None
         w, h = self.taille()
         return self.etat_avec([Calque("Arrière-plan", fusionner(self.calques, w, h))], 0)
@@ -387,7 +388,8 @@ def ecrire_ora(chemin: Path, calques, fusion: QImage) -> None:
             nom_png = f"data/calque{len(calques) - 1 - i}.png"
             z.writestr(nom_png, _png(c.image), compress_type=zipfile.ZIP_STORED)
             ET.SubElement(pile_calques, "layer", name=c.nom, src=nom_png, x="0", y="0",
-                          opacity=f"{c.opacite:.3f}", visibility="visible" if c.visible else "hidden")
+                          opacity=f"{c.opacite:.3f}", visibility="visible" if c.visible else "hidden",
+                          **({"edit-locked": "true"} if c.verrou else {}))
         z.writestr("stack.xml", ET.tostring(pile, encoding="utf-8", xml_declaration=True),
                    compress_type=zipfile.ZIP_DEFLATED)
         z.writestr("mergedimage.png", _png(fusion), compress_type=zipfile.ZIP_STORED)
@@ -410,7 +412,8 @@ def lire_ora(chemin: Path) -> list[Calque]:
             p.end()
             calques.append(Calque(couche.get("name") or "Calque", img,
                                   visible=couche.get("visibility", "visible") != "hidden",
-                                  opacite=float(couche.get("opacity", 1))))
+                                  opacite=float(couche.get("opacity", 1)),
+                                  verrou=couche.get("edit-locked", "false") == "true"))
     if not calques:
         raise ValueError("Ce fichier .ora ne contient aucun calque.")
     return list(reversed(calques))

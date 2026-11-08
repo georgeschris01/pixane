@@ -164,6 +164,7 @@ devant. Une photo ouverte a un seul calque, « Arrière-plan ».
 | **Vignette** | Aperçu du calque ; le damier gris montre les parties transparentes |
 | **Nom** | Double-clic pour renommer |
 | **Opacité** | Transparence du calque choisi, de 0 % (invisible) à 100 % ; affichée sous le nom quand < 100 % |
+| **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. On peut toujours le masquer, le renommer et le monter / descendre. Agrandir et Upscale le redimensionnent avec toute l'image. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .ora |
 
 ### Les boutons (de gauche à droite)
 | Bouton | Action |
@@ -180,6 +181,7 @@ Efface les pixels du **calque choisi** avec le pinceau rond (taille : curseur «
 Exemple : une retouche IA réussie sauf sur un bord → choisissez son calque et gommez ce bord ; la photo
 d'origine réapparaît dessous. Les zones effacées d'un calque seul apparaissent en damier.
 À ne pas confondre avec la **Gomme de sélection** (E), qui ne touche qu'au rouge de la sélection.
+Sur un calque verrouillé, la gomme ne fait rien et un message en bas de la fenêtre l'indique.
 
 Toutes les actions sur les calques s'annulent avec Ctrl+Z (changer de calque choisi ne compte pas).
 

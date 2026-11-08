@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QPainter, QPixmap
-from PySide6.QtWidgets import (QHBoxLayout, QInputDialog, QLabel, QListWidget, QListWidgetItem, QSlider, QToolButton,
+from PySide6.QtWidgets import (QGraphicsOpacityEffect, QHBoxLayout, QInputDialog, QLabel, QListWidget, QListWidgetItem, QSlider, QToolButton,
                                QVBoxLayout, QWidget)
 
 from .document import Document
@@ -25,8 +25,9 @@ def damier(taille: QSize, case: int = 5) -> QPixmap:
 
 
 class LigneCalque(QWidget):
-    """Une ligne de la liste : œil, vignette, nom."""
+    """Une ligne de la liste : œil, vignette, nom, cadenas."""
     oeil_clique = Signal()
+    cadenas_clique = Signal()
 
     def __init__(self, icones):
         super().__init__()
@@ -47,12 +48,24 @@ class LigneCalque(QWidget):
         textes.setSpacing(0)
         textes.addWidget(self.nom)
         textes.addWidget(self.details)
+        self.cadenas = QToolButton()
+        self.cadenas.setAutoRaise(True)
+        self.cadenas.clicked.connect(self.cadenas_clique)
         lay.addWidget(self.oeil)
         lay.addWidget(self.vignette)
         lay.addLayout(textes, 1)
+        lay.addWidget(self.cadenas)
 
-    def remplir(self, nom: str, visible: bool, opacite: float, vignette: QPixmap):
+    def remplir(self, nom: str, visible: bool, opacite: float, vignette: QPixmap, verrou: bool = False):
         self.oeil.setIcon(self.icones("oeil" if visible else "oeil_ferme"))
+        self.cadenas.setIcon(self.icones("cadenas" if verrou else "cadenas_ouvert"))
+        self.cadenas.setToolTip("Calque verrouillé : cliquer pour le déverrouiller" if verrou else
+                                "Verrouiller le calque (protège contre les modifications)")
+        effet = self.cadenas.graphicsEffect()
+        if effet is None:
+            effet = QGraphicsOpacityEffect(self.cadenas)
+            self.cadenas.setGraphicsEffect(effet)
+        effet.setOpacity(1.0 if verrou else 0.35)        # cadenas ouvert discret
         self.nom.setText(nom)
         self.nom.setEnabled(visible)
         self.details.setText("" if opacite >= 0.999 else f"opacité {round(opacite * 100)} %")
@@ -158,13 +171,14 @@ class PanneauCalques(QWidget):
             self.liste.addItem(item)
             ligne = LigneCalque(self.icones)
             ligne.oeil_clique.connect(lambda l=ligne: self._oeil(l))
+            ligne.cadenas_clique.connect(lambda l=ligne: self._cadenas(l))
             self.liste.setItemWidget(item, ligne)
         for rang in range(n):                       # rang 0 = calque du haut
             index = n - 1 - rang
             c = doc.calques[index]
             ligne = self.liste.itemWidget(self.liste.item(rang))
             ligne.index = index
-            ligne.remplir(c.nom, c.visible, c.opacite, self._vignette(c.image))
+            ligne.remplir(c.nom, c.visible, c.opacite, self._vignette(c.image), c.verrou)
         if doc:
             self.liste.setCurrentRow(n - 1 - doc.actif)
             if not self.curseur.isSliderDown():
@@ -175,13 +189,15 @@ class PanneauCalques(QWidget):
         self.liste.blockSignals(False)
         for nom, b in self.boutons.items():
             b.setEnabled(bool(doc))
+        verrou = bool(doc) and doc.calque_actif.verrou
         if doc:
-            self.boutons["supprimer"].setEnabled(n > 1)
-            self.boutons["aplatir"].setEnabled(n > 1)
-            self.boutons["fusionner"].setEnabled(doc.actif > 0)
+            self.boutons["supprimer"].setEnabled(doc.etat_supprimer() is not None)
+            self.boutons["aplatir"].setEnabled(n > 1 and not any(c.verrou for c in doc.calques))
+            self.boutons["fusionner"].setEnabled(doc.actif > 0 and not verrou and not doc.calques[doc.actif - 1].verrou)
             self.boutons["monter"].setEnabled(doc.actif < n - 1)
             self.boutons["descendre"].setEnabled(doc.actif > 0)
-        self.curseur.setEnabled(bool(doc))
+        self.curseur.setEnabled(bool(doc) and not verrou)
+        self.curseur.setToolTip("Calque verrouillé" if verrou else "")
 
     # ---------------------------------------------------------- actions
     def _ligne_choisie(self, rang: int):
@@ -194,6 +210,11 @@ class PanneauCalques(QWidget):
         c = self.doc.calques[ligne.index]
         texte = "Masquer le calque" if c.visible else "Afficher le calque"
         self.demande.emit(self.doc.etat_calque_modifie(ligne.index, visible=not c.visible), texte)
+
+    def _cadenas(self, ligne: LigneCalque):
+        c = self.doc.calques[ligne.index]
+        texte = "Déverrouiller le calque" if c.verrou else "Verrouiller le calque"
+        self.demande.emit(self.doc.etat_calque_modifie(ligne.index, verrou=not c.verrou), texte)
 
     def _opacite_debut(self):
         self._avant_opacite = self.doc.etat()
