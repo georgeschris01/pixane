@@ -1,5 +1,5 @@
 @echo off
-rem Fabrique l'installateur de Chrypix : publication\installateur\Chrypix-Setup-<version>.exe
+rem Fabrique l'installateur de Chrypix : publication\installateur\Chrypix-Setup-<version>-64bits.exe
 rem Il faut Inno Setup 7 (gratuit) : https://jrsoftware.org/isdl.php
 rem La version se change dans chrypix\__init__.py (__version__) avant chaque nouvel installateur.
 rem Resultat detaille dans installateur.log.
@@ -14,7 +14,7 @@ if not defined ISCC for /f "delims=" %%i in ('where ISCC.exe 2^>nul') do set ISC
 
 call :work > installateur.log 2>&1
 
-if exist "publication\installateur\Chrypix-Setup-%VERSION%.exe" explorer /select,"publication\installateur\Chrypix-Setup-%VERSION%.exe"
+if exist "publication\installateur\Chrypix-Setup-%VERSION%-64bits.exe" explorer /select,"publication\installateur\Chrypix-Setup-%VERSION%-64bits.exe"
 endlocal
 goto :eof
 
@@ -39,7 +39,7 @@ if errorlevel 1 (
   goto :done
 )
 echo.
-echo Installateur cree : publication\installateur\Chrypix-Setup-%VERSION%.exe
+echo Installateur cree : publication\installateur\Chrypix-Setup-%VERSION%-64bits.exe
 :done
 echo.
 echo === FIN ===

@@ -308,7 +308,7 @@ A **text** retouched with the brush or the stamp becomes an image (a message rem
 
 ## 10. Hardware and licences
 
-**Installation**: run `Chrypix-Setup-<version>.exe`.
+**Installation**: run `Chrypix-Setup-<version>-64bits.exe`.
 1. Installation language (it will also be Chrypix's language, which can be changed later in View > Language).
 2. Just for me (default, no administrator rights) or for all users.
 3. Installation folder.

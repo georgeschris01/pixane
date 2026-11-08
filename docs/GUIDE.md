@@ -309,7 +309,7 @@ Un **texte** retouché au pinceau ou au tampon devient une image (un message le 
 
 ## 10. Matériel et licences
 
-**Installation** : lancer `Chrypix-Setup-<version>.exe`.
+**Installation** : lancer `Chrypix-Setup-<version>-64bits.exe`.
 1. Langue de l'installation (ce sera aussi la langue de Chrypix, modifiable ensuite dans Affichage > Langue).
 2. Pour moi seulement (par défaut, sans droits administrateur) ou pour tous les utilisateurs.
 3. Dossier d'installation.

@@ -1,7 +1,7 @@
 ﻿; Chrypix — © 2026 Georges Christophe (chrypox).
 ; Installateur de Chrypix (Inno Setup 7, gratuit : https://jrsoftware.org/isdl.php), même présentation que TwinPanel.
 ; Compilé par construire-installateur.bat, qui prépare d'abord les fichiers dans publication\Chrypix et donne la version.
-; Une nouvelle version = un nouveau Chrypix-Setup-x.y.z.exe : lancé sur un PC où Chrypix est déjà installé, il le met
+; Une nouvelle version = un nouveau Chrypix-Setup-x.y.z-64bits.exe : lancé sur un PC où Chrypix est déjà installé, il le met
 ; à jour (même AppId ci-dessous, à NE JAMAIS changer). Les réglages (registre, %LOCALAPPDATA%\Chrypix) ne sont pas touchés.
 ; Pages : langue, accueil, licence, dossier, vérification du PC (carte graphique, place libre, moteur IA ComfyUI), moteur IA
 ; (seulement si ComfyUI est absent : liste des téléchargements, licence FLUX.1 [dev] à accepter), installation.
@@ -28,7 +28,7 @@ DisableProgramGroupPage=yes
 UsePreviousAppDir=yes
 DisableDirPage=no
 OutputDir=..\publication\installateur
-OutputBaseFilename=Chrypix-Setup-{#AppVersion}
+OutputBaseFilename=Chrypix-Setup-{#AppVersion}-64bits
 SetupIconFile=..\chrypix\ressources\chrypix.ico
 UninstallDisplayIcon={app}\chrypix.ico
 UninstallDisplayName=Chrypix

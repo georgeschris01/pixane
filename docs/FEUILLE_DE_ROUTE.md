@@ -24,7 +24,7 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
    - [x] images (validées le 08/11/2026) ;
    - [x] partie 1 (08/11/2026, à essayer par Christophe) : langue, pour moi / pour tous, dossier, vérification du PC
      (carte NVIDIA, place, ComfyUI trouvé ou dossier à indiquer), Python inclus, association .chr ;
-     construire-installateur.bat -> publication\installateur\Chrypix-Setup-x.y.z.exe ;
+     construire-installateur.bat -> publication\installateur\Chrypix-Setup-x.y.z-64bits.exe ;
    - [x] partie 2 (08/11/2026, à essayer par Christophe) : page « Moteur IA » si ComfyUI absent (liste taille /
      site / licence, case licence FLUX.1 [dev] obligatoire, Flux Schnell facultatif), téléchargeur
      chrypix\installation_moteur.py (reprise après coupure, SHA-256, ComfyUI portable 0.44 selon le pilote,
