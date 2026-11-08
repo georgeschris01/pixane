@@ -8,11 +8,13 @@ from PySide6.QtWidgets import QWidget
 from .document import COULEUR_SELECTION, Document
 
 MAIN, RECTANGLE, LASSO, PINCEAU, GOMME = "main", "rectangle", "lasso", "pinceau", "gomme"
+GOMME_CALQUE = "gomme_calque"                  # efface pour de vrai les pixels du calque actif
+OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE)   # outils au curseur rond (taille du pinceau)
 OPACITE_SELECTION = 0.45
 
 
 class Canevas(QWidget):
-    selection_modifiee = Signal(object, str)   # (état avant, nom de l'action) -> pour annuler
+    selection_modifiee = Signal(object, str)   # (état avant, nom de l'action) -> pour annuler (sélection ou calque)
     infos = Signal(int, int, float)             # largeur, hauteur, zoom
     cadre_change = Signal(object, object)       # Agrandir : (ajout, bord abîmé), chacun (haut, bas, gauche, droite) px
     cadre_valide = Signal()                     # Entrée pendant Agrandir
@@ -138,6 +140,10 @@ class Canevas(QWidget):
             p.setPen(self.couleur_texte)
             p.drawText(self.rect(), Qt.AlignCenter, "Fichier > Ouvrir…  (ou glisse une photo ici)")
             return
+        # damier sous la photo : les zones transparentes des calques se voient
+        photo = QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
+                                                              self.doc.image.height()) * self.zoom)
+        p.fillRect(photo, QBrush(self._damier()))
         if self.zoom < 1:
             p.drawPixmap(self.decalage, self._pixmap_reduite())
         else:
@@ -172,7 +178,7 @@ class Canevas(QWidget):
         p.drawRect(QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
                                                                  self.doc.image.height()) * self.zoom))
         # curseur du pinceau
-        if self._souris is not None and self.outil in (PINCEAU, GOMME) and not self._espace and self.cadre is None:
+        if self._souris is not None and self.outil in OUTILS_ROND and not self._espace and self.cadre is None:
             r = self.taille_pinceau * self.zoom / 2
             p.setPen(QPen(QColor(0, 0, 0), 3))
             p.drawEllipse(self._souris, r, r)
@@ -342,6 +348,33 @@ class Canevas(QWidget):
         for pt in points(sain):
             p.drawEllipse(pt, 4.5, 4.5)
 
+    def _damier(self) -> QPixmap:
+        if getattr(self, "_motif_damier", None) is None:
+            pm = QPixmap(16, 16)
+            pm.fill(QColor(255, 255, 255))
+            p = QPainter(pm)
+            p.fillRect(0, 0, 8, 8, QColor(214, 214, 214))
+            p.fillRect(8, 8, 8, 8, QColor(214, 214, 214))
+            p.end()
+            self._motif_damier = pm
+        return self._motif_damier
+
+    # ---------------------------------------------------------- gomme de calque
+    def _coup_de_gomme_calque(self, a: QPointF, b: QPointF):
+        p = QPainter(self._img_calque)
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setCompositionMode(QPainter.CompositionMode_DestinationOut)
+        if a == b:
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(0, 0, 0))
+            r = self.taille_pinceau / 2
+            p.drawEllipse(a, r, r)
+        else:
+            p.setPen(QPen(QColor(0, 0, 0), self.taille_pinceau, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            p.drawLine(a, b)
+        p.end()
+        self.doc.apercu_calque(self.doc.actif, QImage(self._img_calque))
+
     # ---------------------------------------------------------- peinture de la sélection
     def _peintre_selection(self) -> QPainter:
         p = QPainter(self.doc.selection)
@@ -400,7 +433,10 @@ class Canevas(QWidget):
         self._avant = self.doc.etat()
         pt = self.vers_image(pos)
         self._trace = [pt]
-        if self.outil in (PINCEAU, GOMME):
+        if self.outil == GOMME_CALQUE:
+            self._img_calque = self.doc.calque_actif.image.copy()   # copie : l'état d'avant reste intact
+            self._coup_de_gomme_calque(pt, pt)
+        elif self.outil in (PINCEAU, GOMME):
             self._coup_de_pinceau(pt, pt)
         self.update()
 
@@ -421,7 +457,10 @@ class Canevas(QWidget):
             return
         if self._trace is not None:
             pt = self.vers_image(pos)
-            if self.outil in (PINCEAU, GOMME):
+            if self.outil == GOMME_CALQUE:
+                self._coup_de_gomme_calque(self._trace[-1], pt)
+                self._trace.append(pt)
+            elif self.outil in (PINCEAU, GOMME):
                 self._coup_de_pinceau(self._trace[-1], pt)
                 self._trace.append(pt)
             elif self.outil == RECTANGLE:
@@ -443,7 +482,8 @@ class Canevas(QWidget):
         if self.outil in (RECTANGLE, LASSO) and len(self._trace) > 1:
             self._remplir_forme()
         noms = {PINCEAU: "Pinceau de sélection", GOMME: "Gomme de sélection", RECTANGLE: "Sélection rectangle",
-                LASSO: "Lasso"}
+                LASSO: "Lasso", GOMME_CALQUE: "Gomme de calque"}
+        self._img_calque = None
         self._trace = None
         self.selection_modifiee.emit(self._avant, noms[self.outil])
         self._avant = None
@@ -508,4 +548,4 @@ class Canevas(QWidget):
             self.setCursor(Qt.ArrowCursor)
             return
         self.setCursor(Qt.OpenHandCursor if self.outil == MAIN else
-                       Qt.BlankCursor if self.outil in (PINCEAU, GOMME) else Qt.CrossCursor)
+                       Qt.BlankCursor if self.outil in OUTILS_ROND else Qt.CrossCursor)

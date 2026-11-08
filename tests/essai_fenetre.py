@@ -4,6 +4,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from PySide6.QtCore import QPointF, QTimer
 from PySide6.QtWidgets import QApplication
+import os
+os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"   # ne touche pas aux réglages de l'utilisateur
 from chrypix.fenetre import Fenetre
 from chrypix.moteur import Moteur
 

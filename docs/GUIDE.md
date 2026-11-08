@@ -14,6 +14,7 @@ Ce guide explique chaque outil et chaque réglage. Il est complété à chaque n
 | **Outils (à gauche)** | Main, Rectangle, Lasso, Pinceau, Gomme |
 | **Photo (au centre)** | La photo ; la zone sélectionnée apparaît en rouge transparent |
 | **Panneau « Intelligence artificielle » (à droite)** | Effacer, Remplir, Agrandir l'image, Upscale |
+| **Panneau « Calques » (à droite, en dessous)** | Les calques de l'image (voir chapitre 6) |
 | **Barre d'état (en bas)** | État du moteur IA (point de couleur), taille de la photo |
 
 **Couleurs** : Chrypix prend la couleur d'accent choisie dans Windows (Paramètres > Personnalisation > Couleurs)
@@ -27,8 +28,13 @@ Le bouton soleil / lune de la barre du haut bascule aussi entre clair et sombre.
 
 ## 2. Ouvrir et enregistrer
 
-- **Fichier > Ouvrir** (Ctrl+O) : JPG, PNG, TIFF, WebP… La photo est redressée selon son orientation d'appareil.
-- **Enregistrer** (Ctrl+S), **Enregistrer sous** (Ctrl+Maj+S) : JPG (qualité 95), PNG, TIFF, WebP.
+- **Fichier > Ouvrir** (Ctrl+O) : JPG, PNG, TIFF, WebP, BMP, et les projets à calques **.ora**.
+  La photo est redressée selon son orientation d'appareil.
+- **Enregistrer** (Ctrl+S), **Enregistrer sous** (Ctrl+Maj+S) :
+  - **.ora** (OpenRaster) : garde **tous les calques** (noms, ordre, visibilité, opacité). Format ouvert, lisible
+    aussi par Krita, GIMP et MyPaint. Proposé d'office quand l'image a plusieurs calques.
+  - **JPG** (qualité 95), **PNG**, **TIFF**, **WebP** : l'image **à plat** (ce que vous voyez, calques fusionnés).
+    Un message le rappelle si l'image a plusieurs calques.
   Les informations de l'appareil (EXIF) et le profil de couleur sont conservés.
 - **Annuler** (Ctrl+Z) / **Rétablir** (Ctrl+Y ou Ctrl+Maj+Z) : chaque retouche et chaque sélection peut être annulée
   (30 étapes).
@@ -55,6 +61,7 @@ on peut simplement **peindre dessus**.
 |---|---|---|
 | **Pinceau** | B | Peindre la zone. Idéal pour un objet, un texte, un fil… |
 | **Gomme** | E | Retirer de la sélection en peignant |
+| **Gomme de calque** | G | Efface **pour de vrai** les pixels du calque choisi (voir chapitre 6) |
 | **Rectangle** | M | Sélection rectangulaire |
 | **Lasso** | L | Tracer un contour à main levée ; la forme est fermée automatiquement |
 
@@ -72,6 +79,8 @@ pour attraper les bords flous.
 ## 5. Les actions IA
 
 Chaque action propose **plusieurs résultats** : on choisit le meilleur, comme dans Photoshop.
+Le résultat gardé arrive sur un **nouveau calque** (« Effacer 1 », « Remplir 2 »…) : la photo d'origine n'est
+jamais abîmée. L'IA travaille toujours sur l'image **telle qu'on la voit** (tous les calques visibles ensemble).
 
 ### Fenêtre de choix du résultat
 - Cliquez sur une vignette pour la voir en grand.
@@ -120,6 +129,8 @@ Deux cadres apparaissent sur la photo :
 - Le raccord entre la photo et l'ajout est fait par Chrypix : la photo d'origine est gardée **au pixel près**, avec un
   fondu progressif et un accord des couleurs, pour qu'aucune ligne ne soit visible.
 - 3 propositions, environ 1 minute chacune.
+- **Calques** : tous les calques sont décalés sur la nouvelle toile ; un calque « Agrandir 1 » contient l'ajout
+  et le bord refait (seulement les pixels nouveaux).
 - Si la photo contient du texte, l'IA invente parfois des lettres sans sens dans l'ajout : utilisez
   « Autres propositions ».
 
@@ -135,13 +146,50 @@ Augmente la définition (nombre de pixels) de la photo.
 
 La fenêtre indique la taille finale avant de lancer ; pendant le calcul, la progression compte les morceaux.
 
+**Calques** : tous les calques sont agrandis (lissage simple) et le résultat de l'IA arrive, complet, sur un
+calque « Upscale 1 » au-dessus.
+
 ---
 
-## 6. Raccourcis
+## 6. Les calques
+
+Une image peut avoir plusieurs **calques**, empilés comme des feuilles transparentes : celui du haut passe
+devant. Une photo ouverte a un seul calque, « Arrière-plan ».
+
+### Le panneau Calques
+| Élément | Rôle |
+|---|---|
+| **Liste** | Le calque du haut est en haut. Cliquez sur un calque pour le choisir (il est surligné) |
+| **Œil** | Afficher / masquer le calque (pratique pour comparer avant / après une retouche IA) |
+| **Vignette** | Aperçu du calque ; le damier gris montre les parties transparentes |
+| **Nom** | Double-clic pour renommer |
+| **Opacité** | Transparence du calque choisi, de 0 % (invisible) à 100 % ; affichée sous le nom quand < 100 % |
+
+### Les boutons (de gauche à droite)
+| Bouton | Action |
+|---|---|
+| **Nouveau calque** | Ajoute un calque vide au-dessus du calque choisi |
+| **Dupliquer** | Copie le calque choisi |
+| **Monter / Descendre** | Change la place du calque dans la pile |
+| **Fusionner** | Réunit le calque choisi avec celui du dessous (l'opacité est appliquée) |
+| **Aplatir** | Réunit tous les calques visibles en un seul « Arrière-plan » |
+| **Supprimer** | Supprime le calque choisi (le dernier calque ne peut pas être supprimé) |
+
+### Gomme de calque (G)
+Efface les pixels du **calque choisi** avec le pinceau rond (taille : curseur « Taille » ou `[` `]`).
+Exemple : une retouche IA réussie sauf sur un bord → choisissez son calque et gommez ce bord ; la photo
+d'origine réapparaît dessous. Les zones effacées d'un calque seul apparaissent en damier.
+À ne pas confondre avec la **Gomme de sélection** (E), qui ne touche qu'au rouge de la sélection.
+
+Toutes les actions sur les calques s'annulent avec Ctrl+Z (changer de calque choisi ne compte pas).
+
+---
+
+## 7. Raccourcis
 
 | Touche | Action |
 |---|---|
-| H, M, L, B, E | Main, Rectangle, Lasso, Pinceau, Gomme |
+| H, M, L, B, E, G | Main, Rectangle, Lasso, Pinceau, Gomme de sélection, Gomme de calque |
 | `[` / `]` | Pinceau plus petit / plus grand |
 | Espace (maintenu) | Déplacer la vue |
 | Alt (maintenu) | Inverser Ajouter / Retirer le temps d'un geste |
@@ -154,7 +202,7 @@ La fenêtre indique la taille finale avant de lancer ; pendant le calcul, la pro
 
 ---
 
-## 7. Matériel et licences
+## 8. Matériel et licences
 
 - Testé sur une carte graphique NVIDIA de 8 Go (RTX 3060 Ti). Les durées indiquées viennent de ce PC.
 - Modèles utilisés : Flux.1 Fill dev (**usage non commercial**), Flux.1 Schnell (Apache-2.0),

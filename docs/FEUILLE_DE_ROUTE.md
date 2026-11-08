@@ -9,7 +9,8 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
 - [x] Guide d'utilisation (docs/GUIDE.md).
 
 ## À faire (dans cet ordre, sauf décision contraire)
-1. [ ] **Calques** — en cours (lancé le 08/11/2026).
+1. [ ] **Calques** — en cours (lancé le 08/11/2026). Fait : panneau, IA sur calques, gomme de calque, .ora.
+   Reste : validation par Christophe.
    Panneau Calques (vignette, œil, nom, opacité, ordre, nouveau / dupliquer / supprimer / fusionner / aplatir) ;
    Effacer et Remplir créent un calque avec seulement la zone retouchée ; Agrandir décale les calques et met
    l'ajout dessous ; Upscale agrandit tous les calques ; l'IA voit l'image visible ; outil « Gomme de calque » ;

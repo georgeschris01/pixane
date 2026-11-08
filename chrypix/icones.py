@@ -42,6 +42,22 @@ DESSINS = {
     "lune": '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
     "ajouter": '<circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/>',
     "retirer": '<circle cx="12" cy="12" r="8.5"/><path d="M8 12h8"/>',
+    # calques
+    "calque_nouveau": '<path d="M12 4 3 8.5l9 4.5 9-4.5z"/><path d="M3 13l9 4.5 3-1.5"/>'
+                      '<path stroke="A" d="M19 14v6M16 17h6"/>',
+    "dupliquer": '<rect x="8" y="8" width="12" height="12" rx="1.5"/>'
+                 '<path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>',
+    "supprimer": '<path d="M4 7h16M9.5 7V4.5h5V7M6 7l1 12.5a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5L18 7"/>'
+                 '<path d="M10 11v6M14 11v6"/>',
+    "monter": '<path d="M12 19V5M6 11l6-6 6 6"/>',
+    "descendre": '<path d="M12 5v14M6 13l6 6 6-6"/>',
+    "fusionner": '<path d="M12 3 3 7.5 12 12l9-4.5z"/><path stroke="A" d="M12 14.5v6.5M9 18l3 3 3-3"/>',
+    "aplatir": '<path d="M12 4 3 8.5l9 4.5 9-4.5z"/><path d="M3 12.5l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5"/>',
+    "oeil": '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/>'
+            '<circle cx="12" cy="12" r="3"/>',
+    "oeil_ferme": '<path d="M4 9.5c2 2.2 4.8 3.5 8 3.5s6-1.3 8-3.5M6.5 12.2 5 14.5M12 13v2.8M17.5 12.2l1.5 2.3"/>',
+    "gomme_calque": '<path d="M8.5 20 3.6 15.1a1.6 1.6 0 0 1 0-2.3L13 3.4a1.6 1.6 0 0 1 2.3 0l5.3 5.3a1.6 1.6 0 0 1 '
+                    '0 2.3L11.2 20z"/><path d="M8.5 20H14"/><path stroke="A" d="M16.5 15.5l4 4M20.5 15.5l-4 4"/>',
 }
 
 

@@ -1,6 +1,7 @@
 """Fenêtre principale de Chrypix."""
 from __future__ import annotations
 
+import os
 import threading
 from pathlib import Path
 
@@ -12,7 +13,8 @@ from PySide6.QtWidgets import (QApplication, QButtonGroup, QDockWidget, QFileDia
 
 from . import recettes, theme
 from .icones import icone
-from .canevas import GOMME, LASSO, MAIN, PINCEAU, RECTANGLE, Canevas
+from .calques import PanneauCalques
+from .canevas import GOMME, GOMME_CALQUE, LASSO, MAIN, PINCEAU, RECTANGLE, Canevas
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection, qimage_rgb, tableau
 from .moteur import Annule, ErreurMoteur, Moteur
@@ -95,7 +97,8 @@ class Fenetre(QMainWindow):
         self.setWindowTitle(NOM)
         self.resize(1440, 920)
         self.setAcceptDrops(True)
-        self.reglages = QSettings("Chrypix", "Chrypix")
+        # les essais automatiques utilisent leurs propres réglages (variable CHRYPIX_REGLAGES)
+        self.reglages = QSettings("Chrypix", os.environ.get("CHRYPIX_REGLAGES", "Chrypix"))
         self.doc: Document | None = None
         self.historique = QUndoStack(self)
         self.historique.setUndoLimit(30)
@@ -121,6 +124,7 @@ class Fenetre(QMainWindow):
         self._barre_commandes()
         self._outils()
         self._panneau_ia()
+        self._panneau_calques()
         self._barre_etat()
         self._appliquer_theme()
         self._actualiser()
@@ -269,7 +273,9 @@ class Fenetre(QMainWindow):
                                           (RECTANGLE, "Sélection rectangle", "M", "rectangle"),
                                           (LASSO, "Lasso", "L", "lasso"),
                                           (PINCEAU, "Pinceau de sélection", "B", "pinceau"),
-                                          (GOMME, "Gomme de sélection", "E", "gomme")):
+                                          (GOMME, "Gomme de sélection", "E", "gomme"),
+                                          (GOMME_CALQUE, "Gomme de calque : efface les pixels du calque choisi",
+                                           "G", "gomme_calque")):
             a = QAction(texte, self, checkable=True)
             a.setShortcut(touche)
             a.setToolTip(f"{texte}  ({touche})")
@@ -319,10 +325,23 @@ class Fenetre(QMainWindow):
         lay.addSpacing(6)
         lay.addWidget(self.b_agrandir)
         lay.addWidget(self.b_upscale)
-        lay.addStretch(1)
         dock.setWidget(w)
         dock.setFixedWidth(290)
+        w.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
+
+    def _panneau_calques(self):
+        dock = QDockWidget("CALQUES", self)
+        dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
+        self.calques = PanneauCalques(lambda nom: icone(nom, self.couleurs.texte, self.couleurs.accent, 20))
+        self.calques.demande.connect(self._commande_calques)
+        dock.setWidget(self.calques)
+        dock.setFixedWidth(290)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+
+    def _commande_calques(self, etat, texte: str):
+        if self.doc and etat is not None:
+            self.historique.push(CommandeEtat(self.doc, self.doc.etat(), etat, texte))
 
     def _barre_etat(self):
         self.pastille_moteur = QLabel()
@@ -381,6 +400,8 @@ class Fenetre(QMainWindow):
                 objet.setIcon(ic)
         self.a_theme.setIcon(icone("soleil" if c.sombre else "lune", c.texte, c.accent))
         self.canevas.definir_couleurs(c.canevas, c.discret, c.accent)
+        if hasattr(self, "calques"):
+            self.calques.appliquer_icones()
         self._peindre_pastille_moteur()
 
     def _actualiser(self):
@@ -401,7 +422,7 @@ class Fenetre(QMainWindow):
 
     def _aide(self):
         QMessageBox.information(self, "Raccourcis", (
-            "Outils : H main, M rectangle, L lasso, B pinceau, E gomme\n"
+            "Outils : H main, M rectangle, L lasso, B pinceau, E gomme de sélection, G gomme de calque\n"
             "[ et ] : taille du pinceau\n"
             "Alt pendant le tracé : inverse Ajouter / Retirer\n"
             "Espace + glisser, ou bouton du milieu : déplacer la vue\n"
@@ -463,6 +484,7 @@ class Fenetre(QMainWindow):
         self.barre_agrandir.hide()
         self.canevas.cadre = None
         self.canevas.definir_document(doc)
+        self.calques.definir_document(doc)
         self._actualiser()
 
     def enregistrer(self) -> bool:
@@ -483,12 +505,19 @@ class Fenetre(QMainWindow):
     def enregistrer_sous(self) -> bool:
         if not self.doc:
             return False
+        plusieurs = len(self.doc.calques) > 1
         if self.doc.chemin:
-            propose = str(self.doc.chemin.with_name(self.doc.chemin.stem + "_retouche" + self.doc.chemin.suffix))
+            ext = ".ora" if plusieurs else self.doc.chemin.suffix
+            propose = str(self.doc.chemin.with_name(self.doc.chemin.stem + "_retouche" + ext))
         else:
-            propose = str(Path(self.reglages.value("dossier", str(Path.home()))) / "image.jpg")
-        chemin, _ = QFileDialog.getSaveFileName(self, "Enregistrer sous", propose,
-                                                "JPEG (*.jpg);;PNG (*.png);;TIFF (*.tif);;WebP (*.webp)")
+            propose = str(Path(self.reglages.value("dossier", str(Path.home()))) / ("image.ora" if plusieurs
+                                                                                     else "image.jpg"))
+        formats = ["Projet à calques OpenRaster (*.ora)", "JPEG (*.jpg)", "PNG (*.png)", "TIFF (*.tif)",
+                   "WebP (*.webp)"]
+        if not plusieurs:
+            formats.append(formats.pop(0))
+        chemin, _ = QFileDialog.getSaveFileName(self, "Enregistrer sous", propose, ";;".join(formats),
+                                                formats[0])
         if not chemin:
             return False
         if not Path(chemin).suffix:
@@ -504,7 +533,11 @@ class Fenetre(QMainWindow):
             return False
         finally:
             QApplication.restoreOverrideCursor()
-        self.statusBar().showMessage(f"Enregistré : {chemin}", 5000)
+        if len(self.doc.calques) > 1 and chemin.suffix.lower() != ".ora":
+            self.statusBar().showMessage(f"Enregistré à plat (sans les calques) : {chemin}  —  pour garder les "
+                                         "calques, enregistre aussi en .ora", 10000)
+        else:
+            self.statusBar().showMessage(f"Enregistré : {chemin}", 5000)
         self._actualiser()
         return True
 
@@ -593,7 +626,11 @@ class Fenetre(QMainWindow):
 
         def raccord(img: QImage) -> QImage:
             return qimage_rgb(finaliser(orig, tableau(img)[:, :, :3], geo))
-        self._lancer("Agrandir", False, lambda nom: recettes.agrandir(nom), apres=raccord, png=png)
+        doc = self.doc
+
+        def placer(img: QImage):   # calques décalés ; l'ajout de l'IA dans un nouveau calque
+            return doc.etat_agrandi("Agrandir", img, (ajout[2], ajout[0]))
+        self._lancer("Agrandir", False, lambda nom: recettes.agrandir(nom), apres=raccord, png=png, placer=placer)
 
     def ia_upscale(self):
         if not self.doc:
@@ -608,7 +645,8 @@ class Fenetre(QMainWindow):
             else:
                 self._lancer("Upscale", False, lambda nom: recettes.upscale_rapide(nom, v["facteur"]))
 
-    def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None):
+    def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None,
+                placer=None):
         """Envoie l'image au moteur, attend, puis propose les résultats."""
         doc = self.doc
         if png is None:
@@ -642,7 +680,7 @@ class Fenetre(QMainWindow):
             attente.deleteLater()
             choix.ajouter(res)
             if choix.exec() and choix.choix() is not None:
-                self._appliquer_resultat(doc, choix.choix(), titre)
+                self._appliquer_resultat(doc, choix.choix(), titre, placer)
             annuler.set()
 
         def premier_echec(message):
@@ -664,12 +702,15 @@ class Fenetre(QMainWindow):
         t.lancer()
         attente.show()
 
-    def _appliquer_resultat(self, doc: Document, image: QImage, titre: str):
+    def _appliquer_resultat(self, doc: Document, image: QImage, titre: str, placer=None):
+        """Le résultat choisi devient un nouveau calque (annulable)."""
         if doc is not self.doc:
             return
         avant = doc.etat()
-        if image.size() == doc.image.size():
-            apres = (image, doc.selection.copy())
+        if placer is not None:
+            apres = placer(image)
+        elif image.size() == doc.image.size():
+            apres = doc.etat_resultat_ia(titre, image)      # seulement les pixels retouchés
         else:
-            apres = (image, nouvelle_selection(image.width(), image.height()))
+            apres = doc.etat_redimensionne(titre, image)    # Upscale
         self.historique.push(CommandeEtat(doc, avant, apres, titre))
