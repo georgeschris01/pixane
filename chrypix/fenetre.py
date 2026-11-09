@@ -20,6 +20,7 @@ from . import langue, recettes, theme
 from .icones import icone
 from .langue import tr
 from .actions_calques import ActionsCalques
+from .contour import ActionContour
 from .onglets import Onglets
 from .calques import PanneauCalques
 from .canevas import (BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GOMME_CALQUE, LASSO, MAIN, OBJET,
@@ -123,7 +124,7 @@ class Carte(QPushButton):
         self.image.setPixmap(ic.pixmap(28, 28))
 
 
-class Fenetre(ActionsCalques, Onglets, QMainWindow):
+class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
     etat_moteur = Signal(str)
 
     def __init__(self):
@@ -262,6 +263,7 @@ class Fenetre(ActionsCalques, Onglets, QMainWindow):
         self._action(sous, tr("Agrandir…"), None, lambda: self._modifier_bord("agrandir"), "a_sel_agrandir")
         self._action(sous, tr("Réduire…"), None, lambda: self._modifier_bord("reduire"), "a_sel_reduire")
         self._action(sous, tr("Adoucir les bords…"), None, lambda: self._modifier_bord("adoucir"), "a_sel_adoucir")
+        self._action(m, tr("Améliorer le contour…"), "Ctrl+Alt+R", self.ameliorer_contour, "a_contour")
         self._action(m, tr("Sélectionner le sujet (IA)"), "Ctrl+Alt+S", self.selectionner_sujet, "a_sujet")
         m.addSeparator()
         self._action(m, tr("Recadrer à la sélection"), None, self._recadrer_selection, "a_recadrer_selection",
@@ -940,7 +942,7 @@ class Fenetre(ActionsCalques, Onglets, QMainWindow):
                   self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster, self.a_recadrer_selection, self.a_taille,
                   self.a_pivoter_d, self.a_pivoter_g, self.a_pivoter_180, self.a_miroir_h, self.a_miroir_v,
                   self.a_redresser, self.a_transformer, self.a_reglages_image, self.a_sel_agrandir,
-                  self.a_sel_reduire, self.a_sel_adoucir, self.a_couper, self.a_copier, self.a_supprimer_selection,
+                  self.a_sel_reduire, self.a_sel_adoucir, self.a_contour, self.a_couper, self.a_copier, self.a_supprimer_selection,
                   self.a_style, self.a_copier_style, self.a_coller_style, self.a_enlever_style, self.a_figer_style,
                   self.a_nouveau_calque, self.a_dupliquer_calque, *self._actions_calques_doc()):
             a.setEnabled(a_doc)

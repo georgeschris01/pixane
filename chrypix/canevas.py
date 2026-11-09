@@ -120,6 +120,7 @@ class Canevas(QWidget):
         self._transfo_glisse = False
         # sélections calculées
         self.apercu_selection: QImage | None = None  # baguette pendant le glisser (petite image, étirée)
+        self.apercu_plein: QImage | None = None      # aperçu qui cache la photo (Améliorer le contour)
         self.points_ia: list = []                    # sélection rapide : (point image, garder ?)
         self.trait_en_attente = None                 # trait ou cadre envoyé à l'IA, montré pendant le calcul
         self._auto = None                            # geste en cours : (outil, départ écran, données)
@@ -241,7 +242,10 @@ class Canevas(QWidget):
         p.save()
         p.setTransform(QTransform(self.zoom, 0, 0, self.zoom, self.decalage.x(), self.decalage.y()))
         p.setOpacity(OPACITE_SELECTION)
-        if self.apercu_selection is not None:
+        if self.apercu_plein is not None:
+            p.setOpacity(1)
+            p.drawImage(QRectF(0, 0, self.doc.image.width(), self.doc.image.height()), self.apercu_plein)
+        elif self.apercu_selection is not None:
             p.drawImage(QRectF(0, 0, self.doc.image.width(), self.doc.image.height()), self.apercu_selection)
         elif not (self._trace and self._nouvelle):   # nouvelle sélection en cours : l'ancienne va disparaître
             p.drawImage(QPointF(0, 0), self.doc.selection)
