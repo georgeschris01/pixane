@@ -60,10 +60,65 @@ class ActionsCalques:
     def _actions_calques_doc(self) -> list:
         noms = [f"a_regl_{t}" for t in ("niveaux", "courbes", "balance", "noir_blanc", "vibrance")]
         noms += [f"a_cr_{t}" for t in ajustements.TYPES] + [f"a_filtre_{t}" for t in filtres.FILTRES]
+        noms += ["a_taille_grille", "a_nouveau_repere", "a_effacer_reperes"]
         noms += ["a_modifier_reglage", "a_nouveau_groupe", "a_grouper", "a_degrouper", "a_masque_blanc",
                  "a_masque_sel", "a_masque_cacher", "a_masque_cible", "a_masque_actif", "a_masque_inverser",
                  "a_masque_selection", "a_masque_appliquer", "a_masque_supprimer"]
         return [getattr(self, n) for n in noms]
+
+    # ---------------------------------------------------------------- règles, repères, grille
+    def _menu_regles(self, m):
+        def case(texte, raccourci, cle, defaut, fonction):
+            a = self._action(m, texte, raccourci, None, cle)
+            a.setCheckable(True)
+            a.setChecked(self.reglages.value(cle, defaut) == "true")
+            a.toggled.connect(lambda v: (self.reglages.setValue(cle, "true" if v else "false"), fonction(v)))
+            fonction(a.isChecked())
+            return a
+        c = self.canevas
+        case(tr("Règles"), "Ctrl+R", "a_regles", "false",
+             lambda v: [w.setVisible(v) for w in (self.regle_h, self.regle_v, self.coin_regles)])
+        case(tr("Grille"), "Ctrl+'", "a_grille", "false", lambda v: (setattr(c, "grille_visible", v), c.update()))
+        case(tr("Repères"), "Ctrl+;", "a_reperes", "true", lambda v: (setattr(c, "reperes_visibles", v), c.update()))
+        case(tr("Magnétisme (repères, grille, bords)"), "Ctrl+Shift+;", "a_magnetisme", "true",
+             lambda v: setattr(c, "magnetisme", v))
+        c.pas_grille = int(self.reglages.value("pas_grille", 100))
+        self._action(m, tr("Taille de la grille…"), None, self.taille_grille, "a_taille_grille")
+        self._action(m, tr("Nouveau repère…"), None, self.nouveau_repere, "a_nouveau_repere")
+        self._action(m, tr("Effacer les repères"), None, self.effacer_reperes, "a_effacer_reperes")
+
+    def taille_grille(self):
+        from PySide6.QtWidgets import QInputDialog
+        v, ok = QInputDialog.getInt(self, tr("Grille"), tr("Écart entre les lignes (pixels de l'image) :"),
+                                    self.canevas.pas_grille, 2, 5000)
+        if ok:
+            self.canevas.pas_grille = v
+            self.reglages.setValue("pas_grille", v)
+            self.a_grille.setChecked(True)
+            self.canevas.update()
+
+    def nouveau_repere(self):
+        if not self.doc:
+            return
+        from PySide6.QtWidgets import QInputDialog
+        sens, ok = QInputDialog.getItem(self, tr("Nouveau repère"), tr("Sens :"), [tr("Horizontal"), tr("Vertical")],
+                                        0, False)
+        if not ok:
+            return
+        h = sens == tr("Horizontal")
+        w_, h_ = self.doc.taille()
+        v, ok = QInputDialog.getInt(self, tr("Nouveau repère"), tr("Position (pixels depuis le haut)") if h else
+                                    tr("Position (pixels depuis la gauche)"), (h_ if h else w_) // 2, 0,
+                                    h_ if h else w_)
+        if ok:
+            self.doc.reperes.append(("h" if h else "v", v))
+            self.a_reperes.setChecked(True)
+            self.canevas.update()
+
+    def effacer_reperes(self):
+        if self.doc:
+            self.doc.reperes.clear()
+            self.canevas.update()
 
     # ---------------------------------------------------------------- options des outils de dessin
     def _options_dessin(self, tout):

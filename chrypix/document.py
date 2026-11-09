@@ -217,6 +217,7 @@ class Document(QObject):
         self.remarques: list[str] = []      # à montrer après l'ouverture (ex. effets d'un PSD non repris)
         self._fusion: QImage | None = None
         self.cible_masque = False           # outils de peinture sur le masque du calque choisi (panneau)
+        self.reperes: list = []              # repères : (« h » ou « v », position en pixels) ; hors Annuler
 
     # ---------------------------------------------------------- image fusionnée
     def taille(self) -> tuple[int, int]:
@@ -245,7 +246,9 @@ class Document(QObject):
             doc.remarques = remarques
             return doc
         if chemin.suffix.lower() in EXTENSIONS_CALQUES:
-            return cls(chemin=chemin, calques=lire_ora(chemin))
+            doc = cls(chemin=chemin, calques=lire_ora(chemin))
+            doc.reperes = lire_reperes_ora(chemin)
+            return doc
         with Image.open(chemin) as im:
             exif = im.info.get("exif")
             icc = im.info.get("icc_profile")
@@ -268,7 +271,7 @@ class Document(QObject):
         if ext in EXTENSIONS_CALQUES:
             natif = ext == ".chr"           # .chr : styles modifiables ; .ora (Krita, GIMP) : effets figés
             ecrire_ora(chemin, self.calques if natif else calques_figes(self.calques, garder_groupes=True),
-                       self.image, natif=natif)
+                       self.image, natif=natif, reperes=self.reperes)
             self.chemin = chemin
             self.modifie = False
             return
@@ -814,11 +817,13 @@ def _png(img: QImage) -> bytes:
     return tampon.getvalue()
 
 
-def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False) -> None:
+def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False, reperes=None) -> None:
     """Groupes = piles imbriquées, modes de fusion = composite-op (lus par Krita et GIMP). En .chr (natif) :
     masques, calques de réglage, styles et textes gardés en attributs « chrypix-… »."""
     w, h = calques[0].image.width(), calques[0].image.height()
     pile = ET.Element("image", w=str(w), h=str(h), version="0.0.5")
+    if natif and reperes:
+        pile.set("chrypix-reperes", json.dumps([list(r) for r in reperes]))
     racine = ET.SubElement(pile, "stack")
     temporaire = chemin.with_name(chemin.name + ".tmp")
     compte = [0]
@@ -931,3 +936,12 @@ def lire_ora(chemin: Path) -> list[Calque]:
     if not calques:
         raise ValueError(tr("Ce fichier ne contient aucun calque."))
     return list(reversed(calques))
+
+
+def lire_reperes_ora(chemin: Path) -> list:
+    try:
+        with zipfile.ZipFile(chemin) as z:
+            r = ET.fromstring(z.read("stack.xml")).get("chrypix-reperes")
+        return [(str(a), float(b)) for a, b in json.loads(r)] if r else []
+    except (KeyError, ValueError, TypeError, OSError, zipfile.BadZipFile):
+        return []

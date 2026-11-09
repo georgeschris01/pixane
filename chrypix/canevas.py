@@ -9,6 +9,7 @@ from PySide6.QtCore import QLineF, QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPainterPath, QPen, QPixmap, QPolygonF, QTransform
 from PySide6.QtWidgets import QWidget
 
+from . import regles
 from .composition import argb_vers_masque, masque_vers_argb
 from .document import COULEUR_SELECTION, Document
 from .langue import tr
@@ -41,6 +42,7 @@ class Canevas(QWidget):
     selection_modifiee = Signal(object, str)   # (état avant, nom de l'action) -> pour annuler (sélection ou calque)
     infos = Signal(int, int, float)             # largeur, hauteur, zoom
     refus = Signal(str)                         # action impossible (ex. calque verrouillé) : message
+    vue_peinte = Signal()                       # le canevas se redessine (les règles suivent)
     cadre_change = Signal(object, object)       # Agrandir : (ajout, bord abîmé), chacun (haut, bas, gauche, droite) px
     cadre_valide = Signal()                     # Entrée pendant Agrandir
     cadre_annule = Signal()                     # Échap pendant Agrandir
@@ -100,6 +102,11 @@ class Canevas(QWidget):
         self.forme = "rectangle"
         self.forme_remplie = True
         self._glisse_dessin = None   # dégradé / forme en cours : [début, fin, Maj]
+        self.grille_visible = False
+        self.pas_grille = 100
+        self.reperes_visibles = True
+        self.magnetisme = True
+        self.repere_tire = None      # repère qu'on tire : [« h » ou « v », position dans l'image ou None]
         self._trait: Trait | None = None
         self.source_tampon: QPointF | None = None    # point (image) choisi par Alt+clic
         self._decalage_tampon: QPointF | None = None # source - point peint, fixé au premier coup (aligné)
@@ -212,6 +219,7 @@ class Canevas(QWidget):
         return self._cache[1]
 
     def paintEvent(self, _):
+        self.vue_peinte.emit()
         p = QPainter(self)
         p.fillRect(self.rect(), self.couleur_fond)
         if not self.doc:
@@ -252,6 +260,7 @@ class Canevas(QWidget):
                     chemin.lineTo(pt)
                 p.drawPath(chemin)
         p.restore()
+        regles.dessiner(p, self)
         if self.cadre is not None:
             self._dessiner_cadre(p)
             return
@@ -662,6 +671,40 @@ class Canevas(QWidget):
         self.selection_modifiee.emit(self._avant, nom)
         self._avant = None
 
+    # ---------------------------------------------------------- repères
+    def commencer_repere(self, sens: str):
+        self.repere_tire = [sens, None]
+        self.reperes_visibles = True
+
+    def bouger_repere(self, pos: QPointF):
+        pt = self.vers_image(QPointF(pos))
+        sens = self.repere_tire[0]
+        self.repere_tire[1] = round(pt.y() if sens == "h" else pt.x())
+        self.update()
+
+    def finir_repere(self, pos: QPointF):
+        sens, v = self.repere_tire
+        self.repere_tire = None
+        W, H = self.doc.image.width(), self.doc.image.height()
+        dedans = self.rect().contains(QPointF(pos).toPoint()) and v is not None and \
+            0 <= v <= (H if sens == "h" else W)
+        if dedans:
+            self.doc.reperes.append((sens, v))
+        self.update()
+
+    def _repere_sous(self, pos: QPointF) -> bool:
+        """Outil Déplacer sur un repère : on le prend (il sera reposé ou enlevé au lâcher)."""
+        if not self.reperes_visibles:
+            return False
+        for r in list(self.doc.reperes):
+            sens, v = r
+            e = self.vers_ecran(QPointF(v, v))
+            if (sens == "h" and abs(e.y() - pos.y()) <= 4) or (sens == "v" and abs(e.x() - pos.x()) <= 4):
+                self.doc.reperes.remove(r)
+                self.repere_tire = [sens, v]
+                return True
+        return False
+
     # ---------------------------------------------------------- dégradé, pot de peinture, formes
     def _cible_image(self):
         """(image où dessiner, sur le masque ?) ; None si refusé (verrou, groupe, réglage)."""
@@ -715,6 +758,7 @@ class Canevas(QWidget):
             return
         if self.outil == DEGRADE and self._cible_image() is None:
             return
+        pt = regles.aimanter(self, pt)
         self._glisse_dessin = [pt, pt, bool(mods & Qt.ShiftModifier)]
 
     def _fin_glisse(self):
@@ -1194,6 +1238,8 @@ class Canevas(QWidget):
             self._presser_texte(pos)
             self.update()
             return
+        if self.outil == DEPLACER and self._repere_sous(pos):
+            return
         if self.outil == DEPLACER:
             self._presser_deplacer(pos)
             return
@@ -1229,6 +1275,8 @@ class Canevas(QWidget):
             self._soustraire = self.mode_retirer != bool(mods & Qt.AltModifier)
         self._avant = self.doc.etat()
         pt = self.vers_image(pos)
+        if self.outil == RECTANGLE:
+            pt = regles.aimanter(self, pt)
         self._trace = [pt]
         if self.outil == GOMME_CALQUE:
             self._sur_masque = self.sur_masque()
@@ -1310,8 +1358,10 @@ class Canevas(QWidget):
                 self.setCursor(Qt.SizeAllCursor)
             else:
                 self.setCursor(Qt.IBeamCursor)
+        if self.repere_tire is not None:
+            self.bouger_repere(pos)
         if self._glisse_dessin is not None:
-            self._glisse_dessin[1] = self.vers_image(pos)
+            self._glisse_dessin[1] = regles.aimanter(self, self.vers_image(pos))
             self._glisse_dessin[2] = bool(e.modifiers() & Qt.ShiftModifier)
         if self._trace is not None:
             pt = self.vers_image(pos)
@@ -1322,7 +1372,7 @@ class Canevas(QWidget):
                 self._coup_de_pinceau(self._trace[-1], pt)
                 self._trace.append(pt)
             elif self.outil == RECTANGLE:
-                self._trace = [self._trace[0], pt]
+                self._trace = [self._trace[0], regles.aimanter(self, pt)]
             else:
                 self._trace.append(pt)
         self.update()
@@ -1353,6 +1403,9 @@ class Canevas(QWidget):
             return
         if self._recadre_glisse is not None:
             self._lacher_recadre()
+            return
+        if self.repere_tire is not None:
+            self.finir_repere(e.position())
             return
         if self._glisse_dessin is not None:
             self._lacher_dessin()
