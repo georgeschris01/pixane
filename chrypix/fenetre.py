@@ -20,6 +20,7 @@ from . import langue, recettes, theme
 from .icones import icone
 from .langue import tr
 from .actions_calques import ActionsCalques
+from .onglets import Onglets
 from .calques import PanneauCalques
 from .canevas import (BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GOMME_CALQUE, LASSO, MAIN, OBJET,
                       OUTILS_AUTO, OUTILS_ROND, PEINTURE, PINCEAU, RAPIDE, RECADRER, RECTANGLE, SEAU, SUPPRIMER,
@@ -122,7 +123,7 @@ class Carte(QPushButton):
         self.image.setPixmap(ic.pixmap(28, 28))
 
 
-class Fenetre(ActionsCalques, QMainWindow):
+class Fenetre(ActionsCalques, Onglets, QMainWindow):
     etat_moteur = Signal(str)
 
     def __init__(self):
@@ -133,8 +134,7 @@ class Fenetre(ActionsCalques, QMainWindow):
         # les essais automatiques utilisent leurs propres réglages (variable CHRYPIX_REGLAGES)
         self.reglages = reglages()
         self.doc: Document | None = None
-        self.historique = QUndoStack(self)
-        self.historique.setUndoLimit(30)
+        self._init_onglets()
         self.moteur = Moteur()
         self._taches = set()
         self._icones = []            # (objet, nom d'icône) à redessiner quand le thème change
@@ -145,7 +145,7 @@ class Fenetre(ActionsCalques, QMainWindow):
         self.canevas = Canevas()
         self.canevas.selection_modifiee.connect(self._selection_modifiee)
         self.canevas.refus.connect(lambda m: self.statusBar().showMessage(m, 6000))
-        self.setCentralWidget(self.canevas)
+        self.setCentralWidget(self._centre_avec_onglets(self.canevas))
         self.barre_agrandir = BarreAgrandir(self.canevas)
         self.barre_agrandir.lancer.connect(self._lancer_agrandir)
         self.barre_agrandir.annuler.connect(self._fin_agrandir)
@@ -163,7 +163,7 @@ class Fenetre(ActionsCalques, QMainWindow):
         self.canevas.transfo_valide.connect(self._valider_transfo)
         self.canevas.transfo_annule.connect(self._annuler_transfo)
         self._transfo_avant = None
-        self.historique.indexChanged.connect(self._historique_bouge)
+        self.groupe_historique.indexChanged.connect(self._historique_bouge)
         self._session_texte = 0      # regroupe les changements d'un même texte dans Annuler
 
         self._menus()
@@ -179,6 +179,10 @@ class Fenetre(ActionsCalques, QMainWindow):
         from .suppression import Suppression
         self.suppression = Suppression(self)
         self.canevas.fin_session_ia.connect(self.selection_auto.fin_session)
+        from .recuperation import Recuperation
+        self._recuperation = Recuperation(self)
+        if not os.environ.get("CHRYPIX_REGLAGES") or os.environ.get("CHRYPIX_RECUPERATION"):
+            QTimer.singleShot(400, self._recuperation.proposer)
         self._appliquer_theme()
         self._choisir_outil(PINCEAU)
         self._actualiser()
@@ -221,12 +225,16 @@ class Fenetre(ActionsCalques, QMainWindow):
         self._action(m, tr("Enregistrer"), QKeySequence.Save, self.enregistrer, "a_enregistrer", "enregistrer")
         self._action(m, tr("Enregistrer sous…"), "Ctrl+Shift+S", self.enregistrer_sous, "a_enregistrer_sous")
         m.addSeparator()
+        self._action(m, tr("Fermer la photo"), "Ctrl+W", lambda: self.fermer_onglet(), "a_fermer")
+        self._action(m, tr("Photo suivante"), "Ctrl+Tab", lambda: self.onglet_suivant(1))
+        self._action(m, tr("Photo précédente"), "Ctrl+Shift+Tab", lambda: self.onglet_suivant(-1))
+        m.addSeparator()
         self._action(m, tr("Quitter"), "Ctrl+Q", self.close)
 
         m = self.menuBar().addMenu(tr("&Édition"))
-        self.a_annuler = self.historique.createUndoAction(self, tr("Annuler|édition"))
+        self.a_annuler = self.groupe_historique.createUndoAction(self, tr("Annuler|édition"))
         self.a_annuler.setShortcut(QKeySequence.Undo)
-        self.a_retablir = self.historique.createRedoAction(self, tr("Rétablir|édition"))
+        self.a_retablir = self.groupe_historique.createRedoAction(self, tr("Rétablir|édition"))
         self.a_retablir.setShortcuts([QKeySequence("Ctrl+Y"), QKeySequence("Ctrl+Shift+Z")])
         self._icone(self.a_annuler, "annuler")
         self._icone(self.a_retablir, "retablir")
@@ -766,7 +774,7 @@ class Fenetre(ActionsCalques, QMainWindow):
         Rétablir tant qu'on ne fait rien d'autre."""
         dock = QDockWidget(tr("HISTORIQUE"), self)
         dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
-        self.vue_historique = QUndoView(self.historique)
+        self.vue_historique = QUndoView(self.groupe_historique)
         self.vue_historique.setEmptyLabel(tr("Photo ouverte"))
         dock.setWidget(self.vue_historique)
         dock.setFixedWidth(290)
@@ -885,10 +893,8 @@ class Fenetre(ActionsCalques, QMainWindow):
         self.reglages.setValue("langue", code)
         rep = QMessageBox.question(self, NOM, tr("La nouvelle langue sera utilisée au prochain démarrage de "
                                                  "Chrypix.\n\nRedémarrer maintenant ?"))
-        if rep == QMessageBox.Yes and self._peut_fermer():
+        if rep == QMessageBox.Yes and self._peut_fermer_tout():
             chemin = str(self.doc.chemin) if self.doc and self.doc.chemin else None
-            if self.doc:
-                self.doc.modifie = False      # déjà proposé par _peut_fermer
             racine = str(Path(__file__).resolve().parents[1])
             QProcess.startDetached(sys.executable, ["-m", "chrypix"] + ([chemin] if chemin else []), racine)
             self.close()
@@ -924,7 +930,7 @@ class Fenetre(ActionsCalques, QMainWindow):
     def _actualiser(self):
         a_doc = self.doc is not None
         pret = a_doc and self.moteur.etat == "prêt"
-        for a in (self.a_enregistrer, self.a_enregistrer_sous, self.a_tout, self.a_rien, self.a_inverser,
+        for a in (self.a_enregistrer, self.a_enregistrer_sous, self.a_fermer, self.a_tout, self.a_rien, self.a_inverser,
                   self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster, self.a_recadrer_selection, self.a_taille,
                   self.a_pivoter_d, self.a_pivoter_g, self.a_pivoter_180, self.a_miroir_h, self.a_miroir_v,
                   self.a_redresser, self.a_transformer, self.a_reglages_image, self.a_sel_agrandir,
@@ -1049,15 +1055,18 @@ class Fenetre(ActionsCalques, QMainWindow):
 
     # ================================================================ fichiers
     def ouvrir(self):
-        if not self._peut_fermer():
-            return
         dossier = self.reglages.value("dossier", str(Path.home() / "Pictures"))
-        chemin, _ = QFileDialog.getOpenFileName(self, tr("Ouvrir une photo"), dossier,
-                                                f"{tr('Images')} ({EXTENSIONS_LECTURE});;{tr('Tous les fichiers')} (*)")
-        if chemin:
+        chemins, _ = QFileDialog.getOpenFileNames(self, tr("Ouvrir une photo"), dossier,
+                                                  f"{tr('Images')} ({EXTENSIONS_LECTURE});;"
+                                                  f"{tr('Tous les fichiers')} (*)")
+        for chemin in chemins:
             self.charger(chemin)
 
     def charger(self, chemin: str):
+        for d in self.documents:                     # déjà ouverte : on revient à son onglet
+            if d.chemin is not None and str(d.chemin.resolve()).lower() == str(Path(chemin).resolve()).lower():
+                self._installer_document(d)
+                return
         try:
             doc = Document.ouvrir(chemin)
         except Exception as e:
@@ -1067,14 +1076,23 @@ class Fenetre(ActionsCalques, QMainWindow):
         self._ajouter_recent(chemin)
         self._installer_document(doc)
 
-    def _installer_document(self, doc: Document):
+    def _montrer_document(self, doc: Document | None):
+        """Affiche la photo d'un onglet (ou rien)."""
         if self.canevas.transfo is not None:
-            self.canevas.finir_transfo()
-            self._transfo_avant = None
+            self._valider_transfo()
+        if self.canevas.recadre is not None:
+            self.canevas.annuler_recadre()
+        ancien = self.doc
+        if ancien is not None:
+            for signal, fonction in ((ancien.change, self._actualiser), (ancien.calques_changes, self._sync_texte)):
+                try:
+                    signal.disconnect(fonction)
+                except (RuntimeError, TypeError):
+                    pass
         self.doc = doc
-        self.historique.clear()
-        doc.change.connect(self._actualiser)
-        doc.calques_changes.connect(self._sync_texte)
+        if doc is not None:
+            doc.change.connect(self._actualiser)
+            doc.calques_changes.connect(self._sync_texte)
         self.barre_agrandir.hide()
         self.canevas.cadre = None
         if hasattr(self, "selection_auto"):
@@ -1083,8 +1101,9 @@ class Fenetre(ActionsCalques, QMainWindow):
         self.calques.definir_document(doc)
         self._sync_texte()
         self._actualiser()
-        if doc.remarques:
+        if doc is not None and doc.remarques:
             self.statusBar().showMessage("  ".join(doc.remarques), 15000)
+            doc.remarques = []
 
     def enregistrer(self) -> bool:
         if not self.doc:
@@ -1140,6 +1159,7 @@ class Fenetre(ActionsCalques, QMainWindow):
         finally:
             QApplication.restoreOverrideCursor()
         self._ajouter_recent(str(chemin))
+        self._recuperation.enregistree(self.doc)
         ext = chemin.suffix.lower()
         textes = any(c.texte is not None for c in self.doc.calques)
         styles = any(c.style is not None and not c.style.vide() for c in self.doc.calques)
@@ -1174,14 +1194,15 @@ class Fenetre(ActionsCalques, QMainWindow):
 
     def dropEvent(self, e):
         urls = [u.toLocalFile() for u in e.mimeData().urls() if u.isLocalFile()]
-        if urls and self._peut_fermer():
-            self.charger(urls[0])
+        for u in urls:
+            self.charger(u)
 
     def closeEvent(self, e):
-        if not self._peut_fermer():
+        if not self._peut_fermer_tout():
             e.ignore()
             return
         self.moteur.arreter()
+        self._recuperation.tout_effacer()
         self.reglages.setValue("texte_defaut", json.dumps(self.panneau_texte.defaut.vers_dict(), ensure_ascii=False))
         e.accept()
 
@@ -1314,8 +1335,6 @@ class Fenetre(ActionsCalques, QMainWindow):
 
     # ================================================================ nouvelle image, fichiers récents
     def nouvelle_image(self):
-        if not self._peut_fermer():
-            return
         pp = QApplication.clipboard().image()
         l, h = (pp.width(), pp.height()) if not pp.isNull() else (1920, 1080)
         d = NouvelleImage(l, h, self)
@@ -1328,8 +1347,6 @@ class Fenetre(ActionsCalques, QMainWindow):
         img = QApplication.clipboard().image()
         if img.isNull():
             self.statusBar().showMessage(tr("Le presse-papiers ne contient pas d'image."), 5000)
-            return
-        if not self._peut_fermer():
             return
         self._installer_document(Document(img.convertToFormat(QImage.Format_ARGB32_Premultiplied)))
         self.doc.modifie = True
@@ -1366,8 +1383,7 @@ class Fenetre(ActionsCalques, QMainWindow):
                                     tr("Ce fichier n'existe plus :\n{chemin}", chemin=chemin))
             self.reglages.setValue("recents", [c for c in self._recents() if c != chemin])
             return
-        if self._peut_fermer():
-            self.charger(chemin)
+        self.charger(chemin)
 
     # ================================================================ géométrie de l'image
     def _geometrie(self, titre: str, quoi):
