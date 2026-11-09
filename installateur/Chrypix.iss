@@ -174,16 +174,16 @@ Root: HKCU; Subkey: "Software\Chrypix\Chrypix"; ValueType: string; ValueName: "l
 Root: HKA; Subkey: "Software\Classes\.chr"; ValueType: string; ValueName: ""; ValueData: "Chrypix.Projet"; Flags: uninsdeletevalue; Tasks: associer
 Root: HKA; Subkey: "Software\Classes\Chrypix.Projet"; ValueType: string; ValueName: ""; ValueData: "{cm:TypeProjet}"; Flags: uninsdeletekey; Tasks: associer
 Root: HKA; Subkey: "Software\Classes\Chrypix.Projet\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\chrypix.ico"; Tasks: associer
-Root: HKA; Subkey: "Software\Classes\Chrypix.Projet\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python\pythonw.exe"" -m chrypix ""%1"""; Tasks: associer
+Root: HKA; Subkey: "Software\Classes\Chrypix.Projet\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python\Chrypix.exe"" -m chrypix ""%1"""; Tasks: associer
 
 [Icons]
-Name: "{autoprograms}\Chrypix"; Filename: "{app}\python\pythonw.exe"; Parameters: "-m chrypix"; WorkingDir: "{app}"; IconFilename: "{app}\chrypix.ico"; AppUserModelID: "chrypox.Chrypix"
-Name: "{autodesktop}\Chrypix"; Filename: "{app}\python\pythonw.exe"; Parameters: "-m chrypix"; WorkingDir: "{app}"; IconFilename: "{app}\chrypix.ico"; AppUserModelID: "chrypox.Chrypix"; Tasks: desktopicon
+Name: "{autoprograms}\Chrypix"; Filename: "{app}\python\Chrypix.exe"; Parameters: "-m chrypix"; WorkingDir: "{app}"; IconFilename: "{app}\chrypix.ico"; AppUserModelID: "chrypox.Chrypix"
+Name: "{autodesktop}\Chrypix"; Filename: "{app}\python\Chrypix.exe"; Parameters: "-m chrypix"; WorkingDir: "{app}"; IconFilename: "{app}\chrypix.ico"; AppUserModelID: "chrypox.Chrypix"; Tasks: desktopicon
 
 [Run]
 ; Moteur IA absent et licence acceptée : le téléchargeur démarre (Chrypix sera lancé ensuite par l'utilisateur).
-Filename: "{app}\python\pythonw.exe"; Parameters: "{code:ParamsMoteur}"; WorkingDir: "{app}"; Description: "{cm:MoteurLancer}"; Check: InstallerMoteur; Flags: nowait postinstall skipifsilent runasoriginaluser
-Filename: "{app}\python\pythonw.exe"; Parameters: "-m chrypix"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,Chrypix}"; Check: not InstallerMoteur; Flags: nowait postinstall skipifsilent runasoriginaluser
+Filename: "{app}\python\Chrypix.exe"; Parameters: "{code:ParamsMoteur}"; WorkingDir: "{app}"; Description: "{cm:MoteurLancer}"; Check: InstallerMoteur; Flags: nowait postinstall skipifsilent runasoriginaluser
+Filename: "{app}\python\Chrypix.exe"; Parameters: "-m chrypix"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,Chrypix}"; Check: not InstallerMoteur; Flags: nowait postinstall skipifsilent runasoriginaluser
 
 [UninstallDelete]
 ; Fichiers créés par Python en fonctionnant (__pycache__) dans le dossier du programme.

@@ -52,7 +52,7 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
 7. [ ] **Publication** : guide complet, licences (Flux Fill dev = non commercial), dépôt public ou installateur.
 
 ## Numérotation des versions (décidée le 08/11/2026)
-A.B.C : A = 0 tant que Chrypix n'est pas fini (1.0.0 = première version finie) ; B = +1 pour un lot de nouvelles fonctions (C repart à 0) ; C = +1 pour des corrections seulement. Le numéro se change dans chrypix\__init__.py avant de fabriquer l'installateur. Dernière version d'essai : 0.3.0.
+A.B.C : A = 0 tant que Chrypix n'est pas fini (1.0.0 = première version finie) ; B = +1 pour un lot de nouvelles fonctions (C repart à 0) ; C = +1 pour des corrections seulement. Le numéro se change dans chrypix\__init__.py avant de fabriquer l'installateur. Dernière version d'essai : 0.3.1 (corrections : Réglages et Filtres ne s'ouvraient pas par le menu ; erreurs affichées et notées ; Chrypix.exe dans le Gestionnaire des tâches ; curseur sur les repères).
 
 ## Idées notées en passant
 - Nettoyer les images d'essai dans les dossiers de sortie de ComfyUI (proposé, pas encore fait).

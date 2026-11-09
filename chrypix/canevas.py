@@ -696,18 +696,25 @@ class Canevas(QWidget):
             self.doc.reperes.append((sens, v))
         self.update()
 
-    def _repere_sous(self, pos: QPointF) -> bool:
-        """Outil Déplacer sur un repère : on le prend (il sera reposé ou enlevé au lâcher)."""
-        if not self.reperes_visibles:
-            return False
-        for r in list(self.doc.reperes):
+    def _repere_a(self, pos: QPointF):
+        """Repère sous la souris (à 4 pixels d'écran près), ou None."""
+        if not self.reperes_visibles or self.doc is None:
+            return None
+        for r in self.doc.reperes:
             sens, v = r
             e = self.vers_ecran(QPointF(v, v))
             if (sens == "h" and abs(e.y() - pos.y()) <= 4) or (sens == "v" and abs(e.x() - pos.x()) <= 4):
-                self.doc.reperes.remove(r)
-                self.repere_tire = [sens, v]
-                return True
-        return False
+                return r
+        return None
+
+    def _repere_sous(self, pos: QPointF) -> bool:
+        """Outil Déplacer sur un repère : on le prend (il sera reposé ou enlevé au lâcher)."""
+        r = self._repere_a(pos)
+        if r is None:
+            return False
+        self.doc.reperes.remove(r)
+        self.repere_tire = list(r)
+        return True
 
     # ---------------------------------------------------------- dégradé, pot de peinture, formes
     def _cible_image(self):
@@ -1364,6 +1371,13 @@ class Canevas(QWidget):
                 self.setCursor(Qt.IBeamCursor)
         if self.repere_tire is not None:
             self.bouger_repere(pos)
+            self.setCursor(Qt.SplitVCursor if self.repere_tire[0] == "h" else Qt.SplitHCursor)
+        elif self.outil == DEPLACER and self.doc and not self._espace and not e.buttons():
+            r = self._repere_a(pos)
+            if r is not None:
+                self.setCursor(Qt.SplitVCursor if r[0] == "h" else Qt.SplitHCursor)
+            else:
+                self._curseur()
         if self._glisse_dessin is not None:
             self._glisse_dessin[1] = regles.aimanter(self, self.vers_image(pos))
             self._glisse_dessin[2] = bool(e.modifiers() & Qt.ShiftModifier)

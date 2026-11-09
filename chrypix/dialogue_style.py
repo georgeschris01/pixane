@@ -208,7 +208,7 @@ class DialogueStyle(QDialog):
         self.b_ajouter.setPopupMode(QToolButton.InstantPopup)
         menu = QMenu(self.b_ajouter)
         for t in TYPES:
-            menu.addAction(nom_effet(t), lambda t=t: self._ajouter(t))
+            menu.addAction(nom_effet(t), lambda *_, t=t: self._ajouter(t))
         self.b_ajouter.setMenu(menu)
         boutons.addWidget(self.b_ajouter)
         for texte, aide, fonction in (("⧉", tr("Dupliquer l'effet (ex. deux contours)"), self._dupliquer),

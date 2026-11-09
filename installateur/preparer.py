@@ -52,9 +52,12 @@ def main():
     for f in ("LICENSE", "LICENSE.en.txt"):              # licence MIT : le nom de l'auteur reste avec le programme
         shutil.copy2(RACINE / f, SORTIE / f)
     shutil.copy2(RACINE / "chrypix" / "ressources" / "chrypix.ico", SORTIE / "chrypix.ico")
+    version = re.search(r'__version__ = "([^"]+)"', (RACINE / "chrypix" / "__init__.py").read_text()).group(1)
+    # python\Chrypix.exe : pythonw.exe nommé « Chrypix » (Gestionnaire des tâches, pare-feu) avec l'icône
+    from lanceur import fabriquer
+    fabriquer(python / "pythonw.exe", SORTIE / "chrypix.ico", python / "Chrypix.exe", version)
     # compilé d'avance : Program Files est en lecture seule, Python ne pourrait pas le faire au démarrage
     compileall.compile_dir(SORTIE, quiet=1, workers=0)
-    version = re.search(r'__version__ = "([^"]+)"', (RACINE / "chrypix" / "__init__.py").read_text()).group(1)
     (RACINE / "publication" / "version.txt").write_text(version, encoding="ascii")
     # vérification : rien de personnel
     suspects = [p for p in SORTIE.rglob("*") if p.suffix.lower() in (".log", ".jpg", ".jpeg", ".safetensors",

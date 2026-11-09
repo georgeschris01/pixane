@@ -71,6 +71,8 @@ Layer names that already exist keep their original language.
   `%LOCALAPPDATA%\Chrypix\recuperation`, without slowing you down. If Chrypix closes badly (crash, power cut), it
   offers to **reopen these copies** the next time it starts; they open "to be saved", with the original file name.
   The copies are deleted when the photo is saved or closed, and when Chrypix closes normally.
+- **If an error occurs**: when a command fails, Chrypix shows it and writes it to
+  `%LOCALAPPDATA%\Chrypix\erreurs.log` (useful to report the problem).
 - **File > Export for web…** (Ctrl+Alt+Shift+S): a light copy for the Internet, without touching the photo.
   - **Format**: JPEG (photos), **WebP** (lighter at the same quality, keeps transparency), PNG (lossless).
   - **Shrink: longest side** (for example 2048 px); never enlarged.
@@ -106,7 +108,8 @@ Layer names that already exist keep their original language.
 ### Rulers, guides and grid (View menu)
 - **Rulers** (Ctrl+R): in image pixels, 0 at the top-left corner of the photo; a line follows the mouse.
 - **Guides**: drag from a ruler onto the photo to place a blue line (horizontal from the top ruler, vertical from
-  the left one). With the **Move** tool, grab a guide to move it; dragged off the photo, it disappears. *New
+  the left one). With the **Move** tool (V), grab a guide to move it (the cursor becomes a double arrow
+  over it); dragged off the photo, it disappears. *New
   guide…* places one at an exact position, *Clear guides* removes them all, Ctrl+; hides or shows them. They are
   saved in the .chr file.
 - **Grid** (Ctrl+'): regular lines over the photo; *Grid size…* sets the spacing (100 px by default).

@@ -21,12 +21,12 @@ class ActionsCalques:
         for t in ("niveaux", "courbes", "balance", "noir_blanc", "vibrance"):
             raccourci = {"niveaux": "Ctrl+L", "courbes": "Ctrl+M", "balance": "Ctrl+B",
                          "noir_blanc": "Ctrl+Alt+Shift+B"}.get(t)
-            self._action(sous, ajustements.nom(t) + "…", raccourci, lambda t=t: self.reglage(t), f"a_regl_{t}")
+            self._action(sous, ajustements.nom(t) + "…", raccourci, lambda *_, t=t: self.reglage(t), f"a_regl_{t}")
 
         m_calque.addSeparator()
         sous = m_calque.addMenu(tr("Nouveau calque de réglage"))
         for t in ajustements.TYPES:
-            self._action(sous, ajustements.nom(t) + "…", None, lambda t=t: self.nouveau_calque_reglage(t),
+            self._action(sous, ajustements.nom(t) + "…", None, lambda *_, t=t: self.nouveau_calque_reglage(t),
                          f"a_cr_{t}")
         self._action(m_calque, tr("Modifier le réglage…"), None, self.modifier_reglage, "a_modifier_reglage")
         m_calque.addSeparator()
@@ -54,7 +54,7 @@ class ActionsCalques:
         m = self.menuBar().addMenu(tr("Fi&ltres"))
         noms = filtres.noms()
         for t in filtres.FILTRES:
-            self._action(m, noms[t] + "…", None, lambda t=t: self.filtre(t), f"a_filtre_{t}")
+            self._action(m, noms[t] + "…", None, lambda *_, t=t: self.filtre(t), f"a_filtre_{t}")
         return m
 
     def _actions_calques_doc(self) -> list:

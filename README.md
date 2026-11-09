@@ -126,6 +126,8 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
   (plantage, coupure de courant), il propose au démarrage suivant de **rouvrir ces copies** ; elles s'ouvrent
   « à enregistrer », avec le nom du fichier d'origine. Les copies sont effacées quand la photo est enregistrée ou
   fermée, et quand Chrypix se ferme normalement.
+- **En cas d'erreur** : si une commande échoue, Chrypix l'affiche et la note dans
+  `%LOCALAPPDATA%\Chrypix\erreurs.log` (utile pour signaler le problème).
 - **Fichier > Exporter pour le web…** (Ctrl+Alt+Maj+S) : une copie légère pour Internet, sans toucher à la photo.
   - **Format** : JPEG (photos), **WebP** (plus léger à qualité égale, garde la transparence), PNG (sans perte).
   - **Réduire : plus grand côté** (par exemple 2048 px) ; jamais agrandie.
@@ -162,8 +164,8 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 - **Règles** (Ctrl+R) : graduées en pixels de l'image, le 0 au coin haut-gauche de la photo ; un trait suit la
   souris.
 - **Repères** : glissez depuis une règle vers la photo pour poser une ligne bleue (horizontale depuis la règle du
-  haut, verticale depuis celle de gauche). Avec l'outil **Déplacer**, attrapez un repère pour le bouger ; tiré hors
-  de la photo, il disparaît. *Nouveau repère…* le pose à une position exacte, *Effacer les repères* les enlève tous,
+  haut, verticale depuis celle de gauche). Avec l'outil **Déplacer** (V), attrapez un repère pour le bouger (le
+  curseur devient une double flèche au-dessus) ; tiré hors de la photo, il disparaît. *Nouveau repère…* le pose à une position exacte, *Effacer les repères* les enlève tous,
   Ctrl+; les cache ou les montre. Ils sont gardés dans le fichier .chr.
 - **Grille** (Ctrl+') : lignes régulières sur la photo ; *Taille de la grille…* règle l'écart (100 px par défaut).
 - **Magnétisme** (Ctrl+Maj+;, coché par défaut) : la sélection rectangle, le dégradé et les formes s'accrochent aux

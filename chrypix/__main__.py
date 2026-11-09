@@ -20,7 +20,40 @@ def traduire_qt(app: QApplication, langue: str) -> None:
         app.installTranslator(traducteur)
 
 
+def signaler_erreurs() -> None:
+    """Une erreur dans un menu ou un bouton ne doit pas passer inaperçue (avec pythonw, rien ne s'affiche) :
+    elle est notée dans %LOCALAPPDATA%\\Chrypix\\erreurs.log et montrée à l'écran."""
+    import os
+    import traceback
+    from datetime import datetime
+    deja = set()
+
+    def crochet(type_, valeur, tb):
+        texte = "".join(traceback.format_exception(type_, valeur, tb))
+        try:
+            dossier = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "Chrypix"
+            dossier.mkdir(parents=True, exist_ok=True)
+            with open(dossier / "erreurs.log", "a", encoding="utf-8") as f:
+                f.write(f"--- {datetime.now():%d/%m/%Y %H:%M:%S}\n{texte}\n")
+        except OSError:
+            pass
+        if sys.stderr is not None:
+            sys.stderr.write(texte)
+        cle = (type_.__name__, str(valeur))
+        if cle in deja or QApplication.instance() is None:
+            return
+        deja.add(cle)
+        from PySide6.QtWidgets import QMessageBox
+        from .langue import tr
+        QMessageBox.warning(None, "Chrypix", tr("Une erreur s'est produite : l'action n'a pas pu se faire.\n\n"
+                                                "{erreur}\n\nDétails dans le fichier erreurs.log "
+                                                "(%LOCALAPPDATA%\\Chrypix).", erreur=f"{type_.__name__} : {valeur}"))
+
+    sys.excepthook = crochet
+
+
 def main():
+    signaler_erreurs()
     if sys.platform == "win32":
         # pour que la barre des tâches montre l'icône de Chrypix et non celle de Python
         import ctypes

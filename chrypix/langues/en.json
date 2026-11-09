@@ -706,6 +706,7 @@
  "Ultimate SD Upscale (partie commune)": "Ultimate SD Upscale (shared part)",
  "Un ComfyUI est déjà installé sur ce PC et Chrypix l'utilise :\n{dossier}\n\nPour ajouter un modèle, mets-le dans son dossier « models ».": "A ComfyUI is already installed on this PC and Chrypix uses it:\n{dossier}\n\nTo add a model, put it in its \"models\" folder.",
  "Un groupe ou un calque de réglage n'a pas de style : choisis un calque d'image ou de texte.": "A group or an adjustment layer has no style: choose an image or text layer.",
+ "Une erreur s'est produite : l'action n'a pas pu se faire.\n\n{erreur}\n\nDétails dans le fichier erreurs.log (%LOCALAPPDATA%\\Chrypix).": "An error occurred: the action could not be completed.\n\n{erreur}\n\nDetails in the file erreurs.log (%LOCALAPPDATA%\\Chrypix).",
  "Une mise à jour du moteur IA attend : menu IA > Installer le moteur IA.": "An AI engine update is waiting: AI > Install the AI engine.",
  "Une nouvelle version de Chrypix est disponible : {v} (vous avez {actuelle}).\n\n{notes}\n\nOuvrir la page de téléchargement ?": "A new version of Chrypix is available: {v} (you have {actuelle}).\n\n{notes}\n\nOpen the download page?",
  "Upscale": "Upscale",

@@ -449,7 +449,7 @@ class PanneauCalques(QWidget):
     def _menu_reglage(self):
         menu = QMenu(self)
         for t in ajustements.TYPES:
-            menu.addAction(ajustements.nom(t), lambda t=t: self.reglage_demande.emit(t))
+            menu.addAction(ajustements.nom(t), lambda *_, t=t: self.reglage_demande.emit(t))
         b = self.boutons["reglage"]
         menu.exec(b.mapToGlobal(b.rect().bottomLeft()))
 
