@@ -1872,16 +1872,16 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                 res = garder_teinte(original, tableau(dans_sel(img).convertToFormat(FORMAT_IMAGE)))
                 return QImage(np.ascontiguousarray(res).data, w, h, w * 4, FORMAT_IMAGE).copy()
         if coloriser:
-            nom_calque, suffixe = tr("Restaurée et colorisée"), tr("_restaurée_colorisée")
+            nom_calque, suffixe = tr("Restaurée et colorisée"), tr("_restauree_colorisee")
         else:
-            nom_calque, suffixe = tr("Restaurée"), tr("_restaurée")
+            nom_calque, suffixe = tr("Restaurée"), tr("_restauree")
         self._lancer(titre, False, lambda nom: recettes.restaurer(nom, taille, coloriser), apres=apres,
                      nom_calque=nom_calque, suffixe=suffixe)
 
     def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None,
                 placer=None, nom_calque: str | None = None, suffixe: str | None = None):
         """Envoie l'image au moteur, attend, puis propose les résultats. nom_calque : nom du calque du résultat
-        (le titre sinon) ; suffixe : ajouté au nom proposé à l'enregistrement (ex. « _restaurée »)."""
+        (le titre sinon) ; suffixe : ajouté au nom proposé à l'enregistrement (ex. « _restauree »)."""
         doc = self.doc
         if png is None:
             png = doc.png_pour_ia(avec_selection)

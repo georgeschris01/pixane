@@ -78,11 +78,11 @@ verifier(lance["fabriquer"]("a.png")[0]["11"]["inputs"]["model_name"] == recette
 f.ia_nettete()
 verifier("RealESRGAN" in str(lance["fabriquer"]("a.png")[0]), "Netteté : RealESRGAN")
 
-# Restaurer : nom du calque et nom proposé à l'enregistrement (« _restaurée », « _restaurée_colorisée »)
+# Restaurer : nom du calque et nom proposé à l'enregistrement (« _restauree », « _restauree_colorisee »)
 from PySide6.QtWidgets import QFileDialog, QMessageBox  # noqa: E402
 f._lancer = lambda titre, sel, fabriquer, apres=None, **k: lance.update(titre=titre, apres=apres, **k)
-for coloriser, calque_attendu, ajout in ((False, "Restaurée", "_restaurée"),
-                                         (True, "Restaurée et colorisée", "_restaurée_colorisée")):
+for coloriser, calque_attendu, ajout in ((False, "Restaurée", "_restauree"),
+                                         (True, "Restaurée et colorisée", "_restauree_colorisee")):
     lance.clear()
     QMessageBox.exec = lambda self, c=coloriser: None
     QMessageBox.clickedButton = lambda self, c=coloriser: self.buttons()[[b.text() for b in self.buttons()].index(
@@ -95,11 +95,11 @@ avant = len(f.doc.calques)
 f._appliquer_resultat(f.doc, f.doc.image.copy(), "Restaurer une vieille photo", None, "Restaurée")
 verifier(f.doc.calques[-1].nom.startswith("Restaurée") or len(f.doc.calques) == avant,
          "calque du résultat nommé « Restaurée »")
-f.doc.suffixe_nom = "_restaurée"
+f.doc.suffixe_nom = "_restauree"
 propose = {}
 QFileDialog.getSaveFileName = lambda *a, **k: (propose.update(nom=a[2]) or ("", ""))
 f.enregistrer_sous()
-verifier(propose.get("nom", "").endswith(("_restaurée.jpg", "_restaurée.chr")), f"nom proposé : {propose.get('nom')}")
+verifier(propose.get("nom", "").endswith(("_restauree.jpg", "_restauree.chr")), f"nom proposé : {propose.get('nom')}")
 print("ERREURS :", erreurs if erreurs else "aucune")
 sys.stdout.flush()
 for d in f.documents:          # aucune question à la fermeture
