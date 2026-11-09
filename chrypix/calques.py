@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QCursor, QImage, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import (QApplication, QComboBox, QGraphicsOpacityEffect, QHBoxLayout, QInputDialog, QLabel,
-                               QListWidget, QListWidgetItem, QMenu, QSlider, QToolButton, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGraphicsOpacityEffect, QHBoxLayout, QInputDialog,
+                               QLabel, QListWidget, QListWidgetItem, QMenu, QSlider, QToolButton, QVBoxLayout, QWidget)
 
 from . import ajustements
 from .composition import GROUPES_MODES, MODES, noms_modes, parents
@@ -186,6 +186,13 @@ class PanneauCalques(QWidget):
         self.liste.setIconSize(VIGNETTE)
         self.liste.currentRowChanged.connect(self._ligne_choisie)
         self.liste.itemDoubleClicked.connect(self._double_clic)
+        # glisser un calque à la souris pour changer sa place (comme Photoshop)
+        self._glisse = None                 # {"depart": point, "rang": ligne prise, "actif": en cours ?}
+        self.liste.viewport().installEventFilter(self)
+        self._trait = QFrame(self.liste.viewport())
+        self._trait.setFixedHeight(3)
+        self._trait.setStyleSheet("background: #f97316; border: none")
+        self._trait.hide()
         lay.addWidget(self.liste, 1)
 
         opacite = QHBoxLayout()
@@ -346,6 +353,88 @@ class PanneauCalques(QWidget):
         self.curseur.setEnabled(bool(doc) and not verrou)
         self.mode.setEnabled(bool(doc) and not verrou and not (doc and doc.calque_actif.reglage is not None))
         self.curseur.setToolTip(tr("Calque verrouillé") if verrou else "")
+
+    # ---------------------------------------------------------- glisser un calque
+    def _rang_cible(self, y: float) -> int:
+        """Place visée (0 = tout en haut) d'après la hauteur de la souris : au-dessus ou en dessous de la ligne
+        survolée selon sa moitié."""
+        n = self.liste.count()
+        for rang in range(n):
+            r = self.liste.visualItemRect(self.liste.item(rang))
+            if y < r.center().y():
+                return rang
+        return n
+
+    def eventFilter(self, obj, ev):
+        if obj is not self.liste.viewport() or self.doc is None:
+            return False
+        t = ev.type()
+        if t == QEvent.MouseButtonPress and ev.button() == Qt.LeftButton:
+            it = self.liste.itemAt(ev.position().toPoint())
+            self._glisse = {"depart": ev.position(), "rang": self.liste.row(it), "actif": False} if it else None
+        elif t == QEvent.MouseMove and self._glisse is not None and ev.buttons() & Qt.LeftButton:
+            g = self._glisse
+            if not g["actif"] and (ev.position() - g["depart"]).manhattanLength() >=                     QApplication.startDragDistance():
+                g["actif"] = True
+                self.liste.setCursor(Qt.ClosedHandCursor)
+            if g["actif"]:
+                cible = self._rang_cible(ev.position().y())
+                n = self.liste.count()
+                if cible < n:
+                    y = self.liste.visualItemRect(self.liste.item(cible)).top()
+                else:
+                    y = self.liste.visualItemRect(self.liste.item(n - 1)).bottom()
+                self._trait.setGeometry(0, max(0, y - 1), self.liste.viewport().width(), 3)
+                self._trait.show()
+                self._trait.raise_()
+                return True
+        elif t == QEvent.MouseButtonRelease and self._glisse is not None:
+            g, self._glisse = self._glisse, None
+            self._trait.hide()
+            self.liste.unsetCursor()
+            if g["actif"]:
+                self.deposer(g["rang"], self._rang_cible(ev.position().y()))
+                return True
+        return False
+
+    def deposer(self, rang: int, cible: int):
+        """Calque de la ligne « rang » posé avant la ligne « cible » (lignes du haut vers le bas) : il avance d'une
+        place à la fois (règles de Monter / Descendre : entre dans un groupe ouvert, sort d'un groupe), une seule
+        entrée dans Annuler."""
+        doc = self.doc
+        if not (0 <= rang < len(self._indexes)) or cible in (rang, rang + 1):
+            return
+        index = self._indexes[rang]
+        sens = 1 if cible < rang else -1                  # vers le haut de la liste = index plus grand
+        voulu = cible if sens > 0 else cible - 1          # ligne où le calque doit arriver
+        sauve = (doc.calques, doc.actif)
+        etat = None
+        try:
+            doc.actif = index
+            for _ in range(2 * len(doc.calques) + 2):
+                e = doc.etat_deplacer(doc.actif, doc.actif + sens)
+                if e is None:
+                    break
+                etat = e
+                doc.calques, doc.actif = e[0], e[1]
+                lignes = self._lignes()
+                if doc.actif not in lignes:
+                    break
+                ici = lignes.index(doc.actif)
+                if (sens > 0 and ici <= voulu) or (sens < 0 and ici >= voulu):
+                    # un pas de plus qui ne change pas la ligne : il entre dans le groupe juste au-dessus
+                    e2 = doc.etat_deplacer(doc.actif, doc.actif + sens)
+                    if sens > 0 and e2 is not None:
+                        doc.calques, doc.actif = e2[0], e2[1]
+                        lignes2 = self._lignes()
+                        if doc.actif in lignes2 and lignes2.index(doc.actif) == ici:
+                            etat = e2
+                    break
+        finally:
+            doc.calques, doc.actif = sauve
+            doc._fusion = None
+        if etat is not None:
+            self.demande.emit(etat, tr("Déplacer le calque"))
 
     # ---------------------------------------------------------- actions
     def _ligne_choisie(self, rang: int):

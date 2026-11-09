@@ -2,36 +2,87 @@
 
 [Français](README.md) · **English**
 
-Free photo editor for Windows, with artificial intelligence retouching **on your own PC**: no subscription, no photos sent over the Internet. Interface in English and French.
+Free photo editor for Windows, with artificial intelligence retouching **that runs entirely on your own PC**. Interface in English and French.
 
+> **No online AI.** Chrypix never sends your photos over the Internet: every AI action runs on your computer, with models installed on your disk. No account, no subscription, no limit. The Internet is only used to download the AI engine once; after that, Chrypix works even offline.
+>
+> **Speed depends on your PC**, above all on the **graphics card**: the more powerful it is (and the more memory it has), the faster the AI processing. See [System requirements](#system-requirements).
+
+## What Chrypix can do
+
+**AI retouching** (several proposals each time: you pick the best one, as in Photoshop; the result arrives on its own layer, the original photo is never damaged)
 - **Erase** an object: paint over it, the AI removes it and rebuilds the background
-- **Fill** an area: the AI invents what fits best in that spot
-- **Expand** the image beyond its edges (outpaint): the AI extends the scenery
-- **Upscale**: increase the resolution (×1.5 to ×4), fast or sharper
-- Several proposals each time: you pick the best one, as in Photoshop
-- Layers: visibility, opacity, lock, order, merge; each AI result arrives in its own layer
-- Non-destructive **layer styles**: drop shadow (including a realistic shadow), perspective ground shadow, glows, multiple outlines, bevel, overlays; 14 ready-made styles, saved styles
-- Rectangle, lasso or brush selection; AI object selection and quick selection (SAM 3.1); magic wand adjusted by dragging; cut, copy, paste, delete
-- Retouching tools: crop, colour brush, clone stamp, layer eraser, move
-- Editable text: font, size, colour, outline, shadow, background, rotation
-- JPG, PNG, TIFF, WebP, BMP, and `.chr` / `.ora` to keep the layers; EXIF information and colour profile preserved
+- **Fill** an area: the AI invents what fits best in that spot (with or without a prompt)
+- **Expand the image** beyond its edges (outpaint): the AI extends the scenery; it also redraws damaged edges
+- **Upscale**: increase the resolution (×1.5 to ×4), fast or sharper (details redrawn)
+- **Remove** (J): one brush stroke on a small defect (wire, spot, dust), it disappears on release
+- **Remove background** and **Select subject** in one click
+- **Reduce noise** (grain, JPEG artefacts) and **Sharpen** (slight blur)
+- **Restore an old photo** (scratches, stains, creases, grain), keeping its colours or **colourising** it
+
+**Selection**
+- Rectangle, lasso, selection brush and eraser; add / subtract with Shift / Alt
+- AI **object selection** and **quick selection** (SAM 3.1), **magic wand** adjusted by dragging
+- **Refine edge** for hair, fur and soft edges; expand, shrink, feather, invert
+
+**Layers, as in Photoshop**
+- Visibility, opacity, lock, order (buttons or **drag with the mouse**), merge, flatten
+- **17 blend modes**, **layer masks**, **groups**, **adjustment layers** editable at any time
+- Non-destructive **layer styles**: drop shadow (including a realistic shadow), perspective ground shadow, inner shadow, glows, multiple outlines, bevel, colour and gradient overlays; 14 ready-made styles, saved styles
+
+**Tools**
+- Crop, colour brush, clone stamp, **healing brush**, layer eraser, move
+- **Gradient**, **paint bucket**, **shapes** (rectangle, ellipse, line, arrow)
+- **Editable text**: font, size, colour, outline, shadow, background, rotation, curved text
+- Rulers, guides, grid and snapping
+
+**Adjustments and filters**
+- Image adjustments with an **Auto** button (brightness, contrast, saturation, hue, temperature, sharpness)
+- **Levels**, **Curves**, **Colour balance**, **Black & white** (with sepia toning), **Vibrance**
+- Filters: Gaussian blur, motion blur, noise reduction, sharpen, vignette
 - Image size, rotate, flip, straighten; transform a layer (size, rotation)
-- Remove the background or select the subject in one click (AI)
-- Image adjustments with an Auto button; expand, shrink, soften a selection
-- Undo / Redo (last 30 steps) with a History panel; recent files
-- Light or dark theme, Windows accent colour
+
+**Files**
+- JPG, PNG, TIFF, WebP, BMP; **PSD** (Photoshop) with layers, groups, masks, modes and styles; `.chr` (Chrypix project, everything stays editable) and `.ora` (Krita, GIMP)
+- **Several photos open** in tabs, each with its own Undo
+- **Autosave** and recovery after a crash
+- **Export for web** (JPEG, WebP, PNG; size, quality, file size shown, personal information removed)
+- **Batch processing** of a whole folder (resize, auto adjust, AI upscale, background, format)
+- Undo / Redo with a History panel; recent files
+
+**Comfort**
+- Light or dark theme, Windows accent colour; built-in guide with search (F1)
 - Installer that checks the PC and downloads the AI engine itself (ComfyUI and the models), resuming after an interruption
+
+## System requirements
+
+| | Minimum | Recommended |
+|---|---|---|
+| **System** | Windows 10 or 11, 64-bit | Windows 11, 64-bit |
+| **Graphics card** | NVIDIA, **8 GB** of memory (for example RTX 3060 Ti, 3070, 4060) | NVIDIA RTX, **12 GB or more** (for example RTX 3060 12 GB, 4070, 4080, 4090) |
+| **RAM** | 16 GB (Flux actions are then slow) | **32 GB** |
+| **Disk** | 35 GB free for the AI engine | 60 GB free (with the options), on an SSD |
+| **Processor** | recent 4-core | 6 cores or more |
+
+Chrypix has been tested on an **RTX 3060 Ti (8 GB) with 32 GB of RAM**; the minimum is an estimate. **Without an NVIDIA card**, Chrypix opens and edits normally (layers, text, adjustments, filters, export…), but the AI actions do not work.
+
+**Times measured on this test PC** (a more powerful card is faster):
+
+| Action | Time |
+|---|---|
+| Object selection, quick selection | about 1 second |
+| Remove background, Remove (J), Reduce noise | a few seconds |
+| Sharpen (AI) | 15 to 20 seconds |
+| Fill, Expand image | about 1 minute per proposal |
+| Erase | about 2 minutes |
+| Sharp upscale | 20 to 30 seconds per 1024 px tile |
+| Restore an old photo | about 2 minutes per proposal |
 
 ## Download
 
 **[Chrypix for Windows](../../releases/latest)** (64-bit installer, `Chrypix-Setup-<version>-64bits.exe`).
 
-**You need:**
-- Windows 10 or 11, 64-bit;
-- an **NVIDIA** graphics card with **8 GB** of memory (tested on an RTX 3060 Ti); without it, Chrypix opens and edits, but the AI actions do not work;
-- about **32 GB** of space for the AI engine (21.4 GB to download), 44 GB with the "Sharp upscale" option.
-
-The installer checks the graphics card and the free space, then offers to download the AI engine from the official sites (GitHub, Hugging Face). The Flux Fill model is under the **non-commercial FLUX.1 [dev] licence**: you must accept it to install it.
+The installer checks the graphics card and free space, then offers to download the AI engine from the official sites (GitHub, Hugging Face): **21.5 GB**, about 31 GB on disk. Two optional extras: **Flux Schnell** for "Sharp upscale" (11.8 GB) and **Flux Kontext** for "Restore an old photo" (11.9 GB). The Flux Fill and Flux Kontext models are under the **non-commercial FLUX.1 [dev] licence**: you must accept it to install them.
 
 > **"Windows protected your PC" message:** Chrypix is free and not signed, because a code-signing certificate costs money every year. Windows therefore shows this message until the program is well enough known. Click **More info**, then **Run anyway**. Check that the file really comes from this page; its SHA-256 fingerprint is given with each version.
 
@@ -351,8 +402,11 @@ AI actions, the result goes on a **new layer** (Ctrl+Z undoes it).
   then brought back to its size. It also smooths grain: on a very textured photo, the *Sharpen* filter (Filters
   menu) may be better. 15 to 20 seconds.
 - **Restore an old photo…**: the AI **redraws** the whole photo, removing scratches, stains, dust, creases and
-  grain, and making contrast and faces sharper. *Restore and colourise* also adds natural colours to a black &
-  white or sepia photo. Two proposals, about **2 minutes each**; *More proposals* asks for others. The AI may change
+  grain, and making contrast and faces sharper. The photo keeps **exactly its size and proportions**.
+  - **Restore** keeps the **original colours**: a black & white or sepia photo stays so, a colour photo keeps its
+    colours. The AI only provides the light and the details; Chrypix then puts back the original's tint.
+  - **Restore and colourise** also adds natural colours to a black & white or sepia photo.
+   Two proposals, about **2 minutes each**; *More proposals* asks for others. The AI may change
   small details (facial features, letters): compare carefully with the original (layer eye). **Flux Kontext dev**
   model (11.9 GB, FLUX.1 [dev] licence, **non-commercial** use), optional: *Flux Kontext* box in **AI > Install the
   AI engine…**.
@@ -373,7 +427,7 @@ An opened photo has a single layer, "Background".
 | **Name** | Double-click the name to rename; double-click elsewhere on the row: layer style |
 | **Opacity** | Transparency of the selected layer, from 0% (invisible) to 100%; shown under the name when < 100% |
 | **Padlock** (right of the name) | Locks the layer to protect it: it can no longer be erased, deleted or merged, and its opacity is fixed; Flatten is disabled while a layer is locked. AI actions are refused with a message: Erase and Fill if the selected layer is locked, Expand and Upscale if any layer is locked (they change the size of every layer). It can still be hidden, renamed and moved up / down. The open padlock is discreet, the closed padlock clearly visible. The lock is kept in .chr and .ora files |
-
+| **Drag a layer** | Change its place in the stack with the mouse: grab the row (on the name) and drag it up or down; an **orange line** shows where it will go. Dropped just below a layer of an open group, it enters the group; a group moves with its layers. A single Undo step |
 | **Blend mode** (list at the top of the panel) | How the layer mixes with what is below (see below) |
 | **Mask thumbnail** (right of the thumbnail) | The layer's mask, if it has one. Click: you paint the mask (orange frame); click the layer thumbnail: you paint the pixels again. Shift+click: disable / enable the mask (crossed in red) |
 
@@ -383,7 +437,7 @@ An opened photo has a single layer, "Background".
 | **New layer** | Adds an empty layer above the selected layer (Ctrl+Shift+N) |
 | **New group** | Creates a folder of layers (Ctrl+G puts the selected layer in a group) |
 | **Mask** | Adds a mask to the selected layer (from the selection if there is one) |
-| **Adjustment** | Menu: new adjustment layer (Levels, Curves, Colour balance, Black & white, Vibrance, Brightness/contrast…) |
+| **Adjustment** | Menu: new adjustment layer (Levels, Curves, Colour balance, Black & white, Vibrance, Image adjustments) |
 | **Duplicate** | Copies the selected layer (Ctrl+J); a group is copied with its layers |
 | **fx** | Layer style (see below) |
 | **Move up / down** | Changes the layer's place in the stack; enters an open group, leaves it at the edge; a group moves with its layers |
@@ -419,7 +473,7 @@ group an opacity, a blend mode and a mask that apply to everything inside.
 
 ### Adjustment layers
 An **adjustment layer** applies an adjustment (Levels, Curves, Colour balance, Black & white, Vibrance,
-Brightness/contrast…) to **everything below it**, without touching the pixels: you can edit it (double-click it, or
+Image adjustments) to **everything below it**, without touching the pixels: you can edit it (double-click it, or
 **Layer > Edit adjustment…**), hide it (eye), lower its opacity or delete it at any time.
 - **Layer > New adjustment layer**, or the panel's **Adjustment** button. If there is a selection, it becomes the
   adjustment layer's mask (the adjustment only applies there).
@@ -457,7 +511,7 @@ result live; **OK** keeps the style (a single step in Undo), **Cancel** puts eve
 - **Layer** menu: **Copy style** / **Paste style** (onto another layer), **Remove style**, **Merge style into pixels**
   (to erase or paint the layer with its effects).
 - Saving: in **.chr**, styles stay editable. In **.psd** and **.ora** they are merged into the pixels (visible in
-  Photoshop, Krita, GIMP, but no longer editable). Effects of an opened PSD are not imported.
+  Photoshop, Krita, GIMP, but no longer editable). Styles of an opened PSD are imported and stay editable (see chapter 2).
 - Merge and Flatten also put the effects into the pixels.
 
 ### Layer eraser (G)
@@ -569,8 +623,16 @@ Drag from the start to the end of the gradient (**Shift**: horizontal, vertical 
 selection if there is one. On a **mask**, it makes a gradual fade (for example to blend two photos).
 
 ### Paint bucket (K)
-Click an area: it fills with the chosen colour, following the colours of the visible image. **Tolerance** (top
-bar): higher, the colour spreads to more distant shades. Alt+click: pick a colour.
+**What it is for**: filling a plain-coloured area in a single click, without painting it by hand. For example:
+changing the colour of a plain background or a banner, filling the inside of a letter or a shape, colouring an area
+of a line drawing, or filling a selection.
+
+**How**: choose the colour (swatch in the top bar, or **Alt+click** on the photo to pick it), then click inside the
+area: it fills until the colour changes, following the visible image.
+- **Tolerance** (top bar): at 0, only the exact colour is filled; higher, the fill spreads to nearby shades (useful
+  for a slightly graded background or a JPEG photo).
+- If there is a **selection**, it stays inside it. It paints on the selected layer (tip: an empty layer above makes
+  it easy to go back).
 
 ### Shapes (U)
 Drag to draw a **rectangle**, **rounded rectangle**, **ellipse**, **line** or **arrow** (**Shift**: square, circle,
@@ -723,7 +785,7 @@ asks two questions (default answer "No"):
   way, such as ComfyUI Desktop, is never touched;
 - also delete the **settings** (language, theme, last folder, text style, engine folder) and the logs?
 
-
+**Licences and test hardware**:
 - Chrypix: Chrypix Licence 1.1, © 2026 Georges Christophe (chrypox): free of charge, may be modified and shared,
   author's name required, no sale (of Chrypix or a modified version); file `LICENSE` (French text prevails;
   translation `LICENSE.en.txt`).

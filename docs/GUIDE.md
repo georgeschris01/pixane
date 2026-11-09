@@ -2,7 +2,50 @@
 
 Chrypix est un éditeur photo pour Windows qui retouche les images avec une IA qui tourne **sur votre PC**
 (pas d'abonnement, pas d'envoi de photos sur Internet).
-Ce guide explique chaque outil et chaque réglage. Il est complété à chaque nouvelle fonction.
+Ce guide explique chaque outil et chaque réglage : **à quoi il sert** et **comment s'en servir**. Il est complété
+à chaque nouvelle fonction.
+
+## Avant de commencer : une IA 100 % sur votre PC
+
+- **Aucune IA en ligne.** Toutes les actions IA de Chrypix (Effacer, Remplir, Agrandir, Upscale, sélection d'objet,
+  arrière-plan, réduction du bruit, netteté, restauration…) tournent **sur votre ordinateur**, avec des modèles
+  installés sur votre disque. **Aucune photo n'est envoyée sur Internet** ; pas de compte, pas d'abonnement, pas de
+  limite d'utilisation. Internet sert seulement à télécharger le moteur IA une fois (et ses mises à jour, si vous
+  les acceptez). Ensuite, Chrypix marche même sans connexion.
+- **La vitesse dépend de votre PC, surtout de la carte graphique** : c'est elle qui fait les calculs de l'IA. **Plus
+  elle est puissante et plus elle a de mémoire, plus les traitements vont vite.** Une carte récente avec 12, 16 ou
+  24 Go de mémoire va nettement plus vite que celle du PC d'essai ; une carte plus modeste, plus lentement. La
+  mémoire vive (RAM) compte aussi : quand la carte graphique manque de mémoire, une partie du modèle passe par la RAM,
+  ce qui ralentit.
+- **Durées mesurées** sur le PC d'essai (NVIDIA RTX 3060 Ti 8 Go, 32 Go de mémoire vive) :
+
+| Action | Durée |
+|---|---|
+| Démarrage du moteur IA (à l'ouverture de Chrypix) | environ 20 secondes |
+| Sélection d'objet, sélection rapide | environ 1 seconde |
+| Supprimer l'arrière-plan, sélectionner le sujet, outil Supprimer (J), Réduire le bruit | quelques secondes |
+| Netteté (IA) | 15 à 20 secondes |
+| Remplir, Agrandir l'image | environ 1 minute par proposition |
+| Effacer | environ 2 minutes |
+| Upscale net | 20 à 30 secondes par morceau de 1024 px |
+| Restaurer une vieille photo | environ 2 minutes par proposition |
+
+La première utilisation d'un modèle après le démarrage est un peu plus longue (il se charge en mémoire).
+
+### Configuration
+
+| | Minimum | Conseillé |
+|---|---|---|
+| **Système** | Windows 10 ou 11, 64 bits | Windows 11, 64 bits |
+| **Carte graphique** | NVIDIA, **8 Go** de mémoire (par exemple RTX 3060 Ti, 3070, 4060) | NVIDIA RTX, **12 Go ou plus** (par exemple RTX 3060 12 Go, 4070, 4080, 4090) |
+| **Mémoire vive** | 16 Go (les actions Flux sont alors lentes) | **32 Go** |
+| **Disque** | 35 Go libres pour le moteur IA | 60 Go libres (avec Flux Schnell et Flux Kontext), sur un SSD |
+| **Processeur** | 4 cœurs récent | 6 cœurs ou plus |
+
+Chrypix a été testé sur une **RTX 3060 Ti (8 Go) avec 32 Go de mémoire vive**. Le minimum est une estimation : il
+n'a pas été essayé sur d'autres PC. **Sans carte NVIDIA** (carte AMD ou Intel, PC portable sans carte graphique),
+Chrypix s'ouvre et retouche normalement (calques, texte, réglages, filtres, export…), mais les actions IA ne
+marchent pas.
 
 ---
 
@@ -307,8 +350,13 @@ l'intérieur. Comme les autres actions IA, le résultat va dans un **nouveau cal
   RealESRGAN puis ramenée à sa taille. Elle lisse aussi le grain : sur une photo très texturée, le filtre
   *Netteté* (menu Filtres) peut être préférable. 15 à 20 secondes.
 - **Restaurer une vieille photo…** : l'IA **redessine** toute la photo en enlevant rayures, taches, poussières,
-  plis et grain, et en rendant le contraste et les visages plus nets. *Restaurer et coloriser* met aussi des
-  couleurs naturelles à une photo en noir et blanc ou sépia. Deux propositions, environ **2 minutes chacune** ;
+  plis et grain, et en rendant le contraste et les visages plus nets. La photo garde **exactement sa taille et ses
+  proportions**.
+  - **Restaurer** garde les **couleurs d'origine** : une photo noir et blanc ou sépia le reste, une photo en couleur
+    garde ses couleurs. L'IA ne fournit que la lumière et les détails ; Chrypix remet ensuite la teinte de
+    l'original.
+  - **Restaurer et coloriser** met en plus des couleurs naturelles à une photo en noir et blanc ou sépia.
+   Deux propositions, environ **2 minutes chacune** ;
   *Autres propositions* en redemande. L'IA peut changer de petits détails (traits d'un visage, lettres) :
   comparez bien avec l'original (œil du calque). Modèle **Flux Kontext dev** (11,9 Go, licence FLUX.1 [dev], usage
   **non commercial**), facultatif : case *Flux Kontext* dans **IA > Installer le moteur IA…**.
@@ -329,7 +377,7 @@ devant. Une photo ouverte a un seul calque, « Arrière-plan ».
 | **Nom** | Double-clic sur le nom pour renommer ; double-clic ailleurs sur la ligne : style du calque |
 | **Opacité** | Transparence du calque choisi, de 0 % (invisible) à 100 % ; affichée sous le nom quand < 100 % |
 | **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. Les actions IA sont refusées avec un message : Effacer et Remplir si le calque choisi est verrouillé, Agrandir et Upscale si un calque quelconque est verrouillé (ils changent la taille de tous les calques). On peut toujours le masquer, le renommer et le monter / descendre. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .chr et .ora |
-
+| **Glisser un calque** | Changer sa place dans la pile à la souris : prenez la ligne (sur le nom) et glissez-la vers le haut ou le bas ; un **trait orange** montre où il ira. Lâché juste sous un calque d'un groupe ouvert, il entre dans le groupe ; un groupe bouge avec ses calques. Une seule étape dans Annuler |
 | **Mode de fusion** (liste en haut du panneau) | Comment le calque se mélange à ce qui est dessous (voir plus bas) |
 | **Vignette du masque** (à droite de la vignette) | Le masque du calque, s'il en a un. Clic : on peint le masque (cadre orange) ; clic sur la vignette du calque : on repeint les pixels. Maj+clic : désactiver / réactiver le masque (barré en rouge) |
 
@@ -339,7 +387,7 @@ devant. Une photo ouverte a un seul calque, « Arrière-plan ».
 | **Nouveau calque** | Ajoute un calque vide au-dessus du calque choisi (Ctrl+Maj+N) |
 | **Nouveau groupe** | Crée un dossier de calques (Ctrl+G met le calque choisi dans un groupe) |
 | **Masque** | Ajoute un masque au calque choisi (d'après la sélection s'il y en a une) |
-| **Réglage** | Menu : nouveau calque de réglage (Niveaux, Courbes, Balance, Noir et blanc, Vibrance, Luminosité/contraste…) |
+| **Réglage** | Menu : nouveau calque de réglage (Niveaux, Courbes, Balance, Noir et blanc, Vibrance, Réglages de l'image) |
 | **Dupliquer** | Copie le calque choisi (Ctrl+J) ; un groupe est copié avec ses calques |
 | **fx** | Style du calque (voir plus bas) |
 | **Monter / Descendre** | Change la place du calque dans la pile ; entre dans un groupe ouvert, en sort au bord ; un groupe bouge avec ses calques |
@@ -377,7 +425,7 @@ supprimer d'un coup, et donner au groupe une opacité, un mode de fusion et un m
 
 ### Calques de réglage
 Un **calque de réglage** applique un réglage (Niveaux, Courbes, Balance des couleurs, Noir et blanc, Vibrance,
-Luminosité/contraste…) à **tout ce qui est dessous**, sans toucher aux pixels : on peut le modifier (double-clic
+Réglages de l'image) à **tout ce qui est dessous**, sans toucher aux pixels : on peut le modifier (double-clic
 dessus, ou **Calque > Modifier le réglage…**), le masquer (œil), baisser son opacité ou le supprimer à tout moment.
 - **Calque > Nouveau calque de réglage**, ou le bouton **Réglage** du panneau. S'il y a une sélection, elle devient
   le masque du calque de réglage (le réglage ne s'applique que là).
@@ -416,7 +464,7 @@ calque…**. La photo montre le résultat en direct ; **OK** garde le style (une
 - Menu **Calque** : **Copier le style** / **Coller le style** (sur un autre calque), **Enlever le style**, **Mettre
   le style dans les pixels** (pour gommer ou peindre le calque avec ses effets).
 - Enregistrement : en **.chr**, les styles restent modifiables. En **.psd** et **.ora**, ils sont mis dans les pixels
-  (visibles dans Photoshop, Krita, GIMP, mais plus modifiables). Les effets d'un PSD ouvert ne sont pas repris.
+  (visibles dans Photoshop, Krita, GIMP, mais plus modifiables). Les styles d'un PSD ouvert sont repris et restent modifiables (voir chapitre 2).
 - Fusionner ou aplatir met aussi les effets dans les pixels.
 
 ### Gomme de calque (G)
@@ -530,9 +578,16 @@ rien). Dans la sélection s'il y en a une. Sur un **masque**, il fait un fondu p
 deux photos).
 
 ### Pot de peinture (K)
-Clic sur une zone : elle se remplit de la couleur choisie, en suivant les couleurs de l'image visible.
-**Tolérance** (barre du haut) : plus haut, la couleur déborde sur des teintes plus éloignées. Alt+clic : prendre
-une couleur.
+**À quoi il sert** : remplir d'un seul clic une zone de couleur unie, sans la peindre à la main. Par exemple :
+changer la couleur d'un fond uni ou d'un bandeau, remplir l'intérieur d'une lettre ou d'une forme, colorer une zone
+d'un dessin au trait, ou remplir une sélection.
+
+**Comment** : choisissez la couleur (pastille de la barre du haut, ou **Alt+clic** sur la photo pour la prendre),
+puis cliquez dans la zone : elle se remplit jusqu'à ce que la couleur change, en suivant l'image visible.
+- **Tolérance** (barre du haut) : à 0, seule la couleur exacte est remplie ; plus haut, le remplissage déborde sur
+  des teintes voisines (utile pour un fond légèrement dégradé ou une photo JPEG).
+- S'il y a une **sélection**, il reste dedans. Il peint sur le calque choisi (astuce : un calque vide au-dessus
+  permet de revenir en arrière facilement).
 
 ### Formes (U)
 Glissez pour dessiner un **rectangle**, un **rectangle arrondi**, une **ellipse**, une **ligne** ou une **flèche**
@@ -686,7 +741,7 @@ Applications. Le désinstalleur pose deux questions (réponse « Non » par déf
 - supprimer aussi les **réglages** (langue, thème, dernier dossier, style de texte, dossier du moteur) et les
   journaux ?
 
-
+**Licences et matériel d'essai** :
 - Chrypix : Licence Chrypix 1.1, © 2026 Georges Christophe (chrypox) : gratuit, modifiable et partageable,
   nom de l'auteur obligatoire, aucune vente (ni de Chrypix ni d'une version modifiée) ; fichier `LICENSE`.
   Éléments tiers : `docs\LICENCES_TIERS.md`.

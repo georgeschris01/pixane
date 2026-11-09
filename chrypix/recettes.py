@@ -39,7 +39,8 @@ TEXTE_RESTAURER = ("Restore this old damaged photo: remove scratches, dust, crea
                    "torn or missing parts, fix faded contrast, make faces and details sharp and natural. Keep exactly "
                    "the same people, faces, expressions, clothes, pose, framing and composition.")
 TEXTE_COLORISER = (" Colorize it with natural, realistic colors.")
-TEXTE_GARDER_COULEURS = (" Keep the original colors.")
+TEXTE_GARDER_COULEURS = (" Keep exactly the original colors: if the photo is black and white or sepia, keep it so, "
+                         "do not colorize it.")
 
 
 class ModeleManquant(Exception):
@@ -315,6 +316,27 @@ def restauration_disponible() -> bool:
     return _kontext["fichier"] is not None
 
 
+def taille_kontext(taille: tuple[int, int], pixels: int = 1024 * 1024) -> tuple[int, int]:
+    """Taille de travail de Flux Kontext : environ un million de pixels, côtés multiples de 16, en gardant les
+    proportions de la photo (FluxKontextImageScale prend le format « préféré » le plus proche : la photo
+    revenait ensuite étirée)."""
+    w, h = taille
+    ratio = w / h
+    meilleur = None
+    for lw in range(256, 2049, 16):                      # entre 0,8 et 1,25 million de pixels
+        base = max(16, int(lw / ratio) // 16 * 16)
+        for lh in (base, base + 16):
+            if not 0.8 * pixels <= lw * lh <= 1.25 * pixels:
+                continue
+            note = (round(abs(lw / lh / ratio - 1), 3), abs(lw * lh - pixels))
+            if meilleur is None or note < meilleur[0]:
+                meilleur = (note, (lw, lh))
+    if meilleur is None:                                 # photo très allongée
+        k = (pixels / (w * h)) ** 0.5
+        return max(16, round(w * k / 16) * 16), max(16, round(h * k / 16) * 16)
+    return meilleur[1]
+
+
 def restaurer(image: str, taille: tuple[int, int], coloriser: bool = False, nb: int = NB_RESTAURER,
               graine: int | None = None, texte: str = ""):
     """Flux Kontext : la photo est redessinée d'après une consigne (restaurer, coloriser). Une sortie par
@@ -329,7 +351,8 @@ def restaurer(image: str, taille: tuple[int, int], coloriser: bool = False, nb: 
          "21": _n("DualCLIPLoader", clip_name1="clip_l.safetensors",
                   clip_name2="t5xxl_fp8_e4m3fn_scaled.safetensors", type="flux", device="default"),
          "22": _n("VAELoader", vae_name="ae.safetensors"),
-         "11": _n("FluxKontextImageScale", image=["10", 0]),
+         "11": _n("ImageScale", image=["10", 0], upscale_method="lanczos", width=taille_kontext(taille)[0],
+                  height=taille_kontext(taille)[1], crop="disabled"),
          "12": _n("VAEEncode", pixels=["11", 0], vae=["22", 0]),
          "24": _n("CLIPTextEncode", text=consigne, clip=["21", 0]),
          "25": _n("ReferenceLatent", conditioning=["24", 0], latent=["12", 0]),

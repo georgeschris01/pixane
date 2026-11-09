@@ -180,6 +180,29 @@ def vignette(t: np.ndarray, p: dict) -> np.ndarray:
     return out
 
 
+# ------------------------------------------------------------------ teinte d'une photo (restauration IA)
+def _ycbcr(rgb: np.ndarray):
+    f = rgb[..., :3].astype(np.float32)
+    y = 0.299 * f[..., 0] + 0.587 * f[..., 1] + 0.114 * f[..., 2]
+    return y, 0.564 * (f[..., 2] - y), 0.713 * (f[..., 0] - y)
+
+
+def garder_teinte(original: np.ndarray, resultat: np.ndarray) -> np.ndarray:
+    """Lumière et détails du résultat, teinte de l'original (adoucie pour ne pas reprendre les taches) :
+    une restauration ne peut pas coloriser. Tableaux RGBA de même taille ; l'alpha du résultat est gardé."""
+    y, _, _ = _ycbcr(resultat)
+    _, cb, cr = _ycbcr(original)
+    sigma = max(2.0, max(original.shape[:2]) / 250)
+    cb, cr = _flou_pil(cb, sigma), _flou_pil(cr, sigma)
+    r = y + cr / 0.713
+    b = y + cb / 0.564
+    g = (y - 0.299 * r - 0.114 * b) / 0.587
+    out = resultat.copy()
+    for i, c in enumerate((r, g, b)):
+        out[..., i] = np.clip(np.round(c), 0, 255).astype(np.uint8)
+    return out
+
+
 FONCTIONS = {"flou": flou_gaussien, "mouvement": flou_mouvement, "bruit": reduire_bruit, "nettete": nettete,
              "vignette": vignette}
 

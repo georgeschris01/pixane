@@ -32,11 +32,27 @@ verifier(recettes.debruitage_disponible() and recettes.restauration_disponible()
 p, s = recettes.restaurer("x.png", (640, 480), coloriser=True, nb=2)
 ks = [n for n in p.values() if n["class_type"] == "KSampler"]
 verifier(len(s) == 2 and len({k["inputs"]["seed"] for k in ks}) == 2, "Restaurer : 2 propositions, graines différentes")
-verifier(all(n["inputs"]["width"] == 640 for n in p.values() if n["class_type"] == "ImageScale"),
-         "Restaurer : remis à la taille de la photo")
+verifier(all(n["inputs"]["width"] == 640 and n["inputs"]["height"] == 480 for k, n in p.items()
+             if n["class_type"] == "ImageScale" and k != "11"), "Restaurer : remis à la taille de la photo")
+e = p["11"]["inputs"]
+verifier(e["width"] % 16 == 0 and e["height"] % 16 == 0 and abs(e["width"] / e["height"] - 640 / 480) < 0.005,
+         f"Restaurer : taille de travail aux mêmes proportions, sans étirement ({e['width']} × {e['height']})")
 verifier("Colorize" in p["24"]["inputs"]["text"], "Coloriser : consigne")
 recettes.configurer({"ReferenceLatent": {}})
 verifier(not recettes.restauration_disponible() and not recettes.debruitage_disponible(), "modèles absents : repéré")
+
+# « Restaurer » : lumière du résultat, couleurs de l'original (une photo sépia ne peut pas être colorisée)
+import numpy as np  # noqa: E402
+from chrypix.filtres import garder_teinte  # noqa: E402
+rng = np.random.default_rng(3)
+gris = rng.integers(0, 256, (120, 160)).astype(np.float32)
+sepia = np.dstack([gris * 0.95 + 12, gris * 0.85 + 8, gris * 0.65, np.full_like(gris, 255)]).clip(0, 255).astype(np.uint8)
+colorise = sepia.copy()
+colorise[:60, :, 2] = 255                                   # ciel bleu inventé
+colorise[60:, :, 1] = 200                                   # herbe verte inventée
+r = garder_teinte(sepia, colorise).astype(np.float32)
+dom = (r[..., 0] - r[..., 2]).mean()
+verifier(dom > 10 and (r[..., 2] <= r[..., 0] + 2).mean() > 0.97, "Restaurer : teinte sépia gardée, pas de couleurs ajoutées")
 
 app = QApplication(sys.argv)
 f = Fenetre()

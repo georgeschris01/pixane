@@ -1470,6 +1470,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             d.deleteLater()
         d.fini.connect(fin)
         d.show()
+        d.raise_()
+        d.activateWindow()
 
     def copier_style(self):
         if not self.doc:
@@ -1855,8 +1857,19 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             return
         coloriser = boite.clickedButton() is b_couleur
         taille = self.doc.taille()
-        self._lancer(titre, False, lambda nom: recettes.restaurer(nom, taille, coloriser),
-                     apres=self._dans_selection(titre))
+        apres = self._dans_selection(titre)
+        if not coloriser:
+            # « Restaurer » seul : les couleurs de l'original sont remises après coup, l'IA ne donne que la lumière
+            # et les détails (Flux Kontext colorise parfois une photo noir et blanc ou sépia malgré la consigne)
+            from .filtres import garder_teinte
+            original = tableau(self.doc.image.convertToFormat(FORMAT_IMAGE))
+            w, h = taille
+            dans_sel = apres
+
+            def apres(img: QImage) -> QImage:
+                res = garder_teinte(original, tableau(dans_sel(img).convertToFormat(FORMAT_IMAGE)))
+                return QImage(np.ascontiguousarray(res).data, w, h, w * 4, FORMAT_IMAGE).copy()
+        self._lancer(titre, False, lambda nom: recettes.restaurer(nom, taille, coloriser), apres=apres)
 
     def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None,
                 placer=None):
