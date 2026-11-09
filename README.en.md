@@ -178,6 +178,10 @@ Layer names that already exist keep their original language.
   The copies are deleted when the photo is saved or closed, and when Pixane closes normally.
 - **If an error occurs**: when a command fails, Pixane shows it and writes it to
   `%LOCALAPPDATA%\Pixane\erreurs.log` (useful to report the problem).
+- **File > Export as…** (Ctrl+Alt+Shift+W): a copy **for a normal send** (printer, friend, USB stick): full size,
+  full quality, resolution, colour profile and camera information kept. JPEG, PNG (with transparency), TIFF or WebP.
+  The open photo does not change (it still needs saving if it was modified); Pixane never offers to overwrite the
+  original photo and remembers the last format chosen.
 - **File > Export for web…** (Ctrl+Alt+Shift+S): a light copy for the Internet, without touching the photo.
   - **Format**: JPEG (photos), **WebP** (lighter at the same quality, keeps transparency), PNG (lossless).
   - **Shrink: longest side** (for example 2048 px); never enlarged.
@@ -275,6 +279,9 @@ The selection tools share **two buttons** in the left bar (small triangle): the 
   selection eraser).
 - **Brush size**: "Size" slider in the top bar, or the `[` and `]` keys.
 - **Select** menu: *Select all* (Ctrl+A), *Deselect* (Ctrl+D), *Invert* (Ctrl+Shift+I).
+- **Arrow keys** (with a selection tool: rectangle, lasso, selection brush, magic wand, quick or object selection):
+  the selection moves by **1 pixel** (Shift: **10 pixels**). Only the outline moves, not the image; a single Ctrl+Z
+  undoes all the presses.
 - **Select > Modify selection**: *Expand…* or *Shrink…* by a number of pixels, *Soften edges…* (gradual edge,
   useful for image adjustments).
 - **Select > Select subject (AI)** (Ctrl+Alt+S): the AI finds the main subject (person, animal, object) and selects
@@ -588,7 +595,7 @@ All layer actions can be undone with Ctrl+Z (changing the selected layer does no
 ### Panel settings
 | Setting | Effect |
 |---|---|
-| **Font** | All fonts installed in Windows |
+| **Font** | All fonts installed in Windows. The list shows each font **with the beginning of your text** (or of the part selected in the box), otherwise "Aa Bb Cc 123" |
 | **Size** | Letter height, in pixels of the photo |
 | **Colour** (swatch) | Letter colour, with transparency (alpha channel) |
 | **B / I / U / S** | Bold, italic, underline, strikethrough |
@@ -785,7 +792,8 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+Alt+R | Refine edge |
 | Ctrl+R, Ctrl+', Ctrl+;, Ctrl+Shift+; | Rulers, Grid, Guides, Snap |
 | Ctrl+W, Ctrl+Tab, Ctrl+Shift+Tab | Close photo, Next photo, Previous photo |
-| Ctrl+Alt+Shift+S | Export for web |
+| Ctrl+Alt+Shift+S, Ctrl+Alt+Shift+W | Export for web, Export as |
+| Arrows (Shift: x10) | Move the selection (selection tools) |
 | Ctrl+N, Ctrl+Alt+V | New image, New image from clipboard |
 | Ctrl+Alt+I, Ctrl+Alt+C | Image size, Canvas size |
 | Ctrl+Alt+Y | Print preview (CMYK) |

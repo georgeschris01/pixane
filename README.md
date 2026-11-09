@@ -182,6 +182,10 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
   fermée, et quand Pixane se ferme normalement.
 - **En cas d'erreur** : si une commande échoue, Pixane l'affiche et la note dans
   `%LOCALAPPDATA%\Pixane\erreurs.log` (utile pour signaler le problème).
+- **Fichier > Exporter sous…** (Ctrl+Alt+Maj+W) : une copie **pour un envoi normal** (imprimeur, ami, clé USB) :
+  pleine taille, pleine qualité, résolution, profil de couleur et informations de l'appareil photo gardés. JPEG, PNG
+  (avec la transparence), TIFF ou WebP. La photo ouverte ne change pas (elle reste à enregistrer si elle a été
+  modifiée) ; Pixane ne propose jamais d'écraser la photo d'origine et retient le dernier format choisi.
 - **Fichier > Exporter pour le web…** (Ctrl+Alt+Maj+S) : une copie légère pour Internet, sans toucher à la photo.
   - **Format** : JPEG (photos), **WebP** (plus léger à qualité égale, garde la transparence), PNG (sans perte).
   - **Réduire : plus grand côté** (par exemple 2048 px) ; jamais agrandie.
@@ -281,6 +285,9 @@ directement leur touche.
   (comme la gomme de sélection).
 - **Taille du pinceau** : curseur « Taille » de la barre du haut, ou touches `[` et `]`.
 - Menu **Sélection** : *Tout sélectionner* (Ctrl+A), *Désélectionner* (Ctrl+D), *Inverser* (Ctrl+Maj+I).
+- **Flèches du clavier** (avec un outil de sélection : rectangle, lasso, pinceau de sélection, baguette, sélection
+  rapide ou d'objet) : la sélection bouge de **1 pixel** (Maj : **10 pixels**). Seul le contour bouge, pas l'image ;
+  un seul Ctrl+Z annule tous les appuis.
 - **Sélection > Modifier la sélection** : *Agrandir…* ou *Réduire…* d'un nombre de pixels, *Adoucir les bords…*
   (bord progressif, utile pour les réglages de l'image).
 - **Sélection > Sélectionner le sujet (IA)** (Ctrl+Alt+S) : l'IA trouve le sujet principal (personne, animal,
@@ -604,7 +611,7 @@ Outil **Texte** (touche **T**, icône « T » dans la barre d'outils). Le pannea
 ### Réglages du panneau
 | Réglage | Effet |
 |---|---|
-| **Police** | Toutes les polices installées dans Windows |
+| **Police** | Toutes les polices installées dans Windows. La liste montre chaque police **avec le début de votre texte** (ou de la partie sélectionnée dans la case), sinon « Aa Bb Cc 123 » |
 | **Taille** | Hauteur des lettres, en pixels de la photo |
 | **Couleur** (pastille) | Couleur des lettres, avec la transparence (canal alpha) |
 | **G / I / S / B** | Gras, italique, souligné, barré |
@@ -803,7 +810,8 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+Alt+R | Améliorer le contour |
 | Ctrl+R, Ctrl+', Ctrl+;, Ctrl+Maj+; | Règles, Grille, Repères, Magnétisme |
 | Ctrl+W, Ctrl+Tab, Ctrl+Maj+Tab | Fermer la photo, Photo suivante, Photo précédente |
-| Ctrl+Alt+Maj+S | Exporter pour le web |
+| Ctrl+Alt+Maj+S, Ctrl+Alt+Maj+W | Exporter pour le web, Exporter sous |
+| Flèches (Maj : x10) | Bouger la sélection (outils de sélection) |
 | Ctrl+N, Ctrl+Alt+V | Nouvelle image, Nouvelle image depuis le presse-papiers |
 | Ctrl+Alt+I, Ctrl+Alt+C | Taille de l'image, Taille de la zone de travail |
 | Ctrl+Alt+Y | Aperçu de l'impression (CMJN) |

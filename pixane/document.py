@@ -313,6 +313,15 @@ class Document(QObject):
             self.chemin = chemin
             self.modifie = False
             return
+        self.exporter(chemin)
+        self.chemin = chemin
+        self.modifie = False
+
+    def exporter(self, chemin: str | Path, qualite: int = 95) -> None:
+        """Image à plat (JPEG, PNG, TIFF, WebP, BMP), pleine taille, avec résolution, profil de couleur et EXIF.
+        Le document ne change pas (ni son fichier, ni « modifié ») : c'est une copie (Fichier > Exporter sous)."""
+        chemin = Path(chemin)
+        ext = chemin.suffix.lower()
         im = qimage_vers_pil(self.image)
         opaque = bool(np.all(np.asarray(im)[:, :, 3] == 255))
         options = {}
@@ -330,9 +339,9 @@ class Document(QObject):
                 pass
         if ext in (".jpg", ".jpeg"):
             im = im.convert("RGB")
-            options.update(quality=95, subsampling=0)
+            options.update(quality=qualite, subsampling=0 if qualite >= 90 else 2)
         elif ext == ".webp":
-            options.update(quality=95)
+            options.update(quality=qualite)
             if opaque:
                 im = im.convert("RGB")
         elif ext in (".tif", ".tiff"):
@@ -352,8 +361,6 @@ class Document(QObject):
             if ext == ".webp":
                 im = im.convert("RGBA" if im.mode == "LA" else "RGB")   # WebP n'a pas de gris
         im.save(chemin, **options)
-        self.chemin = chemin
-        self.modifie = False
 
     # ---------------------------------------------------------- état (annuler / rétablir)
     def etat(self):

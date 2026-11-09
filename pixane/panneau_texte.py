@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
+from PySide6.QtCore import QRect, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPixmap
 from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QColorDialog, QDoubleSpinBox, QFontComboBox, QFormLayout,
                                QFrame, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QScrollArea, QSpinBox,
-                               QToolButton, QVBoxLayout, QWidget)
+                               QStyle, QStyledItemDelegate, QToolButton, QVBoxLayout, QWidget)
 
 from .calques import damier
 from .langue import tr
@@ -47,6 +47,43 @@ class BoutonCouleur(QToolButton):
         if c.isValid():
             self.definir(c.name(QColor.HexArgb))
             self.change.emit(self.couleur)
+
+
+EXEMPLE_MAX = 24          # caractères de l'exemple montré dans la liste des polices
+
+
+class ApercuPolices(QStyledItemDelegate):
+    """Liste des polices : le nom (police normale) puis un exemple écrit dans la police, avec le texte tapé ou
+    sélectionné (ses premiers caractères), sinon « Aa Bb Cc 123 »."""
+
+    def __init__(self, exemple, parent=None):
+        super().__init__(parent)
+        self.exemple = exemple            # fonction -> texte de l'exemple
+
+    def sizeHint(self, option, index):
+        return QSize(420, max(30, option.fontMetrics.height() + 14))
+
+    def paint(self, p: QPainter, option, index):
+        p.save()
+        if option.state & QStyle.State_Selected:
+            p.fillRect(option.rect, option.palette.highlight())
+            couleur = option.palette.highlightedText().color()
+        else:
+            couleur = option.palette.text().color()
+        famille = index.data(Qt.DisplayRole) or ""
+        r = option.rect.adjusted(8, 0, -8, 0)
+        largeur_nom = min(190, r.width() // 2)
+        p.setPen(couleur)
+        p.setFont(option.font)
+        nom = QFontMetrics(option.font).elidedText(famille, Qt.ElideRight, largeur_nom - 10)
+        p.drawText(QRect(r.x(), r.y(), largeur_nom, r.height()), Qt.AlignVCenter | Qt.AlignLeft, nom)
+        police = QFont(famille)
+        police.setPixelSize(max(14, option.fontMetrics.height() + 4))
+        p.setFont(police)
+        zone = QRect(r.x() + largeur_nom, r.y(), r.width() - largeur_nom, r.height())
+        texte = QFontMetrics(police).elidedText(self.exemple(), Qt.ElideRight, zone.width())
+        p.drawText(zone, Qt.AlignVCenter | Qt.AlignLeft, texte)
+        p.restore()
 
 
 def _titre(texte: str) -> QLabel:
@@ -85,6 +122,10 @@ class PanneauTexte(QScrollArea):
         # ---- caractères
         lay.addWidget(_titre(tr("Caractères")))
         self.police = QFontComboBox()
+        self.police.setItemDelegate(ApercuPolices(self.exemple_police, self.police))
+        self.police.view().setMinimumWidth(460)
+        self.police.setToolTip(tr("La liste montre chaque police avec le début de ton texte (ou de la partie "
+                                  "sélectionnée)"))
         self.police.currentFontChanged.connect(lambda f: self._changer("police", f.family()))
         lay.addWidget(self.police)
         ligne = QHBoxLayout()
@@ -217,6 +258,14 @@ class PanneauTexte(QScrollArea):
     def appliquer_icones(self):
         for b, nom in self.alignements.values():
             b.setIcon(self.icones(nom))
+
+    def exemple_police(self) -> str:
+        """Exemple de la liste des polices : la partie sélectionnée du texte, sinon le texte, sinon un modèle."""
+        choisi = self.saisie.textCursor().selectedText() or self.saisie.toPlainText()
+        choisi = " ".join(choisi.replace("\u2029", " ").split())          # une seule ligne
+        if len(choisi) > EXEMPLE_MAX:
+            choisi = choisi[:EXEMPLE_MAX].rstrip() + "…"
+        return choisi or tr("Aa Bb Cc 123")
 
     # ---------------------------------------------------------- affichage
     def afficher(self, t: Texte | None, verrou: bool = False):

@@ -39,6 +39,10 @@ OUTILS_AUTO = (BAGUETTE, RAPIDE, OBJET)                                  # séle
 OUTILS_CALQUE = (GOMME_CALQUE, PEINTURE, TAMPON, CORRECTEUR, DEGRADE, SEAU)                  # outils qui changent les pixels du calque
 OPACITE_SELECTION = 0.45
 
+# outils de sélection : les flèches du clavier décalent la sélection (Maj : 10 pixels)
+OUTILS_SELECTION = (RECTANGLE, LASSO, PINCEAU, BAGUETTE, RAPIDE, OBJET)
+FLECHES = {Qt.Key_Left: (-1, 0), Qt.Key_Right: (1, 0), Qt.Key_Up: (0, -1), Qt.Key_Down: (0, 1)}
+
 
 class Canevas(QWidget):
     selection_modifiee = Signal(object, str)   # (état avant, nom de l'action) -> pour annuler (sélection ou calque)
@@ -57,6 +61,7 @@ class Canevas(QWidget):
     transfo_valide = Signal()                   # Entrée ou double-clic dans le cadre
     transfo_annule = Signal()                   # Échap
     transfo_demandee = Signal()                 # outil Déplacer : poignée du cadre attrapée -> Transformer (Ctrl+T)
+    selection_fleche = Signal(int, int)         # outils de sélection : flèche du clavier -> décaler la sélection
     message = Signal(str)                       # information (barre d'état)
     baguette_clic = Signal(object, str)         # point (image), mode « nouvelle » / « ajouter » / « retirer »
     baguette_glisse = Signal(float)             # écart horizontal (écran) depuis le clic -> tolérance
@@ -1574,6 +1579,11 @@ class Canevas(QWidget):
             self.annuler_recadre()
         elif self.outil == RAPIDE and e.key() == Qt.Key_Escape:
             self.fin_session_ia.emit()
+        elif (e.key() in FLECHES and self.doc is not None and self.outil in OUTILS_SELECTION
+              and self.transfo is None and self.cadre is None and not self.doc.selection_vide()):
+            pas = 10 if e.modifiers() & Qt.ShiftModifier else 1
+            dx, dy = FLECHES[e.key()]
+            self.selection_fleche.emit(dx * pas, dy * pas)
         elif e.key() == Qt.Key_Space and not e.isAutoRepeat():
             self._espace = True
             self.setCursor(Qt.OpenHandCursor)

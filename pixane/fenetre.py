@@ -214,6 +214,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.canevas.transfo_valide.connect(self._valider_transfo)
         self.canevas.transfo_annule.connect(self._annuler_transfo)
         self.canevas.transfo_demandee.connect(self.transformer)
+        self.canevas.selection_fleche.connect(self.decaler_selection)
         self._transfo_avant = None
         self.groupe_historique.indexChanged.connect(self._historique_bouge)
         self._session_texte = 0      # regroupe les changements d'un même texte dans Annuler
@@ -276,6 +277,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.m_recents.aboutToShow.connect(self._remplir_recents)
         self._action(m, tr("Enregistrer"), QKeySequence.Save, self.enregistrer, "a_enregistrer", "enregistrer")
         self._action(m, tr("Enregistrer sous…"), "Ctrl+Shift+S", self.enregistrer_sous, "a_enregistrer_sous")
+        self._action(m, tr("Exporter sous…"), "Ctrl+Alt+Shift+W", self.exporter_sous, "a_exporter_sous")
         self._action(m, tr("Exporter pour le web…"), "Ctrl+Alt+Shift+S", self.exporter_web, "a_exporter_web")
         self._action(m, tr("Exporter pour l'impression (CMJN)…"), None, self.exporter_impression, "a_exporter_cmjn")
         self._action(m, tr("Traitement par lot…"), None, self.traitement_lot, "a_lot", "lot")
@@ -1026,7 +1028,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                   self.a_redresser, self.a_transformer, self.a_reglages_image, self.a_sel_agrandir,
                   self.a_sel_reduire, self.a_sel_adoucir, self.a_contour, self.a_couper, self.a_copier, self.a_supprimer_selection,
                   self.a_style, self.a_copier_style, self.a_coller_style, self.a_enlever_style, self.a_figer_style,
-                  self.a_nouveau_calque, self.a_dupliquer_calque, self.a_zone_travail, self.a_exporter_cmjn,
+                  self.a_nouveau_calque, self.a_dupliquer_calque, self.a_zone_travail, self.a_exporter_cmjn, self.a_exporter_sous,
                   self.a_epreuve, *self._actions_calques_doc()):
             a.setEnabled(a_doc)
         self._m_mode.setEnabled(a_doc)
@@ -1586,6 +1588,43 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.canevas.update()
         self._actualiser()
 
+    def exporter_sous(self):
+        """Fichier > Exporter sous : une copie à plat pour un envoi normal (pleine taille, pleine qualité, résolution,
+        profil de couleur et EXIF gardés). La photo ouverte reste telle quelle (son fichier ne change pas)."""
+        if not self.doc:
+            return
+        if self.canevas.transfo is not None:
+            self._valider_transfo()
+        formats = {".jpg": "JPEG (*.jpg)", ".png": tr("PNG (avec la transparence)") + " (*.png)",
+                   ".tif": "TIFF (*.tif)", ".webp": "WebP (*.webp)"}
+        ext = self.reglages.value("exporter_format", ".jpg")
+        ext = ext if ext in formats else ".jpg"
+        base = self.doc.chemin.stem if self.doc.chemin else (self.doc.nom or "image")
+        base += getattr(self.doc, "suffixe_nom", None) or ""
+        dossier = self.doc.chemin.parent if self.doc.chemin else Path(self.reglages.value("dossier", str(Path.home())))
+        propose = dossier / (base + ext)
+        if self.doc.chemin and propose == self.doc.chemin:          # ne pas proposer d'écraser la photo d'origine
+            propose = dossier / (base + tr("_retouche") + ext)
+        ordre = [ext] + [e for e in formats if e != ext]
+        chemin, filtre = QFileDialog.getSaveFileName(self, tr("Exporter sous"), str(propose),
+                                                     ";;".join(formats[e] for e in ordre), formats[ext])
+        if not chemin:
+            return
+        chemin = Path(chemin)
+        if chemin.suffix.lower() not in (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"):
+            chemin = chemin.with_name(chemin.name + next(e for e in formats if formats[e] == filtre))
+        self.reglages.setValue("exporter_format", {".jpeg": ".jpg", ".tiff": ".tif"}.get(chemin.suffix.lower(),
+                                                                                         chemin.suffix.lower()))
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            self.doc.exporter(chemin)
+        except Exception as e:
+            QMessageBox.critical(self, tr("Exporter sous"), tr("Impossible d'enregistrer :\n{erreur}", erreur=e))
+            return
+        finally:
+            QApplication.restoreOverrideCursor()
+        self.statusBar().showMessage(tr("Exporté : {chemin}  —  la photo ouverte n'a pas changé", chemin=chemin), 8000)
+
     def exporter_impression(self):
         """Fichier > Exporter pour l'impression : TIFF, PDF ou JPEG en CMJN, profil intégré."""
         if not self.doc:
@@ -1694,6 +1733,21 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         from .styles import image_rendue
         self._commande_calques(self.doc.etat_calque_modifie(self.doc.actif, image=image_rendue(c), style=None,
                                                             texte=None), tr("Mettre le style dans les pixels"))
+
+    def decaler_selection(self, dx: int, dy: int):
+        """Flèches du clavier avec un outil de sélection : la sélection (seulement le contour, pas les pixels) bouge
+        de 1 pixel (Maj : 10). Les appuis qui se suivent ne font qu'une étape d'Annuler."""
+        if not self.doc or self.doc.selection_vide():
+            return
+        w, h = self.doc.taille()
+        sel = nouvelle_selection(w, h)
+        p = QPainter(sel)
+        p.setCompositionMode(QPainter.CompositionMode_Source)
+        p.drawImage(dx, dy, self.doc.selection)
+        p.end()
+        avant = self.doc.etat()
+        self.historique.push(CommandeEtat(self.doc, avant, (self.doc.calques, self.doc.actif, sel),
+                                          tr("Déplacer la sélection"), cle=("fleches", id(self.doc))))
 
     def _cadre_deplacer(self, oui: bool):
         self.canevas.cadre_deplacer = oui

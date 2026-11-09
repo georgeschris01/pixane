@@ -52,7 +52,7 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
 7. [ ] **Publication** : guide complet, licences (Flux Fill dev = non commercial), dépôt public ou installateur.
 
 ## Numérotation des versions (décidée le 08/11/2026)
-A.B.C : A = 0 tant que Pixane n'est pas fini (1.0.0 = première version finie) ; B = +1 pour un lot de nouvelles fonctions (C repart à 0) ; C = +1 pour des corrections seulement. Le numéro se change dans pixane\__init__.py avant de fabriquer l'installateur. Dernière version d'essai : 0.6.0 (cadre à poignées de l'outil Déplacer ; 0.5.0 : Nouvelle image avec formats tout prêts, unités, résolution, mode, fond perdu ; taille de la zone de travail ; niveaux de gris ; export CMJN et aperçu de l'impression).
+A.B.C : A = 0 tant que Pixane n'est pas fini (1.0.0 = première version finie) ; B = +1 pour un lot de nouvelles fonctions (C repart à 0) ; C = +1 pour des corrections seulement. Le numéro se change dans pixane\__init__.py avant de fabriquer l'installateur. Dernière version d'essai : 0.6.0 (cadre à poignées de l'outil Déplacer, Exporter sous, flèches pour bouger la sélection, polices avec aperçu du texte ; 0.5.0 : Nouvelle image avec formats tout prêts, unités, résolution, mode, fond perdu ; taille de la zone de travail ; niveaux de gris ; export CMJN et aperçu de l'impression).
 
 ## Idées notées en passant
 - Nettoyer les images d'essai dans les dossiers de sortie de ComfyUI (proposé, pas encore fait).
