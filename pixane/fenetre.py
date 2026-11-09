@@ -30,7 +30,7 @@ from .canevas import (BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GO
                       TAMPON, TEXTE, Canevas)
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import (EXTENSIONS_CALQUES, EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, image_entiere,
-                       nouvelle_selection, qimage_rgb, tableau)
+                       masque, nouvelle_selection, qimage_rgb, tableau)
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
 from .panneau_texte import BoutonCouleur, PanneauTexte
 from .raccord import finaliser, lisere_auto, preparer
@@ -412,6 +412,14 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self._action(m, tr("Réduire le bruit (IA)"), None, self.ia_debruiter, "a_ia_bruit")
         self._action(m, tr("Netteté (IA)"), None, self.ia_nettete, "a_ia_nettete")
         self._action(m, tr("Restaurer une vieille photo…"), None, self.ia_restaurer, "a_ia_restaurer")
+        m.addSeparator()
+        a = self._action(m, tr("Mettre les résultats dans un nouveau calque"), None, None, "a_ia_nouveau_calque")
+        a.setCheckable(True)
+        a.setChecked(self.reglages.value("ia_nouveau_calque", False, type=bool))
+        a.setToolTip(tr("Décoché : le résultat de l'IA va dans le calque choisi (il le suit quand on le déplace ou "
+                        "le redimensionne). Coché : chaque résultat va dans un nouveau calque."))
+        a.toggled.connect(lambda v: self.reglages.setValue("ia_nouveau_calque", v))
+        m.setToolTipsVisible(True)
         m.addSeparator()
         self._action(m, tr("Installer le moteur IA…"), None, self.installer_moteur, "a_installer_moteur")
 
@@ -2175,8 +2183,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             return qimage_rgb(finaliser(orig, tableau(img)[:, :, :3], geo))
         doc = self.doc
 
-        def placer(img: QImage):   # calques décalés ; l'ajout de l'IA dans un nouveau calque
-            return doc.etat_agrandi(tr("Agrandir"), img, (ajout[2], ajout[0]))
+        def placer(img: QImage):   # calques décalés ; l'ajout de l'IA dans le calque choisi (ou un nouveau)
+            return doc.etat_agrandi(tr("Agrandir"), img, (ajout[2], ajout[0]),
+                                    nouveau_calque=self.a_ia_nouveau_calque.isChecked())
         affiner = None
         if self.barre_agrandir.pleine.isChecked() and affinage.utile(geo.taille, geo.travail):
             m = affinage.masque_ajout(geo.taille, geo.marges, orig.shape[:2], max(geo.bande) * 1.5)
@@ -2336,6 +2345,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         if png is None:
             png = doc.png_pour_ia(avec_selection)
         original = doc.image
+        zone = None if doc.selection_vide() else masque(doc.selection).copy()   # sélection au lancement
         choix = ChoixResultat(titre, original, self)
         annuler = threading.Event()
         nom_image = {}
@@ -2364,7 +2374,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             choix.ajouter(res)
             if choix.exec() and choix.choix() is not None:
                 def fin(image):
-                    self._appliquer_resultat(doc, image, titre, placer, nom_calque)
+                    self._appliquer_resultat(doc, image, titre, placer, nom_calque, zone)
                     if suffixe:
                         doc.suffixe_nom = suffixe
                 annuler.set()
@@ -2394,18 +2404,24 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         attente.show()
 
     def _appliquer_resultat(self, doc: Document, image: QImage, titre: str, placer=None,
-                            nom_calque: str | None = None):
-        """Le résultat choisi devient un nouveau calque (annulable)."""
+                            nom_calque: str | None = None, zone=None):
+        """Le résultat choisi va dans le calque choisi, ou dans un nouveau calque (option du menu IA, ou si le
+        calque choisi ne peut pas le recevoir). zone : sélection au lancement (le résultat n'en sort pas)."""
         if doc is not self.doc:
             return
         avant = doc.etat()
         nom = nom_calque or titre
+        nouveau = self.a_ia_nouveau_calque.isChecked()
         if placer is not None:
             apres = placer(image)
         elif image.size() == doc.image.size():
-            apres = doc.etat_resultat_ia(nom, image)        # seulement les pixels retouchés
+            apres = doc.etat_resultat_ia(nom, image, zone, nouveau)    # seulement les pixels retouchés
         else:
-            apres = doc.etat_redimensionne(nom, image)      # Upscale
+            apres = doc.etat_redimensionne(nom, image, nouveau)        # Upscale
+        if len(apres[0]) > len(doc.calques) and not nouveau:
+            self.statusBar().showMessage(tr(
+                "Résultat mis dans un nouveau calque : le calque choisi ne peut pas le recevoir (texte, groupe, "
+                "réglage, caché ou verrouillé), ou il y a d'autres calques et rien n'était sélectionné."), 10000)
         # travail fini : la sélection disparaît (Ctrl+Z la fait revenir avec l'image d'avant)
         calques, actif, _sel = apres
         apres = (calques, actif, nouvelle_selection(calques[0].image.width(), calques[0].image.height()))

@@ -265,6 +265,34 @@ def _avec_masque_transforme(c: "Calque", fonction) -> "Calque":
     return replace(c, masque=masque_transforme(c.masque, fonction))
 
 
+MARGE_IA = 3.0      # px : le résultat de l'IA déborde à peine de la sélection (fondu doux, pas de « halo »)
+
+
+def poids_zone(zone: np.ndarray | None, w: int, h: int) -> np.ndarray:
+    """(h, w) float32 0..1 : où le résultat de l'IA est gardé. zone : sélection 0..255 au lancement (None : partout).
+    La sélection est gardée telle quelle, plus un fondu de quelques pixels autour pour un raccord invisible."""
+    if zone is None:
+        return np.ones((h, w), np.float32)
+    s = zone.astype(np.float32) / 255
+    dure = Image.fromarray(((s > 0.5) * 255).astype(np.uint8), "L").filter(ImageFilter.GaussianBlur(MARGE_IA))
+    autour = np.clip(np.asarray(dure, np.float32) / 255 * 2, 0, 1)
+    return np.maximum(s, autour)
+
+
+def _image_ia(resultat: QImage, base: QImage, poids: np.ndarray) -> QImage:
+    """Résultat de l'IA, transparent là où il ne change rien ou hors de la zone (alpha = poids)."""
+    r = tableau(resultat.convertToFormat(FORMAT_IMAGE)).copy()
+    b = tableau(base.convertToFormat(FORMAT_IMAGE))
+    change = np.any(r[:, :, :3] != b[:, :, :3], axis=2)
+    r[:, :, 3] = np.where(change, np.clip(poids * 255 + 0.5, 0, 255), 0).astype(np.uint8)
+    return qimage_rgba(r)
+
+
+def peut_recevoir_ia(c) -> bool:
+    """Calque où l'on peut poser directement le résultat de l'IA (calque d'image visible, modifiable)."""
+    return c.visible and not c.verrou and not c.special and c.texte is None
+
+
 def calque_des_changements(nom: str, resultat: QImage, base: QImage) -> Calque:
     """Calque qui ne contient que les pixels où `resultat` diffère de `base` (même taille).
     Posé sur `base`, il redonne exactement `resultat`."""
@@ -503,15 +531,38 @@ class Document(QObject):
         return f"{base} {i}"
 
     # ---------------------------------------------------------- états proposés par les actions sur les calques
-    def etat_resultat_ia(self, titre: str, resultat: QImage):
-        """Résultat de l'IA de même taille : nouveau calque (en haut) avec seulement les pixels changés."""
-        calque = calque_des_changements(self.nom_libre(titre), resultat, self.image)
-        return self.etat_avec(self.calques + (calque,), len(self.calques))
+    def cible_ia(self, zone: np.ndarray | None) -> int | None:
+        """Calque qui reçoit le résultat de l'IA : le calque choisi s'il peut le recevoir. Sans sélection (toute
+        l'image), seulement s'il est le seul calque visible avec des pixels (sinon les autres y seraient copiés)."""
+        c = self.calque_actif
+        if not peut_recevoir_ia(c):
+            return None
+        if zone is None and any(i != self.actif and k.visible and not k.special and tableau(k.image)[:, :, 3].any()
+                                for i, k in enumerate(self.calques)):
+            return None
+        return self.actif
+
+    def etat_resultat_ia(self, titre: str, resultat: QImage, zone: np.ndarray | None = None,
+                         nouveau_calque: bool = True):
+        """Résultat de l'IA de même taille, gardé seulement dans la zone (sélection au lancement, plus un fondu de
+        quelques px) et là où il change quelque chose. Posé dans le calque choisi, ou dans un nouveau calque en
+        haut (nouveau_calque, ou si le calque choisi ne peut pas le recevoir)."""
+        w, h = self.taille()
+        pose = _image_ia(resultat, self.image, poids_zone(zone, w, h))
+        cible = None if nouveau_calque else self.cible_ia(zone)
+        if cible is None:
+            calque = Calque.depuis(self.nom_libre(titre), pose)
+            return self.etat_avec(self.calques + (calque,), len(self.calques))
+        img = self.calques[cible].image.convertToFormat(FORMAT_CALQUE)
+        p = QPainter(img)
+        p.drawImage(0, 0, pose)
+        p.end()
+        return self.etat_calque_modifie(cible, image=img)
 
 
-    def etat_agrandi(self, titre: str, resultat: QImage, decalage: tuple[int, int]):
-        """Agrandir : chaque calque est posé, décalé, sur la nouvelle toile ; l'ajout de l'IA va dans un nouveau
-        calque en haut (seulement les pixels qui diffèrent de la photo d'origine)."""
+    def etat_agrandi(self, titre: str, resultat: QImage, decalage: tuple[int, int], nouveau_calque: bool = True):
+        """Agrandir : chaque calque est posé, décalé, sur la nouvelle toile ; l'ajout de l'IA (seulement les pixels
+        qui diffèrent de la photo d'origine) va dans le calque choisi, ou dans un nouveau calque en haut."""
         W, H = resultat.width(), resultat.height()
         dx, dy = decalage
         nouveaux = []
@@ -529,12 +580,25 @@ class Document(QObject):
             return res
         nouveaux = [_avec_masque_transforme(c, poser) for c in nouveaux]
         base = fusionner(nouveaux, W, H)
+        if not nouveau_calque and peut_recevoir_ia(nouveaux[self.actif]):
+            pose = _image_ia(resultat, base, np.ones((H, W), np.float32))
+            img = nouveaux[self.actif].image.convertToFormat(FORMAT_CALQUE)
+            p = QPainter(img)
+            p.drawImage(0, 0, pose)
+            p.end()
+            nouveaux[self.actif] = replace(nouveaux[self.actif], image=img)
+            return self.etat_avec(tuple(nouveaux), self.actif)
         calque = calque_des_changements(self.nom_libre(titre), resultat, base)
         return self.etat_avec(tuple(nouveaux) + (calque,), len(nouveaux))
 
-    def etat_redimensionne(self, titre: str, resultat: QImage):
-        """Upscale : tous les calques sont agrandis (lissage) ; le résultat de l'IA, complet, va en haut."""
+    def etat_redimensionne(self, titre: str, resultat: QImage, nouveau_calque: bool = True):
+        """Upscale : tous les calques sont agrandis (lissage) ; le résultat de l'IA, complet, va en haut. Une photo
+        d'un seul calque (sans nouveau_calque) : le résultat remplace simplement ce calque."""
         W, H = resultat.width(), resultat.height()
+        if not nouveau_calque and len(self.calques) == 1 and peut_recevoir_ia(self.calques[0]) \
+                and self.calques[0].masque is None and self.calques[0].style is None and self.calques[0].hors is None:
+            c = replace(self.calques[0], image=resultat.convertToFormat(FORMAT_CALQUE))
+            return self.etat_avec((c,), 0, nouvelle_selection(W, H))
         w, h = self.taille()
         nouveaux = []
         for c in self.calques:

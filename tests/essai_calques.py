@@ -25,6 +25,7 @@ f.charger(sys.argv[1])
 app.processEvents()
 doc, c = f.doc, f.canevas
 erreurs = []
+f.a_ia_nouveau_calque.setChecked(True)          # cet essai : résultats de l'IA dans un nouveau calque (option)
 
 
 def verifier(cond, texte):
@@ -158,6 +159,7 @@ c.definir_outil("pinceau")
 c.repaint()
 f.grab().save(str(sortie / "calques.png"))
 print("ERREURS :", erreurs if erreurs else "aucune")
+f.a_ia_nouveau_calque.setChecked(False)         # réglage par défaut remis
 doc.modifie = False
 QTimer.singleShot(200, f.close)
 app.exec()

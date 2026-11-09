@@ -365,8 +365,16 @@ than the stroke; don't forget the shadow or outline if there is one. Pixane alre
 ## 5. AI actions
 
 Each action offers **several results**: you pick the best one, as in Photoshop.
-The result you keep goes onto a **new layer** ("Erase 1", "Fill 2"…): the original photo is never damaged.
-The AI always works on the image **as you see it** (all visible layers together).
+The result you keep goes **into the chosen layer** (the one highlighted in the Layers panel): it becomes part of it
+and follows it when you move, transform or resize it. Ctrl+Z goes back. The AI always works on the image **as you
+see it** (all visible layers together): so choose the photo's layer before starting.
+- The result **does not go outside the selection**: the AI retouches a little around it for the join, but Pixane
+  only keeps the inside, plus a blend of a few pixels, so that no edge shows.
+- It goes into a **new layer** ("Erase 1", "Fill 2"…) when the chosen layer cannot receive it (text, group,
+  adjustment layer, hidden or locked layer), or when there is no selection and the image has several layers
+  (otherwise the others would be copied into it). A message at the bottom says so.
+- **AI > Put results in a new layer** (tick box): each result goes into a new layer, as before; handy to compare
+  with the original by hiding the layer.
 
 ### Result chooser
 - Click a thumbnail to see it full size.
@@ -427,8 +435,8 @@ Two frames appear on the photo:
   **Cancel** during this work keeps the option as it is. No effect on a small photo (already done at its real size).
 - **Tips** for a realistic addition: expand in small steps (20 to 30% at a time) rather than 100% at once; compare
   the options ("More options"); mark a border or frame as a damaged edge.
-- **Layers**: all layers are shifted onto the new canvas; an "Expand 1" layer contains the addition and the
-  redone edge (only the new pixels).
+- **Layers**: all layers are shifted onto the new canvas; the addition and the redone edge go into the chosen
+  layer (usually the photo), or into an "Expand 1" layer with the *new layer* option.
 - If the photo contains text, the AI sometimes invents meaningless letters in the addition: use "More options".
 
 ### Upscale (Shift+U)
@@ -443,8 +451,9 @@ Increases the resolution (number of pixels) of the photo.
 
 The window shows the final size before starting; while computing, the progress counts the tiles.
 
-**Layers**: all layers are enlarged (simple smoothing) and the AI result arrives, complete, on an
-"Upscale 1" layer on top.
+**Layers**: a photo with a single layer is simply replaced by the result. With several layers (or the *new layer*
+option), all layers are enlarged (simple smoothing) and the AI result arrives, complete, on an "Upscale 1" layer on
+top.
 
 ### Subject and background
 **BiRefNet** model (MIT, 444 MB, installed with the AI engine; if it is missing, **AI > Install the AI engine…**
@@ -456,7 +465,7 @@ adds it). A few seconds.
 
 ### Reduce noise, Sharpen, Restore an old photo (AI menu)
 These three actions work on the visible image; if there is a **selection**, only its inside changes. Like the other
-AI actions, the result goes on a **new layer** (Ctrl+Z undoes it).
+AI actions, the result goes into the chosen layer (Ctrl+Z undoes it).
 - **Reduce noise (AI)**: removes grain (night or phone photos) and JPEG compression artefacts while keeping detail.
   **SCUNet** model (Apache-2.0, 72 MB). A few seconds.
 - **Sharpen (AI)**: makes a slight blur sharper (edges, text, details): the photo is enlarged ×4 by RealESRGAN

@@ -374,8 +374,17 @@ pour attraper les bords flous.
 ## 5. Les actions IA
 
 Chaque action propose **plusieurs résultats** : on choisit le meilleur, comme dans Photoshop.
-Le résultat gardé arrive sur un **nouveau calque** (« Effacer 1 », « Remplir 2 »…) : la photo d'origine n'est
-jamais abîmée. L'IA travaille toujours sur l'image **telle qu'on la voit** (tous les calques visibles ensemble).
+Le résultat gardé va **dans le calque choisi** (celui surligné dans le panneau Calques) : il en fait partie et le
+suit quand on le déplace, le transforme ou change sa taille. Ctrl+Z revient en arrière. L'IA travaille toujours sur
+l'image **telle qu'on la voit** (tous les calques visibles ensemble) : choisissez donc le calque de la photo avant
+de lancer.
+- Le résultat **ne sort pas de la sélection** : l'IA retouche un peu autour pour le raccord, mais Pixane ne garde
+  que l'intérieur, plus un fondu de quelques pixels, pour qu'aucun bord ne se voie.
+- Il va dans un **nouveau calque** (« Effacer 1 », « Remplir 2 »…) quand le calque choisi ne peut pas le recevoir
+  (texte, groupe, calque de réglage, calque caché ou verrouillé), ou quand il n'y a pas de sélection et que
+  l'image a plusieurs calques (sinon les autres y seraient recopiés). Un message le dit en bas.
+- **IA > Mettre les résultats dans un nouveau calque** (à cocher) : chaque résultat va dans un nouveau calque,
+  comme avant ; pratique pour comparer avec l'original en masquant le calque.
 
 ### Fenêtre de choix du résultat
 - Cliquez sur une vignette pour la voir en grand.
@@ -437,8 +446,8 @@ Deux cadres apparaissent sur la photo :
   petite photo (déjà travaillée à sa vraie taille).
 - **Conseils** pour un ajout réaliste : agrandir par petites étapes (20 à 30 % à la fois) plutôt que 100 % d'un
   coup ; comparer les propositions (« Autres propositions ») ; marquer en bord abîmé un liseré ou un cadre.
-- **Calques** : tous les calques sont décalés sur la nouvelle toile ; un calque « Agrandir 1 » contient l'ajout
-  et le bord refait (seulement les pixels nouveaux).
+- **Calques** : tous les calques sont décalés sur la nouvelle toile ; l'ajout et le bord refait vont dans le
+  calque choisi (en général la photo), ou dans un calque « Agrandir 1 » avec l'option *nouveau calque*.
 - Si la photo contient du texte, l'IA invente parfois des lettres sans sens dans l'ajout : utilisez
   « Autres propositions ».
 
@@ -454,8 +463,9 @@ Augmente la définition (nombre de pixels) de la photo.
 
 La fenêtre indique la taille finale avant de lancer ; pendant le calcul, la progression compte les morceaux.
 
-**Calques** : tous les calques sont agrandis (lissage simple) et le résultat de l'IA arrive, complet, sur un
-calque « Upscale 1 » au-dessus.
+**Calques** : une photo d'un seul calque est simplement remplacée par le résultat. Avec plusieurs calques (ou
+l'option *nouveau calque*), tous les calques sont agrandis (lissage simple) et le résultat de l'IA arrive, complet,
+sur un calque « Upscale 1 » au-dessus.
 
 ### Sujet et arrière-plan
 Modèle **BiRefNet** (MIT, 444 Mo, installé avec le moteur IA ; s'il manque, menu **IA > Installer le moteur IA…**
@@ -467,7 +477,7 @@ l'ajoute). Quelques secondes.
 
 ### Réduire le bruit, Netteté, Restaurer une vieille photo (menu IA)
 Ces trois actions travaillent sur l'image visible ; s'il y a une **sélection**, le résultat ne change que
-l'intérieur. Comme les autres actions IA, le résultat va dans un **nouveau calque** (Ctrl+Z annule).
+l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi (Ctrl+Z annule).
 - **Réduire le bruit (IA)** : enlève le grain (photo de nuit, téléphone) et les défauts de compression JPEG en
   gardant les détails. Modèle **SCUNet** (Apache-2.0, 72 Mo). Quelques secondes.
 - **Netteté (IA)** : rend un flou léger plus net (contours, textes, détails) : la photo est agrandie ×4 par
