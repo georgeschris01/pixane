@@ -26,6 +26,7 @@ from .contour import ActionContour
 from .onglets import Onglets
 from .calques import PanneauCalques
 from .canevas import (BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GOMME_CALQUE, LASSO, MAIN, OBJET,
+                      SEL_TEXTE,
                       OUTILS_AUTO, OUTILS_ROND, PEINTURE, PINCEAU, RAPIDE, RECADRER, RECTANGLE, SEAU, SUPPRIMER,
                       TAMPON, TEXTE, Canevas)
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
@@ -635,6 +636,22 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                                            "choisi seulement"))
         lay.addWidget(self.opt_echantillon)
         tout.addWidget(self.opt_baguette)
+        # sélection de texte
+        self.opt_sel_texte = QWidget()
+        lay = QHBoxLayout(self.opt_sel_texte)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(8)
+        self.opt_pleines = QCheckBox(tr("Lettres pleines"))
+        self.opt_pleines.setToolTip(tr("Coché : l'intérieur des lettres est pris aussi (motifs, intérieur des O et "
+                                       "des A). Pratique pour effacer ou déplacer un texte."))
+        self.opt_pleines.setChecked(self.reglages.value("texte_pleines", False, type=bool))
+        self.opt_pleines.toggled.connect(lambda v: self.reglages.setValue("texte_pleines", v))
+        self.opt_pleines.toggled.connect(lambda _v: self.selection_auto.texte_relancer())
+        lay.addWidget(self.opt_pleines)
+        aide = QLabel(tr("Alt+clic : enlever un morceau · Maj+clic : ajouter · Ctrl en plus : toute la couleur"))
+        aide.setEnabled(False)
+        lay.addWidget(aide)
+        tout.addWidget(self.opt_sel_texte)
 
     def _couleur_peinture(self, couleur: str, enregistrer: bool = True):
         self.canevas.couleur_peinture = QColor(couleur)
@@ -710,6 +727,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                                                       "retirer"), "Q", "rapide"),
                                           (OBJET, tr("Sélection d'objet (IA) : cadre autour de l'objet, ou clic "
                                                      "dessus"), "O", "objet"),
+                                          (SEL_TEXTE, tr("Sélection de texte : cadre autour d'un texte, les lettres "
+                                                         "seules sont sélectionnées"), "Y", "sel_texte"),
                                           (GOMME_CALQUE, tr("Gomme de calque : efface les pixels du calque choisi"),
                                            "G", "gomme_calque"),
                                           (TEXTE, tr("Texte : écrire, déplacer, tourner"), "T", "texte"),
@@ -742,7 +761,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         # comme Photoshop : un bouton par famille d'outils ; clic droit (ou clic maintenu) pour choisir dans la
         # famille ; le bouton montre le dernier outil choisi. Main et Déplacer restent seuls.
         self._bouton_groupe = {}
-        for famille in ((MAIN,), (DEPLACER,), (RECTANGLE, LASSO, PINCEAU, GOMME), (OBJET, RAPIDE, BAGUETTE),
+        for famille in ((MAIN,), (DEPLACER,), (RECTANGLE, LASSO, PINCEAU, GOMME), (OBJET, RAPIDE, BAGUETTE, SEL_TEXTE),
                         (SUPPRIMER, CORRECTEUR, TAMPON), (PEINTURE, GOMME_CALQUE, DEGRADE, SEAU), (FORMES,),
                         (RECADRER,), (TEXTE,)):
             if len(famille) == 1:
@@ -793,10 +812,11 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.options.setEnabled(outil not in (MAIN, TEXTE))
         self.opt_taille.setVisible(outil in OUTILS_ROND or outil in (MAIN, TEXTE, RECTANGLE, LASSO,
                                                                      FORMES))
-        if outil in (BAGUETTE, OBJET):
+        if outil in (BAGUETTE, OBJET, SEL_TEXTE):
             self.opt_taille.setVisible(False)
         self.opt_selection.setVisible(outil in (RECTANGLE, LASSO, PINCEAU) + OUTILS_AUTO)
         self.opt_baguette.setVisible(outil == BAGUETTE)
+        self.opt_sel_texte.setVisible(outil == SEL_TEXTE)
         self.opt_couleur.setVisible(outil in (PEINTURE, DEGRADE, SEAU, FORMES))
         self.opt_retouche.setVisible(outil in (PEINTURE, TAMPON, CORRECTEUR, DEGRADE, SEAU))
         self.opt_degrade.setVisible(outil == DEGRADE)
@@ -816,6 +836,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                             "Alt + peindre : retirer une partie. Maj : objet suivant. Échap : recommencer."),
                  OBJET: tr("Sélection d'objet (IA) : tire un cadre autour de l'objet, ou clique dessus. "
                            "Maj : ajouter, Alt : retirer."),
+                 SEL_TEXTE: tr("Sélection de texte : tire un cadre autour du texte, avec un peu de fond autour. "
+                               "Ensuite, Alt+clic enlève un morceau en trop, Maj+clic ajoute un morceau oublié."),
                  RECADRER: tr("Recadrer : tire un cadre sur la photo, ajuste-le, puis Entrée (ou double-clic). "
                               "Échap pour annuler."),
                  PEINTURE: tr("Pinceau de couleur : peint sur le calque choisi. Alt+clic sur la photo : prendre une "

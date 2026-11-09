@@ -78,6 +78,8 @@ DESSINS = {
     "objet": '<rect x="3.5" y="4.5" width="17" height="15" rx="1.5" stroke-dasharray="3 2.4"/>'
              '<path stroke="A" d="M9 16.5c-1.5 0-2-1.2-1.5-2.4l1.6-3.6c.6-1.3 2.4-1.6 3.4-.4l3.3 3.9c.9 1.1.2 2.5-1.2 '
              '2.5z"/>',
+    "sel_texte": '<rect x="3.5" y="4.5" width="17" height="15" rx="1.5" stroke-dasharray="3 2.4"/>'
+                 '<path stroke="A" d="M8 9h8M12 9v7.5"/>',
     "arriere_plan": '<rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke-dasharray="2.5 2.2"/>'
                     '<path stroke="A" d="M12 8a2.3 2.3 0 1 1 0 4.6A2.3 2.3 0 0 1 12 8zM7.5 19.5c.6-3 2.3-4.6 4.5-4.6s3.9 1.6 4.5 4.6"/>',
     "reglages": '<path d="M4 6.5h9M17 6.5h3M4 12h3M11 12h9M4 17.5h11M19 17.5h1"/>'

@@ -29,18 +29,19 @@ TAMPON = "tampon"                              # copier une zone de la photo sur
 BAGUETTE = "baguette"                          # baguette magique : zone de couleur proche (glisser = tolérance)
 RAPIDE = "rapide"                              # sélection rapide (IA) : peindre sur l'objet
 OBJET = "objet"                                # sélection d'objet (IA) : cadre autour, ou clic dessus
+SEL_TEXTE = "sel_texte"                        # sélection de texte : cadre autour du texte, clics pour corriger
 SUPPRIMER = "supprimer"                        # pinceau Supprimer (IA, LaMa) : le défaut peint disparaît au lâcher
 CORRECTEUR = "correcteur"                      # pinceau correcteur : comme le tampon, raccordé à la lumière autour
 DEGRADE = "degrade"                            # dégradé : glisser du début à la fin
 SEAU = "seau"                                  # pot de peinture : remplit une zone de couleur proche
 FORMES = "formes"                              # rectangle, ellipse, ligne, flèche (nouveau calque)
 OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE, PEINTURE, TAMPON, RAPIDE, SUPPRIMER, CORRECTEUR)   # curseur rond
-OUTILS_AUTO = (BAGUETTE, RAPIDE, OBJET)                                  # sélections calculées
+OUTILS_AUTO = (BAGUETTE, RAPIDE, OBJET, SEL_TEXTE)                       # sélections calculées
 OUTILS_CALQUE = (GOMME_CALQUE, PEINTURE, TAMPON, CORRECTEUR, DEGRADE, SEAU)                  # outils qui changent les pixels du calque
 OPACITE_SELECTION = 0.45
 
 # outils de sélection : les flèches du clavier décalent la sélection (Maj : 10 pixels)
-OUTILS_SELECTION = (RECTANGLE, LASSO, PINCEAU, BAGUETTE, RAPIDE, OBJET)
+OUTILS_SELECTION = (RECTANGLE, LASSO, PINCEAU, BAGUETTE, RAPIDE, OBJET, SEL_TEXTE)
 FLECHES = {Qt.Key_Left: (-1, 0), Qt.Key_Right: (1, 0), Qt.Key_Up: (0, -1), Qt.Key_Down: (0, 1)}
 
 
@@ -68,6 +69,7 @@ class Canevas(QWidget):
     baguette_lache = Signal()
     trait_ia = Signal(list, bool, bool)         # sélection rapide : points (image), Alt (retirer), Maj (nouvel objet)
     objet_ia = Signal(object, str)              # sélection d'objet : QRectF (cadre) ou QPointF (clic), mode
+    texte_sel = Signal(object, str, bool)       # sélection de texte : QRectF (cadre) ou QPointF (clic), mode, Ctrl
     fin_session_ia = Signal()                   # Échap avec la sélection rapide : l'objet suivant repart de zéro
     suppression = Signal(list, float)           # pinceau Supprimer : points (image), taille du pinceau
     poignee_sol_bouge = Signal(object)          # style « ombre au sol » : bout de l'ombre tiré (point image)
@@ -1183,7 +1185,7 @@ class Canevas(QWidget):
         """Trait de la sélection rapide, cadre de la sélection d'objet (en cours ou en calcul), points de l'IA.
         Appelé avec la transformation de l'image (coordonnées image)."""
         trait = None
-        if self._auto is not None and self._auto[0] in (RAPIDE, OBJET, SUPPRIMER):
+        if self._auto is not None and self._auto[0] in (RAPIDE, OBJET, SUPPRIMER, SEL_TEXTE):
             trait = (self._auto[0], self._auto[2])
         elif self.trait_en_attente is not None:
             trait = self.trait_en_attente
@@ -1201,7 +1203,7 @@ class Canevas(QWidget):
                     p.drawPoint(d["points"][0])
                 else:
                     p.drawPolyline(QPolygonF(d["points"]))
-            elif genre == OBJET and d.get("fin") is not None:
+            elif genre in (OBJET, SEL_TEXTE) and d.get("fin") is not None:
                 r = QRectF(d["debut"], d["fin"]).normalized()
                 for couleur, style in ((QColor(0, 0, 0), Qt.SolidLine), (QColor(255, 255, 255), Qt.DashLine)):
                     stylo = QPen(couleur, 0, style)
@@ -1230,7 +1232,8 @@ class Canevas(QWidget):
         elif self.outil == SUPPRIMER:
             self._auto = (SUPPRIMER, pos, {"points": [pt], "taille": float(self.taille_pinceau)})
         else:
-            self._auto = (OBJET, pos, {"debut": pt, "fin": None, "mode": mode})
+            self._auto = (self.outil if self.outil == SEL_TEXTE else OBJET, pos,
+                          {"debut": pt, "fin": None, "mode": mode, "ctrl": bool(mods & Qt.ControlModifier)})
         self.update()
 
     def _glisser_auto(self, pos: QPointF):
@@ -1254,6 +1257,9 @@ class Canevas(QWidget):
         elif outil == RAPIDE:
             self.trait_en_attente = (RAPIDE, d)
             self.trait_ia.emit([(pt.x(), pt.y()) for pt in d["points"]], d["alt"], d["maj"])
+        elif outil == SEL_TEXTE:
+            quoi = QRectF(d["debut"], d["fin"]).normalized() if d["fin"] is not None else d["debut"]
+            self.texte_sel.emit(quoi, d["mode"], d["ctrl"])
         else:
             self.trait_en_attente = (OBJET, d)
             quoi = QRectF(d["debut"], d["fin"]).normalized() if d["fin"] is not None else d["debut"]

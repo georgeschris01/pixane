@@ -24,7 +24,7 @@
 
 **Sélection**
 - Rectangle, lasso, pinceau et gomme de sélection ; ajouter / retirer avec Maj / Alt
-- **Sélection d'objet** et **sélection rapide** par IA (SAM 3.1), **baguette magique** réglable en glissant
+- **Sélection d'objet** et **sélection rapide** par IA (SAM 3.1), **baguette magique** réglable en glissant, **sélection de texte** (un cadre autour d'un titre : les lettres seules, traits fins compris)
 - **Améliorer le contour** pour les cheveux, poils et bords flous ; agrandir, réduire, adoucir, inverser
 
 **Calques, comme dans Photoshop**
@@ -281,6 +281,7 @@ directement leur touche.
 | **Sélection d'objet** (IA) | O | Tirer un cadre autour d'un objet, ou cliquer dessus : l'IA le détoure |
 | **Sélection rapide** (IA) | Q | Peindre grossièrement sur l'objet : l'IA trouve ses contours |
 | **Baguette magique** | W | Un clic sur une couleur : toute la zone de couleur proche (sans IA) |
+| **Sélection de texte** | Y | Un cadre autour d'un texte : les lettres seules, traits fins compris (sans IA) |
 
 - **Rectangle et lasso**, comme dans Photoshop : une nouvelle sélection **remplace** l'ancienne. Maintenir **Maj** en
   commençant le tracé **ajoute** à la sélection, **Alt** **retire**. Un simple clic sans tracer **désélectionne**.
@@ -311,6 +312,25 @@ seconde par demande (quelques secondes la première fois).
   objets déjà trouvés. Une sélection vidée (Ctrl+D) ou changée par un autre outil fait repartir de zéro ; **Échap**
   aussi.
 - Ctrl+Z annule chaque étape. Le résultat se règle ensuite avec *Modifier la sélection* (agrandir, adoucir…).
+
+### Sélection de texte (Y)
+Pour prendre un **texte** (titre de pochette, lettres manuscrites, texte en dégradé ou à contour) sans le fond, même
+quand une couleur proche le touche. Sans IA, en moins d'une seconde. Dans le groupe de la baguette (clic droit sur
+son bouton) ou touche **Y**.
+1. **Tirer un cadre autour du texte**, en laissant un peu de fond tout autour : Pixane regarde ce qui touche le bord
+   du cadre (le fond) et sélectionne ce qui s'en distingue (les lettres). Les traits très fins et les bords des
+   lettres sont pris en douceur (sélection progressive). Rien n'est pris hors du cadre.
+2. **Corriger d'un clic**, dans ce cadre :
+   - **Alt + clic** sur un morceau pris en trop (un bout de photo) : il est enlevé ;
+   - **Maj + clic** sur un morceau oublié : il est ajouté ;
+   - avec **Ctrl** en plus : toute cette couleur du cadre (pratique pour des franges ou des taches nombreuses).
+3. **Maj + cadre** : ajoute un autre texte ; **Alt + cadre** : retire le texte de ce cadre.
+- **Lettres pleines** (case) : l'intérieur des lettres est pris aussi (motifs dans une lettre, intérieur des O et
+  des A). Pratique pour effacer ou déplacer un texte. Sans la case, seuls les petits trous (grain d'un JPEG) sont
+  bouchés.
+- Conseils : un cadre qui coupe un peu les lettres d'un côté n'est pas grave. Si le fond derrière le texte est une
+  photo chargée, un cadre bien serré aide ; une partie de photo entièrement dans le cadre se retire par Alt + clic.
+- Ctrl+Z annule le dernier cadre ou la dernière correction.
 
 ### Baguette magique (W)
 Un clic sur une couleur sélectionne la zone de couleur proche. Sans IA, instantané.
@@ -380,8 +400,10 @@ l'image **telle qu'on la voit** (tous les calques visibles ensemble) : choisisse
 de lancer.
 - Le résultat **ne sort pas de la sélection** : l'IA retouche un peu autour pour le raccord, mais Pixane ne garde
   que l'intérieur, plus un fondu de quelques pixels, pour qu'aucun bord ne se voie.
-- Les zones **transparentes** (fond transparent, logo détouré) sont montrées à l'IA sur du blanc et **restent
-  transparentes** dans le résultat (Upscale aussi).
+- Les zones **transparentes** (fond transparent, logo détouré, texte seul) **restent transparentes** : aucun noir
+  n'est ajouté, ni dans les propositions ni dans le résultat (Upscale aussi). Pour que l'IA voie bien ce qu'il y a
+  dessus, Pixane lui montre ces zones sur un fond uni qui contraste (sombre derrière un texte blanc, blanc derrière
+  un logo foncé), puis retire ce fond du résultat, bords des lettres compris.
 - Il va dans un **nouveau calque** (« Effacer 1 », « Remplir 2 »…) quand le calque choisi ne peut pas le recevoir
   (texte, groupe, calque de réglage, calque caché ou verrouillé), ou quand il n'y a pas de sélection et que
   l'image a plusieurs calques (sinon les autres y seraient recopiés). Un message le dit en bas.
@@ -870,7 +892,7 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+Alt+F | Style du calque |
 | Ctrl+Maj+N, Ctrl+J | Nouveau calque, Dupliquer le calque |
 | Ctrl+Alt+S, Maj+B | Sélectionner le sujet, Supprimer l'arrière-plan (IA) |
-| O, Q, W | Sélection d'objet (IA), Sélection rapide (IA), Baguette magique |
+| O, Q, W, Y | Sélection d'objet (IA), Sélection rapide (IA), Baguette magique, Sélection de texte |
 | Glisser après un clic de baguette | Régler la tolérance en direct |
 | Clic droit sur un outil à petit triangle | Choisir un autre outil du groupe |
 | Ctrl+0, Ctrl+1 | Ajuster, 100 % |

@@ -24,7 +24,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 
 **Selection**
 - Rectangle, lasso, selection brush and eraser; add / subtract with Shift / Alt
-- AI **object selection** and **quick selection** (SAM 3.1), **magic wand** adjusted by dragging
+- AI **object selection** and **quick selection** (SAM 3.1), **magic wand** adjusted by dragging, **text selection** (a frame around a title: only the letters, thin strokes included)
 - **Refine edge** for hair, fur and soft edges; expand, shrink, feather, invert
 
 **Layers, as in Photoshop**
@@ -275,6 +275,7 @@ The selection tools share **two buttons** in the left bar (small triangle): the 
 | **Object selection** (AI) | O | Drag a frame around an object, or click on it: the AI cuts it out |
 | **Quick selection** (AI) | Q | Roughly paint over the object: the AI finds its outline |
 | **Magic wand** | W | One click on a colour: the whole area of similar colour (no AI) |
+| **Text selection** | Y | A frame around a text: only the letters, thin strokes included (no AI) |
 
 - **Rectangle and lasso**, as in Photoshop: a new selection **replaces** the old one. Holding **Shift** when you
   start drawing **adds** to the selection, **Alt** **removes**. A single click without drawing **deselects**.
@@ -303,6 +304,24 @@ per request (a few seconds the first time).
   over a part to leave out (red dots): the AI corrects the objects already found. A selection cleared (Ctrl+D) or
   changed by another tool starts again from scratch; so does **Esc**.
 - Ctrl+Z undoes each step. Fine-tune the result afterwards with *Modify selection* (expand, soften…).
+
+### Text selection (Y)
+To take a **text** (cover title, handwritten letters, gradient or outlined text) without the background, even when a
+similar colour touches it. No AI, in less than a second. In the magic wand's group (right-click its button) or key
+**Y**.
+1. **Drag a frame around the text**, leaving a little background all around: Pixane looks at what touches the edge
+   of the frame (the background) and selects what stands out from it (the letters). Very thin strokes and letter
+   edges are taken softly (progressive selection). Nothing outside the frame is taken.
+2. **Correct with a click**, inside that frame:
+   - **Alt + click** on an extra piece (a bit of photo): it is removed;
+   - **Shift + click** on a missed piece: it is added;
+   - with **Ctrl** as well: this whole colour in the frame (handy for many fringes or spots).
+3. **Shift + frame**: adds another text; **Alt + frame**: removes the text in that frame.
+- **Solid letters** (tick box): the inside of the letters is taken too (patterns in a letter, inside of O and A).
+  Handy to erase or move a text. Without it, only small holes (JPEG grain) are filled.
+- Tips: a frame that cuts the letters a little on one side does not matter. If the background behind the text is a
+  busy photo, a tight frame helps; a piece of photo entirely inside the frame is removed with Alt + click.
+- Ctrl+Z undoes the last frame or the last correction.
 
 ### Magic wand (W)
 One click on a colour selects the area of similar colour. No AI, instant.
@@ -370,8 +389,10 @@ and follows it when you move, transform or resize it. Ctrl+Z goes back. The AI a
 see it** (all visible layers together): so choose the photo's layer before starting.
 - The result **does not go outside the selection**: the AI retouches a little around it for the join, but Pixane
   only keeps the inside, plus a blend of a few pixels, so that no edge shows.
-- **Transparent** areas (transparent background, cut-out logo) are shown to the AI on white and **stay transparent**
-  in the result (Upscale too).
+- **Transparent** areas (transparent background, cut-out logo, text alone) **stay transparent**: no black is added,
+  neither in the proposals nor in the result (Upscale too). So that the AI sees clearly what is on them, Pixane
+  shows these areas on a plain contrasting background (dark behind white text, white behind a dark logo), then
+  removes that background from the result, letter edges included.
 - It goes into a **new layer** ("Erase 1", "Fill 2"…) when the chosen layer cannot receive it (text, group,
   adjustment layer, hidden or locked layer), or when there is no selection and the image has several layers
   (otherwise the others would be copied into it). A message at the bottom says so.
@@ -846,7 +867,7 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+Alt+F | Layer style |
 | Ctrl+Shift+N, Ctrl+J | New layer, Duplicate layer |
 | Ctrl+Alt+S, Shift+B | Select subject, Remove background (AI) |
-| O, Q, W | Object selection (AI), Quick selection (AI), Magic wand |
+| O, Q, W, Y | Object selection (AI), Quick selection (AI), Magic wand, Text selection |
 | Drag after a magic wand click | Adjust the tolerance live |
 | Right-click on a tool with a small triangle | Choose another tool of the group |
 | Ctrl+0, Ctrl+1 | Fit, 100% |

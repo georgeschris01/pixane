@@ -11,10 +11,11 @@ from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from . import recettes
-from .document import FORMAT_IMAGE, _masque_vers_selection, masque, tableau
+from .document import FORMAT_IMAGE, _masque_vers_selection, a_plat, masque, tableau
 from .langue import tr
 from .moteur import ErreurMoteur
 from .selection_auto import apercu_baguette, baguette, combiner, nettoyer, points_du_trait
+from .selection_texte import Analyse
 
 COTE_IA = 1536            # l'image envoyée à SAM : au plus 1536 px de côté (SAM travaille de toute façon en ~1000 px)
 MAX_POINTS = 40
@@ -47,6 +48,8 @@ class SelectionAuto(QObject):
         self.c.baguette_lache.connect(self.baguette_lache)
         self.c.trait_ia.connect(self.trait_rapide)
         self.c.objet_ia.connect(self.objet)
+        self.c.texte_sel.connect(self.texte)
+        self._t = None               # sélection de texte : dernier cadre (pour les clics de correction)
 
     # ------------------------------------------------------------------ outils communs
     def _historique(self, a: np.ndarray, titre: str):
@@ -157,6 +160,69 @@ class SelectionAuto(QObject):
         self.c.points_ia = [(QPointF(x, y), True) for g in s["groupes"] for x, y in g["pos"]] + \
                            [(QPointF(x, y), False) for x, y in s["neg"]]
         self._demander({"titre": titre, "doc": doc, "session": s, "mode": s["mode"], "base": s["base"]})
+
+    # ------------------------------------------------------------------ sélection de texte (sans IA)
+    def texte(self, quoi, mode: str, ctrl: bool):
+        """Cadre : les lettres du cadre deviennent la sélection. Clic dans ce cadre ensuite : correction
+        (Alt+clic enlève le morceau, Maj+clic l'ajoute ; Ctrl en plus : toute cette couleur du cadre)."""
+        doc = self.f.doc
+        if doc is None:
+            return
+        W, H = doc.taille()
+        if isinstance(quoi, QRectF):
+            r = quoi.normalized()
+            x0, y0 = max(0, int(r.left())), max(0, int(r.top()))
+            x1, y1 = min(W, int(np.ceil(r.right()))), min(H, int(np.ceil(r.bottom())))
+            if x1 - x0 < 8 or y1 - y0 < 8:
+                self.f.statusBar().showMessage(tr("Cadre trop petit : tire un cadre autour du texte, avec un peu de "
+                                                  "fond tout autour."), 6000)
+                return
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                rgba = tableau(doc.image.convertToFormat(FORMAT_IMAGE))[y0:y1, x0:x1]
+                an = Analyse(a_plat(np.ascontiguousarray(rgba)))
+            finally:
+                QApplication.restoreOverrideCursor()
+            base = None if mode == "nouvelle" else masque(doc.selection).copy()
+            self._t = {"doc": doc, "rect": (x0, y0, x1, y1), "an": an, "base": base, "mode": mode}
+            self._appliquer_texte(tr("Sélection de texte"))
+            self.f.statusBar().showMessage(tr("Texte sélectionné. Pour corriger : Alt+clic sur un morceau en trop, "
+                                              "Maj+clic sur un morceau oublié (Ctrl en plus : toute cette couleur)."),
+                                           10000)
+            return
+        t = self._t
+        x, y = int(quoi.x()), int(quoi.y())
+        if t is None or t["doc"] is not doc or t.get("empreinte") != _empreinte(doc.selection) or not (
+                t["rect"][0] <= x < t["rect"][2] and t["rect"][1] <= y < t["rect"][3]):
+            self.f.statusBar().showMessage(tr("Tire d'abord un cadre autour du texte. Les clics servent ensuite à "
+                                              "corriger, dans ce cadre : Alt+clic enlève un morceau, Maj+clic en "
+                                              "ajoute un."), 10000)
+            return
+        if mode == "nouvelle":
+            self.f.statusBar().showMessage(tr("Alt+clic : enlever ce morceau. Maj+clic : l'ajouter. Ctrl en plus : "
+                                              "toute cette couleur du cadre."), 8000)
+            return
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            t["an"].corriger(x - t["rect"][0], y - t["rect"][1], ajouter=(mode == "ajouter"), toute_couleur=ctrl)
+            self._appliquer_texte(tr("Sélection de texte : correction"))
+        finally:
+            QApplication.restoreOverrideCursor()
+
+    def _appliquer_texte(self, titre: str):
+        t, doc = self._t, self.f.doc
+        x0, y0, x1, y1 = t["rect"]
+        W, H = doc.taille()
+        a = np.zeros((H, W), np.uint8)
+        a[y0:y1, x0:x1] = t["an"].calculer(self.f.opt_pleines.isChecked())
+        self._historique(combiner(t["base"], a, t["mode"]), titre)
+        t["empreinte"] = _empreinte(doc.selection)
+
+    def texte_relancer(self):
+        """Case « Lettres pleines » changée : le dernier cadre est recalculé (s'il est toujours la sélection)."""
+        t, doc = self._t, self.f.doc
+        if t is not None and t["doc"] is doc and t.get("empreinte") == _empreinte(doc.selection):
+            self._appliquer_texte(tr("Sélection de texte"))
 
     def fin_session(self):
         """Échap, autre outil, autre photo : la prochaine sélection rapide commence un nouvel objet."""
