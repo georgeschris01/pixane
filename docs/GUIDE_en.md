@@ -762,7 +762,7 @@ while keeping its models, extensions and settings; a replaced old model is delet
 update and restarted afterwards. A ComfyUI installed another way (for example ComfyUI Desktop) updates itself:
 Pixane does not touch it.
 
-A new version installs over the old one (settings kept). To uninstall: Windows Settings > Apps. The uninstaller
+**Help > Check for updates…** (or at startup, if *Check for updates at startup* is ticked): when a new version exists, a window shows **what's new** (new features, fixes) in every version you do not have yet; **Download** opens the download page. A new version installs over the old one (settings kept). To uninstall: Windows Settings > Apps. The uninstaller
 asks two questions (default answer "No"):
 - also delete the **AI engine installed by Pixane** (ComfyUI, extensions, models)? A ComfyUI installed another
   way, such as ComfyUI Desktop, is never touched;

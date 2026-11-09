@@ -173,6 +173,19 @@ verifier("Pixane" in d.findChildren(type(f.info_transfo))[0].text(), "fenêtre �
 d.deleteLater()
 verifier(mises_a_jour.plus_recente("0.2.0", "0.1.0") and not mises_a_jour.plus_recente("0.1.0", "0.1.0")
          and mises_a_jour.plus_recente("v1.0", "0.9.9"), "comparaison des versions")
+publiees = [{"tag_name": "v0.4.0", "body": "ancienne"}, {"tag_name": "v0.6.0", "body": "### Nouveautés\n- six"},
+            {"tag_name": "v0.5.1", "body": "### Corrections\n- bug", "draft": True},
+            {"tag_name": "v0.5.0", "body": "### Nouveautés\n- cinq", "html_url": "https://exemple/0.5.0"}]
+info = mises_a_jour.trier_nouveautes(publiees, "0.4.0")
+verifier(info["version"] == "0.6.0" and [v for v, _n in info["versions"]] == ["0.6.0", "0.5.0"],
+         "mise à jour : toutes les versions plus récentes, sans les brouillons, la plus récente en haut")
+verifier(mises_a_jour.trier_nouveautes(publiees, "0.6.0")["versions"] == [], "mise à jour : déjà à jour")
+from pixane.fenetre import FenetreNouveautes  # noqa: E402
+fn = FenetreNouveautes(info, f)
+texte = fn.notes.toPlainText()
+verifier("Pixane 0.6.0" in texte and "six" in texte and "cinq" in texte and texte.index("six") < texte.index("cinq"),
+         "fenêtre de mise à jour : nouveautés de chaque version")
+fn.deleteLater()
 sombre = QImage(str(sortie / "fond.png")).convertToFormat(QImage.Format_ARGB32_Premultiplied)
 t = tableau(sombre.convertToFormat(FORMAT_IMAGE))
 t[..., :3] = t[..., :3] // 3 + 20

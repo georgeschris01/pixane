@@ -781,7 +781,7 @@ Seul ce qui a changé est téléchargé. ComfyUI est remplacé en gardant ses mo
 un ancien modèle remplacé est effacé. Le moteur est arrêté pendant la mise à jour et relancé après. Un ComfyUI
 installé autrement (par exemple ComfyUI Desktop) se met à jour de son côté : Pixane n'y touche pas.
 
-Une nouvelle version s'installe par-dessus l'ancienne (réglages gardés). Désinstaller : Paramètres de Windows >
+**Aide > Rechercher une mise à jour…** (ou au démarrage, si *Vérifier les mises à jour au démarrage* est coché) : quand une nouvelle version existe, une fenêtre montre **ce qui change** (nouveautés, corrections) dans toutes les versions que vous n'avez pas encore ; **Télécharger** ouvre la page de téléchargement. Une nouvelle version s'installe par-dessus l'ancienne (réglages gardés). Désinstaller : Paramètres de Windows >
 Applications. Le désinstalleur pose deux questions (réponse « Non » par défaut) :
 - supprimer aussi le **moteur IA installé par Pixane** (ComfyUI, extensions, modèles) ? Un ComfyUI installé
   autrement, par exemple ComfyUI Desktop, n'est jamais touché ;

@@ -72,6 +72,36 @@ class Tache(QObject):
             self.echec.emit(f"{type(e).__name__} : {e}")
 
 
+class FenetreNouveautes(QDialog):
+    """Nouvelle version trouvée : ce qui change (nouveautés, corrections) dans toutes les versions pas encore
+    installées, puis Télécharger ou Plus tard."""
+
+    def __init__(self, info: dict, parent=None):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QDialogButtonBox, QTextBrowser
+        from . import __version__
+        self.setWindowTitle(tr("Mise à jour"))
+        self.resize(640, 520)
+        lay = QVBoxLayout(self)
+        n = len(info["versions"])
+        titre = QLabel(tr("<b>Pixane {v} est disponible</b> (vous avez la {actuelle}).", v=info["version"],
+                          actuelle=__version__) + (" " + tr("{n} versions depuis la vôtre.", n=n) if n > 1 else ""))
+        titre.setWordWrap(True)
+        lay.addWidget(titre)
+        lay.addWidget(QLabel(tr("Ce qui change :")))
+        self.notes = QTextBrowser()
+        self.notes.setOpenExternalLinks(True)
+        self.notes.setMarkdown(mises_a_jour.texte_nouveautes(info["versions"]))
+        lay.addWidget(self.notes, 1)
+        boutons = QDialogButtonBox()
+        telecharger = boutons.addButton(tr("Télécharger"), QDialogButtonBox.AcceptRole)
+        telecharger.setDefault(True)
+        boutons.addButton(tr("Plus tard"), QDialogButtonBox.RejectRole)
+        boutons.accepted.connect(self.accept)
+        boutons.rejected.connect(self.reject)
+        lay.addWidget(boutons)
+
+
 class CommandeEtat(QUndoCommand):
     """Passage d'un état du document à un autre. Deux commandes de même `cle` à la suite n'en font qu'une
     (ex. les lettres tapées dans un texte : un seul Ctrl+Z annule toute la saisie)."""
@@ -1832,13 +1862,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
 
     def verifier_maj(self, silencieux: bool = False):
         def ok(info):
-            if mises_a_jour.plus_recente(info["version"]):
-                notes = info["notes"][:600] + ("…" if len(info["notes"]) > 600 else "")
-                rep = QMessageBox.question(self, tr("Mise à jour"), tr(
-                    "Une nouvelle version de Pixane est disponible : {v} (vous avez {actuelle}).\n\n{notes}\n\n"
-                    "Ouvrir la page de téléchargement ?", v=info["version"], actuelle=__import__("pixane").__version__,
-                    notes=notes))
-                if rep == QMessageBox.Yes:
+            if info["versions"]:
+                if FenetreNouveautes(info, self).exec() == QDialog.Accepted:
                     QDesktopServices.openUrl(QUrl(info["page"]))
             elif not silencieux:
                 QMessageBox.information(self, tr("Mise à jour"), tr("Pixane est à jour."))
@@ -1849,7 +1874,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
 
         def chercher(_progres):
             try:
-                return mises_a_jour.derniere_version()
+                return mises_a_jour.nouveautes()
             except OSError as e:
                 raise ErreurMoteur(str(e)) from e
         t = self._tache(chercher, ok, echec)
