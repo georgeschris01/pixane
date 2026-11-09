@@ -269,14 +269,14 @@ They work on the **layer chosen** in the Layers panel:
   centre if it comes from elsewhere (screenshot, another program…). Then move it with the Move tool (V). To enlarge
   or shrink it: **Ctrl+T** (see *Transform layer*).
   - **Image larger than the photo**: it arrives **reduced to fit entirely**, with the *Transform* frame already
-    open. Adjust its size and position, then press **Enter**. Nothing is cut off before you apply: you can enlarge
-    it again without loss.
+    open. Adjust its size and position, then press **Enter**. Nothing is ever cut off: what extends beyond the
+    canvas is kept in the layer (see *Pixels outside the canvas*).
 - **Delete selection** (Del): erases the selected area of the layer (transparent).
 
 A **locked** layer is protected; a **text** that is cut or deleted becomes an image. Ctrl+Z undoes everything.
 
 The other tools: **Move** (V) moves the content of the **chosen layer** (a moved text stays editable; what goes
-outside the image is cut off; refused on a locked layer).
+outside the canvas is kept and can be brought back; refused on a locked layer).
 - A **frame with handles** surrounds what is on the layer (or only the selected part, if there is a selection):
   **drag inside** to move; **a corner** changes the size keeping the proportions (Shift: free); **the middle of a
   side**, only the width or the height; **just outside a corner** (cross cursor), you rotate. As soon as a handle is
@@ -403,6 +403,19 @@ AI actions, the result goes on a **new layer** (Ctrl+Z undoes it).
 
 An image can have several **layers**, stacked like transparent sheets: the top one is in front.
 An opened photo has a single layer, "Background".
+
+### Pixels outside the canvas
+
+As in Photoshop, a layer can be **larger than the canvas**: an image pasted at full size, an element pushed to the
+edge with Move or enlarged with Ctrl+T. What extends beyond **is not visible, but is never cut off**: you can bring
+it back, shrink it, show it again.
+- **Move**, **Transform (Ctrl+T)**, the handle frame, **Canvas size**, **Image size**, **rotations** and
+  **flips** work on the whole layer. The handle frame also shows what extends beyond.
+- The **brush**, the **eraser**, the **filters** and the AI only change what is inside the canvas; the part
+  outside stays as it is.
+- **Image > Reveal all**: the canvas grows just enough to show everything that extends beyond (Ctrl+Z to undo).
+- Saved in **.pixane**, **PSD** and **ORA** (Photoshop, Krita and GIMP read it back). JPEG, PNG… only save the
+  canvas. **Crop** and **Flatten** delete what extends beyond.
 
 ### The Layers panel
 | Element | Purpose |
@@ -569,7 +582,8 @@ protected. Tools sharing a button (small triangle) are chosen by **right-clickin
    moves it. The frame never goes beyond the photo (to enlarge, see *Expand image*).
 3. **Aspect ratio** (top bar): *Free*, *Same as the photo*, 1:1, 4:3, 3:2, 16:9, and the same in portrait.
 4. **Enter**, double-click inside the frame or the **Crop** button: done. **Esc** or **Cancel**: the frame goes
-   away without changing anything.
+   away without changing anything. What is outside the frame is deleted, including what already extended beyond
+   the canvas (as in Photoshop).
 
 All layers are cropped together; texts stay editable. **Selection > Crop to selection** menu: keeps the smallest
 rectangle containing the selection.
@@ -683,7 +697,9 @@ selection if there is one, one step in Undo. They also work on a mask.
     what you add (e.g. +200 px).
   - **Anchor**: where the image stays (centre, top left…); the arrows show where the sheet grows.
   - **Added colour** on the bottom layer: white, transparent, black or a colour of your choice.
-  - Texts stay editable, guides follow; Ctrl+Z undoes it.
+  - Texts stay editable, guides follow; Ctrl+Z undoes it. What extended beyond the canvas reappears if it falls
+    inside the new canvas.
+- **Reveal all**: the canvas grows to show all the pixels that extend beyond the layers.
 - **Image size…** (Ctrl+Alt+I): in pixels or %, proportions kept (tick box), quick buttons (for example 1920 px
   for screen and Internet). No AI: to enlarge with more detail, prefer Upscale.
 - **Rotate** 90° right, left or 180°, **Flip** horizontally or vertically: the whole image, all layers, lossless.

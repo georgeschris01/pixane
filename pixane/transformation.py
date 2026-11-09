@@ -1,15 +1,15 @@
 """Transformer un calque (Ctrl+T, comme Photoshop) : agrandir, réduire, tourner, déplacer avec un cadre à poignées.
 
-Le cadre entoure les pixels visibles du calque, ou seulement ceux de la sélection (le reste du calque, `fond`, ne
-bouge pas). Une image collée plus grande que la photo est transformée à partir de tous ses pixels (rien de coupé
-avant la validation). Coin : taille proportionnelle (Maj : libre), autour du coin opposé.
+Le cadre entoure tous les pixels du calque, même ceux qui dépassent de la feuille, ou seulement ceux de la sélection
+(le reste du calque, `fond`, ne bouge pas). Rien n'est coupé : `rendu_entier` donne le calque entier, la feuille
+n'en montre qu'une partie. Coin : taille proportionnelle (Maj : libre), autour du coin opposé.
 Milieu d'un côté : une seule direction. Dedans : déplacer. Dehors : tourner autour du centre (Maj : par 15°).
 """
 from __future__ import annotations
 
 import math
 
-from PySide6.QtCore import QPointF, QRect, QRectF, QSize
+from PySide6.QtCore import QPoint, QPointF, QRect, QRectF
 from PySide6.QtGui import QImage, QPainter, QTransform
 
 POIGNEES = {"hg": (-1, -1), "h": (0, -1), "hd": (1, -1), "d": (1, 0), "bd": (1, 1), "b": (0, 1), "bg": (-1, 1),
@@ -23,11 +23,15 @@ def _rot(v: QPointF, degres: float) -> QPointF:
 
 
 class Transformation:
-    def __init__(self, image: QImage, rect: QRect, fond: QImage | None = None):
+    def __init__(self, image: QImage, rect: QRect, fond: QImage | None = None, origine: QPoint = QPoint(0, 0)):
+        """image : le calque entier, posé en `origine` dans la feuille ; rect : la partie à transformer (dans
+        `image`) ; fond : le reste du calque (même taille et même place que `image`), qui ne bouge pas."""
         self.source = image.copy(rect)
         self.fond = fond                    # reste du calque, sous l'élément transformé (sélection)
+        self.origine = QPoint(origine)
         self.bw, self.bh = rect.width(), rect.height()
-        self.centre = QPointF(rect.x() + rect.width() / 2, rect.y() + rect.height() / 2)
+        self.centre = QPointF(origine.x() + rect.x() + rect.width() / 2,
+                              origine.y() + rect.y() + rect.height() / 2)
         self.sx = self.sy = 1.0
         self.angle = 0.0
         self._depart = None
@@ -57,15 +61,25 @@ class Transformation:
         return abs(l.x()) <= hw and abs(l.y()) <= hh
 
     def rendu(self, W: int, H: int, lisse: bool = True) -> QImage:
-        if self.fond is not None and self.fond.size() == QSize(W, H):
-            img = self.fond.convertToFormat(QImage.Format_ARGB32_Premultiplied)
-        else:
-            img = QImage(W, H, QImage.Format_ARGB32_Premultiplied)
-            img.fill(0)
+        """La feuille W × H (aperçu) : ce qui dépasse n'est pas dessiné."""
+        return self._dessiner(QRect(0, 0, W, H), lisse)
+
+    def rendu_entier(self, lisse: bool = True) -> tuple[QImage, int, int]:
+        """Le calque entier après transformation, même ce qui dépasse de la feuille -> (image, x, y)."""
+        r = self.transfo().mapRect(QRectF(0, 0, self.bw, self.bh)).toAlignedRect()
+        if self.fond is not None:
+            r = r.united(QRect(self.origine, self.fond.size()))
+        return self._dessiner(r, lisse), r.x(), r.y()
+
+    def _dessiner(self, r: QRect, lisse: bool) -> QImage:
+        img = QImage(max(1, r.width()), max(1, r.height()), QImage.Format_ARGB32_Premultiplied)
+        img.fill(0)
         p = QPainter(img)
+        if self.fond is not None:
+            p.drawImage(self.origine - r.topLeft(), self.fond)
         p.setRenderHint(QPainter.SmoothPixmapTransform, lisse)
         p.setRenderHint(QPainter.Antialiasing, lisse)
-        p.setTransform(self.transfo())
+        p.setTransform(self.transfo() * QTransform().translate(-r.x(), -r.y()))
         p.drawImage(QRectF(0, 0, self.bw, self.bh), self.source)
         p.end()
         return img

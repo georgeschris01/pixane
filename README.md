@@ -342,14 +342,14 @@ Ils agissent sur le **calque choisi** dans le panneau Calques :
   au centre si elle vient d'ailleurs (capture d'écran, autre logiciel…). Bougez-la ensuite avec l'outil Déplacer (V).
   Pour l'agrandir ou la réduire : **Ctrl+T** (voir *Transformer le calque*).
   - **Image plus grande que la photo** : elle arrive **réduite pour tenir entière**, avec le cadre *Transformer*
-    déjà ouvert. Ajustez sa taille et sa place, puis **Entrée**. Rien n'est coupé avant de valider : on peut la
-    réagrandir sans perte.
+    déjà ouvert. Ajustez sa taille et sa place, puis **Entrée**. Rien n'est jamais coupé : ce qui dépasse de la
+    feuille est gardé dans le calque (voir *Pixels hors de la feuille*).
 - **Supprimer la sélection** (Suppr) : efface la zone sélectionnée du calque (transparente).
 
 Un calque **verrouillé** est protégé ; un **texte** coupé ou supprimé devient une image. Ctrl+Z annule tout.
 
 Les autres outils : **Déplacer** (V) bouge le contenu du **calque choisi** (un texte déplacé reste modifiable ; ce qui
-sort de l'image est coupé ; refusé sur un calque verrouillé).
+sort de la feuille est gardé, on peut le faire revenir ; refusé sur un calque verrouillé).
 - Un **cadre à poignées** entoure ce qu'il y a sur le calque (ou seulement la partie sélectionnée, s'il y a une
   sélection) : **glisser au milieu** déplace ; **un coin** change la taille en gardant les proportions (Maj : libre) ;
   **un milieu de côté**, seulement la largeur ou la hauteur ; **juste à l'extérieur d'un coin** (curseur en croix),
@@ -481,6 +481,21 @@ l'intérieur. Comme les autres actions IA, le résultat va dans un **nouveau cal
 
 Une image peut avoir plusieurs **calques**, empilés comme des feuilles transparentes : celui du haut passe
 devant. Une photo ouverte a un seul calque, « Arrière-plan ».
+
+### Pixels hors de la feuille
+
+Comme dans Photoshop, un calque peut être **plus grand que la feuille** : une image collée en taille réelle, un
+élément poussé au bord avec Déplacer ou agrandi avec Ctrl+T. Ce qui dépasse **ne se voit pas, mais n'est jamais
+coupé** : on peut le ramener, le réduire, le réafficher.
+- **Déplacer**, **Transformer (Ctrl+T)**, le cadre à poignées, **Taille de la zone de travail**, **Taille de
+  l'image**, les **rotations** et **miroirs** travaillent sur le calque entier. Le cadre à poignées montre aussi
+  ce qui dépasse.
+- Le **pinceau**, la **gomme**, les **filtres** et l'IA ne changent que ce qui est dans la feuille ; la partie
+  dehors reste telle quelle.
+- **Image > Tout faire apparaître** : la feuille s'agrandit juste assez pour montrer tout ce qui dépasse
+  (Ctrl+Z pour revenir).
+- Enregistré en **.pixane**, **PSD** et **ORA** (Photoshop, Krita et GIMP le relisent). JPEG, PNG… n'enregistrent
+  que la feuille. **Recadrer** et **Aplatir** suppriment ce qui dépasse.
 
 ### Le panneau Calques
 | Élément | Rôle |
@@ -650,7 +665,8 @@ est protégé. Les outils d'un même bouton (petit triangle) se choisissent par 
    déplace. Le cadre ne sort jamais de la photo (pour l'agrandir, voir *Agrandir l'image*).
 3. **Proportions** (barre du haut) : *Libre*, *Comme la photo*, 1:1, 4:3, 3:2, 16:9, et les mêmes en hauteur.
 4. **Entrée**, double-clic dans le cadre ou bouton **Recadrer** : c'est fait. **Échap** ou **Annuler** : le cadre
-   disparaît sans rien changer.
+   disparaît sans rien changer. Ce qui est hors du cadre est supprimé, même ce qui dépassait déjà de la feuille
+   (comme dans Photoshop).
 
 Tous les calques sont recadrés ensemble ; les textes restent modifiables. Menu **Sélection > Recadrer à la
 sélection** : garde le plus petit rectangle qui contient la sélection.
@@ -766,7 +782,9 @@ direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annul
     : on tape ce qu'on ajoute (ex. +200 px).
   - **Ancrage** : où reste l'image (au centre, en haut à gauche…) ; les flèches montrent où la feuille s'agrandit.
   - **Couleur ajoutée** sur le calque du bas : blanc, transparent, noir ou une couleur au choix.
-  - Les textes restent modifiables, les repères suivent ; Ctrl+Z annule.
+  - Les textes restent modifiables, les repères suivent ; Ctrl+Z annule. Ce qui dépassait de la feuille
+    réapparaît s'il entre dans la nouvelle feuille.
+- **Tout faire apparaître** : la feuille s'agrandit pour montrer tous les pixels qui dépassent des calques.
 - **Taille de l'image…** (Ctrl+Alt+I) : en pixels ou en %, proportions gardées (case à décocher), boutons rapides
   (par exemple 1920 px pour l'écran et Internet). Sans IA : pour agrandir avec plus de détails, préférez Upscale.
 - **Pivoter** de 90° à droite, à gauche ou de 180°, **Retourner** horizontalement ou verticalement : toute l'image,

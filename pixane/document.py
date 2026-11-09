@@ -16,7 +16,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageFilter, ImageOps
-from PySide6.QtCore import QObject, QPoint, QPointF, QRect, Qt, Signal
+from PySide6.QtCore import QObject, QPoint, QPointF, QRect, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QPainter, QTransform
 
 from . import composition
@@ -88,7 +88,7 @@ def image_vide(largeur: int, hauteur: int) -> QImage:
 @dataclass(frozen=True, eq=False)   # comparés par identité (pas pixel par pixel)
 class Calque:
     nom: str
-    image: QImage                 # FORMAT_CALQUE, taille du document
+    image: QImage                 # FORMAT_CALQUE, taille du document : la partie du calque dans la feuille
     visible: bool = True
     opacite: float = 1.0          # 0..1
     verrou: bool = False          # cadenas : ni gomme, ni suppression, ni fusion, ni opacité
@@ -102,6 +102,12 @@ class Calque:
     ident: str | None = None      # identifiant d'un groupe
     dans: str | None = None       # groupe qui contient ce calque
     ouvert: bool = True           # groupe déplié dans le panneau Calques
+    # pixels qui dépassent de la feuille (comme Photoshop, rien n'est coupé en déplaçant ou en transformant) : le
+    # calque entier, posé en (hors_x, hors_y) ; sa partie dans la feuille est remplacée par `image` (voir
+    # image_entiere). None : tout le calque est dans la feuille.
+    hors: QImage | None = None
+    hors_x: int = 0
+    hors_y: int = 0
 
     @staticmethod
     def depuis(nom: str, image: QImage, **kw) -> "Calque":
@@ -111,6 +117,80 @@ class Calque:
     def special(self) -> bool:
         """Groupe ou calque de réglage : pas de pixels à peindre."""
         return self.groupe or self.reglage is not None
+
+
+def rect_entier(c: Calque) -> QRect:
+    """Place du calque entier dans la feuille (plus grand qu'elle si des pixels dépassent)."""
+    feuille = QRect(0, 0, c.image.width(), c.image.height())
+    if c.hors is None:
+        return feuille
+    return QRect(c.hors_x, c.hors_y, c.hors.width(), c.hors.height()).united(feuille)
+
+
+def image_entiere(c: Calque) -> tuple[QImage, int, int]:
+    """Le calque entier : sa partie dans la feuille (`image`) et ce qui dépasse (`hors`) -> (image, x, y)."""
+    if c.hors is None:
+        return c.image, 0, 0
+    r = rect_entier(c)
+    img = image_vide(r.width(), r.height())
+    p = QPainter(img)
+    p.drawImage(c.hors_x - r.x(), c.hors_y - r.y(), c.hors)
+    p.setCompositionMode(QPainter.CompositionMode_Source)      # dans la feuille : `image` fait foi
+    p.drawImage(-r.x(), -r.y(), c.image)
+    p.end()
+    return img, r.x(), r.y()
+
+
+def avec_image_entiere(c: Calque, img: QImage, x: int, y: int, W: int, H: int, **changements) -> Calque:
+    """Le calque dont l'image entière est `img`, posée en (x, y) : la partie dans la feuille W × H va dans `image`,
+    ce qui dépasse est gardé dans `hors` (réduit aux pixels non transparents)."""
+    img = img.convertToFormat(FORMAT_CALQUE)
+    dedans = image_vide(W, H)
+    p = QPainter(dedans)
+    p.drawImage(x, y, img)
+    p.end()
+    hors, hx, hy = None, 0, 0
+    feuille = QRect(0, 0, W, H)
+    if not feuille.contains(QRect(x, y, img.width(), img.height())):
+        ys, xs = np.nonzero(tableau(img)[:, :, 3])
+        if len(ys):
+            r = QRect(int(xs.min()), int(ys.min()), int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1))
+            if not feuille.contains(r.translated(x, y)):
+                hors, hx, hy = img.copy(r), x + r.x(), y + r.y()
+    return replace(c, image=dedans, hors=hors, hors_x=hx, hors_y=hy, **changements)
+
+
+def _decale(c: Calque, dx: int, dy: int, W: int, H: int) -> Calque:
+    """Calque posé, décalé de (dx, dy), sur une feuille W × H (ce qui dépasse est gardé)."""
+    img, x, y = image_entiere(c)
+    return avec_image_entiere(c, img, x + dx, y + dy, W, H)
+
+
+def _transforme_entier(c: Calque, transfo: QTransform, W: int, H: int, lisse: bool) -> Calque:
+    """Calque entier redessiné par `transfo` sur une feuille W × H (ce qui dépasse est gardé)."""
+    img, x, y = image_entiere(c)
+    t = QTransform().translate(x, y) * transfo
+    r = t.mapRect(QRectF(0, 0, img.width(), img.height())).toAlignedRect()
+    res = image_vide(max(1, r.width()), max(1, r.height()))
+    p = QPainter(res)
+    p.setRenderHint(QPainter.SmoothPixmapTransform, lisse)
+    p.setRenderHint(QPainter.Antialiasing, lisse)
+    p.setTransform(t * QTransform().translate(-r.x(), -r.y()))
+    p.drawImage(0, 0, img)
+    p.end()
+    return avec_image_entiere(c, res, r.x(), r.y(), W, H, texte=None)
+
+
+def _mis_a_l_echelle(c: Calque, w: int, h: int, W: int, H: int, lanczos: bool) -> Calque:
+    """Calque entier agrandi ou réduit (feuille w × h -> W × H ; ce qui dépasse suit)."""
+    img, x, y = image_entiere(c)
+    kx, ky = W / w, H / h
+    nw, nh = max(1, round(img.width() * kx)), max(1, round(img.height() * ky))
+    if lanczos:
+        res = pil_vers_qimage(qimage_vers_pil(img).resize((nw, nh), Image.LANCZOS))
+    else:
+        res = img.scaled(nw, nh, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+    return avec_image_entiere(c, res, round(x * kx), round(y * ky), W, H)
 
 
 def nouvel_ident() -> str:
@@ -440,11 +520,7 @@ class Document(QObject):
                 t = c.texte.deplace(dx, dy)
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
                 continue
-            img = image_vide(W, H)
-            p = QPainter(img)
-            p.drawImage(QPoint(dx, dy), c.image)
-            p.end()
-            nouveaux.append(replace(c, image=img))
+            nouveaux.append(_decale(c, dx, dy, W, H))
         def poser(img):
             res = image_vide(W, H)
             p = QPainter(res)
@@ -466,7 +542,7 @@ class Document(QObject):
                 t = c.texte.mis_a_l_echelle(W / w, H / h)
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
             else:
-                nouveaux.append(replace(c, image=c.image.scaled(W, H, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)))
+                nouveaux.append(_mis_a_l_echelle(c, w, h, W, H, lanczos=False))
         nouveaux = _styles_a_l_echelle(nouveaux, ((W / w) * (H / h)) ** 0.5)
         nouveaux = [_avec_masque_transforme(c, lambda im: im.scaled(W, H, Qt.IgnoreAspectRatio,
                                                                      Qt.SmoothTransformation)) for c in nouveaux]
@@ -474,7 +550,8 @@ class Document(QObject):
         return self.etat_avec(tuple(nouveaux) + (calque,), len(nouveaux))
 
     def etat_recadre(self, r: QRect):
-        """Recadrer : chaque calque (et la sélection) ne garde que le rectangle r ; les textes restent des textes."""
+        """Recadrer : chaque calque (et la sélection) ne garde que le rectangle r (ce qui dépassait de la feuille est
+        supprimé aussi, comme dans Photoshop) ; les textes restent des textes."""
         r = r.intersected(QRect(0, 0, *self.taille()))
         W, H = r.width(), r.height()
         nouveaux = []
@@ -483,27 +560,33 @@ class Document(QObject):
                 t = c.texte.deplace(-r.x(), -r.y())
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
             else:
-                nouveaux.append(replace(c, image=c.image.copy(r)))
+                nouveaux.append(replace(c, image=c.image.copy(r), hors=None))
         nouveaux = [_avec_masque_transforme(c, lambda im: im.copy(r)) for c in nouveaux]
         return self.etat_avec(tuple(nouveaux), self.actif, self.selection.copy(r))
 
     def etat_zone_travail(self, W: int, H: int, dx: int, dy: int, couleur: QColor | None):
         """Taille de la zone de travail : toile W × H, contenu décalé de (dx, dy) (négatif = rogné). La bande ajoutée
-        est remplie de `couleur` sur le calque du bas (s'il n'est ni un texte ni un groupe), transparente ailleurs."""
+        est remplie de `couleur` sur le calque du bas (s'il n'est ni un texte ni un groupe), transparente ailleurs.
+        Les pixels qui dépassaient de la feuille réapparaissent s'ils y entrent ; ceux qui en sortent sont gardés."""
+        w, h = self.taille()
         nouveaux = []
         for i, c in enumerate(self.calques):
             if c.texte is not None:
                 t = c.texte.deplace(dx, dy)
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
                 continue
-            img = image_vide(W, H)
-            p = QPainter(img)
+            n = _decale(c, dx, dy, W, H)
             if i == 0 and couleur is not None and couleur.alpha() and not c.groupe and c.reglage is None:
-                p.fillRect(0, 0, W, H, couleur)
-                p.setCompositionMode(QPainter.CompositionMode_Source)
-            p.drawImage(QPoint(dx, dy), c.image)
-            p.end()
-            nouveaux.append(replace(c, image=img))
+                img = image_vide(W, H)
+                img.fill(couleur)
+                p = QPainter(img)
+                p.drawImage(0, 0, n.image)
+                p.setCompositionMode(QPainter.CompositionMode_Source)   # l'ancienne feuille : telle quelle
+                ancienne = QRect(dx, dy, w, h).intersected(QRect(0, 0, W, H))
+                p.drawImage(ancienne, n.image, ancienne)
+                p.end()
+                n = replace(n, image=img)
+            nouveaux.append(n)
         def poser(im):
             res = QImage(W, H, im.format())
             res.fill(0)
@@ -527,7 +610,7 @@ class Document(QObject):
                 t = replace(c.texte, x=pt.x(), y=pt.y(), angle=(c.texte.angle + tourne + 180) % 360 - 180)
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
             else:
-                nouveaux.append(replace(c, image=_transformee(c.image, transfo, W, H, lisse), texte=None))
+                nouveaux.append(_transforme_entier(c, transfo, W, H, lisse))
         nouveaux = [_avec_masque_transforme(c, lambda im: _transformee(im, transfo, W, H, lisse)) for c in nouveaux]
         sel = _transformee(self.selection, transfo, W, H, lisse)
         return self.etat_avec(tuple(nouveaux), self.actif, sel)
@@ -552,7 +635,10 @@ class Document(QObject):
         w, h = self.taille()
         W, H = taille_redressee(w, h, angle, recadrer)
         t = QTransform().translate(W / 2, H / 2).rotate(angle).translate(-w / 2, -h / 2)
-        return self.etat_geometrie(t, W, H, angle)
+        etat = self.etat_geometrie(t, W, H, angle)
+        if recadrer:                                   # coins coupés : supprimés (comme Recadrer)
+            etat = (tuple(replace(c, hors=None) for c in etat[0]),) + tuple(etat[1:])
+        return etat
 
     def etat_taille(self, W: int, H: int):
         """Change la taille de l'image (sans IA) : calques rééchantillonnés (Lanczos), textes redessinés nets."""
@@ -563,8 +649,7 @@ class Document(QObject):
                 t = c.texte.mis_a_l_echelle(W / w, H / h)
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
             else:
-                im = qimage_vers_pil(c.image).resize((W, H), Image.LANCZOS)
-                nouveaux.append(replace(c, image=pil_vers_qimage(im).convertToFormat(FORMAT_CALQUE)))
+                nouveaux.append(_mis_a_l_echelle(c, w, h, W, H, lanczos=True))
         nouveaux = _styles_a_l_echelle(nouveaux, ((W / w) * (H / h)) ** 0.5)
         nouveaux = [replace(c, masque=c.masque.scaled(W, H, Qt.IgnoreAspectRatio, Qt.SmoothTransformation))
                     if c.masque is not None else c for c in nouveaux]
@@ -626,11 +711,40 @@ class Document(QObject):
         w, h = self.taille()
         if place is None:
             place = QPoint((w - img.width()) // 2, (h - img.height()) // 2)
-        fond = image_vide(w, h)
-        p = QPainter(fond)
-        p.drawImage(place, img)
-        p.end()
-        return self.inserer(Calque(self.nom_libre(tr("Collage")), fond), selection=nouvelle_selection(w, h))
+        c = avec_image_entiere(Calque(self.nom_libre(tr("Collage")), image_vide(w, h)), img, place.x(), place.y(),
+                               w, h)
+        return self.inserer(c, selection=nouvelle_selection(w, h))
+
+    def etat_calque_entier(self, index: int, img: QImage, x: int, y: int, **changements):
+        """Le calque `index` devient `img` posée en (x, y) (ce qui dépasse de la feuille est gardé)."""
+        w, h = self.taille()
+        calques = list(self.calques)
+        calques[index] = avec_image_entiere(calques[index], img, x, y, w, h, **changements)
+        return self.etat_avec(calques)
+
+    def apercu_calque_entier(self, index: int, img: QImage, x: int, y: int) -> None:
+        """Comme apercu_calque, en gardant ce qui dépasse de la feuille (fin d'un déplacement)."""
+        w, h = self.taille()
+        calques = list(self.calques)
+        calques[index] = avec_image_entiere(calques[index], img, x, y, w, h, texte=None)
+        self.calques = tuple(calques)
+        self._fusion = None
+        self.change.emit()
+
+    def rect_tout(self) -> QRect:
+        """Rectangle qui contient la feuille et tous les pixels qui en dépassent."""
+        r = QRect(0, 0, *self.taille())
+        for c in self.calques:
+            r = r.united(rect_entier(c))
+        return r
+
+    def etat_tout_faire_apparaitre(self):
+        """Image > Tout faire apparaître : la feuille s'agrandit pour montrer tous les pixels qui dépassent.
+        None s'il n'y a rien hors de la feuille."""
+        r = self.rect_tout()
+        if r == QRect(0, 0, *self.taille()):
+            return None
+        return self.etat_zone_travail(r.width(), r.height(), -r.x(), -r.y(), None)
 
     def etat_calque_modifie(self, index: int, **changements):
         calques = list(self.calques)
@@ -947,8 +1061,9 @@ def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False, reper
                     continue
                 compte[0] += 1
                 nom_png = f"data/calque{compte[0]}.png"
-                z.writestr(nom_png, _png(c.image), compress_type=zipfile.ZIP_STORED)
-                ET.SubElement(parent, "layer", src=nom_png, x="0", y="0", **attributs(c))
+                img, x, y = image_entiere(c)                    # ce qui dépasse de la feuille est gardé
+                z.writestr(nom_png, _png(img), compress_type=zipfile.ZIP_STORED)
+                ET.SubElement(parent, "layer", src=nom_png, x=str(x), y=str(y), **attributs(c))
         ecrire(arbre(calques), racine)
         z.writestr("stack.xml", ET.tostring(pile, encoding="utf-8", xml_declaration=True),
                    compress_type=zipfile.ZIP_DEFLATED)
@@ -1000,10 +1115,10 @@ def lire_ora(chemin: Path) -> list[Calque]:
                 elif e.tag == "layer":
                     with Image.open(io.BytesIO(z.read(e.get("src")))) as im:
                         morceau = pil_vers_qimage(im)
-                    img = image_vide(w, h)
-                    p = QPainter(img)
-                    p.drawImage(QPoint(int(float(e.get("x", 0))), int(float(e.get("y", 0)))), morceau)
-                    p.end()
+                    place = Calque("", image_vide(w, h))      # pixels hors de la feuille : gardés dans `hors`
+                    place = avec_image_entiere(place, morceau, int(float(e.get("x", 0))), int(float(e.get("y", 0))),
+                                               w, h)
+                    img = place.image
                     texte = json_ou_rien(_attr(e, "texte"), lambda t: Texte.depuis_dict(json.loads(t)))
                     style = json_ou_rien(_attr(e, "style"), Style.depuis_json)
                     reglage = json_ou_rien(_attr(e, "reglage"), json.loads)
@@ -1011,7 +1126,8 @@ def lire_ora(chemin: Path) -> list[Calque]:
                                                     and "params" in reglage):
                         reglage = None
                     res.append(Calque(e.get("name") or tr("Calque"), img, texte=texte, style=style, reglage=reglage,
-                                      dans=dans, **commun(e)))
+                                      dans=dans, hors=None if texte is not None else place.hors,
+                                      hors_x=place.hors_x, hors_y=place.hors_y, **commun(e)))
             return res
         pile = racine.find("stack")
         calques = lire(pile if pile is not None else racine, None)

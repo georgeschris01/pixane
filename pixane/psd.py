@@ -17,11 +17,11 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
-from PySide6.QtCore import QPoint
-from PySide6.QtGui import QImage, QPainter
+from PySide6.QtGui import QImage
 
 from .composition import MODE_PSD, MODES, masque_depuis, masque_tableau
-from .document import FORMAT_IMAGE, Calque, image_vide, nouvel_ident, pil_vers_qimage, qimage_rgba, tableau
+from .document import (FORMAT_IMAGE, Calque, avec_image_entiere, image_entiere, image_vide, nouvel_ident,
+                       pil_vers_qimage, qimage_rgba, tableau)
 from .langue import tr
 
 REGLAGES = {b"levl", b"curv", b"brit", b"blnc", b"hue ", b"hue2", b"selc", b"mixr", b"grdm", b"thrs", b"post",
@@ -252,13 +252,15 @@ def _vers_calque(f, W: int, H: int, mode: int) -> Calque:
         a = px.get(-1)
         a = np.full((h, w), 255, np.uint8) if a is None else a.copy()
         morceau = qimage_rgba(np.dstack([r, g, b, a]))
-        p = QPainter(img)
-        p.drawImage(QPoint(gauche, haut), morceau)
-        p.end()
+    else:
+        morceau = None
     m = _masque(f, W, H)
-    return Calque(f["nom"] or tr("Calque"), img, visible=f["visible"], opacite=f["opacite"],
-                  verrou=_verrou(f["infos"].get(b"lspf")), masque=m,
-                  masque_actif=not (f["masque"] and f["masque"][5] & 2))
+    c = Calque(f["nom"] or tr("Calque"), img, visible=f["visible"], opacite=f["opacite"],
+               verrou=_verrou(f["infos"].get(b"lspf")), masque=m,
+               masque_actif=not (f["masque"] and f["masque"][5] & 2))
+    if morceau is not None:                    # ce qui dépasse de la feuille est gardé (comme dans Photoshop)
+        c = avec_image_entiere(c, morceau, gauche, haut, W, H)
+    return c
 
 
 def _masque(f, W: int, H: int):
@@ -399,7 +401,8 @@ def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = 
             fiches.append(fiche)
             donnees.append(bloc)
             continue
-        t = tableau(c.image.convertToFormat(FORMAT_IMAGE))
+        entiere, ox, oy = image_entiere(c)              # ce qui dépasse de la feuille est gardé
+        t = tableau(entiere.convertToFormat(FORMAT_IMAGE))
         alpha = t[:, :, 3]
         ys, xs = np.nonzero(alpha)
         if len(ys):
@@ -407,6 +410,8 @@ def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = 
         else:
             haut = bas = gauche = droite = 0
         morceau = t[haut:bas, gauche:droite]
+        if bas > haut:
+            haut, bas, gauche, droite = haut + oy, bas + oy, gauche + ox, droite + ox
         canaux = []
         for ident, k in ((-1, 3), (0, 0), (1, 1), (2, 2)):
             if bas > haut:

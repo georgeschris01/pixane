@@ -28,7 +28,8 @@ from .canevas import (BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GO
                       OUTILS_AUTO, OUTILS_ROND, PEINTURE, PINCEAU, RAPIDE, RECADRER, RECTANGLE, SEAU, SUPPRIMER,
                       TAMPON, TEXTE, Canevas)
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
-from .document import EXTENSIONS_CALQUES, EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection, qimage_rgb, tableau
+from .document import (EXTENSIONS_CALQUES, EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, image_entiere,
+                       nouvelle_selection, qimage_rgb, tableau)
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
 from .panneau_texte import BoutonCouleur, PanneauTexte
 from .raccord import finaliser, lisere_auto, preparer
@@ -337,6 +338,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         m.addSeparator()
         self._action(m, tr("Taille de l'image…"), "Ctrl+Alt+I", self.taille_image, "a_taille")
         self._action(m, tr("Taille de la zone de travail…"), "Ctrl+Alt+C", self.zone_travail, "a_zone_travail")
+        self._action(m, tr("Tout faire apparaître"), None, self.tout_faire_apparaitre, "a_tout_apparaitre")
         self._action(m, tr("Pivoter de 90° à droite"), None, lambda: self._geometrie(tr("Pivoter"), 90), "a_pivoter_d")
         self._action(m, tr("Pivoter de 90° à gauche"), None, lambda: self._geometrie(tr("Pivoter"), -90),
                      "a_pivoter_g")
@@ -1029,6 +1031,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                   self.a_sel_reduire, self.a_sel_adoucir, self.a_contour, self.a_couper, self.a_copier, self.a_supprimer_selection,
                   self.a_style, self.a_copier_style, self.a_coller_style, self.a_enlever_style, self.a_figer_style,
                   self.a_nouveau_calque, self.a_dupliquer_calque, self.a_zone_travail, self.a_exporter_cmjn, self.a_exporter_sous,
+                  self.a_tout_apparaitre,
                   self.a_epreuve, *self._actions_calques_doc()):
             a.setEnabled(a_doc)
         self._m_mode.setEnabled(a_doc)
@@ -1557,6 +1560,22 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.historique.push(CommandeZoneTravail(self.doc, avant, apres, tr("Taille de la zone de travail"),
                                                  self.doc.reperes, decales))
 
+    def tout_faire_apparaitre(self):
+        """Image > Tout faire apparaître : la feuille s'agrandit pour montrer tout ce qui dépasse des calques."""
+        if not self.doc or not self._verifier_verrou(tr("Tout faire apparaître"), tous=True):
+            return
+        r = self.doc.rect_tout()
+        avant = self.doc.etat()
+        apres = self.doc.etat_tout_faire_apparaitre()
+        if apres is None:
+            self.statusBar().showMessage(tr("Rien ne dépasse de la feuille."), 6000)
+            return
+        dx, dy = -r.x(), -r.y()
+        decales = [(s, v + (dy if s == "h" else dx)) for s, v in self.doc.reperes]
+        self.historique.push(CommandeZoneTravail(self.doc, avant, apres, tr("Tout faire apparaître"),
+                                                 self.doc.reperes, decales))
+        self.statusBar().showMessage(tr("Feuille agrandie : {l} × {h} px", l=r.width(), h=r.height()), 6000)
+
     def changer_mode(self, mode: str):
         """Image > Mode : couleurs RVB ou niveaux de gris."""
         if not self.doc or mode == self.doc.mode:
@@ -1760,14 +1779,20 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         if not self._verifier_pixels(tr("Transformer le calque")):
             return
         c = self.doc.calque_actif
-        source, fond = c.image, None
+        entiere, ox, oy = image_entiere(c)                 # même ce qui dépasse de la feuille
+        source, fond = entiere, None
         if self.doc.rect_selection() is not None:        # sélection : seulement l'élément sélectionné
-            source, fond = c.image.copy(), c.image.copy()
+            choix = QImage(entiere.size(), QImage.Format_ARGB32_Premultiplied)
+            choix.fill(0)
+            p = QPainter(choix)
+            p.drawImage(-ox, -oy, self.doc.selection)
+            p.end()
+            source, fond = entiere.copy(), entiere.copy()
             for img, mode in ((source, QPainter.CompositionMode_DestinationIn),
                               (fond, QPainter.CompositionMode_DestinationOut)):
                 p = QPainter(img)
                 p.setCompositionMode(mode)
-                p.drawImage(0, 0, self.doc.selection)
+                p.drawImage(0, 0, choix)
                 p.end()
         a = tableau(source)[:, :, 3]
         ys, xs = (a > 0).nonzero()
@@ -1781,7 +1806,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         if c.texte is not None:
             self.statusBar().showMessage(tr("Le texte « {nom} » devient une image (pour garder un texte modifiable, "
                                             "change sa taille et tourne-le avec l'outil Texte).", nom=c.nom), 8000)
-        self._commencer_transfo(Transformation(source, rect, fond))
+        self._commencer_transfo(Transformation(source, rect, fond, QPoint(ox, oy)))
 
     def _commencer_transfo(self, t: Transformation):
         self._transfo_avant = (self.doc.etat(), self.doc.modifie)
@@ -1812,7 +1837,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         avant, _modifie = self._transfo_avant
         index = self.canevas._transfo_index
         w, h = self.doc.taille()
-        img = t.rendu(w, h, lisse=True)
+        img, x, y = t.rendu_entier(lisse=True)            # ce qui dépasse de la feuille est gardé
         self.canevas.finir_transfo()
         self.opt_transfo.hide()
         self._transfo_avant = None
@@ -1820,7 +1845,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.doc.modifie = _modifie
         c = self.doc.calques[index]
         style = c.style.mis_a_l_echelle(abs(t.sx * t.sy) ** 0.5) if c.style is not None else None
-        apres = self.doc.etat_calque_modifie(index, image=img, texte=None, style=style)
+        apres = self.doc.etat_calque_entier(index, img, x, y, texte=None, style=style)
         if t.fond is not None:                            # élément sélectionné déplacé : l'ancienne sélection part
             apres = (apres[0], apres[1], nouvelle_selection(w, h))
         self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Transformer le calque")))

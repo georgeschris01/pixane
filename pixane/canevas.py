@@ -13,7 +13,7 @@ from PySide6.QtWidgets import QWidget
 
 from . import regles
 from .composition import argb_vers_masque, masque_vers_argb
-from .document import COULEUR_SELECTION, Document, tableau
+from .document import COULEUR_SELECTION, Document, image_entiere, tableau
 from .langue import tr
 from .retouche import Trait
 from .texte import contient, contour_bloc, rendre
@@ -577,26 +577,29 @@ class Canevas(QWidget):
         if c.texte is not None:              # un texte se déplace comme avec l'outil Texte (il reste modifiable)
             self._texte_glisse = (self.doc.actif, "deplacer", self.vers_image(pos), c.texte, self.doc.etat())
             return
-        self._calque_glisse = (self.doc.actif, self.vers_image(pos), c.image, self.doc.etat())
+        # le calque entier (même ce qui dépasse de la feuille) : rien n'est coupé en le déplaçant
+        self._calque_glisse = (self.doc.actif, self.vers_image(pos), image_entiere(c), self.doc.etat())
         self._decalage_calque = (0, 0)
 
     def _glisser_calque(self, pos: QPointF):
-        index, depart, image, _ = self._calque_glisse
+        index, depart, (image, x, y), _ = self._calque_glisse
         pt = self.vers_image(pos)
         dx, dy = round(pt.x() - depart.x()), round(pt.y() - depart.y())
         w, h = self.doc.taille()
         nouvelle = QImage(w, h, image.format())
         nouvelle.fill(Qt.transparent)
         p = QPainter(nouvelle)
-        p.drawImage(dx, dy, image)
+        p.drawImage(x + dx, y + dy, image)
         p.end()
         self.doc.apercu_calque(index, nouvelle)
         self._decalage_calque = (dx, dy)
 
     def _lacher_calque(self):
-        avant = self._calque_glisse[3]
+        index, _depart, (image, x, y), avant = self._calque_glisse
         self._calque_glisse = None
-        if getattr(self, "_decalage_calque", (0, 0)) != (0, 0):
+        dx, dy = getattr(self, "_decalage_calque", (0, 0))
+        if (dx, dy) != (0, 0):
+            self.doc.apercu_calque_entier(index, image, x + dx, y + dy)     # ce qui sort de la feuille est gardé
             self.selection_modifiee.emit(avant, tr("Déplacer le calque"))
         self._decalage_calque = (0, 0)
 
@@ -1065,14 +1068,18 @@ class Canevas(QWidget):
         if self._calque_glisse is not None and self._rect_cadre_deplacer is not None:   # pendant un déplacement :
             dx, dy = getattr(self, "_decalage_calque", (0, 0))                           # le cadre suit
             return self._rect_cadre_deplacer.translated(dx, dy)
-        cle = (id(self.doc), self.doc.actif, c.image.cacheKey(), self.doc.selection.cacheKey())
+        cle = (id(self.doc), self.doc.actif, c.image.cacheKey(), self.doc.selection.cacheKey(),
+               c.hors.cacheKey() if c.hors is not None else 0, c.hors_x, c.hors_y)
         if cle != self._cle_cadre_deplacer:
-            a = tableau(c.image)[:, :, 3]
-            if self.doc.rect_selection() is not None:
-                a = np.minimum(a, tableau(self.doc.selection)[:, :, 3])
+            if self.doc.rect_selection() is not None:     # sélection : seulement sa partie (dans la feuille)
+                a, ox, oy = np.minimum(tableau(c.image)[:, :, 3], tableau(self.doc.selection)[:, :, 3]), 0, 0
+            else:                                         # tout le calque, même ce qui dépasse de la feuille
+                entiere, ox, oy = image_entiere(c)
+                a = tableau(entiere)[:, :, 3]
             ys, xs = (a > 0).nonzero()
-            self._rect_cadre_deplacer = (QRectF(float(xs.min()), float(ys.min()), float(xs.max() - xs.min() + 1),
-                                                float(ys.max() - ys.min() + 1)) if len(ys) else None)
+            self._rect_cadre_deplacer = (QRectF(float(xs.min() + ox), float(ys.min() + oy),
+                                                float(xs.max() - xs.min() + 1), float(ys.max() - ys.min() + 1))
+                                         if len(ys) else None)
             self._cle_cadre_deplacer = cle
         return self._rect_cadre_deplacer
 
