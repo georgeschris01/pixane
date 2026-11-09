@@ -19,8 +19,11 @@ from PIL import Image, ImageFilter, ImageOps
 from PySide6.QtCore import QObject, QPoint, QPointF, QRect, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QPainter, QTransform
 
+from . import composition
+from .composition import (FORMAT_MASQUE, MODE_ORA, MODES, arbre, masque_depuis, masque_plein, masque_tableau,
+                          masque_transforme, rendre_calque)
 from .langue import tr
-from .styles import Style, image_rendue
+from .styles import Style
 from .texte import Texte, nom_calque, rendre
 
 COULEUR_SELECTION = QColor(255, 40, 40)
@@ -91,32 +94,95 @@ class Calque:
     verrou: bool = False          # cadenas : ni gomme, ni suppression, ni fusion, ni opacité
     texte: Texte | None = None    # calque de texte : ses réglages (l'image en est le dessin)
     style: Style | None = None    # style de calque (ombres, contour…) : appliqué à l'affichage, pixels intacts
+    masque: QImage | None = None  # masque de calque (gris, taille du document) : noir = caché, blanc = visible
+    masque_actif: bool = True     # masque désactivé (Maj+clic sur sa vignette) : tout le calque se voit
+    mode: str = "normal"          # mode de fusion (voir composition.MODES)
+    reglage: dict | None = None   # calque de réglage : {"type": …, "params": {…}} (pas de pixels)
+    groupe: bool = False          # en-tête d'un groupe (ses calques sont juste en dessous, avec `dans` = ident)
+    ident: str | None = None      # identifiant d'un groupe
+    dans: str | None = None       # groupe qui contient ce calque
+    ouvert: bool = True           # groupe déplié dans le panneau Calques
 
     @staticmethod
     def depuis(nom: str, image: QImage, **kw) -> "Calque":
         return Calque(nom, image.convertToFormat(FORMAT_CALQUE), **kw)
 
+    @property
+    def special(self) -> bool:
+        """Groupe ou calque de réglage : pas de pixels à peindre."""
+        return self.groupe or self.reglage is not None
+
+
+def nouvel_ident() -> str:
+    import uuid
+    return uuid.uuid4().hex[:12]
+
 
 def fusionner(calques, largeur: int, hauteur: int, seulement_visibles: bool = True) -> QImage:
-    """Image fusionnée (FORMAT_CALQUE) des calques, du bas vers le haut."""
-    res = image_vide(largeur, hauteur)
-    p = QPainter(res)
-    for c in calques:
-        if c.visible or not seulement_visibles:
-            p.setOpacity(c.opacite)
-            p.drawImage(0, 0, image_rendue(c))
-    p.end()
-    return res
+    """Image fusionnée (FORMAT_CALQUE) des calques, du bas vers le haut (masques, styles, modes, réglages,
+    groupes)."""
+    return composition.fusionner(calques, largeur, hauteur, seulement_visibles)
 
 
-def calques_figes(calques) -> list:
-    """Pour les autres logiciels : les effets de style sont mis dans les pixels de chaque calque."""
-    return [replace(c, image=image_rendue(c), style=None) if c.style is not None and not c.style.vide() else c
-            for c in calques]
+def calques_figes(calques, garder_groupes: bool = False, garder_masques: bool = False,
+                  garder_modes: bool = True) -> list:
+    """Pour les autres logiciels : styles mis dans les pixels ; calques de réglage remplacés par leur résultat
+    (ce qui est dessous, réglé) ; masques et groupes mis dans les pixels si le format ne les garde pas."""
+    w, h = calques[0].image.width(), calques[0].image.height()
+    noeuds = arbre(calques)
+
+    def figer(liste, dans):
+        res = []
+        for n in liste:
+            c = n.calque
+            if c.reglage is not None:
+                dessous = composition._composer([x for x in liste[:liste.index(n)]], w, h, True)
+                img = composition.appliquer_reglage(dessous, replace(c, opacite=1.0, masque=None))
+                if composition.masque_utile(c):
+                    img = composition.avec_masque(img, c.masque)
+                res.append(Calque(c.nom, img, visible=c.visible, opacite=c.opacite, verrou=c.verrou, dans=dans))
+                continue
+            if n.enfants is not None:
+                if garder_groupes and (garder_masques or not composition.masque_utile(c)):
+                    g = replace(c, image=image_vide(w, h), style=None, dans=dans)
+                    if not garder_masques:
+                        g = replace(g, masque=None)       # masque désactivé : sans effet
+                    res.extend(figer(n.enfants, c.ident))
+                    res.append(g)
+                else:
+                    img = composition._composer(n.enfants, w, h, True)
+                    if composition.masque_utile(c):
+                        img = composition.avec_masque(img, c.masque)
+                    res.append(Calque(c.nom, img, visible=c.visible, opacite=c.opacite, verrou=c.verrou,
+                                      mode=c.mode if garder_modes else "normal", dans=dans))
+                continue
+            a_style = c.style is not None and not c.style.vide()
+            if garder_masques and c.masque is not None:
+                img = c.image if not a_style else _rendre_sans_masque(c)
+                res.append(replace(c, image=img, style=None, dans=dans))
+            else:
+                img = rendre_calque(c) if (a_style or composition.masque_utile(c)) else c.image
+                res.append(replace(c, image=img, style=None, masque=None, dans=dans))
+            if not garder_modes:
+                res[-1] = replace(res[-1], mode="normal")
+        return res
+    return figer(noeuds, None)
+
+
+def _rendre_sans_masque(c) -> QImage:
+    from .styles import rendre_style
+    return rendre_style(c.image, c.style)
 
 
 def _styles_a_l_echelle(calques, k: float) -> list:
     return [replace(c, style=c.style.mis_a_l_echelle(k)) if c.style is not None else c for c in calques]
+
+
+def _avec_masque_transforme(c: "Calque", fonction) -> "Calque":
+    """Même transformation sur le masque du calque que sur ses pixels."""
+    if c.masque is None:
+        return c
+    return replace(c, masque=masque_transforme(c.masque, fonction))
 
 
 def calque_des_changements(nom: str, resultat: QImage, base: QImage) -> Calque:
@@ -193,13 +259,15 @@ class Document(QObject):
         ext = chemin.suffix.lower()
         if ext == ".psd":
             from .psd import ecrire_psd
-            ecrire_psd(chemin, calques_figes(self.calques), self.image, self.icc)
+            ecrire_psd(chemin, calques_figes(self.calques, garder_groupes=True, garder_masques=True),
+                       self.image, self.icc)
             self.chemin = chemin
             self.modifie = False
             return
         if ext in EXTENSIONS_CALQUES:
             natif = ext == ".chr"           # .chr : styles modifiables ; .ora (Krita, GIMP) : effets figés
-            ecrire_ora(chemin, self.calques if natif else calques_figes(self.calques), self.image, natif=natif)
+            ecrire_ora(chemin, self.calques if natif else calques_figes(self.calques, garder_groupes=True),
+                       self.image, natif=natif)
             self.chemin = chemin
             self.modifie = False
             return
@@ -313,6 +381,13 @@ class Document(QObject):
             p.drawImage(QPoint(dx, dy), c.image)
             p.end()
             nouveaux.append(replace(c, image=img))
+        def poser(img):
+            res = image_vide(W, H)
+            p = QPainter(res)
+            p.drawImage(QPoint(dx, dy), img)
+            p.end()
+            return res
+        nouveaux = [_avec_masque_transforme(c, poser) for c in nouveaux]
         base = fusionner(nouveaux, W, H)
         calque = calque_des_changements(self.nom_libre(titre), resultat, base)
         return self.etat_avec(tuple(nouveaux) + (calque,), len(nouveaux))
@@ -329,6 +404,8 @@ class Document(QObject):
             else:
                 nouveaux.append(replace(c, image=c.image.scaled(W, H, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)))
         nouveaux = _styles_a_l_echelle(nouveaux, ((W / w) * (H / h)) ** 0.5)
+        nouveaux = [_avec_masque_transforme(c, lambda im: im.scaled(W, H, Qt.IgnoreAspectRatio,
+                                                                     Qt.SmoothTransformation)) for c in nouveaux]
         calque = Calque.depuis(self.nom_libre(titre), resultat)
         return self.etat_avec(tuple(nouveaux) + (calque,), len(nouveaux))
 
@@ -343,6 +420,7 @@ class Document(QObject):
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
             else:
                 nouveaux.append(replace(c, image=c.image.copy(r)))
+        nouveaux = [_avec_masque_transforme(c, lambda im: im.copy(r)) for c in nouveaux]
         return self.etat_avec(tuple(nouveaux), self.actif, self.selection.copy(r))
 
     # ---------------------------------------------------------- géométrie de toute l'image
@@ -358,6 +436,7 @@ class Document(QObject):
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
             else:
                 nouveaux.append(replace(c, image=_transformee(c.image, transfo, W, H, lisse), texte=None))
+        nouveaux = [_avec_masque_transforme(c, lambda im: _transformee(im, transfo, W, H, lisse)) for c in nouveaux]
         sel = _transformee(self.selection, transfo, W, H, lisse)
         return self.etat_avec(tuple(nouveaux), self.actif, sel)
 
@@ -395,6 +474,8 @@ class Document(QObject):
                 im = qimage_vers_pil(c.image).resize((W, H), Image.LANCZOS)
                 nouveaux.append(replace(c, image=pil_vers_qimage(im).convertToFormat(FORMAT_CALQUE)))
         nouveaux = _styles_a_l_echelle(nouveaux, ((W / w) * (H / h)) ** 0.5)
+        nouveaux = [replace(c, masque=c.masque.scaled(W, H, Qt.IgnoreAspectRatio, Qt.SmoothTransformation))
+                    if c.masque is not None else c for c in nouveaux]
         sel = self.selection.scaled(W, H, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
         return self.etat_avec(tuple(nouveaux), self.actif, sel.convertToFormat(FORMAT_SELECTION))
 
@@ -498,34 +579,146 @@ class Document(QObject):
 
     def etat_dupliquer(self):
         c = self.calque_actif
-        copie = replace(c, nom=tr("{nom} (copie)", nom=c.nom), image=QImage(c.image))
+        bloc = composition.descendants(self.calques, self.actif) + [self.actif]
+        idents = {self.calques[i].ident: nouvel_ident() for i in bloc if self.calques[i].groupe}
+        copies = []
+        for i in bloc:
+            x = self.calques[i]
+            copies.append(replace(x, image=QImage(x.image), ident=idents.get(x.ident, x.ident),
+                                  dans=idents.get(x.dans, x.dans) if i != self.actif else x.dans))
+        copies[-1] = replace(copies[-1], nom=tr("{nom} (copie)", nom=c.nom))
         calques = list(self.calques)
-        calques.insert(self.actif + 1, copie)
-        return self.etat_avec(calques, self.actif + 1)
+        calques[self.actif + 1:self.actif + 1] = copies
+        return self.etat_avec(calques, self.actif + len(copies))
 
     def etat_supprimer(self):
-        if len(self.calques) <= 1 or self.calque_actif.verrou:
+        enlever = set(composition.descendants(self.calques, self.actif)) | {self.actif}
+        if len(self.calques) - len(enlever) < 1 or any(self.calques[i].verrou for i in enlever):
             return None
+        calques = [c for i, c in enumerate(self.calques) if i not in enlever]
+        return self.etat_avec(calques, max(0, min(enlever) - 1))
+
+    def etat_deplacer(self, depuis: int, vers: int):
+        """Monte (vers > depuis) ou descend le calque d'une place. Dans un groupe, il en sort par le haut ou le
+        bas ; contre un groupe ouvert, il y entre. Un groupe se déplace avec tous ses calques."""
+        if depuis == vers or not (0 <= depuis < len(self.calques)):
+            return None
+        sens = 1 if vers > depuis else -1
+        cible = self.calques[depuis]
+        racine = arbre(self.calques)
+
+        def chercher(liste, parent):
+            for k, n in enumerate(liste):
+                if n.calque is cible:
+                    return liste, k, parent
+                if n.enfants is not None:
+                    r = chercher(n.enfants, (liste, k))
+                    if r:
+                        return r
+            return None
+        trouve = chercher(racine, None)
+        if trouve is None:
+            return None
+        liste, k, parent = trouve
+        n = liste[k]
+        voisin = k + sens
+        if 0 <= voisin < len(liste):
+            v = liste[voisin]
+            if v.enfants is not None and v.calque.ouvert:
+                del liste[k]
+                if sens > 0:
+                    v.enfants.insert(0, n)
+                else:
+                    v.enfants.append(n)
+            else:
+                liste[k], liste[voisin] = v, n
+        elif parent is not None:                          # sort du groupe
+            pliste, pk = parent
+            del liste[k]
+            pliste.insert(pk + 1 if sens > 0 else pk, n)
+        else:
+            return None
+        calques = composition.a_plat(racine)
+        actif = next(i for i, c in enumerate(calques) if c.image is cible.image and c.nom == cible.nom
+                     and c.ident == cible.ident)
+        return self.etat_avec(calques, actif)
+
+    # ---------------------------------------------------------- groupes, masques, réglages
+    def etat_grouper(self):
+        """Met le calque choisi (avec ses calques si c'est un groupe) dans un nouveau groupe (Ctrl+G)."""
+        c = self.calque_actif
+        w, h = self.taille()
+        g = Calque(self.nom_libre(tr("Groupe")), image_vide(w, h), groupe=True, ident=nouvel_ident(), dans=c.dans)
         calques = list(self.calques)
+        calques[self.actif] = replace(c, dans=g.ident)
+        calques.insert(self.actif + 1, g)
+        return self.etat_avec(calques, self.actif + 1)
+
+    def etat_degrouper(self):
+        """Défait le groupe choisi : ses calques restent à leur place (Ctrl+Maj+G)."""
+        c = self.calque_actif
+        if not c.groupe or c.verrou:
+            return None
+        calques = [replace(x, dans=c.dans) if x.dans == c.ident else x for x in self.calques]
         del calques[self.actif]
         return self.etat_avec(calques, max(0, self.actif - 1))
 
-    def etat_deplacer(self, depuis: int, vers: int):
-        if depuis == vers or not (0 <= vers < len(self.calques)):
-            return None
+    def etat_nouveau_groupe(self):
+        """Groupe vide au-dessus du calque choisi (dans le groupe choisi s'il est ouvert)."""
+        w, h = self.taille()
+        c = self.calque_actif
+        dedans = c.groupe and c.ouvert
+        g = Calque(self.nom_libre(tr("Groupe")), image_vide(w, h), groupe=True, ident=nouvel_ident(),
+                   dans=c.ident if dedans else c.dans)
         calques = list(self.calques)
-        c = calques.pop(depuis)
-        calques.insert(vers, c)
-        actif = vers if self.actif == depuis else calques.index(self.calque_actif)
-        return self.etat_avec(calques, actif)
+        pos = self.actif if dedans else self.actif + 1
+        calques.insert(pos, g)
+        return self.etat_avec(calques, pos)
+
+    def etat_ajouter_masque(self, quoi: str = "blanc"):
+        """quoi : « blanc » (tout visible), « selection » (seule la sélection visible) ou « cacher_selection »."""
+        c = self.calque_actif
+        if c.masque is not None or c.verrou:
+            return None
+        w, h = self.taille()
+        if quoi == "blanc" or self.selection_vide():
+            m = masque_plein(w, h, 255)
+        else:
+            a = masque(self.selection)
+            m = masque_depuis(a if quoi == "selection" else 255 - a)
+        return self.etat_calque_modifie(self.actif, masque=m, masque_actif=True)
+
+    def etat_appliquer_masque(self):
+        """Le masque passe dans les pixels (le calque garde son aspect)."""
+        c = self.calque_actif
+        if c.masque is None or c.special or c.verrou:
+            return None
+        img = composition.avec_masque(c.image, c.masque) if c.masque_actif else c.image
+        return self.etat_calque_modifie(self.actif, image=img, masque=None, texte=None)
+
+    def etat_nouveau_reglage(self, type_: str, params: dict, nom: str):
+        """Calque de réglage au-dessus du calque choisi ; la sélection, s'il y en a une, devient son masque."""
+        w, h = self.taille()
+        c = self.calque_actif
+        dedans = c.groupe and c.ouvert
+        m = None if self.selection_vide() else masque_depuis(masque(self.selection))
+        r = Calque(self.nom_libre(nom), image_vide(w, h), reglage={"type": type_, "params": params}, masque=m,
+                   dans=c.ident if dedans else c.dans)
+        calques = list(self.calques)
+        pos = self.actif if dedans else self.actif + 1
+        calques.insert(pos, r)
+        return self.etat_avec(calques, pos)
 
     def etat_fusionner_bas(self):
         if self.actif == 0 or self.calque_actif.verrou or self.calques[self.actif - 1].verrou:
             return None
         w, h = self.taille()
         dessous, dessus = self.calques[self.actif - 1], self.calque_actif
-        img = fusionner([replace(dessous, opacite=1.0, visible=True), dessus], w, h)
-        fusion = replace(dessous, image=img, texte=None, style=None)    # effets des deux calques : dans les pixels
+        if dessous.special or dessus.special or dessous.dans != dessus.dans:
+            return None
+        img = fusionner([replace(dessous, opacite=1.0, visible=True, dans=None, mode="normal"),
+                         replace(dessus, dans=None)], w, h)
+        fusion = replace(dessous, image=img, texte=None, style=None, masque=None)   # effets et masques : pixels
         calques = list(self.calques)
         calques[self.actif - 1:self.actif + 1] = [fusion]
         return self.etat_avec(calques, self.actif - 1)
@@ -617,22 +810,54 @@ def _png(img: QImage) -> bytes:
 
 
 def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False) -> None:
+    """Groupes = piles imbriquées, modes de fusion = composite-op (lus par Krita et GIMP). En .chr (natif) :
+    masques, calques de réglage, styles et textes gardés en attributs « chrypix-… »."""
     w, h = calques[0].image.width(), calques[0].image.height()
     pile = ET.Element("image", w=str(w), h=str(h), version="0.0.5")
-    pile_calques = ET.SubElement(pile, "stack")
+    racine = ET.SubElement(pile, "stack")
     temporaire = chemin.with_name(chemin.name + ".tmp")
+    compte = [0]
     with zipfile.ZipFile(temporaire, "w") as z:
         z.writestr(zipfile.ZipInfo("mimetype"), "image/openraster", compress_type=zipfile.ZIP_STORED)
-        for i, c in enumerate(reversed(calques)):          # stack.xml : du haut vers le bas
-            nom_png = f"data/calque{len(calques) - 1 - i}.png"
-            z.writestr(nom_png, _png(c.image), compress_type=zipfile.ZIP_STORED)
-            autres = {"edit-locked": "true"} if c.verrou else {}
-            if natif and c.texte is not None:
-                autres["chrypix-texte"] = json.dumps(c.texte.vers_dict(), ensure_ascii=False)
-            if natif and c.style is not None and (c.style.effets or c.style.remplissage < 1):
-                autres["chrypix-style"] = c.style.vers_json()
-            ET.SubElement(pile_calques, "layer", name=c.nom, src=nom_png, x="0", y="0",
-                          opacity=f"{c.opacite:.3f}", visibility="visible" if c.visible else "hidden", **autres)
+
+        def attributs(c) -> dict:
+            a = {"name": c.nom, "opacity": f"{c.opacite:.3f}", "visibility": "visible" if c.visible else "hidden"}
+            if c.mode != "normal":
+                a["composite-op"] = MODES.get(c.mode, MODES["normal"])[3]
+            if c.verrou:
+                a["edit-locked"] = "true"
+            if natif:
+                if c.texte is not None:
+                    a["chrypix-texte"] = json.dumps(c.texte.vers_dict(), ensure_ascii=False)
+                if c.style is not None and (c.style.effets or c.style.remplissage < 1):
+                    a["chrypix-style"] = c.style.vers_json()
+                if c.reglage is not None:
+                    a["chrypix-reglage"] = json.dumps(c.reglage, ensure_ascii=False)
+                if c.masque is not None:
+                    compte[0] += 1
+                    src = f"data/masque{compte[0]}.png"
+                    tampon = io.BytesIO()
+                    Image.fromarray(masque_tableau(c.masque), "L").save(tampon, "PNG", compress_level=6)
+                    z.writestr(src, tampon.getvalue(), compress_type=zipfile.ZIP_STORED)
+                    a["chrypix-masque"] = src
+                    if not c.masque_actif:
+                        a["chrypix-masque-inactif"] = "true"
+                if c.groupe and not c.ouvert:
+                    a["chrypix-ferme"] = "true"
+            return a
+
+        def ecrire(noeuds, parent):
+            for n in reversed(noeuds):                         # stack.xml : du haut vers le bas
+                c = n.calque
+                if n.enfants is not None:
+                    s = ET.SubElement(parent, "stack", isolation="isolate", **attributs(c))
+                    ecrire(n.enfants, s)
+                    continue
+                compte[0] += 1
+                nom_png = f"data/calque{compte[0]}.png"
+                z.writestr(nom_png, _png(c.image), compress_type=zipfile.ZIP_STORED)
+                ET.SubElement(parent, "layer", src=nom_png, x="0", y="0", **attributs(c))
+        ecrire(arbre(calques), racine)
         z.writestr("stack.xml", ET.tostring(pile, encoding="utf-8", xml_declaration=True),
                    compress_type=zipfile.ZIP_DEFLATED)
         z.writestr("mergedimage.png", _png(fusion), compress_type=zipfile.ZIP_STORED)
@@ -645,30 +870,59 @@ def lire_ora(chemin: Path) -> list[Calque]:
     with zipfile.ZipFile(chemin) as z:
         racine = ET.fromstring(z.read("stack.xml"))
         w, h = int(racine.get("w")), int(racine.get("h"))
-        calques = []
-        for couche in racine.iter("layer"):                 # du haut vers le bas
-            with Image.open(io.BytesIO(z.read(couche.get("src")))) as im:
-                morceau = pil_vers_qimage(im)
-            img = image_vide(w, h)
-            p = QPainter(img)
-            p.drawImage(QPoint(int(float(couche.get("x", 0))), int(float(couche.get("y", 0)))), morceau)
-            p.end()
-            texte = None
-            if couche.get("chrypix-texte"):
+
+        def json_ou_rien(texte, lire):
+            if not texte:
+                return None
+            try:
+                return lire(texte)
+            except (ValueError, TypeError, KeyError):
+                return None                                  # réglages illisibles : on garde l'image
+
+        def commun(e) -> dict:
+            kw = dict(visible=e.get("visibility", "visible") != "hidden", opacite=float(e.get("opacity", 1)),
+                      verrou=e.get("edit-locked", "false") == "true",
+                      mode=MODE_ORA.get(e.get("composite-op", "svg:src-over"), "normal"))
+            src = e.get("chrypix-masque")
+            if src:
                 try:
-                    texte = Texte.depuis_dict(json.loads(couche.get("chrypix-texte")))
-                except (ValueError, TypeError):
-                    texte = None                       # réglages illisibles : on garde l'image
-            style = None
-            if couche.get("chrypix-style"):
-                try:
-                    style = Style.depuis_json(couche.get("chrypix-style"))
-                except (ValueError, TypeError):
-                    style = None
-            calques.append(Calque(couche.get("name") or tr("Calque"), img, style=style,
-                                  visible=couche.get("visibility", "visible") != "hidden",
-                                  opacite=float(couche.get("opacity", 1)),
-                                  verrou=couche.get("edit-locked", "false") == "true", texte=texte))
+                    with Image.open(io.BytesIO(z.read(src))) as im:
+                        a = np.asarray(im.convert("L"))
+                    if a.shape == (h, w):
+                        kw["masque"] = masque_depuis(a)
+                        kw["masque_actif"] = e.get("chrypix-masque-inactif") != "true"
+                except (KeyError, OSError):
+                    pass
+            return kw
+
+        def lire(element, dans) -> list:
+            res = []
+            for e in element:                                  # du haut vers le bas
+                if e.tag == "stack":
+                    ident = nouvel_ident()
+                    enfants = lire(e, ident)
+                    g = Calque(e.get("name") or tr("Groupe"), image_vide(w, h), groupe=True, ident=ident, dans=dans,
+                               ouvert=e.get("chrypix-ferme") != "true", **commun(e))
+                    res.append(g)
+                    res.extend(enfants)
+                elif e.tag == "layer":
+                    with Image.open(io.BytesIO(z.read(e.get("src")))) as im:
+                        morceau = pil_vers_qimage(im)
+                    img = image_vide(w, h)
+                    p = QPainter(img)
+                    p.drawImage(QPoint(int(float(e.get("x", 0))), int(float(e.get("y", 0)))), morceau)
+                    p.end()
+                    texte = json_ou_rien(e.get("chrypix-texte"), lambda t: Texte.depuis_dict(json.loads(t)))
+                    style = json_ou_rien(e.get("chrypix-style"), Style.depuis_json)
+                    reglage = json_ou_rien(e.get("chrypix-reglage"), json.loads)
+                    if reglage is not None and not (isinstance(reglage, dict) and "type" in reglage
+                                                    and "params" in reglage):
+                        reglage = None
+                    res.append(Calque(e.get("name") or tr("Calque"), img, texte=texte, style=style, reglage=reglage,
+                                      dans=dans, **commun(e)))
+            return res
+        pile = racine.find("stack")
+        calques = lire(pile if pile is not None else racine, None)
     if not calques:
         raise ValueError(tr("Ce fichier ne contient aucun calque."))
     return list(reversed(calques))

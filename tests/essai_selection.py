@@ -131,8 +131,8 @@ verifier(f.historique.index() == n and tableau(doc.calques[0].image)[320, 320, 3
 f._actions_outils[TAMPON].trigger()
 verifier(f._bouton_groupe[TAMPON].defaultAction() is f._actions_outils[TAMPON], "groupe retouche : montre le tampon")
 verifier(f._bouton_groupe[PEINTURE] is f._bouton_groupe[GOMME_CALQUE], "pinceau de couleur et gomme de calque : même groupe")
-verifier(f._bouton_groupe[TAMPON].menu() is not None and len(f._bouton_groupe[TAMPON].menu().actions()) == 3,
-         "le groupe garde son menu de 3 outils")
+verifier(f._bouton_groupe[TAMPON].menu() is not None and len(f._bouton_groupe[TAMPON].menu().actions()) == 4,
+         "le groupe garde son menu de 4 outils (Supprimer compris)")
 f.grab().save(str(sortie / "fenetre.png"))
 
 print("ERREURS :", erreurs if erreurs else "aucune")

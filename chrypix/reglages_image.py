@@ -70,6 +70,20 @@ def _matrice(r: dict) -> np.ndarray:
     return teinte @ sat
 
 
+def appliquer_rgb(rgb: np.ndarray, r: dict) -> np.ndarray:
+    """Tableau (h, w, 3) uint8 -> nouveau tableau avec les réglages `r`."""
+    tables = _courbes(r)
+    res = np.stack([tables[k][rgb[..., k]] for k in range(3)], axis=-1)
+    if r.get("saturation", 0) or r.get("teinte", 0):
+        f = res.reshape(-1, 3).astype(np.float32) @ _matrice(r).T.astype(np.float32)
+        res = np.clip(np.round(f), 0, 255).astype(np.uint8).reshape(res.shape)
+    if r.get("nettete", 0) and res.ndim == 3:
+        net = Image.fromarray(np.ascontiguousarray(res), "RGB").filter(
+            ImageFilter.UnsharpMask(radius=2, percent=int(r["nettete"]), threshold=2))
+        res = np.asarray(net)
+    return res
+
+
 def ajuster(img: QImage, r: dict, selection: QImage | None = None) -> QImage:
     """Nouvelle image (FORMAT_CALQUE) du calque `img` avec les réglages `r`, seulement dans `selection` si donnée."""
     tab = tableau(img.convertToFormat(FORMAT_IMAGE))     # RGBA, couleurs non prémultipliées
@@ -85,15 +99,7 @@ def ajuster(img: QImage, r: dict, selection: QImage | None = None) -> QImage:
         poids = m[zone.top():zone.bottom() + 1, zone.left():zone.right() + 1].astype(np.float32)[..., None] / 255
     morceau = tab[zone.top():zone.bottom() + 1, zone.left():zone.right() + 1]
     rgb = morceau[..., :3]
-    tables = _courbes(r)
-    res = np.stack([tables[k][rgb[..., k]] for k in range(3)], axis=-1)
-    if r.get("saturation", 0) or r.get("teinte", 0):
-        f = res.reshape(-1, 3).astype(np.float32) @ _matrice(r).T.astype(np.float32)
-        res = np.clip(np.round(f), 0, 255).astype(np.uint8).reshape(res.shape)
-    if r.get("nettete", 0):
-        net = Image.fromarray(np.ascontiguousarray(res), "RGB").filter(
-            ImageFilter.UnsharpMask(radius=2, percent=int(r["nettete"]), threshold=2))
-        res = np.asarray(net)
+    res = appliquer_rgb(np.ascontiguousarray(rgb), r)
     if poids is not None:
         res = np.round(rgb + (res.astype(np.float32) - rgb) * poids).astype(np.uint8)
     morceau[..., :3] = res

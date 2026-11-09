@@ -1,12 +1,13 @@
 """Fichiers Photoshop (.psd) : lecture et écriture des calques, sans bibliothèque en plus.
 
 Écrit d'après la description publique du format (« Adobe Photoshop File Formats Specification »).
-Lecture : RGB ou niveaux de gris, 8 ou 16 bits ; calques avec nom, visibilité, opacité, verrou, masque de calque et
-groupes (un groupe masqué masque ses calques, son opacité s'ajoute). Ce que Chrypix ne sait pas reproduire (modes de
-fusion autres que Normal, styles de calque, calques de réglage, masques d'écrêtage) est signalé ; les autres modes
-de couleur (CMJN…) sont ouverts aplatis, par Pillow.
+Lecture : RGB ou niveaux de gris, 8 ou 16 bits ; calques avec nom, visibilité, opacité, verrou, mode de fusion,
+masque de calque, groupes et styles de calque (ombre, lueur, contour, biseau, incrustations : voir psd_styles).
+Ce que Chrypix ne sait pas reproduire (calques de réglage de Photoshop, masques d'écrêtage, mode « traverser » des
+groupes) est signalé ; les autres modes de couleur (CMJN…) sont ouverts aplatis, par Pillow.
 Écriture : RGB 8 bits, compression RLE (PackBits, comme Photoshop), chaque calque réduit au rectangle de ses pixels
-visibles, nom en Unicode, image fusionnée pour les visionneuses. Les textes deviennent des images.
+visibles, nom en Unicode, modes de fusion, masques, groupes, image fusionnée pour les visionneuses. Les textes, les
+styles et les calques de réglage deviennent des images.
 """
 from __future__ import annotations
 
@@ -19,7 +20,8 @@ from PIL import Image
 from PySide6.QtCore import QPoint
 from PySide6.QtGui import QImage, QPainter
 
-from .document import FORMAT_IMAGE, Calque, image_vide, pil_vers_qimage, qimage_rgba, tableau
+from .composition import MODE_PSD, MODES, masque_depuis, masque_tableau
+from .document import FORMAT_IMAGE, Calque, image_vide, nouvel_ident, pil_vers_qimage, qimage_rgba, tableau
 from .langue import tr
 
 REGLAGES = {b"levl", b"curv", b"brit", b"blnc", b"hue ", b"hue2", b"selc", b"mixr", b"grdm", b"thrs", b"post",
@@ -185,41 +187,48 @@ def lire_psd(chemin: str | Path):
             lec.p = debut + taille
 
     # groupes (du bas vers le haut : fin de groupe « 3 », ses calques, puis le dossier « 1 » ou « 2 »)
+    from .psd_styles import style_depuis_lfx2
     remarques = set()
-    calques, pile = [], []
+    resultat, pile = [], []
     for f in fiches:
         sect = f["infos"].get(b"lsct") or f["infos"].get(b"lsdk")
         genre = struct.unpack(">I", sect[:4])[0] if sect and len(sect) >= 4 else 0
+        dans = pile[-1] if pile else None
         if genre == 3:
-            pile.append([])
+            pile.append(nouvel_ident())
             continue
         if genre in (1, 2):
-            enfants = pile.pop() if pile else []
-            for c in enfants:
-                c["opacite"] *= f["opacite"]
-                c["visible"] = c["visible"] and f["visible"]
-            if pile:
-                pile[-1].extend(enfants)
-            if f["fusion"] not in (b"pass", b"norm"):
-                remarques.add(tr("modes de fusion"))
+            ident = pile.pop() if pile else nouvel_ident()
+            fusion = f["fusion"]
+            if len(sect) >= 12 and sect[4:8] == b"8BIM":
+                fusion = sect[8:12]
+            if fusion == b"pass":
+                fusion = b"norm"                       # « traverser » : dessiné comme un groupe normal
+                remarques.add(tr("groupes en mode « traverser »"))
+            g = Calque(f["nom"] or tr("Groupe"), image_vide(W, H), visible=f["visible"], opacite=f["opacite"],
+                       verrou=_verrou(f["infos"].get(b"lspf")), groupe=True, ident=ident,
+                       dans=pile[-1] if pile else None, ouvert=genre == 1, mode=MODE_PSD.get(fusion, "normal"),
+                       masque=_masque(f, W, H))
+            resultat.append(g)
             continue
         if REGLAGES & set(f["infos"]):
             remarques.add(tr("calques de réglage ou de remplissage"))
             continue
-        if f["fusion"] != b"norm":
+        if f["fusion"] not in MODE_PSD:
             remarques.add(tr("modes de fusion"))
         if f["ecretage"]:
             remarques.add(tr("masques d'écrêtage"))
-        if b"lfx2" in f["infos"] or b"lrFX" in f["infos"]:
-            remarques.add(tr("styles de calque (ombre, contour…)"))
-        calques.append(f)
-        if pile:
-            pile[-1].append(f)
-
-    resultat = []
-    for f in calques:
-        resultat.append(_vers_calque(f, W, H, mode))
-    if not resultat:
+        c = _vers_calque(f, W, H, mode)
+        style, manque = None, False
+        if b"lfx2" in f["infos"]:
+            style, manque = style_depuis_lfx2(f["infos"][b"lfx2"])
+        elif b"lrFX" in f["infos"]:
+            manque = True
+        if manque:
+            remarques.add(tr("certains effets de style"))
+        from dataclasses import replace
+        resultat.append(replace(c, style=style, dans=dans, mode=MODE_PSD.get(f["fusion"], "normal")))
+    if not resultat or all(c.groupe for c in resultat):
         return _aplati(chemin, "")
     notes = []
     if remarques:
@@ -242,20 +251,27 @@ def _vers_calque(f, W: int, H: int, mode: int) -> Calque:
             r = g = b = px[0]
         a = px.get(-1)
         a = np.full((h, w), 255, np.uint8) if a is None else a.copy()
-        if f["masque"] and px.get(-2) is not None and not f["masque"][5] & 2:     # masque de calque actif
-            mh, mg, mb, md, defaut, _ = f["masque"]
-            m = np.full((h, w), defaut, np.uint8)
-            y0, x0 = max(mh, haut), max(mg, gauche)
-            y1, x1 = min(mb, bas), min(md, droite)
-            if y1 > y0 and x1 > x0:
-                m[y0 - haut:y1 - haut, x0 - gauche:x1 - gauche] = px[-2][y0 - mh:y1 - mh, x0 - mg:x1 - mg]
-            a = (a.astype(np.uint16) * m // 255).astype(np.uint8)
         morceau = qimage_rgba(np.dstack([r, g, b, a]))
         p = QPainter(img)
         p.drawImage(QPoint(gauche, haut), morceau)
         p.end()
+    m = _masque(f, W, H)
     return Calque(f["nom"] or tr("Calque"), img, visible=f["visible"], opacite=f["opacite"],
-                  verrou=_verrou(f["infos"].get(b"lspf")))
+                  verrou=_verrou(f["infos"].get(b"lspf")), masque=m,
+                  masque_actif=not (f["masque"] and f["masque"][5] & 2))
+
+
+def _masque(f, W: int, H: int):
+    """Masque de calque à la taille du document (ou None)."""
+    px = f.get("pixels", {})
+    if not f["masque"] or px.get(-2) is None:
+        return None
+    mh, mg, mb, md, defaut, _ = f["masque"]
+    m = np.full((H, W), defaut, np.uint8)
+    y0, x0, y1, x1 = max(mh, 0), max(mg, 0), min(mb, H), min(md, W)
+    if y1 > y0 and x1 > x0:
+        m[y0:y1, x0:x1] = px[-2][y0 - mh:y1 - mh, x0 - mg:x1 - mg]
+    return masque_depuis(m)
 
 
 def _verrou(lspf: bytes | None) -> bool:
@@ -319,13 +335,40 @@ def _bloc(cle: bytes, donnees: bytes) -> bytes:
     return b"8BIM" + cle + struct.pack(">I", len(donnees)) + donnees
 
 
+def _fiche_vide(nom: str, bloc_extra: bytes):
+    """Calque sans pixels (fin de groupe)."""
+    canaux = [(i, struct.pack(">H", 0)) for i in (-1, 0, 1, 2)]
+    extra = struct.pack(">II", 0, 0) + _pascal(nom, 4) + bloc_extra
+    fiche = struct.pack(">iiiiH", 0, 0, 0, 0, 4)
+    fiche += b"".join(struct.pack(">hI", i, len(b)) for i, b in canaux)
+    fiche += b"8BIMnorm" + struct.pack(">BBBB", 255, 0, 0, 0) + struct.pack(">I", len(extra)) + extra
+    return fiche, b"".join(b for _i, b in canaux)
+
+
 def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = None) -> None:
     chemin = Path(chemin)
     W, H = fusion.width(), fusion.height()
     if W > 30000 or H > 30000:
         raise ErreurPsd(tr("Image trop grande pour un PSD (30 000 pixels au plus de côté)."))
     fiches, donnees = [], []
-    for c in calques:
+    # ordre Photoshop (du bas vers le haut) : fin de groupe, ses calques, puis l'en-tête du groupe
+    debuts: dict = {}
+    for i, c in enumerate(calques):
+        if c.groupe:
+            from .composition import descendants
+            d = descendants(calques, i)
+            debuts.setdefault(min(d) if d else i, []).append(i)
+    suite = []
+    for i, c in enumerate(calques):
+        for g in sorted(debuts.get(i, []), reverse=True):     # le groupe le plus large d'abord
+            suite.append(("fin", calques[g]))
+        suite.append(("calque", c))
+    for genre, c in suite:
+        if genre == "fin":
+            fiche, bloc = _fiche_vide("</Layer group>", _bloc(b"lsct", struct.pack(">I", 3)))
+            fiches.append(fiche)
+            donnees.append(bloc)
+            continue
         t = tableau(c.image.convertToFormat(FORMAT_IMAGE))
         alpha = t[:, :, 3]
         ys, xs = np.nonzero(alpha)
@@ -342,18 +385,27 @@ def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = 
             else:
                 bloc = struct.pack(">H", 0)
             canaux.append((ident, bloc))
+        donnees_masque = struct.pack(">I", 0)
+        if c.masque is not None:
+            m = masque_tableau(c.masque)
+            longueurs, octets = _canal_rle(np.ascontiguousarray(m))
+            canaux.append((-2, struct.pack(">H", 1) + longueurs + octets))
+            donnees_masque = struct.pack(">IiiiiBBH", 20, 0, 0, H, W, 255, 0 if c.masque_actif else 2, 0)
         nom = c.nom or "Calque"
-        extra = struct.pack(">II", 0, 0) + _pascal(nom, 4)
+        extra = donnees_masque + struct.pack(">I", 0) + _pascal(nom, 4)
         extra += _bloc(b"luni", struct.pack(">I", len(nom)) + nom.encode("utf-16-be"))
         if c.verrou:
             extra += _bloc(b"lspf", struct.pack(">I", 0x80000000))
-        fiche = struct.pack(">iiiiH", haut, gauche, bas, droite, 4)
+        cle = MODES.get(c.mode, MODES["normal"])[2]
+        if c.groupe:
+            extra += _bloc(b"lsct", struct.pack(">I", 1 if c.ouvert else 2) + b"8BIM" + cle)
+        fiche = struct.pack(">iiiiH", haut, gauche, bas, droite, len(canaux))
         fiche += b"".join(struct.pack(">hI", ident, len(bloc)) for ident, bloc in canaux)
-        fiche += b"8BIMnorm" + struct.pack(">BBBB", round(c.opacite * 255), 0, 0 if c.visible else 2, 0)
+        fiche += b"8BIM" + cle + struct.pack(">BBBB", round(c.opacite * 255), 0, 0 if c.visible else 2, 0)
         fiche += struct.pack(">I", len(extra)) + extra
         fiches.append(fiche)
         donnees.append(b"".join(bloc for _i, bloc in canaux))
-    infos = struct.pack(">h", len(calques)) + b"".join(fiches) + b"".join(donnees)
+    infos = struct.pack(">h", len(fiches)) + b"".join(fiches) + b"".join(donnees)
     if len(infos) % 2:
         infos += b"\x00"
     calques_masques = struct.pack(">I", len(infos)) + infos + struct.pack(">I", 0)
