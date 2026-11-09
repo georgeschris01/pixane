@@ -226,6 +226,8 @@ class Fenetre(ActionsCalques, Onglets, QMainWindow):
         self.m_recents.aboutToShow.connect(self._remplir_recents)
         self._action(m, tr("Enregistrer"), QKeySequence.Save, self.enregistrer, "a_enregistrer", "enregistrer")
         self._action(m, tr("Enregistrer sous…"), "Ctrl+Shift+S", self.enregistrer_sous, "a_enregistrer_sous")
+        self._action(m, tr("Exporter pour le web…"), "Ctrl+Alt+Shift+S", self.exporter_web, "a_exporter_web")
+        self._action(m, tr("Traitement par lot…"), None, self.traitement_lot, "a_lot", "lot")
         m.addSeparator()
         self._action(m, tr("Fermer la photo"), "Ctrl+W", lambda: self.fermer_onglet(), "a_fermer")
         self._action(m, tr("Photo suivante"), "Ctrl+Tab", lambda: self.onglet_suivant(1))

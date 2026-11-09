@@ -60,11 +60,29 @@ class ActionsCalques:
     def _actions_calques_doc(self) -> list:
         noms = [f"a_regl_{t}" for t in ("niveaux", "courbes", "balance", "noir_blanc", "vibrance")]
         noms += [f"a_cr_{t}" for t in ajustements.TYPES] + [f"a_filtre_{t}" for t in filtres.FILTRES]
-        noms += ["a_taille_grille", "a_nouveau_repere", "a_effacer_reperes"]
+        noms += ["a_taille_grille", "a_nouveau_repere", "a_effacer_reperes", "a_exporter_web"]
         noms += ["a_modifier_reglage", "a_nouveau_groupe", "a_grouper", "a_degrouper", "a_masque_blanc",
                  "a_masque_sel", "a_masque_cacher", "a_masque_cible", "a_masque_actif", "a_masque_inverser",
                  "a_masque_selection", "a_masque_appliquer", "a_masque_supprimer"]
         return [getattr(self, n) for n in noms]
+
+    # ---------------------------------------------------------------- export web, lot
+    def exporter_web(self):
+        from .document import qimage_vers_pil
+        from .export import DialogueExport
+        if self.doc is None:
+            return
+        nom = self.doc.chemin.stem if self.doc.chemin else tr("sans titre")
+        d = DialogueExport(self, qimage_vers_pil(self.doc.image), nom, self.doc.exif, self.doc.icc)
+        if d.exec() == d.Accepted:
+            self.statusBar().showMessage(tr("Exporté : {chemin}", chemin=d.chemin), 8000)
+        d.deleteLater()
+
+    def traitement_lot(self):
+        from .export import DialogueLot
+        d = DialogueLot(self)
+        d.exec()
+        d.deleteLater()
 
     # ---------------------------------------------------------------- règles, repères, grille
     def _menu_regles(self, m):
