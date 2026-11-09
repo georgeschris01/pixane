@@ -137,7 +137,7 @@ Layer names that already exist keep their original language.
   - **Ready-made formats** (on the left): **album covers** (CD, 12-inch and 7-inch vinyl, 3000 × 3000 px for
     Spotify, Deezer, Apple Music), **books** (pocket, novel, Amazon KDP, e-book), **social media** (Instagram, Story,
     Facebook, YouTube, X), **print** (A3, A4, A5, photos, posters, business card, flyer), **screen** (HD, Full HD,
-    4K). **Save this format…** keeps your own formats in **My formats**; the last format used is offered next time.
+    4K). **Save this format…** keeps your own formats in **My formats** (size, unit, resolution, bleed, safe area, mode and background); the last format used is offered next time.
   - **Width, height and unit**: pixels, inches, centimetres, millimetres, points or picas (1 inch = 2.54 cm =
     72 points = 6 picas). Changing the unit does not change the image.
   - **Orientation**: Portrait or Landscape swaps width and height.

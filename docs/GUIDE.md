@@ -143,7 +143,7 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
   - **Formats tout prêts** (à gauche) : **pochettes** (CD, vinyle 33 et 45 tours, 3000 × 3000 px pour Spotify,
     Deezer, Apple Music), **livres** (poche, roman, Amazon KDP, livre numérique), **réseaux sociaux** (Instagram,
     Story, Facebook, YouTube, X), **impression** (A3, A4, A5, photos, affiches, carte de visite, flyer), **écran**
-    (HD, Full HD, 4K). **Enregistrer ce format…** garde vos propres formats dans **Mes formats** ; le dernier format
+    (HD, Full HD, 4K). **Enregistrer ce format…** garde vos propres formats dans **Mes formats** (taille, unité, résolution, fond perdu, zone de sécurité, mode et fond) ; le dernier format
     utilisé est proposé la fois suivante.
   - **Largeur, hauteur et unité** : pixels, pouces, centimètres, millimètres, points ou picas (1 pouce = 2,54 cm
     = 72 points = 6 picas). Changer d'unité ne change pas l'image.

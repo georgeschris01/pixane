@@ -72,6 +72,39 @@ verifier(d2.pixels() == (600, 1000), "rouvert sur le dernier format")
 d.deleteLater()
 d2.deleteLater()
 
+# 2 bis. fond et mode gardés avec le format (signalé par Christophe : fond transparent redevenu blanc)
+d = NouvelleImage(None, None, r)
+d.largeur.setValue(800)
+d.hauteur.setValue(800)
+d.fond.liste.setCurrentIndex(1)                 # transparent
+d.mode.setCurrentIndex(1)                       # niveaux de gris
+d.nom.setText("Logo transparent")
+fmt.enregistrer_formats_perso(r, [d.format_choisi()])
+d.accept()
+d.deleteLater()
+d = NouvelleImage(None, None, r)
+verifier(d.fond.valeur() == "#00000000" and d.mode.currentData() == "gris" and d.image().pixelColor(0, 0).alpha() == 0,
+         "rouvert : fond transparent et niveaux de gris gardés (dernier format)")
+d.fond.liste.setCurrentIndex(0)
+d.mode.setCurrentIndex(0)
+d.appliquer_format(fmt.formats_perso(r)[0])
+verifier(d.fond.valeur() == "#00000000" and d.mode.currentData() == "gris", "format enregistré : fond et mode remis")
+d.appliquer_format(cd)
+verifier(d.fond.valeur() == "#00000000", "format tout prêt : le fond choisi ne change pas")
+d.fond.couleur_autre = QColor(10, 200, 30)
+d.fond.liste.setCurrentIndex(3)
+d.fond.definir("#00000000")
+d.fond.definir(d.fond.valeur())
+d.fond.definir("#ff0ac81e")
+verifier(d.fond.liste.currentData() == "autre" and d.fond.couleur() == QColor(10, 200, 30), "couleur au choix gardée")
+d.deleteLater()
+r.setValue("formats_perso", '[{"nom": "Ancien", "largeur": 500, "hauteur": 400, "unite": "px", "dpi": 72, '
+                            '"fond_perdu": 0, "marge": 0, "inconnu": 1}]')
+verifier(fmt.formats_perso(r)[0].pixels() == (500, 400) and fmt.formats_perso(r)[0].fond == "",
+         "format enregistré par une version plus ancienne : toujours lu")
+r.remove("formats_perso")
+r.remove("nouvelle_derniere")
+
 # 3. par le menu : nouvelle image CD, nom, mode gris, repères
 f = Fenetre()
 f.show()

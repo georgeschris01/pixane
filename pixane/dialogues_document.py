@@ -78,6 +78,24 @@ class ChoixFond(QWidget):
         d = self.liste.currentData()
         return QColor(self.couleur_autre) if d == "autre" else QColor(d)
 
+    def valeur(self) -> str:
+        """La couleur choisie, #aarrggbb (#00000000 = transparent)."""
+        return self.couleur().name(QColor.HexArgb)
+
+    def definir(self, valeur: str):
+        c = QColor(valeur)
+        if not c.isValid():
+            return
+        if c.alpha() == 0:
+            valeur = "#00000000"
+        i = self.liste.findData(c.name(QColor.HexArgb) if c.alpha() else valeur)
+        if i >= 0:
+            self.liste.setCurrentIndex(i)
+        else:
+            self.couleur_autre = c
+            self.liste.setCurrentIndex(self.liste.findData("autre"))
+        self._actualiser()
+
 
 class ChampLongueur(QDoubleSpinBox):
     def __init__(self):
@@ -242,6 +260,10 @@ class NouvelleImage(QDialog):
         self.hauteur.setValue(f.hauteur)
         self.fond_perdu.setValue(f.fond_perdu)
         self.marge.setValue(f.marge)
+        if f.mode and self.mode.findData(f.mode) >= 0:
+            self.mode.setCurrentIndex(self.mode.findData(f.mode))
+        if f.fond:
+            self.fond.definir(f.fond)
         self._bloque = False
         self._actualiser()
 
@@ -329,7 +351,8 @@ class NouvelleImage(QDialog):
     # ---------------------------------------------------------- résultat
     def format_choisi(self) -> Format:
         return Format(self.nom.text().strip() or tr("sans titre"), self.largeur.value(), self.hauteur.value(),
-                      self._unite, self.dpi.value(), self.fond_perdu.value(), self.marge.value())
+                      self._unite, self.dpi.value(), self.fond_perdu.value(), self.marge.value(),
+                      self.mode.currentData(), self.fond.valeur())
 
     def pixels(self) -> tuple[int, int]:
         return self.format_choisi().pixels()

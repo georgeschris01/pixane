@@ -47,6 +47,8 @@ class Format:
     dpi: float = 72
     fond_perdu: float = 0.0      # mm, ajoutés de chaque côté (impression : coupé au massicot)
     marge: float = 0.0           # mm, zone de sécurité à l'intérieur du format fini (rien d'important au-delà)
+    mode: str = ""               # « rvb » ou « gris » (vide : formats tout prêts, le choix actuel est gardé)
+    fond: str = ""               # couleur du fond, #aarrggbb (#00000000 = transparent ; vide : choix actuel gardé)
 
     def pixels(self) -> tuple[int, int]:
         """Taille de l'image, fond perdu compris."""
@@ -106,9 +108,17 @@ def formats() -> list[tuple[str, list[Format]]]:
 
 
 # ---------------------------------------------------------- formats de l'utilisateur (réglages, en JSON)
+def _format(d: dict) -> Format:
+    """Format relu des réglages (les champs inconnus d'une autre version sont laissés de côté)."""
+    if not isinstance(d, dict):
+        raise TypeError("format illisible")
+    connus = Format.__dataclass_fields__
+    return Format(**{k: v for k, v in d.items() if k in connus})
+
+
 def formats_perso(reglages) -> list[Format]:
     try:
-        return [Format(**d) for d in json.loads(reglages.value("formats_perso", "[]") or "[]")]
+        return [_format(d) for d in json.loads(reglages.value("formats_perso", "[]") or "[]")]
     except (ValueError, TypeError):
         return []
 
@@ -119,7 +129,7 @@ def enregistrer_formats_perso(reglages, liste: list[Format]) -> None:
 
 def dernier_format(reglages) -> Format | None:
     try:
-        return Format(**json.loads(reglages.value("nouvelle_derniere", "") or "null"))
+        return _format(json.loads(reglages.value("nouvelle_derniere", "") or "null"))
     except (ValueError, TypeError):
         return None
 
