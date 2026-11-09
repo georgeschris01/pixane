@@ -93,10 +93,14 @@ class ChoixResultat(QDialog):
         lay.addWidget(self.vignettes)
         lay.addLayout(bas)
 
+    vue = None          # fonction image -> image montrée (ex. transparence de la photo remise)
+
     def ajouter(self, resultats: list[tuple[str, QImage]]):
         premier = len(self.images)
         for libelle, img in resultats:
             self.images.append(img)
+            if self.vue is not None:
+                img = self.vue(img)
             item = QListWidgetItem(QIcon(QPixmap.fromImage(img.scaled(160, 120, Qt.KeepAspectRatio,
                                                                       Qt.SmoothTransformation))), libelle)
             self.vignettes.addItem(item)
@@ -121,7 +125,8 @@ class ChoixResultat(QDialog):
 
     def _choisi(self, ligne: int):
         if 0 <= ligne < len(self.images):
-            self.apercu.montrer(self.images[ligne])
+            img = self.images[ligne]
+            self.apercu.montrer(self.vue(img) if self.vue is not None else img)
 
     def _comparer(self, oui: bool):
         if oui:

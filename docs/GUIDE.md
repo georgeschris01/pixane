@@ -315,6 +315,10 @@ l'image **telle qu'on la voit** (tous les calques visibles ensemble) : choisisse
 de lancer.
 - Le résultat **ne sort pas de la sélection** : l'IA retouche un peu autour pour le raccord, mais Pixane ne garde
   que l'intérieur, plus un fondu de quelques pixels, pour qu'aucun bord ne se voie.
+- Les zones **transparentes** (fond transparent, logo détouré, texte seul) **restent transparentes** : aucun noir
+  n'est ajouté, ni dans les propositions ni dans le résultat (Upscale aussi). Pour que l'IA voie bien ce qu'il y a
+  dessus, Pixane lui montre ces zones sur un fond uni qui contraste (sombre derrière un texte blanc, blanc derrière
+  un logo foncé), puis retire ce fond du résultat, bords des lettres compris.
 - Il va dans un **nouveau calque** (« Effacer 1 », « Remplir 2 »…) quand le calque choisi ne peut pas le recevoir
   (texte, groupe, calque de réglage, calque caché ou verrouillé), ou quand il n'y a pas de sélection et que
   l'image a plusieurs calques (sinon les autres y seraient recopiés). Un message le dit en bas.

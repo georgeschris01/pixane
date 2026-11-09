@@ -30,7 +30,7 @@ from .canevas import (BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GO
                       TAMPON, TEXTE, Canevas)
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import (EXTENSIONS_CALQUES, EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, image_entiere,
-                       masque, nouvelle_selection, qimage_rgb, tableau)
+                       a_plat, masque, nouvelle_selection, qimage_rgb, tableau, vue_ia)
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
 from .panneau_texte import BoutonCouleur, PanneauTexte
 from .raccord import finaliser, lisere_auto, preparer
@@ -2156,7 +2156,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         if self.canevas.cadre is not None or not self._verifier_verrou(tr("Agrandir"), tous=True):
             return
         # bord abîmé proposé d'office : le liseré clair ou foncé détecté sur chaque bord
-        abime = lisere_auto(tableau(self.doc.image)[:, :, :3])
+        abime = lisere_auto(self.doc.rgb_pour_ia())
         self.barre_agrandir.ouvrir(self.doc.image.width(), self.doc.image.height(), abime)
         self.canevas.commencer_cadre(abime)
 
@@ -2177,7 +2177,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         total = [a + m for a, m in zip(ajout, abime)]
         w, h = image.width(), image.height()
         v = {cle: t * 100 / n for cle, t, n in zip(("haut", "bas", "gauche", "droite"), total, (h, h, w, w))}
-        png, geo, orig = preparer(tableau(image)[:, :, :3], **v, enlever_lisere=False)
+        png, geo, orig = preparer(a_plat(tableau(image.convertToFormat(FORMAT_IMAGE))), **v, enlever_lisere=False)
 
         def raccord(img: QImage) -> QImage:
             return qimage_rgb(finaliser(orig, tableau(img)[:, :, :3], geo))
@@ -2347,6 +2347,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         original = doc.image
         zone = None if doc.selection_vide() else masque(doc.selection).copy()   # sélection au lancement
         choix = ChoixResultat(titre, original, self)
+        if placer is None:                       # fond transparent : montré tel qu'il sera posé (pas en noir)
+            choix.vue = lambda img, base=original: vue_ia(img, base)
         annuler = threading.Event()
         nom_image = {}
 

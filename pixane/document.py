@@ -279,12 +279,66 @@ def poids_zone(zone: np.ndarray | None, w: int, h: int) -> np.ndarray:
     return np.maximum(s, autour)
 
 
-def _image_ia(resultat: QImage, base: QImage, poids: np.ndarray) -> QImage:
-    """Résultat de l'IA, transparent là où il ne change rien ou hors de la zone (alpha = poids)."""
+def fond_ia(rgba: np.ndarray) -> int:
+    """Fond uni sur lequel l'IA voit les zones transparentes : il doit contraster avec ce qui est dessus (un texte
+    blanc sur fond transparent est montré sur du noir, un logo sombre sur du blanc), sinon l'IA ne le voit pas."""
+    a = rgba[:, :, 3]
+    plein = a > 128
+    if a.min() == 255 or not plein.any():
+        return 255
+    rgb = rgba[:, :, :3][plein].astype(np.float32)
+    return 0 if float((rgb @ np.array([0.299, 0.587, 0.114], np.float32)).mean()) > 140 else 255
+
+
+def a_plat(rgba: np.ndarray, fond: int | None = None) -> np.ndarray:
+    """(h, w, 4) RGBA non prémultiplié -> (h, w, 3) RGB posé sur un fond uni (fond_ia par défaut). Sans cela, une
+    zone transparente (fond transparent, calque vide) partait en noir sans qu'on le choisisse, et restait noire."""
+    fond = fond_ia(rgba) if fond is None else fond
+    a = rgba[:, :, 3:4].astype(np.float32) / 255
+    return np.clip(rgba[:, :, :3].astype(np.float32) * a + fond * (1 - a) + 0.5, 0, 255).astype(np.uint8)
+
+
+def _sans_fond(rgb: np.ndarray, alpha: np.ndarray, fond: int, orig: np.ndarray) -> np.ndarray:
+    """Retire le fond uni des pixels à moitié transparents (bords) : sinon un bord garderait un peu de ce fond.
+    Plus le pixel est transparent, plus on garde sa couleur d'origine (orig) : aucun liseré sombre ou clair."""
+    a = alpha.astype(np.float32)[..., None] / 255
+    partiel = a < 1
+    vrai = np.clip((rgb.astype(np.float32) - fond * (1 - a)) / np.maximum(a, 0.03), 0, 255)
+    melange = vrai * a * a + orig.astype(np.float32) * (1 - a * a)
+    return np.where(partiel, np.clip(melange + 0.5, 0, 255), rgb).astype(np.uint8)
+
+
+def vue_ia(resultat: QImage, base: QImage) -> QImage:
+    """Résultat de l'IA tel qu'il sera posé : avec la transparence de l'image (pour la fenêtre de choix)."""
+    b = tableau(base.convertToFormat(FORMAT_IMAGE))
+    if b[:, :, 3].min() == 255:
+        return resultat
+    W, H = resultat.width(), resultat.height()
+    alpha = b[:, :, 3]
+    if (W, H) != (base.width(), base.height()):        # Upscale : transparence agrandie comme le résultat
+        alpha = np.asarray(Image.fromarray(alpha, "L").resize((W, H), Image.BICUBIC))
+    r = tableau(resultat.convertToFormat(FORMAT_IMAGE)).copy()
+    orig = b[:, :, :3]
+    if (W, H) != (base.width(), base.height()):
+        orig = np.asarray(Image.fromarray(np.ascontiguousarray(orig), "RGB").resize((W, H), Image.BICUBIC))
+    r[:, :, :3] = _sans_fond(r[:, :, :3], alpha, fond_ia(b), orig)
+    r[:, :, 3] = alpha
+    return qimage_rgba(r)
+
+
+def _image_ia(resultat: QImage, base: QImage, poids: np.ndarray, opacite: np.ndarray | None = None) -> QImage:
+    """Résultat de l'IA, transparent là où il ne change rien ou hors de la zone (alpha = poids). opacite (0..1) :
+    là où l'image était transparente, le résultat l'est aussi (par défaut : l'opacité de base)."""
     r = tableau(resultat.convertToFormat(FORMAT_IMAGE)).copy()
     b = tableau(base.convertToFormat(FORMAT_IMAGE))
-    change = np.any(r[:, :, :3] != b[:, :, :3], axis=2)
-    r[:, :, 3] = np.where(change, np.clip(poids * 255 + 0.5, 0, 255), 0).astype(np.uint8)
+    if opacite is None:
+        opacite = b[:, :, 3].astype(np.float32) / 255
+    fond = fond_ia(b)
+    # changé : autre couleur, ou plus opaque qu'avant (ex. l'ajout d'Agrandir, même tout blanc)
+    change = np.any(r[:, :, :3] != a_plat(b, fond), axis=2) | (opacite * 255 > b[:, :, 3] + 0.5)
+    r[:, :, :3] = _sans_fond(r[:, :, :3], np.where(opacite * 255 > b[:, :, 3] + 0.5, 255, b[:, :, 3]), fond,
+                             b[:, :, :3])
+    r[:, :, 3] = np.where(change, np.clip(poids * opacite * 255 + 0.5, 0, 255), 0).astype(np.uint8)
     return qimage_rgba(r)
 
 
@@ -580,21 +634,29 @@ class Document(QObject):
             return res
         nouveaux = [_avec_masque_transforme(c, poser) for c in nouveaux]
         base = fusionner(nouveaux, W, H)
+        # l'ajout (hors de la photo d'origine) est gardé en entier ; dans la photo, sa transparence est respectée
+        w0, h0 = self.taille()
+        opacite = np.ones((H, W), np.float32)
+        b = tableau(base.convertToFormat(FORMAT_IMAGE))[:, :, 3].astype(np.float32) / 255
+        opacite[dy:dy + h0, dx:dx + w0] = b[dy:dy + h0, dx:dx + w0]
+        pose = _image_ia(resultat, base, np.ones((H, W), np.float32), opacite)
         if not nouveau_calque and peut_recevoir_ia(nouveaux[self.actif]):
-            pose = _image_ia(resultat, base, np.ones((H, W), np.float32))
             img = nouveaux[self.actif].image.convertToFormat(FORMAT_CALQUE)
             p = QPainter(img)
             p.drawImage(0, 0, pose)
             p.end()
             nouveaux[self.actif] = replace(nouveaux[self.actif], image=img)
             return self.etat_avec(tuple(nouveaux), self.actif)
-        calque = calque_des_changements(self.nom_libre(titre), resultat, base)
+        calque = Calque.depuis(self.nom_libre(titre), pose)
         return self.etat_avec(tuple(nouveaux) + (calque,), len(nouveaux))
 
     def etat_redimensionne(self, titre: str, resultat: QImage, nouveau_calque: bool = True):
         """Upscale : tous les calques sont agrandis (lissage) ; le résultat de l'IA, complet, va en haut. Une photo
         d'un seul calque (sans nouveau_calque) : le résultat remplace simplement ce calque."""
         W, H = resultat.width(), resultat.height()
+        # transparence de l'image d'origine remise sur le résultat (l'IA ne rend que du RGB)
+        if tableau(self.image.convertToFormat(FORMAT_IMAGE))[:, :, 3].min() < 255:
+            resultat = vue_ia(resultat, self.image)       # fond montré à l'IA retiré, bords compris
         if not nouveau_calque and len(self.calques) == 1 and peut_recevoir_ia(self.calques[0]) \
                 and self.calques[0].masque is None and self.calques[0].style is None and self.calques[0].hors is None:
             c = replace(self.calques[0], image=resultat.convertToFormat(FORMAT_CALQUE))
@@ -1051,9 +1113,13 @@ class Document(QObject):
         self.change.emit()
 
     # ---------------------------------------------------------- pour l'IA
+    def rgb_pour_ia(self) -> np.ndarray:
+        """(h, w, 3) : l'image visible telle que l'IA doit la voir (zones transparentes sur du blanc)."""
+        return a_plat(tableau(self.image.convertToFormat(FORMAT_IMAGE)))
+
     def png_pour_ia(self, avec_selection: bool) -> bytes:
         """PNG de l'image visible ; la zone sélectionnée devient transparente (= zone à traiter pour ComfyUI)."""
-        rgb = tableau(self.image)[:, :, :3]
+        rgb = self.rgb_pour_ia()
         if avec_selection:
             alpha = 255 - masque(self.selection)
             im = Image.fromarray(np.dstack([rgb, alpha]), "RGBA")

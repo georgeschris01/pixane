@@ -17,7 +17,7 @@ from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from . import recettes
-from .document import FORMAT_IMAGE, Calque, image_vide, qimage_rgba, tableau
+from .document import FORMAT_IMAGE, Calque, a_plat, image_vide, qimage_rgba, tableau
 from .langue import tr
 from .moteur import ErreurMoteur
 from .styles import dilater
@@ -105,13 +105,13 @@ class Suppression:
         # bord du trait un peu élargi : le contour flou d'un défaut part aussi
         x, y, zw, zh = zone.x(), zone.y(), zone.width(), zone.height()
         mz = np.clip(dilater(m[y:y + zh, x:x + zw], max(1.5, taille * 0.06)), 0, 1)
-        photo = tableau(doc.image.copy(zone))
+        photo = tableau(doc.image.copy(zone).convertToFormat(FORMAT_IMAGE))
         self.f.statusBar().showMessage(tr("Suppression en cours…"))
         QApplication.setOverrideCursor(Qt.BusyCursor)
 
         def calcul(_progres):
             k = min(1.0, COTE_MAX / max(zw, zh))
-            rgb = Image.fromarray(np.ascontiguousarray(photo[:, :, :3]), "RGB")
+            rgb = Image.fromarray(a_plat(photo), "RGB")
             alpha = Image.fromarray(((1 - (mz > 0.02)) * 255).astype(np.uint8), "L")
             if k < 1:
                 taille_r = (max(1, round(zw * k)), max(1, round(zh * k)))
@@ -133,7 +133,7 @@ class Suppression:
         def ok(rgb):
             QApplication.restoreOverrideCursor()
             if doc is self.f.doc:
-                self._poser(doc, zone, rgb, mz)
+                self._poser(doc, zone, rgb, mz * (photo[:, :, 3] / 255))   # transparent : reste transparent
                 self.f.statusBar().showMessage(tr("Supprimé. Ctrl+Z pour revenir."), 4000)
             self._suivant()
 

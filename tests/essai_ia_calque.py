@@ -126,6 +126,64 @@ verifier(len(doc.calques) == 1 and doc.taille() == (800, 500), "Upscale : un seu
 f.historique.undo()
 verifier(doc.taille() == (400, 250), "Ctrl+Z")
 
+# 8. fond transparent : l'IA le voit en blanc (plus en noir) et le résultat n'y ajoute pas de noir
+import io
+from PIL import Image
+from pixane.document import image_vide, Calque
+fond = image_vide(300, 200)
+p = QPainter(fond)
+p.fillRect(100, 50, 100, 100, QColor(200, 40, 40))
+p.end()
+doc = Document(calques=[Calque("Logo", fond)])
+f._installer_document(doc)
+envoye = np.asarray(Image.open(io.BytesIO(doc.png_pour_ia(False))))
+verifier((envoye[10, 10, :3] == 255).all(), f"zone transparente envoyée à l'IA en blanc, pas en noir {envoye[10, 10]}")
+r = rgb(doc.image)
+r[(r == 0).all(axis=2)] = [3, 3, 3]                     # comme l'IA : du noir là où c'était transparent
+r[90:110, 140:160] = [20, 200, 40]
+f._appliquer_resultat(doc, qimage_rgb(r.astype(np.uint8)), "Netteté (IA)", zone=None)
+a = tableau(doc.calques[0].image)[:, :, 3]
+verifier(len(doc.calques) == 1 and a[10, 10] == 0 and (rgb(doc.calques[0].image)[100, 150] == [20, 200, 40]).all(),
+         "résultat posé : le fond transparent reste transparent, aucun noir ajouté")
+selection(doc, 0, 0, 300, 200)
+f._appliquer_resultat(doc, qimage_rgb(r.astype(np.uint8)), "Remplir", zone=tableau(doc.selection)[:, :, 3].copy())
+verifier(tableau(doc.calques[0].image)[10, 10, 3] == 0, "même avec une sélection : pas de noir dans le transparent")
+big = np.ascontiguousarray(np.repeat(np.repeat(rgb(doc.image), 2, 0), 2, 1).astype(np.uint8))
+f._appliquer_resultat(doc, qimage_rgb(big), "Upscale")
+a = tableau(doc.calques[0].image.convertToFormat(FORMAT_IMAGE))[:, :, 3]
+verifier(doc.taille() == (600, 400) and a[20, 20] == 0 and a[200, 300] == 255, "Upscale : la transparence est gardée")
+
+# 9. Agrandir une image à fond blanc : l'ajout tout blanc est bien gardé (pas pris pour « rien n'a changé »)
+doc = nouveau_doc()
+blanc = np.full((200, 300, 3), 255, np.uint8)
+doc.appliquer_etat(doc.etat_avec((Calque.depuis("Fond", qimage_rgb(blanc)),), 0))
+grand = np.full((250, 400, 3), 255, np.uint8)
+f._appliquer_resultat(doc, qimage_rgb(grand), "Agrandir",
+                      lambda img: doc.etat_agrandi("Agrandir", img, (100, 50), nouveau_calque=False))
+verifier(tableau(doc.calques[0].image)[10, 10, 3] == 255, "ajout blanc d'Agrandir : bien présent (opaque)")
+
+# 10. texte blanc sur fond transparent (cas de Christophe) : l'IA le voit sur du sombre, mais rien de sombre
+# n'arrive sur l'image, ni dans la proposition montrée, ni dans le résultat posé (bords compris)
+from PIL import ImageDraw, ImageFilter, ImageFont
+from pixane.document import a_plat, qimage_rgba, vue_ia
+a = Image.new("L", (600, 200), 0)
+ImageDraw.Draw(a).text((20, 40), "Pirate", fill=255, font=ImageFont.truetype("C:/Windows/Fonts/georgiai.ttf", 110))
+src = np.dstack([np.full((200, 600, 3), 255, np.uint8), np.asarray(a)])
+doc = Document(calques=[Calque("Titre", qimage_rgba(src))])
+f._installer_document(doc)
+envoye = np.asarray(Image.open(io.BytesIO(doc.png_pour_ia(False))).convert("RGB"))
+verifier(envoye[5, 5].max() < 30 and envoye[(np.asarray(a) == 255)].min() > 200,
+         "texte blanc : montré à l'IA sur un fond sombre (sinon blanc sur blanc, invisible)")
+ia = np.asarray(Image.fromarray(a_plat(src)).filter(ImageFilter.UnsharpMask(2, 150, 2)))   # IA : netteté
+original = doc.image
+vue = tableau(vue_ia(qimage_rgb(np.ascontiguousarray(ia)), original).convertToFormat(FORMAT_IMAGE)).astype(int)
+f._appliquer_resultat(doc, qimage_rgb(np.ascontiguousarray(ia)), "Netteté (IA)", zone=None)
+pose = tableau(doc.image.convertToFormat(FORMAT_IMAGE)).astype(int)
+for nom, r in (("proposition montrée", vue), ("résultat posé", pose)):
+    vis = r[:, :, 3] > 10
+    sombres = int((vis & (r[:, :, :3].mean(2) < 120)).sum())
+    verifier(r[5, 5, 3] == 0 and sombres == 0, f"{nom} : fond transparent, aucun pixel sombre ({sombres})")
+
 print("ERREURS :", erreurs if erreurs else "aucune")
 sys.stdout.flush()
 for dd in f.documents:

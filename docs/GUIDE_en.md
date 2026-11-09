@@ -303,6 +303,10 @@ and follows it when you move, transform or resize it. Ctrl+Z goes back. The AI a
 see it** (all visible layers together): so choose the photo's layer before starting.
 - The result **does not go outside the selection**: the AI retouches a little around it for the join, but Pixane
   only keeps the inside, plus a blend of a few pixels, so that no edge shows.
+- **Transparent** areas (transparent background, cut-out logo, text alone) **stay transparent**: no black is added,
+  neither in the proposals nor in the result (Upscale too). So that the AI sees clearly what is on them, Pixane
+  shows these areas on a plain contrasting background (dark behind white text, white behind a dark logo), then
+  removes that background from the result, letter edges included.
 - It goes into a **new layer** ("Erase 1", "Fill 2"…) when the chosen layer cannot receive it (text, group,
   adjustment layer, hidden or locked layer), or when there is no selection and the image has several layers
   (otherwise the others would be copied into it). A message at the bottom says so.
