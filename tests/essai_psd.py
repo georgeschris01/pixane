@@ -1,4 +1,4 @@
-"""Fichiers Photoshop : écrire un PSD à calques puis le relire (par Chrypix et par Pillow, lecteur indépendant) ;
+"""Fichiers Photoshop : écrire un PSD à calques puis le relire (par Pixane et par Pillow, lecteur indépendant) ;
 noms avec accents, visibilité, opacité, verrou, calque vide, transparence, image fusionnée.
 Usage : essai_psd.py dossier_sortie   (images d'essai fabriquées)"""
 import os
@@ -6,12 +6,12 @@ import sys
 import time
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"
 import numpy as np
 from PIL import Image
 from PySide6.QtWidgets import QApplication
-from chrypix.document import FORMAT_CALQUE, FORMAT_IMAGE, Calque, Document, image_vide, qimage_rgba, tableau
-from chrypix.psd import _packbits
+from pixane.document import FORMAT_CALQUE, FORMAT_IMAGE, Calque, Document, image_vide, qimage_rgba, tableau
+from pixane.psd import _packbits
 
 app = QApplication(sys.argv)
 sortie = Path(sys.argv[1])

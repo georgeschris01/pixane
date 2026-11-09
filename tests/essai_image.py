@@ -7,19 +7,19 @@ import os
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"   # ne touche pas aux réglages de l'utilisateur
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"   # ne touche pas aux réglages de l'utilisateur
 import numpy as np
 from PIL import Image
 from PySide6.QtCore import QEvent, QPointF, QTimer, Qt
 from PySide6.QtGui import QImage, QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import QApplication, QDialog, QInputDialog, QMessageBox
-from chrypix import installation_moteur, mises_a_jour, recettes
-from chrypix.canevas import RECTANGLE
-from chrypix.dialogues_image import APropos, NouvelleImage, Redresser, TailleImage
-from chrypix.document import FORMAT_IMAGE, masque, tableau
-from chrypix.fenetre import Fenetre, reglages
-from chrypix.moteur import Moteur
-from chrypix.reglages_image import auto
+from pixane import installation_moteur, mises_a_jour, recettes
+from pixane.canevas import RECTANGLE
+from pixane.dialogues_image import APropos, NouvelleImage, Redresser, TailleImage
+from pixane.document import FORMAT_IMAGE, masque, tableau
+from pixane.fenetre import Fenetre, reglages
+from pixane.moteur import Moteur
+from pixane.reglages_image import auto
 
 Moteur.demarrer = lambda self, signaler=None: (_ for _ in ()).throw(Exception("moteur désactivé pour l'essai"))
 Fenetre._moteur_en_echec = lambda self, *a: None
@@ -167,14 +167,14 @@ verifier(f.doc is not None and f.doc.taille() == (400, 300), "Ctrl+V sans photo 
 # ------------------------------------------------------------------ historique, à propos, mises à jour, Auto
 verifier(f.vue_historique.stack() is f.historique, "panneau Historique relié à Annuler / Rétablir")
 d = APropos(None, f)
-verifier("Chrypix" in d.findChildren(type(f.info_transfo))[0].text(), "fenêtre À propos")
+verifier("Pixane" in d.findChildren(type(f.info_transfo))[0].text(), "fenêtre À propos")
 d.deleteLater()
 verifier(mises_a_jour.plus_recente("0.2.0", "0.1.0") and not mises_a_jour.plus_recente("0.1.0", "0.1.0")
          and mises_a_jour.plus_recente("v1.0", "0.9.9"), "comparaison des versions")
 sombre = QImage(str(sortie / "fond.png")).convertToFormat(QImage.Format_ARGB32_Premultiplied)
 t = tableau(sombre.convertToFormat(FORMAT_IMAGE))
 t[..., :3] = t[..., :3] // 3 + 20
-from chrypix.document import qimage_rgba
+from pixane.document import qimage_rgba
 r_auto = auto(qimage_rgba(t))
 verifier(r_auto["luminosite"] > 10 and r_auto["contraste"] > 10, f"Auto sur une photo sombre et terne : {r_auto}")
 

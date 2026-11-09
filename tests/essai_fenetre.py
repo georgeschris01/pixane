@@ -5,9 +5,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from PySide6.QtCore import QPointF, QTimer
 from PySide6.QtWidgets import QApplication
 import os
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"   # ne touche pas aux réglages de l'utilisateur
-from chrypix.fenetre import Fenetre
-from chrypix.moteur import Moteur
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"   # ne touche pas aux réglages de l'utilisateur
+from pixane.fenetre import Fenetre
+from pixane.moteur import Moteur
 
 Moteur.demarrer = lambda self, signaler=None: (_ for _ in ()).throw(Exception("moteur désactivé pour l'essai"))
 Fenetre._moteur_en_echec = lambda self, *a: None   # pas de message bloquant pendant l'essai

@@ -7,16 +7,16 @@ import sys
 import time
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"
 import numpy as np
 from PIL import Image
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QApplication, QMessageBox
-from chrypix.canevas import SUPPRIMER
-from chrypix.document import FORMAT_IMAGE, tableau
-from chrypix.fenetre import Fenetre
-from chrypix.moteur import Moteur
+from pixane.canevas import SUPPRIMER
+from pixane.document import FORMAT_IMAGE, tableau
+from pixane.fenetre import Fenetre
+from pixane.moteur import Moteur
 
 VRAI = "--vrai" in sys.argv
 if not VRAI:

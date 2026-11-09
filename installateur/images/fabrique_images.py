@@ -1,4 +1,4 @@
-"""Images de l'installateur de Chrypix (Inno Setup 7), même présentation que celui de TwinPanel.
+"""Images de l'installateur de Pixane (Inno Setup 7), même présentation que celui de TwinPanel.
 À relancer seulement si le logo ou les captures changent (captures : capture.py fr / en d'abord) :
     .venv\\Scripts\\python.exe installateur\\images\\fabrique_images.py
 - accueil-<langue>-<l>x<h>.png : bande de gauche des pages d'accueil et de fin (logo, nom, petite capture),
@@ -16,7 +16,7 @@ from PySide6.QtSvg import QSvgRenderer
 
 RACINE = Path(__file__).resolve().parents[2]
 SORTIE = Path(__file__).resolve().parent
-HAUT, BAS = (29, 36, 51), (12, 15, 22)            # bleu nuit du logo (même couleur que dans Chrypix.iss)
+HAUT, BAS = (29, 36, 51), (12, 15, 22)            # bleu nuit du logo (même couleur que dans Pixane.iss)
 ORANGE, ROSE = (255, 138, 61), (232, 54, 111)     # dégradé du « C » du logo
 TAILLES_ACCUEIL = [(202, 386), (269, 515), (336, 643), (403, 772), (430, 824), (534, 1022)]
 TAILLES_LOGO = [58, 77, 97, 116, 124, 143, 159]
@@ -24,7 +24,7 @@ TAILLES_LOGO = [58, 77, 97, 116, 124, 143, 159]
 
 def logo_png(taille: int) -> Image.Image:
     """Logo SVG dessiné net à la taille voulue."""
-    rendu = QSvgRenderer(QByteArray((RACINE / "logo" / "chrypix.svg").read_bytes()))
+    rendu = QSvgRenderer(QByteArray((RACINE / "logo" / "pixane.svg").read_bytes()))
     img = QImage(taille, taille, QImage.Format_RGBA8888)
     img.fill(Qt.transparent)
     p = QPainter(img)
@@ -58,7 +58,7 @@ def accueil(capture: Image.Image, logo: Image.Image, w: int, h: int) -> Image.Im
     lg = logo.resize((s, s), Image.LANCZOS)
     im.paste(lg, ((w - s) // 2, round(34 * u)), lg)
     f = gras(round(27 * u))
-    nom = "Chrypix"
+    nom = "Pixane"
     tw = d.textlength(nom, font=f)
     d.text(((w - tw) / 2, round(150 * u)), nom, font=f, fill=(255, 255, 255))
     ligne = trait_degrade(w - 2 * round(60 * u), max(2, round(2 * u)))

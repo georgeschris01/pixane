@@ -1,6 +1,6 @@
-# Chrypix user guide
+# Pixane user guide
 
-Chrypix is a photo editor for Windows that retouches images with an AI running **on your own PC**
+Pixane is a photo editor for Windows that retouches images with an AI running **on your own PC**
 (no subscription, no photos sent over the Internet).
 This guide explains every tool and every setting: **what it is for** and **how to use it**. It is updated with
 each new feature.
@@ -8,10 +8,10 @@ each new feature.
 
 ## Before you start: an AI that runs 100% on your PC
 
-- **No online AI.** All of Chrypix's AI actions (Erase, Fill, Expand, Upscale, object selection, background,
+- **No online AI.** All of Pixane's AI actions (Erase, Fill, Expand, Upscale, object selection, background,
   noise reduction, sharpening, restoration…) run **on your computer**, with models installed on your disk. **No photo
   is ever sent over the Internet**; no account, no subscription, no usage limit. The Internet is only used to
-  download the AI engine once (and its updates, if you accept them). After that, Chrypix works even offline.
+  download the AI engine once (and its updates, if you accept them). After that, Pixane works even offline.
 - **Speed depends on your PC, above all on the graphics card**: it does the AI's calculations. **The more powerful it
   is and the more memory it has, the faster the processing.** A recent card with 12, 16 or 24 GB of memory is much
   faster than the test PC's; a more modest card is slower. System memory (RAM) matters too: when the graphics card
@@ -20,7 +20,7 @@ each new feature.
 
 | Action | Time |
 |---|---|
-| AI engine start-up (when Chrypix opens) | about 20 seconds |
+| AI engine start-up (when Pixane opens) | about 20 seconds |
 | Object selection, quick selection | about 1 second |
 | Remove background, select subject, Remove tool (J), Reduce noise | a few seconds |
 | Sharpen (AI) | 15 to 20 seconds |
@@ -41,8 +41,8 @@ The first use of a model after start-up takes a little longer (it is loaded into
 | **Disk** | 35 GB free for the AI engine | 60 GB free (with Flux Schnell and Flux Kontext), on an SSD |
 | **Processor** | recent 4-core | 6 cores or more |
 
-Chrypix has been tested on an **RTX 3060 Ti (8 GB) with 32 GB of RAM**. The minimum is an estimate: it has not been
-tried on other PCs. **Without an NVIDIA card** (AMD or Intel card, laptop without a graphics card), Chrypix opens and
+Pixane has been tested on an **RTX 3060 Ti (8 GB) with 32 GB of RAM**. The minimum is an estimate: it has not been
+tried on other PCs. **Without an NVIDIA card** (AMD or Intel card, laptop without a graphics card), Pixane opens and
 edits normally (layers, text, adjustments, filters, export…), but the AI actions do not work.
 
 ---
@@ -61,40 +61,40 @@ edits normally (layers, text, adjustments, filters, export…), but the AI actio
 | **"Layers" panel (right, below)** | The layers of the image (see chapter 6) |
 | **Status bar (bottom)** | AI engine status (coloured dot), photo size |
 
-**Colours**: Chrypix uses the accent colour chosen in Windows (Settings > Personalization > Colors)
+**Colours**: Pixane uses the accent colour chosen in Windows (Settings > Personalization > Colors)
 and follows the Windows light / dark mode. **View > Theme** menu: *Same as Windows*, *Light* or *Dark*.
 The sun / moon button in the top bar also switches between light and dark.
 
-**Language**: Chrypix is available in **French** and **English**. By default it uses the Windows language
+**Language**: Pixane is available in **French** and **English**. By default it uses the Windows language
 (French if Windows is in French, English otherwise). **View > Language** menu: *Same as Windows*, *Français*
-or *English*; Chrypix then offers to restart to apply the language (the AI engine restarts too, about
+or *English*; Pixane then offers to restart to apply the language (the AI engine restarts too, about
 20 seconds). Standard buttons (Yes / No / Cancel, right-click menu) follow the same language.
 Layer names that already exist keep their original language.
 
-**AI engine**: when it starts, Chrypix launches the AI (ComfyUI) in the background, without a window. Allow about
+**AI engine**: when it starts, Pixane launches the AI (ComfyUI) in the background, without a window. Allow about
 20 seconds. The dot at the bottom left turns green when the engine is ready; AI actions are greyed out before that.
 
 ---
 
 ## 2. Opening and saving
 
-- **File > Open** (Ctrl+O): JPG, PNG, TIFF, WebP, BMP, and the **.chr**, **.ora** and **.psd** (Photoshop)
+- **File > Open** (Ctrl+O): JPG, PNG, TIFF, WebP, BMP, and the **.pixane**, **.ora** and **.psd** (Photoshop)
   layered files.
   The photo is rotated according to the camera orientation.
 - **Save** (Ctrl+S), **Save as** (Ctrl+Shift+S):
-  - **.chr** (Chrypix project): Chrypix's own format. Keeps **everything**: layers (names, order, visibility,
+  - **.pixane** (Pixane project): Pixane's own format. Keeps **everything**: layers (names, order, visibility,
     opacity, lock), **editable texts** and **editable layer styles**. Suggested automatically when the image has several layers or a text.
   - **.ora** (OpenRaster): to **share with Krita or GIMP** (open format). Keeps the layers, but texts become
     images.
-  - Good to know: a .chr file is built like an .ora file; renamed to .ora, it also opens in Krita or GIMP.
+  - Good to know: a .pixane file is built like an .ora file; renamed to .ora, it also opens in Krita or GIMP.
   - **.psd** (Photoshop): to **work with Photoshop**. Keeps the layers (names, order, visibility, opacity, lock);
     texts become images. A photo opened from a PSD is suggested as PSD.
-  - **PSD files opened in Chrypix**: RGB or greyscale, 8 or 16-bit, with layers, **groups**, **layer masks**,
+  - **PSD files opened in Pixane**: RGB or greyscale, 8 or 16-bit, with layers, **groups**, **layer masks**,
     **blend modes** and **layer styles** (drop and inner shadow, glows, stroke, bevel, colour and gradient overlays),
-    which stay editable. Chrypix does not reproduce Photoshop adjustment layers, clipping masks or groups in "pass
+    which stay editable. Pixane does not reproduce Photoshop adjustment layers, clipping masks or groups in "pass
     through" mode (opened as Normal): a message says so when opening, as the result may then look different. A CMYK
     PSD opens flattened (a single layer). Large .psb documents are not supported.
-  - **PSD files saved by Chrypix**: layers, groups, masks and blend modes are kept; styles are baked into the
+  - **PSD files saved by Pixane**: layers, groups, masks and blend modes are kept; styles are baked into the
     pixels; an adjustment layer becomes an image layer (the adjusted result).
   - **JPG** (quality 95), **PNG**, **TIFF**, **WebP**: the **flattened** image (what you see, layers merged).
     A message reminds you of this if the image has several layers.
@@ -104,15 +104,15 @@ Layer names that already exist keep their original language.
   further down to redo the next ones. A new edit discards the steps "ahead".
 - **File > Recent files**: the last 10 images opened or saved (*Clear the list* empties it).
 - **Several photos at once**: *Open* accepts several files at a time (Ctrl+click or Shift+click in the dialog),
-  and several files can be dropped on Chrypix. Each photo has its own **tab** and its own **Undo** (Ctrl+Z only
+  and several files can be dropped on Pixane. Each photo has its own **tab** and its own **Undo** (Ctrl+Z only
   affects the photo shown). Switch photos: click the tab, **Ctrl+Tab** / **Ctrl+Shift+Tab**. **File > Close photo**
   (Ctrl+W, or the tab's cross) asks to save if needed. Opening a photo that is already open just goes to its tab.
 - **Autosave**: every 3 minutes, each modified photo is copied (layers, texts, styles and masks included) to
-  `%LOCALAPPDATA%\Chrypix\recuperation`, without slowing you down. If Chrypix closes badly (crash, power cut), it
+  `%LOCALAPPDATA%\Pixane\recuperation`, without slowing you down. If Pixane closes badly (crash, power cut), it
   offers to **reopen these copies** the next time it starts; they open "to be saved", with the original file name.
-  The copies are deleted when the photo is saved or closed, and when Chrypix closes normally.
-- **If an error occurs**: when a command fails, Chrypix shows it and writes it to
-  `%LOCALAPPDATA%\Chrypix\erreurs.log` (useful to report the problem).
+  The copies are deleted when the photo is saved or closed, and when Pixane closes normally.
+- **If an error occurs**: when a command fails, Pixane shows it and writes it to
+  `%LOCALAPPDATA%\Pixane\erreurs.log` (useful to report the problem).
 - **File > Export for web…** (Ctrl+Alt+Shift+S): a light copy for the Internet, without touching the photo.
   - **Format**: JPEG (photos), **WebP** (lighter at the same quality, keeps transparency), PNG (lossless).
   - **Shrink: longest side** (for example 2048 px); never enlarged.
@@ -127,7 +127,7 @@ Layer names that already exist keep their original language.
     WebP, PNG) and quality, **Add to name** (e.g. `_web`).
   - A bar shows progress; **Stop** finishes the current photo then stops. A photo that causes a problem is listed
     at the end; the others are done.
-  - Safety: if the results would go into the same folder under the same name, Chrypix refuses (the originals
+  - Safety: if the results would go into the same folder under the same name, Pixane refuses (the originals
     would be replaced).
 - **File > New image…** (Ctrl+N): empty image, any size, white, black or transparent background.
 - **File > New image from clipboard** (Ctrl+Alt+V): opens the copied image (screenshot, other program…).
@@ -151,7 +151,7 @@ Layer names that already exist keep their original language.
   the left one). With the **Move** tool (V), grab a guide to move it (the cursor becomes a double arrow
   over it); dragged off the photo, it disappears. *New
   guide…* places one at an exact position, *Clear guides* removes them all, Ctrl+; hides or shows them. They are
-  saved in the .chr file.
+  saved in the .pixane file.
 - **Grid** (Ctrl+'): regular lines over the photo; *Grid size…* sets the spacing (100 px by default).
 - **Snap** (Ctrl+Shift+;, on by default): rectangle selection, gradient and shapes snap to guides, to the photo's
   edges and to the grid (when shown), within 8 screen pixels.
@@ -215,7 +215,7 @@ One click on a colour selects the area of similar colour. No AI, instant.
 
 ### Refine edge (Ctrl+Alt+R, Select menu)
 For a rough selection around **hair, fur, foliage or soft edges** (for example after *Select subject* or a quick
-lasso): Chrypix recomputes the edge from the photo's colours.
+lasso): Pixane recomputes the edge from the photo's colours.
 - **Radius**: width of the band recomputed around the edge. Increase it until the strands appear; outside this
   band, nothing changes.
 - **Smooth**: softens a jagged edge. **Edge contrast**: sharper edge. **Shift edge**: negative pulls it in (removes
@@ -231,7 +231,7 @@ They work on the **layer chosen** in the Layers panel:
 - **Copy** (Ctrl+C): copies what is selected (the whole layer if there is no selection). The copy keeps its
   transparency; it can also be pasted into another program.
 - **Cut** (Ctrl+X): copies, then erases the selected area (it becomes transparent).
-- **Paste** (Ctrl+V): puts the copied image in a **new layer**, at **the same place** if it comes from Chrypix, in the
+- **Paste** (Ctrl+V): puts the copied image in a **new layer**, at **the same place** if it comes from Pixane, in the
   centre if it comes from elsewhere (screenshot, another program…). Then move it with the Move tool (V).
 - **Delete selection** (Del): erases the selected area of the layer (transparent).
 
@@ -242,7 +242,7 @@ outside the image is cut off; refused on a locked layer). The **Layer eraser** (
 chosen layer (see chapter 6); it is grouped with the colour brush and the clone stamp.
 
 **Tip (text, cursive, thin objects)**: cover each letter completely, edges included, with a brush slightly wider
-than the stroke; don't forget the shadow or outline if there is one. Chrypix already enlarges the area a little
+than the stroke; don't forget the shadow or outline if there is one. Pixane already enlarges the area a little
 (about 16 px) to catch blurry edges.
 
 ---
@@ -292,7 +292,7 @@ Two frames appear on the photo:
 - When both frames are on top of each other (at the start), the **direction of your drag** decides:
   outward = expand, inward = damaged edge.
 - **Shift** while dragging: the opposite side moves the same way (expand left and right at once, for example).
-- **Automatic detection**: when opened, Chrypix finds the light or dark border lines (1 to 8 px) that many
+- **Automatic detection**: when opened, Pixane finds the light or dark border lines (1 to 8 px) that many
   images have on their edges, and already places the red frame on them. You can adjust it or set it back to 0.
 - **Bar at the top of the photo**:
   - **Expand** row: what is added on each side, as a % of the photo (0 to 200%);
@@ -301,7 +301,7 @@ Two frames appear on the photo:
   - **Start** (or Enter) / **Cancel** (or Esc).
   The boxes and the frames follow each other: changing one updates the other.
 - **Final size** = original photo + expansion. The damaged edge does not shrink the image: it is replaced.
-- The join between the photo and the addition is made by Chrypix: the original photo is kept **pixel for pixel**,
+- The join between the photo and the addition is made by Pixane: the original photo is kept **pixel for pixel**,
   with a gradual blend and colour matching, so that no line is visible.
 - 3 options, about 1 minute each.
 - **Layers**: all layers are shifted onto the new canvas; an "Expand 1" layer contains the addition and the
@@ -327,7 +327,7 @@ The window shows the final size before starting; while computing, the progress c
 **BiRefNet** model (MIT, 444 MB, installed with the AI engine; if it is missing, **AI > Install the AI engine…**
 adds it). A few seconds.
 - **Remove background** (Shift+B, AI panel or AI menu): the background of the **chosen layer** becomes
-  transparent, the subject stays. Save as PNG, PSD or .chr to keep the transparency. Ctrl+Z undoes it.
+  transparent, the subject stays. Save as PNG, PSD or .pixane to keep the transparency. Ctrl+Z undoes it.
 - **Select subject** (Ctrl+Alt+S, Select menu): selects the subject without erasing anything, for example to
   adjust it (Ctrl+U), or *Invert* (Ctrl+Shift+I) to work on the background.
 
@@ -342,7 +342,7 @@ AI actions, the result goes on a **new layer** (Ctrl+Z undoes it).
 - **Restore an old photo…**: the AI **redraws** the whole photo, removing scratches, stains, dust, creases and
   grain, and making contrast and faces sharper. The photo keeps **exactly its size and proportions**.
   - **Restore** keeps the **original colours**: a black & white or sepia photo stays so, a colour photo keeps its
-    colours. The AI only provides the light and the details; Chrypix then puts back the original's tint.
+    colours. The AI only provides the light and the details; Pixane then puts back the original's tint.
   - **Restore and colourise** also adds natural colours to a black & white or sepia photo.
   - The result arrives in a **"Restored"** (or **"Restored and colourised"**) layer, and *Save as* as well as *Export
     for web* suggest a name that says so: `photo_restored.jpg`, `photo_restored_colourised.jpg`.
@@ -366,7 +366,7 @@ An opened photo has a single layer, "Background".
 | **Thumbnail** | Preview of the layer; the grey checkerboard shows transparent parts |
 | **Name** | Double-click the name to rename; double-click elsewhere on the row: layer style |
 | **Opacity** | Transparency of the selected layer, from 0% (invisible) to 100%; shown under the name when < 100% |
-| **Padlock** (right of the name) | Locks the layer to protect it: it can no longer be erased, deleted or merged, and its opacity is fixed; Flatten is disabled while a layer is locked. AI actions are refused with a message: Erase and Fill if the selected layer is locked, Expand and Upscale if any layer is locked (they change the size of every layer). It can still be hidden, renamed and moved up / down. The open padlock is discreet, the closed padlock clearly visible. The lock is kept in .chr and .ora files |
+| **Padlock** (right of the name) | Locks the layer to protect it: it can no longer be erased, deleted or merged, and its opacity is fixed; Flatten is disabled while a layer is locked. AI actions are refused with a message: Erase and Fill if the selected layer is locked, Expand and Upscale if any layer is locked (they change the size of every layer). It can still be hidden, renamed and moved up / down. The open padlock is discreet, the closed padlock clearly visible. The lock is kept in .pixane and .ora files |
 | **Drag a layer** | Change its place in the stack with the mouse: grab the row (on the name) and drag it up or down; an **orange line** shows where it will go. Dropped just below a layer of an open group, it enters the group; a group moves with its layers. A single Undo step |
 | **Blend mode** (list at the top of the panel) | How the layer mixes with what is below (see below) |
 | **Mask thumbnail** (right of the thumbnail) | The layer's mask, if it has one. Click: you paint the mask (orange frame); click the layer thumbnail: you paint the pixels again. Shift+click: disable / enable the mask (crossed in red) |
@@ -390,7 +390,7 @@ The same as Photoshop, sorted by family: **Normal**; **Darken**, **Multiply**, *
 **Lighten**, **Screen**, **Colour dodge**, **Linear dodge (Add)** (lightening); **Overlay**, **Soft light**, **Hard
 light** (contrast); **Difference**, **Exclusion**; **Hue**, **Saturation**, **Colour**, **Luminosity**. Examples:
 *Multiply* for a shadow or dark texture, *Screen* for a glow, *Overlay* for a paper texture, *Colour* to tint. Kept
-in .chr, .ora and .psd files.
+in .pixane, .ora and .psd files.
 
 ### Layer masks
 A mask **hides part of a layer without erasing it**: black = hidden, white = visible, grey = half. You can always go
@@ -402,7 +402,7 @@ back by painting white.
   photos) or the paint bucket. Adjustments and filters also work on the mask.
 - Example: *Remove background* then a mask rather than an eraser: a bit of the subject cut by mistake comes back by
   painting white.
-- Masks follow the layer (Ctrl+T, crop, image size, Upscale) and are kept in .chr, .ora and .psd.
+- Masks follow the layer (Ctrl+T, crop, image size, Upscale) and are kept in .pixane, .ora and .psd.
 
 ### Groups
 A **group** puts several layers in a folder: you can hide, move, duplicate or delete them all at once, and give the
@@ -418,7 +418,7 @@ Image adjustments) to **everything below it**, without touching the pixels: you 
 - **Layer > New adjustment layer**, or the panel's **Adjustment** button. If there is a selection, it becomes the
   adjustment layer's mask (the adjustment only applies there).
 - Inside a group, it only adjusts the group's layers below it.
-- Kept as is in .chr; in .ora and .psd it becomes an image layer (the result).
+- Kept as is in .pixane; in .ora and .psd it becomes an image layer (the result).
 
 ### Layer style: shadows, outline, glow, bevel… (Ctrl+Alt+F)
 **Effects added to the layer**, always editable: the layer's pixels are not touched. To open it: **double-click** a
@@ -450,7 +450,7 @@ result live; **OK** keeps the style (a single step in Undo), **Cancel** puts eve
   edited text or a moved layer.
 - **Layer** menu: **Copy style** / **Paste style** (onto another layer), **Remove style**, **Merge style into pixels**
   (to erase or paint the layer with its effects).
-- Saving: in **.chr**, styles stay editable. In **.psd** and **.ora** they are merged into the pixels (visible in
+- Saving: in **.pixane**, styles stay editable. In **.psd** and **.ora** they are merged into the pixels (visible in
   Photoshop, Krita, GIMP, but no longer editable). Styles of an opened PSD are imported and stay editable (see chapter 2).
 - Merge and Flatten also put the effects into the pixels.
 
@@ -473,12 +473,12 @@ All layer actions can be undone with Ctrl+Z (changing the selected layer does no
 - **Click on the photo**: a new text "Text" appears at that spot, on **its own layer**.
   Just type: the suggested word is replaced. The panel's box accepts several lines (Enter).
 - **Click on an existing text**: it is selected and its settings are shown; it can be edited at any time,
-  even after saving as **.chr** and reopening.
+  even after saving as **.pixane** and reopening.
 - The text is applied **as you go**: nothing to confirm.
 - **Drag the text**: move it (also with the Move tool, V). A dashed frame surrounds the selected text.
 - **Round handle** above the frame: rotate the text (**Shift**: in 15° steps), or the *Rotation* box.
 - The layer name follows the first line of the text (as long as you have not renamed it yourself).
-- With no text selected, the panel settings are used for the **next** text; Chrypix also remembers the last
+- With no text selected, the panel settings are used for the **next** text; Pixane also remembers the last
   style used (font, colour, effects…). The size of a new text is calculated from the photo.
 
 ### Panel settings
@@ -507,7 +507,7 @@ they stay in proportion when you change the text size.
 - The **Layer eraser** on a text turns it into an image (a message says so; Ctrl+Z to go back).
   So do **Merge** and **Flatten**.
 - A text on a **locked** layer can be neither moved nor edited.
-- To keep texts editable, save as **.chr** (in an .ora file, they become images).
+- To keep texts editable, save as **.pixane** (in an .ora file, they become images).
 
 ---
 
@@ -683,55 +683,55 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+0, Ctrl+1 | Fit, 100% |
 | Enter / Esc | (Expand) Start / Cancel; (Crop) Apply / Cancel |
 | Shift (while rotating a text) | Rotate in 15° steps |
-| F1 | Guide, opened at the shortcuts (Help > Chrypix guide: the whole guide, with a search) |
+| F1 | Guide, opened at the shortcuts (Help > Pixane guide: the whole guide, with a search) |
 
 ---
 
 ## 12. Hardware and licences
 
-**Installation**: run `Chrypix-Setup-<version>-64bits.exe`.
-1. Installation language (it will also be Chrypix's language, which can be changed later in View > Language).
+**Installation**: run `Pixane-Setup-<version>-64bits.exe`.
+1. Installation language (it will also be Pixane's language, which can be changed later in View > Language).
 2. Just for me (default, no administrator rights) or for all users.
 3. Installation folder.
 4. **PC check**: NVIDIA graphics card and its memory (8 GB recommended), free space, AI engine (ComfyUI) found or
    not. If ComfyUI is installed elsewhere, use **Browse…** to select its folder.
-   Without ComfyUI, Chrypix opens, edits (layers, text) and saves photos, but the AI actions do not work.
+   Without ComfyUI, Pixane opens, edits (layers, text) and saves photos, but the AI actions do not work.
 5. **AI engine** (only if ComfyUI is not found): list of what will be downloaded, with size, site and licence
-   (21.5 GB to download, about 31 GB on disk); engine folder (default `%LOCALAPPDATA%\Chrypix\moteur`); optional
+   (21.5 GB to download, about 31 GB on disk); engine folder (default `%LOCALAPPDATA%\Pixane\moteur`); optional
    **Flux Schnell** box for "Sharp upscale" (11.8 GB more); the **I accept the FLUX.1 [dev] licence** box
-   (non-commercial use) is required to install the engine. You can also untick it: Chrypix installs without the
+   (non-commercial use) is required to install the engine. You can also untick it: Pixane installs without the
    engine.
-6. Options: desktop icon; open .chr files with Chrypix.
+6. Options: desktop icon; open .pixane files with Pixane.
 7. At the end, the **Install the AI engine** window downloads and installs everything (ComfyUI portable, its
    extensions, the models). It shows progress, speed and time left. You can **Stop** at any time: the download
    resumes later where it stopped (even after a connection loss). Each file is checked (SHA-256 checksum).
 
 The same window opens from **AI > Install the AI engine…** (for example to add Flux Schnell later, or **Flux
-Kontext** — 11.9 GB, optional — for *Restore an old photo*), and Chrypix
-offers it at start-up if it finds no engine. If a ComfyUI installed another way is already there, Chrypix uses it
+Kontext** — 11.9 GB, optional — for *Restore an old photo*), and Pixane
+offers it at start-up if it finds no engine. If a ComfyUI installed another way is already there, Pixane uses it
 and installs nothing.
 
 **AI engine updates**: the versions of ComfyUI, the extensions and the models are chosen and tested with each
-version of Chrypix; nothing changes on its own. When a new version of Chrypix needs other versions, Chrypix offers
+version of Pixane; nothing changes on its own. When a new version of Pixane needs other versions, Pixane offers
 it once at start-up (list and download size), and the **Install the AI engine** window shows the state of each
 item (*up to date*, *new version*) with the **Update** button. Only what changed is downloaded. ComfyUI is replaced
 while keeping its models, extensions and settings; a replaced old model is deleted. The engine is stopped during the
 update and restarted afterwards. A ComfyUI installed another way (for example ComfyUI Desktop) updates itself:
-Chrypix does not touch it.
+Pixane does not touch it.
 
 A new version installs over the old one (settings kept). To uninstall: Windows Settings > Apps. The uninstaller
 asks two questions (default answer "No"):
-- also delete the **AI engine installed by Chrypix** (ComfyUI, extensions, models)? A ComfyUI installed another
+- also delete the **AI engine installed by Pixane** (ComfyUI, extensions, models)? A ComfyUI installed another
   way, such as ComfyUI Desktop, is never touched;
 - also delete the **settings** (language, theme, last folder, text style, engine folder) and the logs?
 
 **Licences and test hardware**:
-- Chrypix: Chrypix Licence 1.1, © 2026 Georges Christophe (chrypox): free of charge, may be modified and shared,
-  author's name required, no sale (of Chrypix or a modified version); file `LICENSE` (French text prevails;
+- Pixane: Pixane Licence 1.1, © 2026 Georges Christophe (chrypox): free of charge, may be modified and shared,
+  author's name required, no sale (of Pixane or a modified version); file `LICENSE` (French text prevails;
   translation `LICENSE.en.txt`).
   Third-party items: `docs\LICENCES_TIERS.md`.
 - Tested on an 8 GB NVIDIA graphics card (RTX 3060 Ti). The times given come from this PC.
-- Models used: Flux.1 Fill dev (**non-commercial use**; GGUF Q8 version when installed by Chrypix, same
+- Models used: Flux.1 Fill dev (**non-commercial use**; GGUF Q8 version when installed by Pixane, same
   quality), Flux.1 Kontext dev (**non-commercial use**, optional), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0),
   RealESRGAN x4plus (BSD-3), SCUNet (Apache-2.0), BiRefNet (MIT), SAM 3.1 (Meta SAM License).
 - Engine: ComfyUI (GPL-3.0) and its extensions Inpaint nodes, Inpaint Crop and Stitch, Ultimate SD Upscale

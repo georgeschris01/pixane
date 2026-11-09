@@ -6,18 +6,18 @@ import sys
 import time
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"
 import numpy as np
 from PIL import Image
 from PySide6.QtCore import QEvent, QPointF, Qt, QTimer
 from PySide6.QtGui import QColor, QMouseEvent
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
-from chrypix.canevas import CORRECTEUR, DEGRADE, FORMES, GOMME_CALQUE, PEINTURE, SEAU
-from chrypix.composition import masque_tableau
-from chrypix.document import FORMAT_IMAGE, tableau
-from chrypix.fenetre import Fenetre
-from chrypix.moteur import Moteur
+from pixane.canevas import CORRECTEUR, DEGRADE, FORMES, GOMME_CALQUE, PEINTURE, SEAU
+from pixane.composition import masque_tableau
+from pixane.document import FORMAT_IMAGE, tableau
+from pixane.fenetre import Fenetre
+from pixane.moteur import Moteur
 
 Moteur.demarrer = lambda self, signaler=None: None
 Fenetre._moteur_en_echec = lambda self, *a: None

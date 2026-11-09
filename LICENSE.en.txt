@@ -5,7 +5,7 @@ that prevails.
 ======================================================================
 
 ======================================================================
-SOFTWARE LICENCE AGREEMENT: Chrypix ("Chrypix Licence 1.1")
+SOFTWARE LICENCE AGREEMENT: Pixane ("Pixane Licence 1.1")
 Free-of-charge, source-available, non-commercial software
 AUTHOR AND OWNER: Georges Christophe (chrypox)
 Copyright (c) 2026 Georges Christophe.
@@ -21,7 +21,7 @@ following conditions:
    be sold, rented, monetised or included in a paid product or service, in
    any form, direct or indirect.
    Any person, association, public body or company may use it free of
-   charge, including for their work and internally. Using Chrypix as a
+   charge, including for their work and internally. Using Pixane as a
    work tool, including in a company that makes a profit, is allowed.
 
 2. SHARING: The software may be copied and shared free of charge, together
@@ -34,7 +34,7 @@ following conditions:
    a) keep the notice "Copyright (c) 2026 Georges Christophe (chrypox)"
       and this agreement, without removing or hiding them;
    b) state clearly that the version has been modified, and do not present
-      it as the official version of Chrypix published by the author;
+      it as the official version of Pixane published by the author;
    c) publish the modified version, or the project reusing the code, under
       this agreement: it therefore stays free of charge and non-commercial
       (article 1), and the same rules apply to anyone who reuses it in
@@ -47,14 +47,14 @@ following conditions:
    You will be credited in the list of contributors.
 
 5. OTHER DEVELOPERS' COMPONENTS AND AI MODELS: This agreement applies to
-   the Chrypix code only. The libraries shipped with the software, the AI
+   the Pixane code only. The libraries shipped with the software, the AI
    engine (ComfyUI) and the AI models remain under their own licences;
    they are listed in the file docs/LICENCES_TIERS.md. The AI engine and
-   the models are not included in Chrypix: they are downloaded only if
+   the models are not included in Pixane: they are downloaded only if
    the user chooses to. The FLUX.1 Fill [dev] model is under the
    FLUX.1 [dev] Non-Commercial License.
 
-6. RESPECT FOR OTHERS' RIGHTS: The author makes sure that Chrypix respects
+6. RESPECT FOR OTHERS' RIGHTS: The author makes sure that Pixane respects
    the rights of other developers. If you believe that all or part of the
    software uses code, an image or another protected element without
    respecting its licence or your rights, contact the author at
@@ -81,7 +81,7 @@ IN SHORT:
 ----------------------------------------------------------------------
 Free of charge · usable by everyone, including at work · may be modified
 and shared (forks allowed) · author's name required · no sale, neither of
-Chrypix nor of a modified version · modified versions keep these same
+Pixane nor of a modified version · modified versions keep these same
 rules · no warranty. Only the French text prevails.
 This agreement is not a Creative Commons licence and is neither linked to
 nor endorsed by Creative Commons.

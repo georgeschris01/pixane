@@ -1,7 +1,7 @@
 @echo off
-rem Fabrique l'installateur de Chrypix : publication\installateur\Chrypix-Setup-<version>-64bits.exe
+rem Fabrique l'installateur de Pixane : publication\installateur\Pixane-Setup-<version>-64bits.exe
 rem Il faut Inno Setup 7 (gratuit) : https://jrsoftware.org/isdl.php
-rem La version se change dans chrypix\__init__.py (__version__) avant chaque nouvel installateur.
+rem La version se change dans pixane\__init__.py (__version__) avant chaque nouvel installateur.
 rem Resultat detaille dans installateur.log.
 cd /d "%~dp0"
 setlocal
@@ -14,12 +14,12 @@ if not defined ISCC for /f "delims=" %%i in ('where ISCC.exe 2^>nul') do set ISC
 
 call :work > installateur.log 2>&1
 
-if exist "publication\installateur\Chrypix-Setup-%VERSION%-64bits.exe" explorer /select,"publication\installateur\Chrypix-Setup-%VERSION%-64bits.exe"
+if exist "publication\installateur\Pixane-Setup-%VERSION%-64bits.exe" explorer /select,"publication\installateur\Pixane-Setup-%VERSION%-64bits.exe"
 endlocal
 goto :eof
 
 :work
-echo === Preparation des fichiers (Python, bibliotheques, Chrypix) ===
+echo === Preparation des fichiers (Python, bibliotheques, Pixane) ===
 ".venv\Scripts\python.exe" installateur\preparer.py
 if errorlevel 1 (
   echo ECHEC de la preparation.
@@ -33,13 +33,13 @@ if not defined ISCC (
   goto :done
 )
 echo Compilateur : %ISCC%
-%ISCC% /DAppVersion=%VERSION% installateur\Chrypix.iss
+%ISCC% /DAppVersion=%VERSION% installateur\Pixane.iss
 if errorlevel 1 (
   echo ECHEC de l'installateur.
   goto :done
 )
 echo.
-echo Installateur cree : publication\installateur\Chrypix-Setup-%VERSION%-64bits.exe
+echo Installateur cree : publication\installateur\Pixane-Setup-%VERSION%-64bits.exe
 :done
 echo.
 echo === FIN ===

@@ -1,5 +1,5 @@
 ﻿======================================================================
-CONTRAT DE LICENCE DU LOGICIEL : Chrypix (« Licence Chrypix 1.1 »)
+CONTRAT DE LICENCE DU LOGICIEL : Pixane (« Licence Pixane 1.1 »)
 Logiciel gratuit à code source ouvert, non commercial
 AUTEUR ET PROPRIÉTAIRE : Georges Christophe (chrypox)
 Copyright (c) 2026 Georges Christophe.
@@ -16,7 +16,7 @@ les conditions suivantes :
    payant, sous aucune forme, directe ou indirecte.
    Toute personne, association, administration ou entreprise peut
    l'utiliser gratuitement, y compris pour son travail et en interne.
-   Utiliser Chrypix comme outil de travail, y compris dans une entreprise
+   Utiliser Pixane comme outil de travail, y compris dans une entreprise
    qui réalise un bénéfice, est permis.
 
 2. PARTAGE : Le logiciel peut être copié et partagé gratuitement,
@@ -29,7 +29,7 @@ les conditions suivantes :
    a) de garder la mention « Copyright (c) 2026 Georges Christophe
       (chrypox) » et le présent contrat, sans les retirer ni les masquer ;
    b) d'indiquer clairement que la version a été modifiée, et de ne pas
-      la présenter comme la version officielle de Chrypix publiée par
+      la présenter comme la version officielle de Pixane publiée par
       l'auteur ;
    c) de publier la version modifiée, ou le projet qui reprend le code,
       sous le présent contrat : il reste donc gratuit et non commercial
@@ -44,15 +44,15 @@ les conditions suivantes :
    contributeurs.
 
 5. COMPOSANTS D'AUTRES DÉVELOPPEURS ET MODÈLES D'IA : Le présent contrat
-   s'applique au code de Chrypix uniquement. Les bibliothèques livrées avec
+   s'applique au code de Pixane uniquement. Les bibliothèques livrées avec
    le logiciel, le moteur IA (ComfyUI) et les modèles d'IA restent sous leur
    propre licence ; leur liste figure dans le fichier
    docs/LICENCES_TIERS.md. Le moteur IA et les modèles ne sont pas inclus
-   dans Chrypix : ils ne sont téléchargés que si l'utilisateur le choisit.
+   dans Pixane : ils ne sont téléchargés que si l'utilisateur le choisit.
    Le modèle FLUX.1 Fill [dev] est sous licence FLUX.1 [dev] non
    commerciale.
 
-6. RESPECT DES DROITS D'AUTRUI : L'auteur veille à ce que Chrypix respecte
+6. RESPECT DES DROITS D'AUTRUI : L'auteur veille à ce que Pixane respecte
    les droits des autres développeurs. Si vous estimez que tout ou partie
    du logiciel reprend du code, une image ou un autre élément protégé sans
    respecter sa licence ou vos droits, contactez l'auteur à l'adresse
@@ -80,7 +80,7 @@ EN RÉSUMÉ :
 ----------------------------------------------------------------------
 Gratuit · utilisable par tous, y compris au travail · modifiable et
 partageable (forks permis) · nom de l'auteur obligatoire · aucune vente,
-ni de Chrypix ni d'une version modifiée · les versions modifiées gardent
+ni de Pixane ni d'une version modifiée · les versions modifiées gardent
 ces mêmes règles · sans garantie. Seul le texte ci-dessus fait foi.
 Ce contrat n'est pas une licence Creative Commons et n'est ni lié à
 Creative Commons ni approuvé par elle.

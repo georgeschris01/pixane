@@ -1,8 +1,8 @@
 # Licences des éléments tiers / Third-party licences
 
-Chrypix lui-même : Licence Chrypix 1.1 (gratuit, code ouvert, non commercial), © 2026 Georges Christophe (chrypox) —
+Pixane lui-même : Licence Pixane 1.1 (gratuit, code ouvert, non commercial), © 2026 Georges Christophe (chrypox) —
 voir `LICENSE` (seul texte qui fait foi).
-Chrypix itself: Chrypix Licence 1.1 (free of charge, source-available, non-commercial) — see `LICENSE.en.txt`
+Pixane itself: Pixane Licence 1.1 (free of charge, source-available, non-commercial) — see `LICENSE.en.txt`
 (courtesy translation).
 
 ## Inclus dans l'installateur / Included in the installer
@@ -33,5 +33,5 @@ Chrypix itself: Chrypix Licence 1.1 (free of charge, source-available, non-comme
 | BiRefNet (détourage / background removal) | MIT |
 | SAM 3.1 (sélection d'objet / object selection) | SAM License (Meta) — https://huggingface.co/Comfy-Org/sam3.1/blob/main/LICENSE |
 
-Chrypix lance ComfyUI comme un programme séparé (aucun code de ComfyUI n'est inclus dans Chrypix).
-Chrypix runs ComfyUI as a separate program (no ComfyUI code is included in Chrypix).
+Pixane lance ComfyUI comme un programme séparé (aucun code de ComfyUI n'est inclus dans Pixane).
+Pixane runs ComfyUI as a separate program (no ComfyUI code is included in Pixane).

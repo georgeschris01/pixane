@@ -1,17 +1,17 @@
-# Guide d'utilisation de Chrypix
+# Guide d'utilisation de Pixane
 
-Chrypix est un éditeur photo pour Windows qui retouche les images avec une IA qui tourne **sur votre PC**
+Pixane est un éditeur photo pour Windows qui retouche les images avec une IA qui tourne **sur votre PC**
 (pas d'abonnement, pas d'envoi de photos sur Internet).
 Ce guide explique chaque outil et chaque réglage : **à quoi il sert** et **comment s'en servir**. Il est complété
 à chaque nouvelle fonction.
 
 ## Avant de commencer : une IA 100 % sur votre PC
 
-- **Aucune IA en ligne.** Toutes les actions IA de Chrypix (Effacer, Remplir, Agrandir, Upscale, sélection d'objet,
+- **Aucune IA en ligne.** Toutes les actions IA de Pixane (Effacer, Remplir, Agrandir, Upscale, sélection d'objet,
   arrière-plan, réduction du bruit, netteté, restauration…) tournent **sur votre ordinateur**, avec des modèles
   installés sur votre disque. **Aucune photo n'est envoyée sur Internet** ; pas de compte, pas d'abonnement, pas de
   limite d'utilisation. Internet sert seulement à télécharger le moteur IA une fois (et ses mises à jour, si vous
-  les acceptez). Ensuite, Chrypix marche même sans connexion.
+  les acceptez). Ensuite, Pixane marche même sans connexion.
 - **La vitesse dépend de votre PC, surtout de la carte graphique** : c'est elle qui fait les calculs de l'IA. **Plus
   elle est puissante et plus elle a de mémoire, plus les traitements vont vite.** Une carte récente avec 12, 16 ou
   24 Go de mémoire va nettement plus vite que celle du PC d'essai ; une carte plus modeste, plus lentement. La
@@ -21,7 +21,7 @@ Ce guide explique chaque outil et chaque réglage : **à quoi il sert** et **com
 
 | Action | Durée |
 |---|---|
-| Démarrage du moteur IA (à l'ouverture de Chrypix) | environ 20 secondes |
+| Démarrage du moteur IA (à l'ouverture de Pixane) | environ 20 secondes |
 | Sélection d'objet, sélection rapide | environ 1 seconde |
 | Supprimer l'arrière-plan, sélectionner le sujet, outil Supprimer (J), Réduire le bruit | quelques secondes |
 | Netteté (IA) | 15 à 20 secondes |
@@ -42,9 +42,9 @@ La première utilisation d'un modèle après le démarrage est un peu plus longu
 | **Disque** | 35 Go libres pour le moteur IA | 60 Go libres (avec Flux Schnell et Flux Kontext), sur un SSD |
 | **Processeur** | 4 cœurs récent | 6 cœurs ou plus |
 
-Chrypix a été testé sur une **RTX 3060 Ti (8 Go) avec 32 Go de mémoire vive**. Le minimum est une estimation : il
+Pixane a été testé sur une **RTX 3060 Ti (8 Go) avec 32 Go de mémoire vive**. Le minimum est une estimation : il
 n'a pas été essayé sur d'autres PC. **Sans carte NVIDIA** (carte AMD ou Intel, PC portable sans carte graphique),
-Chrypix s'ouvre et retouche normalement (calques, texte, réglages, filtres, export…), mais les actions IA ne
+Pixane s'ouvre et retouche normalement (calques, texte, réglages, filtres, export…), mais les actions IA ne
 marchent pas.
 
 ---
@@ -63,41 +63,41 @@ marchent pas.
 | **Panneau « Calques » (à droite, en dessous)** | Les calques de l'image (voir chapitre 6) ; onglet **Historique** à côté |
 | **Barre d'état (en bas)** | État du moteur IA (point de couleur), taille de la photo |
 
-**Couleurs** : Chrypix prend la couleur d'accent choisie dans Windows (Paramètres > Personnalisation > Couleurs)
+**Couleurs** : Pixane prend la couleur d'accent choisie dans Windows (Paramètres > Personnalisation > Couleurs)
 et suit le mode clair / sombre de Windows. Menu **Affichage > Thème** : *Comme Windows*, *Clair* ou *Sombre*.
 Le bouton soleil / lune de la barre du haut bascule aussi entre clair et sombre.
 
-**Langue** : Chrypix existe en **français** et en **anglais**. Par défaut, il prend la langue de Windows
+**Langue** : Pixane existe en **français** et en **anglais**. Par défaut, il prend la langue de Windows
 (français si Windows est en français, anglais sinon). Menu **Affichage > Langue** : *Comme Windows*, *Français*
-ou *English* ; Chrypix propose alors de redémarrer pour appliquer la langue (le moteur IA redémarre aussi,
+ou *English* ; Pixane propose alors de redémarrer pour appliquer la langue (le moteur IA redémarre aussi,
 environ 20 secondes). Les boutons standard (Oui / Non / Annuler, menu clic droit) suivent la même langue.
 Les noms de calques déjà créés gardent leur langue d'origine. Guide en anglais : `docs\GUIDE_en.md`.
 
-**Moteur IA** : au démarrage, Chrypix lance l'IA (ComfyUI) en arrière-plan, sans fenêtre. Comptez environ
+**Moteur IA** : au démarrage, Pixane lance l'IA (ComfyUI) en arrière-plan, sans fenêtre. Comptez environ
 20 secondes. Le point en bas à gauche passe au vert quand le moteur est prêt ; les actions IA sont grisées avant.
 
 ---
 
 ## 2. Ouvrir et enregistrer
 
-- **Fichier > Ouvrir** (Ctrl+O) : JPG, PNG, TIFF, WebP, BMP, et les fichiers à calques **.chr**, **.ora** et
+- **Fichier > Ouvrir** (Ctrl+O) : JPG, PNG, TIFF, WebP, BMP, et les fichiers à calques **.pixane**, **.ora** et
   **.psd** (Photoshop).
   La photo est redressée selon son orientation d'appareil.
 - **Enregistrer** (Ctrl+S), **Enregistrer sous** (Ctrl+Maj+S) :
-  - **.chr** (projet Chrypix) : le format de Chrypix. Garde **tout** : calques (noms, ordre, visibilité, opacité,
+  - **.pixane** (projet Pixane) : le format de Pixane. Garde **tout** : calques (noms, ordre, visibilité, opacité,
     verrou), **textes modifiables** et **styles de calque modifiables**. Proposé d'office quand l'image a plusieurs calques ou un texte.
   - **.ora** (OpenRaster) : pour **partager avec Krita ou GIMP** (format ouvert). Garde les calques, mais les
     textes y deviennent des images.
-  - Bon à savoir : un .chr est construit comme un .ora ; renommé en .ora, il s'ouvre aussi dans Krita ou GIMP.
+  - Bon à savoir : un .pixane est construit comme un .ora ; renommé en .ora, il s'ouvre aussi dans Krita ou GIMP.
   - **.psd** (Photoshop) : pour **travailler avec Photoshop**. Garde les calques (noms, ordre, visibilité,
     opacité, verrou) ; les textes y deviennent des images. Une photo ouverte depuis un PSD est proposée en PSD.
-  - **PSD ouverts dans Chrypix** : RVB ou niveaux de gris, 8 ou 16 bits, avec les calques, les **groupes**, les
+  - **PSD ouverts dans Pixane** : RVB ou niveaux de gris, 8 ou 16 bits, avec les calques, les **groupes**, les
     **masques de calque**, les **modes de fusion** et les **styles** (ombre portée et interne, lueurs, contour,
-    biseau, incrustations couleur et dégradé), qui restent modifiables. Chrypix ne reproduit pas les calques de
+    biseau, incrustations couleur et dégradé), qui restent modifiables. Pixane ne reproduit pas les calques de
     réglage de Photoshop, les masques d'écrêtage, ni les groupes en mode « traverser » (ouverts en mode Normal) :
     un message le signale à l'ouverture, car l'aspect peut alors différer. Un PSD en CMJN s'ouvre aplati (un seul
     calque). Les grands documents .psb ne sont pas pris en charge.
-  - **PSD enregistrés par Chrypix** : calques, groupes, masques et modes de fusion sont gardés ; les styles sont mis
+  - **PSD enregistrés par Pixane** : calques, groupes, masques et modes de fusion sont gardés ; les styles sont mis
     dans les pixels ; un calque de réglage devient un calque d'image (le résultat du réglage).
   - **JPG** (qualité 95), **PNG**, **TIFF**, **WebP** : l'image **à plat** (ce que vous voyez, calques fusionnés).
     Un message le rappelle si l'image a plusieurs calques.
@@ -108,17 +108,17 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
   moment-là ; un clic sur une étape plus bas refait les suivantes. Une nouvelle retouche efface les étapes « en avance ».
 - **Fichier > Fichiers récents** : les 10 dernières images ouvertes ou enregistrées (*Effacer la liste* pour la vider).
 - **Plusieurs photos à la fois** : *Ouvrir* accepte plusieurs fichiers d'un coup (Ctrl+clic ou Maj+clic dans la
-  fenêtre), et on peut en glisser plusieurs sur Chrypix. Chaque photo a son **onglet** et son propre **Annuler**
+  fenêtre), et on peut en glisser plusieurs sur Pixane. Chaque photo a son **onglet** et son propre **Annuler**
   (Ctrl+Z ne touche que la photo affichée). Changer de photo : clic sur l'onglet, **Ctrl+Tab** / **Ctrl+Maj+Tab**.
   **Fichier > Fermer la photo** (Ctrl+W, ou la croix de l'onglet) demande d'enregistrer si besoin. Rouvrir une photo
   déjà ouverte revient simplement à son onglet.
 - **Enregistrement automatique** : toutes les 3 minutes, chaque photo modifiée est copiée (calques, textes, styles,
-  masques compris) dans `%LOCALAPPDATA%\Chrypix\recuperation`, sans ralentir le travail. Si Chrypix se ferme mal
+  masques compris) dans `%LOCALAPPDATA%\Pixane\recuperation`, sans ralentir le travail. Si Pixane se ferme mal
   (plantage, coupure de courant), il propose au démarrage suivant de **rouvrir ces copies** ; elles s'ouvrent
   « à enregistrer », avec le nom du fichier d'origine. Les copies sont effacées quand la photo est enregistrée ou
-  fermée, et quand Chrypix se ferme normalement.
-- **En cas d'erreur** : si une commande échoue, Chrypix l'affiche et la note dans
-  `%LOCALAPPDATA%\Chrypix\erreurs.log` (utile pour signaler le problème).
+  fermée, et quand Pixane se ferme normalement.
+- **En cas d'erreur** : si une commande échoue, Pixane l'affiche et la note dans
+  `%LOCALAPPDATA%\Pixane\erreurs.log` (utile pour signaler le problème).
 - **Fichier > Exporter pour le web…** (Ctrl+Alt+Maj+S) : une copie légère pour Internet, sans toucher à la photo.
   - **Format** : JPEG (photos), **WebP** (plus léger à qualité égale, garde la transparence), PNG (sans perte).
   - **Réduire : plus grand côté** (par exemple 2048 px) ; jamais agrandie.
@@ -133,7 +133,7 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
     **Format** (garder, JPEG, WebP, PNG) et qualité, **Ajouter au nom** (ex. `_web`).
   - Une barre montre l'avancement ; **Arrêter** termine la photo en cours puis s'arrête. Une photo qui pose
     problème est signalée à la fin, les autres sont faites.
-  - Sécurité : si les résultats iraient dans le même dossier sous le même nom, Chrypix refuse (les originaux
+  - Sécurité : si les résultats iraient dans le même dossier sous le même nom, Pixane refuse (les originaux
     seraient remplacés).
 - **Fichier > Nouvelle image…** (Ctrl+N) : image vide, taille au choix, fond blanc, noir ou transparent.
 - **Fichier > Nouvelle image depuis le presse-papiers** (Ctrl+Alt+V) : ouvre l'image copiée (capture d'écran, autre
@@ -157,7 +157,7 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 - **Repères** : glissez depuis une règle vers la photo pour poser une ligne bleue (horizontale depuis la règle du
   haut, verticale depuis celle de gauche). Avec l'outil **Déplacer** (V), attrapez un repère pour le bouger (le
   curseur devient une double flèche au-dessus) ; tiré hors de la photo, il disparaît. *Nouveau repère…* le pose à une position exacte, *Effacer les repères* les enlève tous,
-  Ctrl+; les cache ou les montre. Ils sont gardés dans le fichier .chr.
+  Ctrl+; les cache ou les montre. Ils sont gardés dans le fichier .pixane.
 - **Grille** (Ctrl+') : lignes régulières sur la photo ; *Taille de la grille…* règle l'écart (100 px par défaut).
 - **Magnétisme** (Ctrl+Maj+;, coché par défaut) : la sélection rectangle, le dégradé et les formes s'accrochent aux
   repères, aux bords de la photo et à la grille (si elle est affichée), à moins de 8 pixels d'écran.
@@ -224,7 +224,7 @@ Un clic sur une couleur sélectionne la zone de couleur proche. Sans IA, instant
 
 ### Améliorer le contour (Ctrl+Alt+R, menu Sélection)
 Pour une sélection grossière autour de **cheveux, poils, feuillage ou bords flous** (par exemple après *Sélectionner
-le sujet* ou un lasso rapide) : Chrypix recalcule le bord d'après les couleurs de la photo.
+le sujet* ou un lasso rapide) : Pixane recalcule le bord d'après les couleurs de la photo.
 - **Rayon** : largeur de la bande recalculée autour du bord. Augmentez-le jusqu'à ce que les mèches apparaissent ;
   hors de cette bande, rien ne change.
 - **Lissage** : adoucit un bord irrégulier. **Contraste du bord** : bord plus net. **Décaler le bord** : négatif le
@@ -240,7 +240,7 @@ Ils agissent sur le **calque choisi** dans le panneau Calques :
 - **Copier** (Ctrl+C) : copie ce qui est sélectionné (tout le calque s'il n'y a pas de sélection). La copie garde sa
   transparence ; on peut aussi la coller dans un autre logiciel.
 - **Couper** (Ctrl+X) : copie, puis efface la zone sélectionnée (elle devient transparente).
-- **Coller** (Ctrl+V) : met l'image copiée dans un **nouveau calque**, à **la même place** si elle vient de Chrypix,
+- **Coller** (Ctrl+V) : met l'image copiée dans un **nouveau calque**, à **la même place** si elle vient de Pixane,
   au centre si elle vient d'ailleurs (capture d'écran, autre logiciel…). Bougez-la ensuite avec l'outil Déplacer (V).
 - **Supprimer la sélection** (Suppr) : efface la zone sélectionnée du calque (transparente).
 
@@ -251,7 +251,7 @@ sort de l'image est coupé ; refusé sur un calque verrouillé). La **Gomme de c
 pixels du calque choisi (voir chapitre 6) ; elle est rangée avec le pinceau de couleur et le tampon.
 
 **Conseil (texte, cursive, objet fin)** : couvrez bien chaque lettre, bords compris, avec un pinceau un peu plus large
-que le trait ; n'oubliez pas l'ombre ou le contour s'il y en a. Chrypix élargit déjà un peu la zone (environ 16 px)
+que le trait ; n'oubliez pas l'ombre ou le contour s'il y en a. Pixane élargit déjà un peu la zone (environ 16 px)
 pour attraper les bords flous.
 
 ---
@@ -301,7 +301,7 @@ Deux cadres apparaissent sur la photo :
 - Quand les deux cadres sont l'un sur l'autre (au départ), le **sens du geste** décide : vers l'extérieur = agrandir,
   vers l'intérieur = bord abîmé.
 - **Maj** en tirant : le côté opposé bouge pareil (agrandir à gauche et à droite en même temps, par exemple).
-- **Détection automatique** : à l'ouverture, Chrypix repère les liserés clairs ou foncés (1 à 8 px) que beaucoup
+- **Détection automatique** : à l'ouverture, Pixane repère les liserés clairs ou foncés (1 à 8 px) que beaucoup
   d'images ont sur leurs bords, et place déjà le cadre rouge dessus. Vous pouvez l'ajuster ou le remettre à 0.
 - **Barre en haut de la photo** :
   - ligne **Agrandir** : ce qui est ajouté de chaque côté, en % de la photo (0 à 200 %) ;
@@ -310,7 +310,7 @@ Deux cadres apparaissent sur la photo :
   - **Lancer** (ou Entrée) / **Annuler** (ou Échap).
   Les cases et les cadres se suivent : modifier l'un met l'autre à jour.
 - **Taille finale** = photo d'origine + agrandissement. Le bord abîmé ne réduit pas l'image : il est remplacé.
-- Le raccord entre la photo et l'ajout est fait par Chrypix : la photo d'origine est gardée **au pixel près**, avec un
+- Le raccord entre la photo et l'ajout est fait par Pixane : la photo d'origine est gardée **au pixel près**, avec un
   fondu progressif et un accord des couleurs, pour qu'aucune ligne ne soit visible.
 - 3 propositions, environ 1 minute chacune.
 - **Calques** : tous les calques sont décalés sur la nouvelle toile ; un calque « Agrandir 1 » contient l'ajout
@@ -337,7 +337,7 @@ calque « Upscale 1 » au-dessus.
 Modèle **BiRefNet** (MIT, 444 Mo, installé avec le moteur IA ; s'il manque, menu **IA > Installer le moteur IA…**
 l'ajoute). Quelques secondes.
 - **Supprimer l'arrière-plan** (Maj+B, panneau IA ou menu IA) : le fond du **calque choisi** devient transparent,
-  le sujet reste. Enregistrez en PNG, PSD ou .chr pour garder la transparence. Ctrl+Z annule.
+  le sujet reste. Enregistrez en PNG, PSD ou .pixane pour garder la transparence. Ctrl+Z annule.
 - **Sélectionner le sujet** (Ctrl+Alt+S, menu Sélection) : sélectionne le sujet sans rien effacer, par exemple
   pour le régler (Ctrl+U), ou *Inverser* (Ctrl+Maj+I) pour travailler le fond.
 
@@ -353,7 +353,7 @@ l'intérieur. Comme les autres actions IA, le résultat va dans un **nouveau cal
   plis et grain, et en rendant le contraste et les visages plus nets. La photo garde **exactement sa taille et ses
   proportions**.
   - **Restaurer** garde les **couleurs d'origine** : une photo noir et blanc ou sépia le reste, une photo en couleur
-    garde ses couleurs. L'IA ne fournit que la lumière et les détails ; Chrypix remet ensuite la teinte de
+    garde ses couleurs. L'IA ne fournit que la lumière et les détails ; Pixane remet ensuite la teinte de
     l'original.
   - **Restaurer et coloriser** met en plus des couleurs naturelles à une photo en noir et blanc ou sépia.
   - Le résultat arrive dans un calque **« Restaurée »** (ou **« Restaurée et colorisée »**), et *Enregistrer sous*
@@ -379,7 +379,7 @@ devant. Une photo ouverte a un seul calque, « Arrière-plan ».
 | **Vignette** | Aperçu du calque ; le damier gris montre les parties transparentes |
 | **Nom** | Double-clic sur le nom pour renommer ; double-clic ailleurs sur la ligne : style du calque |
 | **Opacité** | Transparence du calque choisi, de 0 % (invisible) à 100 % ; affichée sous le nom quand < 100 % |
-| **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. Les actions IA sont refusées avec un message : Effacer et Remplir si le calque choisi est verrouillé, Agrandir et Upscale si un calque quelconque est verrouillé (ils changent la taille de tous les calques). On peut toujours le masquer, le renommer et le monter / descendre. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .chr et .ora |
+| **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. Les actions IA sont refusées avec un message : Effacer et Remplir si le calque choisi est verrouillé, Agrandir et Upscale si un calque quelconque est verrouillé (ils changent la taille de tous les calques). On peut toujours le masquer, le renommer et le monter / descendre. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .pixane et .ora |
 | **Glisser un calque** | Changer sa place dans la pile à la souris : prenez la ligne (sur le nom) et glissez-la vers le haut ou le bas ; un **trait orange** montre où il ira. Lâché juste sous un calque d'un groupe ouvert, il entre dans le groupe ; un groupe bouge avec ses calques. Une seule étape dans Annuler |
 | **Mode de fusion** (liste en haut du panneau) | Comment le calque se mélange à ce qui est dessous (voir plus bas) |
 | **Vignette du masque** (à droite de la vignette) | Le masque du calque, s'il en a un. Clic : on peint le masque (cadre orange) ; clic sur la vignette du calque : on repeint les pixels. Maj+clic : désactiver / réactiver le masque (barré en rouge) |
@@ -403,7 +403,7 @@ Les mêmes que Photoshop, rangés par familles : **Normal** ; **Obscurcir**, **P
 assombrit) ; **Éclaircir**, **Superposition**, **Densité couleur −**, **Densité linéaire − (Ajout)** (ce qui éclaircit) ;
 **Incrustation**, **Lumière tamisée**, **Lumière crue** (contraste) ; **Différence**, **Exclusion** ; **Teinte**,
 **Saturation**, **Couleur**, **Luminosité**. Exemples : *Produit* pour une ombre ou une texture sombre, *Superposition*
-pour une lueur, *Incrustation* pour une texture de papier, *Couleur* pour teinter. Gardés dans les fichiers .chr,
+pour une lueur, *Incrustation* pour une texture de papier, *Couleur* pour teinter. Gardés dans les fichiers .pixane,
 .ora et .psd.
 
 ### Masques de calque
@@ -417,7 +417,7 @@ toujours revenir en arrière en repeignant en blanc.
   exemple pour fondre deux photos) ou le pot de peinture. Les réglages et filtres s'appliquent aussi au masque.
 - Exemple : *Supprimer l'arrière-plan* puis un masque plutôt qu'une gomme : un bout de sujet coupé par erreur se
   récupère en peignant en blanc.
-- Les masques suivent le calque (Ctrl+T, recadrer, taille de l'image, Upscale) et sont gardés en .chr, .ora et .psd.
+- Les masques suivent le calque (Ctrl+T, recadrer, taille de l'image, Upscale) et sont gardés en .pixane, .ora et .psd.
 
 ### Groupes
 Un **groupe** range plusieurs calques dans un dossier : on peut les masquer, les déplacer, les dupliquer ou les
@@ -433,7 +433,7 @@ dessus, ou **Calque > Modifier le réglage…**), le masquer (œil), baisser son
 - **Calque > Nouveau calque de réglage**, ou le bouton **Réglage** du panneau. S'il y a une sélection, elle devient
   le masque du calque de réglage (le réglage ne s'applique que là).
 - Dans un groupe, il ne règle que les calques du groupe placés dessous.
-- Gardé tel quel en .chr ; en .ora et .psd, il devient un calque d'image (le résultat).
+- Gardé tel quel en .pixane ; en .ora et .psd, il devient un calque d'image (le résultat).
 
 ### Style du calque : ombres, contour, lueur, relief… (Ctrl+Alt+F)
 Des **effets ajoutés au calque**, toujours modifiables : les pixels du calque ne sont pas touchés. Pour l'ouvrir :
@@ -466,7 +466,7 @@ calque…**. La photo montre le résultat en direct ; **OK** garde le style (une
   Ils suivent aussi un texte modifié ou un calque déplacé.
 - Menu **Calque** : **Copier le style** / **Coller le style** (sur un autre calque), **Enlever le style**, **Mettre
   le style dans les pixels** (pour gommer ou peindre le calque avec ses effets).
-- Enregistrement : en **.chr**, les styles restent modifiables. En **.psd** et **.ora**, ils sont mis dans les pixels
+- Enregistrement : en **.pixane**, les styles restent modifiables. En **.psd** et **.ora**, ils sont mis dans les pixels
   (visibles dans Photoshop, Krita, GIMP, mais plus modifiables). Les styles d'un PSD ouvert sont repris et restent modifiables (voir chapitre 2).
 - Fusionner ou aplatir met aussi les effets dans les pixels.
 
@@ -489,12 +489,12 @@ Outil **Texte** (touche **T**, icône « T » dans la barre d'outils). Le pannea
 - **Cliquer sur la photo** : un nouveau texte « Texte » apparaît à cet endroit, sur **son propre calque**.
   Tapez directement : le mot proposé est remplacé. La case du panneau accepte plusieurs lignes (Entrée).
 - **Cliquer sur un texte existant** : il est choisi et ses réglages s'affichent ; on peut le modifier à tout
-  moment, même après avoir enregistré en **.chr** et rouvert.
+  moment, même après avoir enregistré en **.pixane** et rouvert.
 - Le texte s'applique **au fur et à mesure** : rien à valider.
 - **Glisser le texte** : le déplacer (aussi avec l'outil Déplacer, V). Un cadre en pointillés entoure le texte choisi.
 - **Poignée ronde** au-dessus du cadre : tourner le texte (**Maj** : par pas de 15°), ou case *Rotation*.
 - Le nom du calque suit la première ligne du texte (tant qu'on ne l'a pas renommé à la main).
-- Sans texte choisi, les réglages du panneau servent pour le **prochain** texte ; Chrypix retient aussi le
+- Sans texte choisi, les réglages du panneau servent pour le **prochain** texte ; Pixane retient aussi le
   dernier style utilisé (police, couleur, effets…). La taille du nouveau texte est calculée d'après la photo.
 
 ### Réglages du panneau
@@ -523,7 +523,7 @@ ils restent proportionnés quand on change la taille du texte.
 - La **Gomme de calque** sur un texte le transforme en image (un message le signale ; Ctrl+Z pour revenir).
   **Fusionner** ou **Aplatir** aussi.
 - Un texte sur un calque **verrouillé** ne peut être ni déplacé ni modifié.
-- Pour garder les textes modifiables, enregistrez en **.chr** (dans un .ora, ils deviennent des images).
+- Pour garder les textes modifiables, enregistrez en **.pixane** (dans un .ora, ils deviennent des images).
 
 ---
 
@@ -701,55 +701,55 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+0, Ctrl+1 | Ajuster, 100 % |
 | Entrée / Échap | (Agrandir) Lancer / Annuler ; (Recadrer) Valider / Annuler |
 | Maj (en tournant un texte) | Rotation par pas de 15° |
-| F1 | Guide, ouvert sur les raccourcis (menu Aide > Guide de Chrypix : tout le guide, avec une recherche) |
+| F1 | Guide, ouvert sur les raccourcis (menu Aide > Guide de Pixane : tout le guide, avec une recherche) |
 
 ---
 
 ## 12. Matériel et licences
 
-**Installation** : lancer `Chrypix-Setup-<version>-64bits.exe`.
-1. Langue de l'installation (ce sera aussi la langue de Chrypix, modifiable ensuite dans Affichage > Langue).
+**Installation** : lancer `Pixane-Setup-<version>-64bits.exe`.
+1. Langue de l'installation (ce sera aussi la langue de Pixane, modifiable ensuite dans Affichage > Langue).
 2. Pour moi seulement (par défaut, sans droits administrateur) ou pour tous les utilisateurs.
 3. Dossier d'installation.
 4. **Vérification du PC** : carte graphique NVIDIA et sa mémoire (8 Go conseillés), place libre, moteur IA
    (ComfyUI) trouvé ou non. Si ComfyUI est installé ailleurs, bouton **Parcourir…** pour indiquer son dossier.
-   Sans ComfyUI, Chrypix ouvre, retouche (calques, texte) et enregistre, mais les actions IA ne marchent pas.
+   Sans ComfyUI, Pixane ouvre, retouche (calques, texte) et enregistre, mais les actions IA ne marchent pas.
 5. **Moteur IA** (seulement si ComfyUI n'est pas trouvé) : liste de ce qui sera téléchargé, avec taille, site et
    licence (21,5 Go à télécharger, environ 31 Go sur le disque) ; dossier du moteur (par défaut
-   `%LOCALAPPDATA%\Chrypix\moteur`) ; case facultative **Flux Schnell** pour « Upscale net » (11,8 Go de plus) ;
+   `%LOCALAPPDATA%\Pixane\moteur`) ; case facultative **Flux Schnell** pour « Upscale net » (11,8 Go de plus) ;
    case **J'accepte la licence FLUX.1 [dev]** (usage non commercial) obligatoire pour installer le moteur.
-   On peut aussi décocher : Chrypix s'installe sans moteur.
-6. Options : icône sur le Bureau ; ouvrir les fichiers .chr avec Chrypix.
+   On peut aussi décocher : Pixane s'installe sans moteur.
+6. Options : icône sur le Bureau ; ouvrir les fichiers .pixane avec Pixane.
 7. À la fin, la fenêtre **Installer le moteur IA** télécharge et installe tout (ComfyUI portable, ses extensions,
    les modèles). Elle montre l'avancement, la vitesse et le temps restant. **Arrêter** est possible à tout moment :
    le téléchargement reprendra plus tard là où il s'était arrêté (même après une coupure). Chaque fichier est
    vérifié (empreinte SHA-256).
 
 La même fenêtre s'ouvre par le menu **IA > Installer le moteur IA…** (par exemple pour ajouter Flux Schnell plus
-tard, ou **Flux Kontext** — 11,9 Go, facultatif — pour *Restaurer une vieille photo*), et Chrypix la propose au démarrage s'il ne trouve pas de moteur. Si un ComfyUI installé autrement est déjà
-là, Chrypix l'utilise et n'installe rien.
+tard, ou **Flux Kontext** — 11,9 Go, facultatif — pour *Restaurer une vieille photo*), et Pixane la propose au démarrage s'il ne trouve pas de moteur. Si un ComfyUI installé autrement est déjà
+là, Pixane l'utilise et n'installe rien.
 
 **Mises à jour du moteur IA** : les versions de ComfyUI, des extensions et des modèles sont choisies et essayées
-avec chaque version de Chrypix ; rien ne change tout seul. Quand une nouvelle version de Chrypix demande d'autres
-versions, Chrypix le propose une fois au démarrage (liste et taille à télécharger), et la fenêtre **Installer le
+avec chaque version de Pixane ; rien ne change tout seul. Quand une nouvelle version de Pixane demande d'autres
+versions, Pixane le propose une fois au démarrage (liste et taille à télécharger), et la fenêtre **Installer le
 moteur IA** montre l'état de chaque élément (*à jour*, *nouvelle version*) avec le bouton **Mettre à jour**.
 Seul ce qui a changé est téléchargé. ComfyUI est remplacé en gardant ses modèles, ses extensions et ses réglages ;
 un ancien modèle remplacé est effacé. Le moteur est arrêté pendant la mise à jour et relancé après. Un ComfyUI
-installé autrement (par exemple ComfyUI Desktop) se met à jour de son côté : Chrypix n'y touche pas.
+installé autrement (par exemple ComfyUI Desktop) se met à jour de son côté : Pixane n'y touche pas.
 
 Une nouvelle version s'installe par-dessus l'ancienne (réglages gardés). Désinstaller : Paramètres de Windows >
 Applications. Le désinstalleur pose deux questions (réponse « Non » par défaut) :
-- supprimer aussi le **moteur IA installé par Chrypix** (ComfyUI, extensions, modèles) ? Un ComfyUI installé
+- supprimer aussi le **moteur IA installé par Pixane** (ComfyUI, extensions, modèles) ? Un ComfyUI installé
   autrement, par exemple ComfyUI Desktop, n'est jamais touché ;
 - supprimer aussi les **réglages** (langue, thème, dernier dossier, style de texte, dossier du moteur) et les
   journaux ?
 
 **Licences et matériel d'essai** :
-- Chrypix : Licence Chrypix 1.1, © 2026 Georges Christophe (chrypox) : gratuit, modifiable et partageable,
-  nom de l'auteur obligatoire, aucune vente (ni de Chrypix ni d'une version modifiée) ; fichier `LICENSE`.
+- Pixane : Licence Pixane 1.1, © 2026 Georges Christophe (chrypox) : gratuit, modifiable et partageable,
+  nom de l'auteur obligatoire, aucune vente (ni de Pixane ni d'une version modifiée) ; fichier `LICENSE`.
   Éléments tiers : `docs\LICENCES_TIERS.md`.
 - Testé sur une carte graphique NVIDIA de 8 Go (RTX 3060 Ti). Les durées indiquées viennent de ce PC.
-- Modèles utilisés : Flux.1 Fill dev (**usage non commercial** ; version GGUF Q8 si installé par Chrypix, même
+- Modèles utilisés : Flux.1 Fill dev (**usage non commercial** ; version GGUF Q8 si installé par Pixane, même
   qualité), Flux.1 Kontext dev (**usage non commercial**, facultatif), Flux.1 Schnell (Apache-2.0), LaMa
   (Apache-2.0), RealESRGAN x4plus (BSD-3), SCUNet (Apache-2.0), BiRefNet (MIT), SAM 3.1 (SAM License de Meta).
 - Moteur : ComfyUI (GPL-3.0) et ses extensions Inpaint nodes, Inpaint Crop and Stitch, Ultimate SD Upscale

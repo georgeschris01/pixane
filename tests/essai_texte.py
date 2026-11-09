@@ -1,20 +1,20 @@
-"""Texte : création au clic, saisie (un seul Annuler), style, effets, déplacer / tourner à la souris, .chr / .ora,
+"""Texte : création au clic, saisie (un seul Annuler), style, effets, déplacer / tourner à la souris, .pixane / .ora,
 Agrandir / Upscale, gomme (texte -> image), verrou.
 Usage : essai_texte.py dossier_sortie   (une image d'essai est fabriquée ; le moteur n'est pas démarré)"""
 import os
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"   # ne touche pas aux réglages de l'utilisateur
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"   # ne touche pas aux réglages de l'utilisateur
 import numpy as np
 from PIL import Image
 from PySide6.QtCore import QEvent, QPointF, Qt, QTimer
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QApplication
-from chrypix.canevas import GOMME_CALQUE, TEXTE
-from chrypix.document import Document, qimage_rgb, tableau
-from chrypix.fenetre import Fenetre
-from chrypix.moteur import Moteur
+from pixane.canevas import GOMME_CALQUE, TEXTE
+from pixane.document import Document, qimage_rgb, tableau
+from pixane.fenetre import Fenetre
+from pixane.moteur import Moteur
 
 Moteur.demarrer = lambda self, signaler=None: (_ for _ in ()).throw(Exception("moteur désactivé pour l'essai"))
 Fenetre._moteur_en_echec = lambda self, *a: None
@@ -26,7 +26,7 @@ Image.fromarray(np.dstack([xx * 255 // 1200, yy * 255 // 800, np.full_like(xx, 1
     sortie / "fond.png")
 
 app = QApplication(sys.argv)
-from chrypix.fenetre import reglages
+from pixane.fenetre import reglages
 reglages().remove("texte_defaut")              # partir du style par défaut
 f = Fenetre()
 f.resize(1440, 920)
@@ -74,8 +74,8 @@ for lettre in "Bonjour":
     pt_.saisie.insertPlainText(lettre)
 verifier(doc.calque_actif.texte.texte == "Bonjour" and doc.calque_actif.nom == "Bonjour", "saisie -> texte et nom suivent")
 verifier(f.historique.count() == n + 1, f"saisie regroupée dans Annuler ({f.historique.count() - n} entrée)")
-pt_.saisie.insertPlainText("\nChrypix")
-verifier(doc.calque_actif.texte.texte == "Bonjour\nChrypix", "deux lignes")
+pt_.saisie.insertPlainText("\nPixane")
+verifier(doc.calque_actif.texte.texte == "Bonjour\nPixane", "deux lignes")
 
 # 3. style et effets
 avant = rgb(doc.image)
@@ -122,12 +122,12 @@ t2 = doc.calque_actif.texte
 souris([(t1.x + 100, t1.y)])                   # sur le premier texte (tourné)
 verifier(doc.actif == 1 and len(doc.calques) == 3, "clic sur le 1er texte -> il est choisi")
 
-# 6. .chr et .ora
-chr_ = sortie / "essai.chr"
+# 6. .pixane et .ora
+chr_ = sortie / "essai.pixane"
 doc.enregistrer(chr_)
 relu = Document.ouvrir(chr_)
-verifier([x.texte for x in relu.calques] == [x.texte for x in doc.calques], ".chr : textes gardés (modifiables)")
-verifier(np.abs(rgb(relu.image) - rgb(doc.image)).max() <= 2, ".chr : même image")
+verifier([x.texte for x in relu.calques] == [x.texte for x in doc.calques], ".pixane : textes gardés (modifiables)")
+verifier(np.abs(rgb(relu.image) - rgb(doc.image)).max() <= 2, ".pixane : même image")
 ora = sortie / "essai.ora"
 doc.enregistrer(ora)
 relu = Document.ouvrir(ora)
@@ -174,7 +174,7 @@ pt_.styles["italique"].setChecked(True)
 verifier(not doc.calque_actif.texte.italique, "verrouillé : le panneau ne modifie rien")
 
 # 10. outil Déplacer (V) : texte (reste modifiable) puis calque d'image (seul le calque bouge)
-from chrypix.canevas import DEPLACER
+from pixane.canevas import DEPLACER
 f.historique.undo()                            # déverrouille
 c.definir_outil(DEPLACER)
 doc.actif = 1

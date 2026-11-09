@@ -3,13 +3,13 @@ import os
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"
 from PIL import Image
 from PySide6.QtWidgets import QApplication, QFileDialog
 
-from chrypix.export import DialogueExport, DialogueLot, encoder, preparer, traiter_une
-from chrypix.fenetre import Fenetre
-from chrypix.moteur import Moteur
+from pixane.export import DialogueExport, DialogueLot, encoder, preparer, traiter_une
+from pixane.fenetre import Fenetre
+from pixane.moteur import Moteur
 
 Moteur.demarrer = lambda self, signaler=None: None
 Fenetre._moteur_en_echec = lambda self, *a: None
@@ -75,7 +75,7 @@ dl = DialogueLot(f)
 dl.source.setText(str(src))
 dl.sortie.setText(str(src))
 dl.suffixe.setText("")
-import chrypix.export as ex
+import pixane.export as ex
 messages = []
 ex.QMessageBox.information = lambda *a, **k: messages.append(a[2])
 dl.lancer()

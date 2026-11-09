@@ -1,8 +1,8 @@
-"""Fabrique python\\Chrypix.exe : une copie de pythonw.exe avec le nom « Chrypix » et l'icône de Chrypix,
-pour que le Gestionnaire des tâches et le pare-feu montrent « Chrypix » et non « Python ».
+"""Fabrique python\\Pixane.exe : une copie de pythonw.exe avec le nom « Pixane » et l'icône de Pixane,
+pour que le Gestionnaire des tâches et le pare-feu montrent « Pixane » et non « Python ».
 
 Les ressources sont changées par Windows lui-même (BeginUpdateResource / UpdateResource), rien à télécharger.
-Usage : python installateur/lanceur.py <pythonw.exe> <chrypix.ico> <Chrypix.exe> <version>
+Usage : python installateur/lanceur.py <pythonw.exe> <pixane.ico> <Pixane.exe> <version>
 """
 from __future__ import annotations
 
@@ -76,9 +76,9 @@ def version_info(version: str) -> bytes:
     a, b, c = (int(x) for x in (version.split(".") + ["0", "0"])[:3])
     ms, ls = (a << 16) | b, c << 16
     fixe = struct.pack("<13I", 0xFEEF04BD, 0x00010000, ms, ls, ms, ls, 0x3F, 0, 0x40004, 1, 0, 0, 0)
-    textes = {"CompanyName": "chrypox", "FileDescription": "Chrypix", "FileVersion": version,
-              "InternalName": "Chrypix", "LegalCopyright": "chrypox", "OriginalFilename": "Chrypix.exe",
-              "ProductName": "Chrypix", "ProductVersion": version}
+    textes = {"CompanyName": "chrypox", "FileDescription": "Pixane", "FileVersion": version,
+              "InternalName": "Pixane", "LegalCopyright": "chrypox", "OriginalFilename": "Pixane.exe",
+              "ProductName": "Pixane", "ProductVersion": version}
     chaines = b"".join(_bloc(k, (v + "\0").encode("utf-16-le"), texte=True) for k, v in textes.items())
     table = _bloc("040904B0", enfants=chaines)
     sfi = _bloc("StringFileInfo", enfants=table)

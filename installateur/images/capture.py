@@ -1,4 +1,4 @@
-"""Capture de Chrypix pour l'installateur, sur un paysage dessiné (aucune photo personnelle).
+"""Capture de Pixane pour l'installateur, sur un paysage dessiné (aucune photo personnelle).
 Usage (depuis la racine du projet) : .venv\\Scripts\\python.exe installateur\\images\\capture.py fr|en
 Écrit installateur\\images\\capture-<langue>.png. Utilise ses propres réglages (ne touche pas ceux de l'utilisateur)."""
 import os
@@ -7,7 +7,7 @@ from pathlib import Path
 
 RACINE = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(RACINE))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-capture"
+os.environ["PIXANE_REGLAGES"] = "Pixane-capture"
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 from PySide6.QtCore import QPointF, QTimer
@@ -44,13 +44,13 @@ def paysage(w=1600, h=1000) -> Path:
     return chemin
 
 
-from chrypix import langue
+from pixane import langue
 langue.choisir(LANGUE)
-from chrypix.__main__ import traduire_qt
-from chrypix.canevas import TEXTE
-from chrypix.fenetre import Fenetre, reglages
-from chrypix.moteur import Moteur
-from chrypix.texte import CENTRE
+from pixane.__main__ import traduire_qt
+from pixane.canevas import TEXTE
+from pixane.fenetre import Fenetre, reglages
+from pixane.moteur import Moteur
+from pixane.texte import CENTRE
 
 Moteur.demarrer = lambda self, signaler=None: None
 app = QApplication(sys.argv)

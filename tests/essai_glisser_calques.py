@@ -6,7 +6,7 @@ Usage : python tests/essai_glisser_calques.py
 import os
 import sys
 
-os.environ.setdefault("CHRYPIX_REGLAGES", "Chrypix-essais")
+os.environ.setdefault("PIXANE_REGLAGES", "Pixane-essais")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from PySide6.QtCore import QPoint, Qt  # noqa: E402
@@ -15,14 +15,14 @@ from PySide6.QtTest import QTest  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 app = QApplication(sys.argv)
-from chrypix.fenetre import Fenetre  # noqa: E402
+from pixane.fenetre import Fenetre  # noqa: E402
 
 f = Fenetre()
 f.resize(1300, 900)
 f.show()
 img = QImage(400, 300, QImage.Format_ARGB32_Premultiplied)
 img.fill(Qt.white)
-from chrypix.document import Document  # noqa: E402
+from pixane.document import Document  # noqa: E402
 f._installer_document(Document(img))
 erreurs = []
 
@@ -71,7 +71,7 @@ doc.actif = 3
 doc.appliquer_etat(doc.etat_grouper())
 app.processEvents()
 print("avec groupe :", noms())
-from chrypix.composition import parents  # noqa: E402
+from pixane.composition import parents  # noqa: E402
 bas = p._indexes[-1]
 nom_bas = doc.calques[bas].nom
 verifier("groupe déplacé avec son calque", noms()[:2] == ["Groupe 1", "Calque 3"], noms())

@@ -3,16 +3,16 @@ import os
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"
 import numpy as np
 from PySide6.QtCore import QRectF
 from PySide6.QtGui import QImage, QPainter
 from PySide6.QtWidgets import QApplication
 
-from chrypix import recettes
-from chrypix.document import COULEUR_SELECTION, FORMAT_IMAGE, tableau
-from chrypix.fenetre import Fenetre
-from chrypix.moteur import Moteur
+from pixane import recettes
+from pixane.document import COULEUR_SELECTION, FORMAT_IMAGE, tableau
+from pixane.fenetre import Fenetre
+from pixane.moteur import Moteur
 
 Moteur.demarrer = lambda self, signaler=None: None
 Fenetre._moteur_en_echec = lambda self, *a: None
@@ -43,7 +43,7 @@ verifier(not recettes.restauration_disponible() and not recettes.debruitage_disp
 
 # « Restaurer » : lumière du résultat, couleurs de l'original (une photo sépia ne peut pas être colorisée)
 import numpy as np  # noqa: E402
-from chrypix.filtres import garder_teinte  # noqa: E402
+from pixane.filtres import garder_teinte  # noqa: E402
 rng = np.random.default_rng(3)
 gris = rng.integers(0, 256, (120, 160)).astype(np.float32)
 sepia = np.dstack([gris * 0.95 + 12, gris * 0.85 + 8, gris * 0.65, np.full_like(gris, 255)]).clip(0, 255).astype(np.uint8)
@@ -99,7 +99,7 @@ f.doc.suffixe_nom = "_restauree"
 propose = {}
 QFileDialog.getSaveFileName = lambda *a, **k: (propose.update(nom=a[2]) or ("", ""))
 f.enregistrer_sous()
-verifier(propose.get("nom", "").endswith(("_restauree.jpg", "_restauree.chr")), f"nom proposé : {propose.get('nom')}")
+verifier(propose.get("nom", "").endswith(("_restauree.jpg", "_restauree.pixane")), f"nom proposé : {propose.get('nom')}")
 print("ERREURS :", erreurs if erreurs else "aucune")
 sys.stdout.flush()
 for d in f.documents:          # aucune question à la fermeture

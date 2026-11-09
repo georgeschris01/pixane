@@ -1,5 +1,5 @@
 """Vérifie les traductions : chaque texte passé à tr("…") dans le code doit exister dans chaque fichier de langue
-(chrypix/langues/*.json), avec les mêmes {valeurs}. Signale aussi les traductions qui ne servent plus.
+(pixane/langues/*.json), avec les mêmes {valeurs}. Signale aussi les traductions qui ne servent plus.
 Usage : essai_langues.py [--manquants]   (--manquants : affiche les textes à traduire au format json)"""
 import ast
 import json
@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 RACINE = Path(__file__).resolve().parents[1]
-CODE = RACINE / "chrypix"
+CODE = RACINE / "pixane"
 
 # textes traduits « indirectement » (passés à tr() par une variable) : listes dans le code
 INDIRECTS = {

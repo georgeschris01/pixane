@@ -6,11 +6,11 @@ import sys
 import time
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"
 from PySide6.QtWidgets import QApplication, QMessageBox
 
-from chrypix.fenetre import Fenetre
-from chrypix.moteur import Moteur
+from pixane.fenetre import Fenetre
+from pixane.moteur import Moteur
 
 Moteur.demarrer = lambda self, signaler=None: None
 Fenetre._moteur_en_echec = lambda self, *a: None
@@ -68,10 +68,10 @@ r.copier()
 time.sleep(0.3)
 app.processEvents()
 verifier(len(ecrits) == 1, "rien de changé depuis : pas de nouvelle copie")
-verifier(r.restes() == [], "copie d'un Chrypix encore ouvert : pas proposée")
+verifier(r.restes() == [], "copie d'un Pixane encore ouvert : pas proposée")
 j = Path(ecrits[0]).with_suffix(".json")
 infos = json.loads(j.read_text(encoding="utf-8"))
-infos["pid"] = 999999                        # comme si ce Chrypix avait planté
+infos["pid"] = 999999                        # comme si ce Pixane avait planté
 j.write_text(json.dumps(infos), encoding="utf-8")
 restes = r.restes()
 verifier(len(restes) == 1, "après un plantage : la copie est proposée")

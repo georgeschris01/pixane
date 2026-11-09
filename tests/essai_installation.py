@@ -1,7 +1,7 @@
 """Essai du téléchargeur du moteur IA, sans Internet : petit serveur local (avec reprise « Range »).
 
 Vérifie : téléchargement, empreinte SHA-256, reprise après arrêt, fichier abîmé refusé, archive zip décompressée,
-fenêtre (liste, licence obligatoire). Lancement : CHRYPIX_REGLAGES=Chrypix-essais python tests/essai_installation.py
+fenêtre (liste, licence obligatoire). Lancement : PIXANE_REGLAGES=Pixane-essais python tests/essai_installation.py
 """
 import hashlib
 import io
@@ -15,13 +15,13 @@ from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-os.environ.setdefault("CHRYPIX_REGLAGES", "Chrypix-essais")
+os.environ.setdefault("PIXANE_REGLAGES", "Pixane-essais")
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
-from chrypix import installation_moteur as im  # noqa: E402
+from pixane import installation_moteur as im  # noqa: E402
 
 GROS = os.urandom(6 * 1024 * 1024 + 123)
 z = io.BytesIO()
@@ -126,12 +126,12 @@ with tempfile.TemporaryDirectory() as tmp:
     verifier((r / "ComfyUI/custom_nodes/ext/sous/fichier.txt").read_text() == "bonjour", "archive : sous-dossier")
     verifier(not (Path(tmp) / "evasion.txt").exists() and not (r / "ComfyUI" / "evasion.txt").exists(),
              "archive : rien écrit hors du dossier")
-    verifier((r / "chrypix.json").is_file(), "marque « installé par Chrypix » écrite")
+    verifier((r / "pixane.json").is_file(), "marque « installé par Pixane » écrite")
     verifier((dossier / im.MARQUE).is_file(), "marque du dossier (pour le désinstalleur) écrite")
     verifier(not im.comfyui_etranger(dossier), "notre dossier n'est pas pris pour un ComfyUI étranger")
     verifier(not (dossier / "telechargements").exists(), "dossier de téléchargements nettoyé")
     from PySide6.QtCore import QSettings
-    verifier(QSettings("Chrypix", "Chrypix-essais").value("comfyui_dir") == str(r), "dossier retenu dans les réglages")
+    verifier(QSettings("Pixane", "Pixane-essais").value("comfyui_dir") == str(r), "dossier retenu dans les réglages")
 
     # 3. relancer : rien n'est retéléchargé
     inst = im.Installation(dossier, [modele, extension])
@@ -154,7 +154,7 @@ with tempfile.TemporaryDirectory() as tmp:
     (Path(tmp) / im.PORTABLE / "ComfyUI").mkdir(parents=True)
     (Path(tmp) / im.PORTABLE / "ComfyUI" / "main.py").write_text("")
     verifier(im.comfyui_etranger(Path(tmp)), "ComfyUI d'un autre : reconnu")
-    verifier(not im.inscriptible(Path(os.environ.get("SystemRoot", "C:/Windows")) / "chrypix-essai"), "dossier protégé : refusé")
+    verifier(not im.inscriptible(Path(os.environ.get("SystemRoot", "C:/Windows")) / "pixane-essai"), "dossier protégé : refusé")
     verifier(im.inscriptible(Path(tmp) / "sous" / "dossier"), "dossier à créer dans un dossier permis : accepté")
     f = im.FenetreInstallation(dossier=tmp, accepte=True)
     verifier(not f.b_lancer.isEnabled(), "ComfyUI d'un autre : installation refusée dans ce dossier")
@@ -172,7 +172,7 @@ with tempfile.TemporaryDirectory() as tmp:
     infos = im.lire_infos(dossier)
     infos["versions"]["comfyui"] = im._signature(comfy1)          # ComfyUI v1 « déjà installé »
     (r / im.INFOS).write_text(__import__("json").dumps(infos), encoding="utf-8")
-    verifier(ok and set(infos["versions"]) >= {"gros", "ext"}, "versions installées retenues dans chrypix.json")
+    verifier(ok and set(infos["versions"]) >= {"gros", "ext"}, "versions installées retenues dans pixane.json")
     verifier(all(im.etat_element(dossier, e) == "ok" for e in (modele, extension, comfy1)), "tout est à jour")
 
     modele2 = replace(modele, url=URL + "/gros2.bin", taille=len(GROS2), sha256=hashlib.sha256(GROS2).hexdigest(),

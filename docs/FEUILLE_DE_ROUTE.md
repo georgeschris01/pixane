@@ -1,4 +1,4 @@
-# Feuille de route de Chrypix
+# Feuille de route de Pixane
 
 Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre à jour docs/GUIDE.md).
 
@@ -16,10 +16,10 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
    Fait : langue.py + langues\en.json, menu Affichage > Langue, Qt traduit, guide docs\GUIDE_en.md.
 2. [ ] **Toutes les fonctions de texte** — fait le 08/11/2026, à valider par Christophe : outil T, police, taille,
    couleur, gras / italique / souligné / barré, alignement, espacement, rotation, courbe, contour, ombre, fond ;
-   format .chr (textes modifiables). Guide chapitre 7.
+   format .pixane (textes modifiables). Guide chapitre 7.
 3. [x] **Outils** (08/11/2026, à essayer par Christophe) : recadrer (C, proportions, Recadrer à la sélection), pinceau de couleur (P, opacité, dureté, pipette Alt+clic), tampon (S, Alt+clic = source, aligné).
 4. [x] **Réglages d'image** (08/11/2026, à essayer par Christophe) : menu Image > Réglages de l'image (Ctrl+U) : luminosité, contraste, saturation, teinte, température, netteté ; calque choisi, dans la sélection s'il y en a une ; aperçu en direct calculé en arrière-plan.
-5. [x] **PSD** (08/11/2026, à essayer par Christophe dans Photoshop) : ouvrir et enregistrer avec les calques, sans bibliothèque en plus (chrypix/psd.py) ; lu : RVB / gris 8-16 bits, groupes, masques de calque ; signalé : modes de fusion, styles, calques de réglage, écrêtage ; CMJN ouvert aplati.
+5. [x] **PSD** (08/11/2026, à essayer par Christophe dans Photoshop) : ouvrir et enregistrer avec les calques, sans bibliothèque en plus (pixane/psd.py) ; lu : RVB / gris 8-16 bits, groupes, masques de calque ; signalé : modes de fusion, styles, calques de réglage, écrêtage ; CMJN ouvert aplati.
    - [x] **En plus** (08/11/2026, à essayer par Christophe) : menu Image (taille, pivoter, retourner, redresser),
      transformer un calque (Ctrl+T), modifier la sélection (agrandir, réduire, adoucir), sélectionner le sujet et
      supprimer l'arrière-plan (BiRefNet), fichiers récents, nouvelle image (vide ou presse-papiers), panneau
@@ -37,24 +37,24 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
 6. [ ] **Installateur** (même présentation que TwinPanel, Inno Setup 7) :
    - [x] images (validées le 08/11/2026) ;
    - [x] partie 1 (08/11/2026, à essayer par Christophe) : langue, pour moi / pour tous, dossier, vérification du PC
-     (carte NVIDIA, place, ComfyUI trouvé ou dossier à indiquer), Python inclus, association .chr ;
-     construire-installateur.bat -> publication\installateur\Chrypix-Setup-x.y.z-64bits.exe ;
+     (carte NVIDIA, place, ComfyUI trouvé ou dossier à indiquer), Python inclus, association .pixane ;
+     construire-installateur.bat -> publication\installateur\Pixane-Setup-x.y.z-64bits.exe ;
    - [x] partie 2 (08/11/2026, à essayer par Christophe) : page « Moteur IA » si ComfyUI absent (liste taille /
      site / licence, case licence FLUX.1 [dev] obligatoire, Flux Schnell facultatif), téléchargeur
-     chrypix\installation_moteur.py (reprise après coupure, SHA-256, ComfyUI portable 0.44 selon le pilote,
+     pixane\installation_moteur.py (reprise après coupure, SHA-256, ComfyUI portable 0.44 selon le pilote,
      extensions, gguf, modèles GGUF Q8 sans compte Hugging Face), menu IA > Installer le moteur IA ;
-     désinstalleur : propose de supprimer le moteur installé par Chrypix et les réglages ;
+     désinstalleur : propose de supprimer le moteur installé par Pixane et les réglages ;
      vrai téléchargement complet (~19 Go) pas encore essayé ;
-   - [x] licence de Chrypix : « Licence Chrypix 1.1 » (gratuit, code ouvert, non commercial ; modifications et forks
+   - [x] licence de Pixane : « Licence Pixane 1.1 » (gratuit, code ouvert, non commercial ; modifications et forks
      permis s'ils restent gratuits et sous la même licence ; nom de l'auteur obligatoire ; texte français qui fait
      foi, droit belge, présentation comme TwinPanel), page dans l'installateur ;
    - [ ] essai sur un Windows vierge (Bac à sable Windows), avec le vrai téléchargement du moteur.
 7. [ ] **Publication** : guide complet, licences (Flux Fill dev = non commercial), dépôt public ou installateur.
 
 ## Numérotation des versions (décidée le 08/11/2026)
-A.B.C : A = 0 tant que Chrypix n'est pas fini (1.0.0 = première version finie) ; B = +1 pour un lot de nouvelles fonctions (C repart à 0) ; C = +1 pour des corrections seulement. Le numéro se change dans chrypix\__init__.py avant de fabriquer l'installateur. Dernière version d'essai : 0.3.4 (noms de fichiers proposés sans accents : _restauree, _restauree_colorisee).
+A.B.C : A = 0 tant que Pixane n'est pas fini (1.0.0 = première version finie) ; B = +1 pour un lot de nouvelles fonctions (C repart à 0) ; C = +1 pour des corrections seulement. Le numéro se change dans pixane\__init__.py avant de fabriquer l'installateur. Dernière version d'essai : 0.4.0 (nouveau nom : Pixane, projets .pixane, nouveau logo).
 
 ## Idées notées en passant
 - Nettoyer les images d'essai dans les dossiers de sortie de ComfyUI (proposé, pas encore fait).
-- **Nom du programme** (09/11/2026) : Christophe trouve que « Chrypix » ne va pas ; nouveau nom à choisir, puis l'extension des projets (.chr est déjà prise par de vieux formats : polices Borland, fiches Baldur's Gate, graphismes NES). À reproposer.
+- **Nom du programme** (09/11/2026) : fait. « Chrypix » devient **Pixane** (projets **.pixane**, logo « P en pixels »), version 0.4.0. Les réglages, le dossier %LOCALAPPDATA% et le moteur de Chrypix sont repris au premier démarrage (pixane\ancien_nom.py) ; l'installateur remplace une installation de Chrypix.
 - **Cartes AMD** (09/11/2026) : pas prévues pour l'instant (moteur et réglages faits pour NVIDIA / CUDA). Possible plus tard avec ComfyUI + ROCm sous Windows (Radeon RX 7000 / 9000), mais il faudrait une carte AMD pour tout essayer.

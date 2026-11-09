@@ -13,7 +13,7 @@ __pycache__/
 *.pt
 *.lnk
 publication/
-# images de l'installateur : fabriquées par Chrypix (aucune photo personnelle), à garder
+# images de l'installateur : fabriquées par Pixane (aucune photo personnelle), à garder
 !installateur/images/*.png
 comparaison/
 image de test/

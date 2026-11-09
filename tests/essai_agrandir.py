@@ -1,4 +1,4 @@
-"""Agrandir de 25 % de chaque côté (préparation et raccord par Chrypix) et enregistre le résultat."""
+"""Agrandir de 25 % de chaque côté (préparation et raccord par Pixane) et enregistre le résultat."""
 import sys
 import threading
 from pathlib import Path
@@ -6,10 +6,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from PySide6.QtGui import QGuiApplication, QImage
 
-from chrypix import recettes
-from chrypix.document import FORMAT_IMAGE, Document, qimage_rgb, tableau
-from chrypix.moteur import Moteur
-from chrypix.raccord import finaliser, preparer
+from pixane import recettes
+from pixane.document import FORMAT_IMAGE, Document, qimage_rgb, tableau
+from pixane.moteur import Moteur
+from pixane.raccord import finaliser, preparer
 
 app = QGuiApplication(sys.argv)
 doc = Document.ouvrir(sys.argv[1])

@@ -7,12 +7,12 @@ import numpy as np
 from PySide6.QtCore import QEvent, QPointF, Qt, QTimer
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QApplication
-from chrypix.canevas import GOMME_CALQUE
-from chrypix.document import FORMAT_IMAGE, Document, qimage_rgb, tableau
+from pixane.canevas import GOMME_CALQUE
+from pixane.document import FORMAT_IMAGE, Document, qimage_rgb, tableau
 import os
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"   # ne touche pas aux réglages de l'utilisateur
-from chrypix.fenetre import Fenetre
-from chrypix.moteur import Moteur
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"   # ne touche pas aux réglages de l'utilisateur
+from pixane.fenetre import Fenetre
+from pixane.moteur import Moteur
 
 Moteur.demarrer = lambda self, signaler=None: (_ for _ in ()).throw(Exception("moteur désactivé pour l'essai"))
 Fenetre._moteur_en_echec = lambda self, *a: None

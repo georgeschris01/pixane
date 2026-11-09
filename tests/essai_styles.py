@@ -1,4 +1,4 @@
-"""Styles de calque : rendu des effets, fenêtre Style du calque, enregistrement (.chr modifiable, .ora / .psd figés),
+"""Styles de calque : rendu des effets, fenêtre Style du calque, enregistrement (.pixane modifiable, .ora / .psd figés),
 mise à l'échelle, lumière commune, ombre au sol (poignée), copier / coller, figer.
 Usage : essai_styles.py dossier_sortie"""
 import os
@@ -7,17 +7,17 @@ import time
 from dataclasses import replace
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"
 import numpy as np
 from PIL import Image
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QApplication, QMessageBox
-from chrypix.canevas import PEINTURE
-from chrypix.document import Calque, Document, FORMAT_IMAGE, image_vide, pil_vers_qimage, tableau
-from chrypix.fenetre import Fenetre
-from chrypix.moteur import Moteur
-from chrypix.styles import Effet, Style, image_rendue, rendre_style, styles_prets
+from pixane.canevas import PEINTURE
+from pixane.document import Calque, Document, FORMAT_IMAGE, image_vide, pil_vers_qimage, tableau
+from pixane.fenetre import Fenetre
+from pixane.moteur import Moteur
+from pixane.styles import Effet, Style, image_rendue, rendre_style, styles_prets
 
 Moteur.demarrer = lambda self, signaler=None: (_ for _ in ()).throw(Exception("moteur désactivé pour l'essai"))
 Fenetre._moteur_en_echec = lambda self, *a: None
@@ -94,10 +94,10 @@ doc = Document(calques=[Calque.depuis("fond", pil_vers_qimage(Image.fromarray(fo
                         Calque.depuis("objet", q_obj, style=contour)])
 verifier(rgba(doc.image)[195, 450, 0] > 200, "image affichée : le style est appliqué")
 verifier((rgba(doc.calques[1].image) == rgba(q_obj)).all(), "pixels du calque intacts (non destructif)")
-doc.enregistrer(sortie / "style.chr")
-d2 = Document.ouvrir(sortie / "style.chr")
+doc.enregistrer(sortie / "style.pixane")
+d2 = Document.ouvrir(sortie / "style.pixane")
 verifier(d2.calques[1].style is not None and d2.calques[1].style.effets[0].r("taille") == 10,
-         ".chr : style relu, toujours modifiable")
+         ".pixane : style relu, toujours modifiable")
 doc.enregistrer(sortie / "style.ora")
 d3 = Document.ouvrir(sortie / "style.ora")
 verifier(d3.calques[1].style is None and rgba(d3.calques[1].image)[195, 450, 0] > 200,

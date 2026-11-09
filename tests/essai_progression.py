@@ -4,9 +4,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from PySide6.QtCore import QRectF
 from PySide6.QtGui import QGuiApplication, QPainter, QPainterPath
-from chrypix.document import Document, COULEUR_SELECTION
-from chrypix.moteur import Moteur
-from chrypix import recettes
+from pixane.document import Document, COULEUR_SELECTION
+from pixane.moteur import Moteur
+from pixane import recettes
 
 app = QGuiApplication(sys.argv)
 doc = Document.ouvrir(sys.argv[1])

@@ -5,11 +5,11 @@ import sys
 import time
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"
 import numpy as np
 from PIL import Image, ImageDraw
 
-from chrypix import contour
+from pixane import contour
 
 sortie = Path(sys.argv[1])
 sortie.mkdir(parents=True, exist_ok=True)
@@ -60,9 +60,9 @@ if len(sys.argv) > 2:
     from PySide6.QtCore import QTimer
     from PySide6.QtWidgets import QApplication, QDialog
 
-    from chrypix.document import _masque_vers_selection, masque
-    from chrypix.fenetre import Fenetre
-    from chrypix.moteur import Moteur
+    from pixane.document import _masque_vers_selection, masque
+    from pixane.fenetre import Fenetre
+    from pixane.moteur import Moteur
     Moteur.demarrer = lambda self, signaler=None: None
     Fenetre._moteur_en_echec = lambda self, *a: None
     app = QApplication(sys.argv)

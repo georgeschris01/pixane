@@ -6,17 +6,17 @@ import os
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"   # ne touche pas aux réglages de l'utilisateur
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"   # ne touche pas aux réglages de l'utilisateur
 import numpy as np
 from PIL import Image
 from PySide6.QtCore import QEvent, QPointF, QRect, Qt
 from PySide6.QtGui import QColor, QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import QApplication
-from chrypix.canevas import PEINTURE, RECADRER, TAMPON
-from chrypix.document import tableau
-from chrypix.fenetre import Fenetre, reglages
-from chrypix.moteur import Moteur
-from chrypix.texte import Texte
+from pixane.canevas import PEINTURE, RECADRER, TAMPON
+from pixane.document import tableau
+from pixane.fenetre import Fenetre, reglages
+from pixane.moteur import Moteur
+from pixane.texte import Texte
 
 Moteur.demarrer = lambda self, signaler=None: (_ for _ in ()).throw(Exception("moteur désactivé pour l'essai"))
 Fenetre._moteur_en_echec = lambda self, *a: None
@@ -89,7 +89,7 @@ verifier(c.rect_recadre() is None, "Échap -> plus de cadre")
 f.opt_proportion.setCurrentIndex(0)
 # un texte, pour vérifier qu'il suit le recadrage
 t = Texte(texte="Bonjour", x=600, y=400, taille=60)
-f.historique.push(__import__("chrypix.fenetre", fromlist=["CommandeEtat"]).CommandeEtat(
+f.historique.push(__import__("pixane.fenetre", fromlist=["CommandeEtat"]).CommandeEtat(
     doc, doc.etat(), doc.etat_nouveau_texte(t), "texte"))
 souris([(200, 150), (1000, 650)])
 touche(Qt.Key_Return)
@@ -143,7 +143,7 @@ attendu = QColor(*[int(v) for v in original[100, 600]]).name()
 verifier(QColor(f.opt_couleur.couleur).name() == attendu, f"Alt+clic : couleur prise {f.opt_couleur.couleur}")
 verifier(np.array_equal(rgb(doc.image), original), "la pipette ne peint pas")
 # verrou
-f.historique.push(__import__("chrypix.fenetre", fromlist=["CommandeEtat"]).CommandeEtat(
+f.historique.push(__import__("pixane.fenetre", fromlist=["CommandeEtat"]).CommandeEtat(
     doc, doc.etat(), doc.etat_calque_modifie(0, verrou=True), "verrou"))
 nb = f.historique.index()
 souris([(100, 600), (300, 600)])

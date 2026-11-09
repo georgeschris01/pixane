@@ -1,4 +1,4 @@
-"""Lance Chrypix en anglais (sans moteur), ouvre une image et les principales fenêtres, capture l'écran et
+"""Lance Pixane en anglais (sans moteur), ouvre une image et les principales fenêtres, capture l'écran et
 cherche les textes restés en français dans tout ce qui est affiché.
 Usage : essai_anglais.py image dossier_sortie"""
 import os
@@ -6,14 +6,14 @@ import re
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QAbstractButton, QApplication, QLabel, QLineEdit, QMenu, QWidget
-from chrypix import langue
-from chrypix.__main__ import traduire_qt
-from chrypix.dialogues import Attente, ChoixResultat, ReglagesUpscale
-from chrypix.fenetre import Fenetre
-from chrypix.moteur import Moteur
+from pixane import langue
+from pixane.__main__ import traduire_qt
+from pixane.dialogues import Attente, ChoixResultat, ReglagesUpscale
+from pixane.fenetre import Fenetre
+from pixane.moteur import Moteur
 
 Moteur.demarrer = lambda self, signaler=None: (_ for _ in ()).throw(Exception("engine off"))
 Fenetre._moteur_en_echec = lambda self, *a: None

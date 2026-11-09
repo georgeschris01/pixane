@@ -8,7 +8,7 @@ import os
 import sys
 import traceback
 
-os.environ.setdefault("CHRYPIX_REGLAGES", "Chrypix-essais")
+os.environ.setdefault("PIXANE_REGLAGES", "Pixane-essais")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from PySide6.QtCore import QTimer  # noqa: E402
@@ -18,8 +18,8 @@ erreurs = []
 sys.excepthook = lambda t, v, tb: erreurs.append("".join(traceback.format_exception(t, v, tb)))
 
 app = QApplication(sys.argv)
-from chrypix import ajustements, filtres  # noqa: E402
-from chrypix.fenetre import Fenetre  # noqa: E402
+from pixane import ajustements, filtres  # noqa: E402
+from pixane.fenetre import Fenetre  # noqa: E402
 
 f = Fenetre()
 f.show()

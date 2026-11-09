@@ -5,16 +5,16 @@ import os
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ["CHRYPIX_REGLAGES"] = "Chrypix-essais"   # ne touche pas aux réglages de l'utilisateur
+os.environ["PIXANE_REGLAGES"] = "Pixane-essais"   # ne touche pas aux réglages de l'utilisateur
 import numpy as np
 from PIL import Image
 from PySide6.QtCore import QEvent, QPointF, QRect, Qt
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QApplication, QMessageBox
-from chrypix.canevas import GOMME, GOMME_CALQUE, LASSO, PEINTURE, PINCEAU, RECTANGLE, TAMPON
-from chrypix.document import masque, tableau
-from chrypix.fenetre import Fenetre
-from chrypix.moteur import Moteur
+from pixane.canevas import GOMME, GOMME_CALQUE, LASSO, PEINTURE, PINCEAU, RECTANGLE, TAMPON
+from pixane.document import masque, tableau
+from pixane.fenetre import Fenetre
+from pixane.moteur import Moteur
 
 Moteur.demarrer = lambda self, signaler=None: (_ for _ in ()).throw(Exception("moteur désactivé pour l'essai"))
 Fenetre._moteur_en_echec = lambda self, *a: None
