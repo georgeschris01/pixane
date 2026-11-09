@@ -216,6 +216,7 @@ class Document(QObject):
         self.modifie = False
         self.remarques: list[str] = []      # à montrer après l'ouverture (ex. effets d'un PSD non repris)
         self._fusion: QImage | None = None
+        self.cible_masque = False           # outils de peinture sur le masque du calque choisi (panneau)
 
     # ---------------------------------------------------------- image fusionnée
     def taille(self) -> tuple[int, int]:
@@ -334,6 +335,14 @@ class Document(QObject):
         self._fusion = None
         self.change.emit()
 
+    def apercu_masque(self, index: int, m: QImage) -> None:
+        """Masque modifié pendant un coup de pinceau (sans entrée dans Annuler)."""
+        calques = list(self.calques)
+        calques[index] = replace(calques[index], masque=m)
+        self.calques = tuple(calques)
+        self._fusion = None
+        self.change.emit()
+
     def apercu_style(self, index: int, style) -> None:
         """Style essayé (fenêtre Style du calque), sans entrée dans Annuler."""
         calques = list(self.calques)
@@ -364,6 +373,7 @@ class Document(QObject):
         """Résultat de l'IA de même taille : nouveau calque (en haut) avec seulement les pixels changés."""
         calque = calque_des_changements(self.nom_libre(titre), resultat, self.image)
         return self.etat_avec(self.calques + (calque,), len(self.calques))
+
 
     def etat_agrandi(self, titre: str, resultat: QImage, decalage: tuple[int, int]):
         """Agrandir : chaque calque est posé, décalé, sur la nouvelle toile ; l'ajout de l'IA va dans un nouveau
@@ -538,9 +548,7 @@ class Document(QObject):
         p = QPainter(fond)
         p.drawImage(place, img)
         p.end()
-        calques = list(self.calques)
-        calques.insert(self.actif + 1, Calque(self.nom_libre(tr("Collage")), fond))
-        return self.etat_avec(calques, self.actif + 1, nouvelle_selection(w, h))
+        return self.inserer(Calque(self.nom_libre(tr("Collage")), fond), selection=nouvelle_selection(w, h))
 
     def etat_calque_modifie(self, index: int, **changements):
         calques = list(self.calques)
@@ -550,10 +558,7 @@ class Document(QObject):
     def etat_nouveau_texte(self, t: Texte):
         """Nouveau calque de texte au-dessus du calque choisi."""
         w, h = self.taille()
-        c = Calque(nom_calque(t, tr("Texte")), rendre(t, w, h), texte=t)
-        calques = list(self.calques)
-        calques.insert(self.actif + 1, c)
-        return self.etat_avec(calques, self.actif + 1)
+        return self.inserer(Calque(nom_calque(t, tr("Texte")), rendre(t, w, h), texte=t))
 
     def etat_texte_modifie(self, index: int, t: Texte):
         """Texte modifié : redessiné ; le nom suit le texte tant qu'il n'a pas été renommé à la main."""
@@ -570,12 +575,25 @@ class Document(QObject):
         """Le calque de texte devient un calque d'image ordinaire (le texte n'est plus modifiable)."""
         return self.etat_calque_modifie(index, texte=None)
 
-    def etat_nouveau_calque(self):
-        w, h = self.taille()
-        c = Calque(self.nom_libre(tr("Calque")), image_vide(w, h))
+    def place_nouveau(self) -> tuple[int, str | None]:
+        """Où poser un nouveau calque : au-dessus du calque choisi, dans son groupe (ou en haut du groupe choisi
+        s'il est ouvert). -> (index d'insertion, groupe)."""
+        c = self.calque_actif
+        if c.groupe and c.ouvert:
+            return self.actif, c.ident
+        return self.actif + 1, c.dans
+
+    def inserer(self, c: "Calque", **kw):
+        """État avec le calque c ajouté à la place d'un nouveau calque."""
+        pos, dans = self.place_nouveau()
         calques = list(self.calques)
-        calques.insert(self.actif + 1, c)
-        return self.etat_avec(calques, self.actif + 1)
+        calques.insert(pos, replace(c, dans=dans))
+        return self.etat_avec(calques, pos, **kw)
+
+    def etat_nouveau_calque(self, image: QImage | None = None, nom: str | None = None):
+        w, h = self.taille()
+        img = image_vide(w, h) if image is None else image.convertToFormat(FORMAT_CALQUE)
+        return self.inserer(Calque(self.nom_libre(nom or tr("Calque")), img))
 
     def etat_dupliquer(self):
         c = self.calque_actif
@@ -666,14 +684,7 @@ class Document(QObject):
     def etat_nouveau_groupe(self):
         """Groupe vide au-dessus du calque choisi (dans le groupe choisi s'il est ouvert)."""
         w, h = self.taille()
-        c = self.calque_actif
-        dedans = c.groupe and c.ouvert
-        g = Calque(self.nom_libre(tr("Groupe")), image_vide(w, h), groupe=True, ident=nouvel_ident(),
-                   dans=c.ident if dedans else c.dans)
-        calques = list(self.calques)
-        pos = self.actif if dedans else self.actif + 1
-        calques.insert(pos, g)
-        return self.etat_avec(calques, pos)
+        return self.inserer(Calque(self.nom_libre(tr("Groupe")), image_vide(w, h), groupe=True, ident=nouvel_ident()))
 
     def etat_ajouter_masque(self, quoi: str = "blanc"):
         """quoi : « blanc » (tout visible), « selection » (seule la sélection visible) ou « cacher_selection »."""
@@ -699,15 +710,9 @@ class Document(QObject):
     def etat_nouveau_reglage(self, type_: str, params: dict, nom: str):
         """Calque de réglage au-dessus du calque choisi ; la sélection, s'il y en a une, devient son masque."""
         w, h = self.taille()
-        c = self.calque_actif
-        dedans = c.groupe and c.ouvert
         m = None if self.selection_vide() else masque_depuis(masque(self.selection))
-        r = Calque(self.nom_libre(nom), image_vide(w, h), reglage={"type": type_, "params": params}, masque=m,
-                   dans=c.ident if dedans else c.dans)
-        calques = list(self.calques)
-        pos = self.actif if dedans else self.actif + 1
-        calques.insert(pos, r)
-        return self.etat_avec(calques, pos)
+        return self.inserer(Calque(self.nom_libre(nom), image_vide(w, h), reglage={"type": type_, "params": params},
+                                   masque=m))
 
     def etat_fusionner_bas(self):
         if self.actif == 0 or self.calque_actif.verrou or self.calques[self.actif - 1].verrou:

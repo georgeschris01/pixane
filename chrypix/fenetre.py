@@ -19,9 +19,11 @@ from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QComboBox,
 from . import langue, recettes, theme
 from .icones import icone
 from .langue import tr
+from .actions_calques import ActionsCalques
 from .calques import PanneauCalques
-from .canevas import (BAGUETTE, DEPLACER, GOMME, GOMME_CALQUE, LASSO, MAIN, OBJET, OUTILS_AUTO, OUTILS_ROND,
-                      PEINTURE, PINCEAU, RAPIDE, RECADRER, RECTANGLE, SUPPRIMER, TAMPON, TEXTE, Canevas)
+from .canevas import (BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GOMME_CALQUE, LASSO, MAIN, OBJET,
+                      OUTILS_AUTO, OUTILS_ROND, PEINTURE, PINCEAU, RAPIDE, RECADRER, RECTANGLE, SEAU, SUPPRIMER,
+                      TAMPON, TEXTE, Canevas)
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection, qimage_rgb, tableau
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
@@ -120,7 +122,7 @@ class Carte(QPushButton):
         self.image.setPixmap(ic.pixmap(28, 28))
 
 
-class Fenetre(QMainWindow):
+class Fenetre(ActionsCalques, QMainWindow):
     etat_moteur = Signal(str)
 
     def __init__(self):
@@ -254,6 +256,7 @@ class Fenetre(QMainWindow):
                      "recadrer")
 
         m = self.menuBar().addMenu(tr("I&mage"))
+        self._m_image = m
         self._action(m, tr("Réglages de l'image…"), "Ctrl+U", self.reglages_image, "a_reglages_image", "reglages")
         m.addSeparator()
         self._action(m, tr("Taille de l'image…"), "Ctrl+Alt+I", self.taille_image, "a_taille")
@@ -278,6 +281,7 @@ class Fenetre(QMainWindow):
                      "a_nouveau_calque")
         self._action(m, tr("Dupliquer le calque"), "Ctrl+J", lambda: self.calques.dupliquer() if self.doc else None,
                      "a_dupliquer_calque")
+        self._menus_calques(self._m_image, m)
 
         m = self.menuBar().addMenu(tr("&Affichage"))
         self._action(m, tr("Zoom avant"), "Ctrl++", lambda: self.canevas.zoomer(1.25), "a_zoom_plus", "zoom_plus")
@@ -397,6 +401,7 @@ class Fenetre(QMainWindow):
         self.opt_transfo.hide()
         tout.addWidget(self.opt_transfo)
         self._options_retouche(tout)
+        self._options_dessin(tout)
         self._options_recadrer(tout)
         b.addWidget(self.options)
 
@@ -582,7 +587,16 @@ class Fenetre(QMainWindow):
                                           (TAMPON, tr("Tampon : recopie une zone (Alt+clic : endroit à copier)"),
                                            "S", "tampon"),
                                           (SUPPRIMER, tr("Supprimer (IA) : peins sur un défaut, il disparaît au "
-                                                         "lâcher"), "J", "suppression")):
+                                                         "lâcher"), "J", "suppression"),
+                                          (CORRECTEUR, tr("Pinceau correcteur : recopie une zone en la raccordant "
+                                                          "à la lumière autour (Alt+clic : endroit à copier)"),
+                                           "R", "correcteur"),
+                                          (DEGRADE, tr("Dégradé : glisse du début à la fin (Maj : droit)"), "D",
+                                           "degrade"),
+                                          (SEAU, tr("Pot de peinture : remplit une zone de couleur proche"), "K",
+                                           "seau"),
+                                          (FORMES, tr("Formes : rectangle, ellipse, ligne, flèche (nouveau calque)"),
+                                           "U", "formes")):
             a = QAction(texte, self, checkable=True)
             a.setShortcut(touche)
             a.setToolTip(f"{texte}  ({touche})")
@@ -597,7 +611,8 @@ class Fenetre(QMainWindow):
         # famille ; le bouton montre le dernier outil choisi. Main et Déplacer restent seuls.
         self._bouton_groupe = {}
         for famille in ((MAIN,), (DEPLACER,), (RECTANGLE, LASSO, PINCEAU, GOMME), (OBJET, RAPIDE, BAGUETTE),
-                        (SUPPRIMER, PEINTURE, TAMPON, GOMME_CALQUE), (RECADRER,), (TEXTE,)):
+                        (SUPPRIMER, CORRECTEUR, TAMPON), (PEINTURE, GOMME_CALQUE, DEGRADE, SEAU), (FORMES,),
+                        (RECADRER,), (TEXTE,)):
             if len(famille) == 1:
                 barre.addAction(self._actions_outils[famille[0]])
                 continue
@@ -644,13 +659,17 @@ class Fenetre(QMainWindow):
             (self.p_retirer if self.canevas.mode_retirer else self.p_ajouter).setChecked(True)
         self.p_nouvelle.setVisible(outil in (RECTANGLE, LASSO) + OUTILS_AUTO)
         self.options.setEnabled(outil not in (MAIN, TEXTE, DEPLACER))
-        self.opt_taille.setVisible(outil in OUTILS_ROND or outil in (MAIN, TEXTE, DEPLACER, RECTANGLE, LASSO))
+        self.opt_taille.setVisible(outil in OUTILS_ROND or outil in (MAIN, TEXTE, DEPLACER, RECTANGLE, LASSO,
+                                                                     FORMES))
         if outil in (BAGUETTE, OBJET):
             self.opt_taille.setVisible(False)
         self.opt_selection.setVisible(outil in (RECTANGLE, LASSO, PINCEAU) + OUTILS_AUTO)
         self.opt_baguette.setVisible(outil == BAGUETTE)
-        self.opt_couleur.setVisible(outil == PEINTURE)
-        self.opt_retouche.setVisible(outil in (PEINTURE, TAMPON))
+        self.opt_couleur.setVisible(outil in (PEINTURE, DEGRADE, SEAU, FORMES))
+        self.opt_retouche.setVisible(outil in (PEINTURE, TAMPON, CORRECTEUR, DEGRADE, SEAU))
+        self.opt_degrade.setVisible(outil == DEGRADE)
+        self.opt_seau.setVisible(outil == SEAU)
+        self.opt_formes.setVisible(outil == FORMES)
         self.opt_recadrer.setVisible(outil == RECADRER)
         # la barre du haut se remet en page (sinon un groupe trop large la ferait déborder)
         self.options.adjustSize()
@@ -670,7 +689,15 @@ class Fenetre(QMainWindow):
                               "couleur."),
                  TAMPON: tr("Tampon : Alt+clic sur l'endroit à copier, puis peins là où il doit être recopié."),
                  SUPPRIMER: tr("Supprimer (IA) : peins sur un fil, une tache, un bouton… ; au lâcher, il disparaît "
-                               "(calque « Suppressions »). Pour un gros objet, préfère Effacer.")}
+                               "(calque « Suppressions »). Pour un gros objet, préfère Effacer."),
+                 CORRECTEUR: tr("Pinceau correcteur : Alt+clic sur une zone saine, puis peins sur le défaut ; au "
+                                "lâcher, la copie prend la lumière et la couleur d'autour."),
+                 DEGRADE: tr("Dégradé : glisse du début à la fin (Maj : horizontal, vertical ou à 45°). Dans la "
+                             "sélection s'il y en a une ; sur un masque : fondu progressif."),
+                 SEAU: tr("Pot de peinture : clic sur une zone ; elle se remplit de la couleur choisie (d'après "
+                          "l'image visible). Alt+clic : prendre une couleur."),
+                 FORMES: tr("Formes : glisse pour dessiner (Maj : carré, cercle, ligne droite). Chaque forme va dans "
+                            "un nouveau calque ; la taille règle l'épaisseur du trait.")}
         if outil in aides:
             self.statusBar().showMessage(aides[outil], 10000)
         if outil == RECADRER:
@@ -728,6 +755,7 @@ class Fenetre(QMainWindow):
         self.calques = PanneauCalques(lambda nom: icone(nom, self.couleurs.texte, self.couleurs.accent, 20))
         self.calques.demande.connect(self._commande_calques)
         self.calques.style_demande.connect(self.style_calque)
+        self.calques.reglage_demande.connect(lambda t: self.nouveau_calque_reglage(t) if t else self.modifier_reglage())
         dock.setWidget(self.calques)
         dock.setFixedWidth(290)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
@@ -902,7 +930,7 @@ class Fenetre(QMainWindow):
                   self.a_redresser, self.a_transformer, self.a_reglages_image, self.a_sel_agrandir,
                   self.a_sel_reduire, self.a_sel_adoucir, self.a_couper, self.a_copier, self.a_supprimer_selection,
                   self.a_style, self.a_copier_style, self.a_coller_style, self.a_enlever_style, self.a_figer_style,
-                  self.a_nouveau_calque, self.a_dupliquer_calque):
+                  self.a_nouveau_calque, self.a_dupliquer_calque, *self._actions_calques_doc()):
             a.setEnabled(a_doc)
         for a in (self.a_effacer, self.a_remplir, self.a_agrandir, self.a_upscale, self.a_arriere_plan,
                   self.a_sujet):
@@ -1391,6 +1419,10 @@ class Fenetre(QMainWindow):
     def style_calque(self):
         if not self.doc or getattr(self, "_dialogue_style", None) is not None:
             return
+        if self.doc.calque_actif.special:
+            QMessageBox.information(self, tr("Style du calque"), tr("Un groupe ou un calque de réglage n'a pas de "
+                                                                    "style : choisis un calque d'image ou de texte."))
+            return
         if self.canevas.transfo is not None:
             self._valider_transfo()
         from .dialogue_style import DialogueStyle
@@ -1446,7 +1478,7 @@ class Fenetre(QMainWindow):
     def transformer(self):
         if not self.doc or self.canevas.transfo is not None or self.canevas.cadre is not None:
             return
-        if not self._verifier_verrou(tr("Transformer le calque")):
+        if not self._verifier_pixels(tr("Transformer le calque")):
             return
         c = self.doc.calque_actif
         a = tableau(c.image)[:, :, 3]

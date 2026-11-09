@@ -8,6 +8,7 @@ from __future__ import annotations
 import io
 import math
 import threading
+from dataclasses import replace
 
 import numpy as np
 from PIL import Image
@@ -152,18 +153,18 @@ class Suppression:
         avant = doc.etat()
         w, h = doc.taille()
         c = doc.calque_actif
-        reutiliser = c.nom.startswith(nom_calque()) and c.texte is None and not c.verrou and c.style is None
+        reutiliser = (c.nom.startswith(nom_calque()) and c.texte is None and not c.verrou and c.style is None
+                      and not c.special and c.masque is None)
         a = np.clip(mz, 0, 1)
         morceau = np.dstack([rgb, (a * 255 + 0.5).astype(np.uint8)])
         img = c.image.copy() if reutiliser else image_vide(w, h)
         p = QPainter(img)
         p.drawImage(zone.topLeft(), qimage_rgba(morceau))
         p.end()
-        calques = list(doc.calques)
         if reutiliser:
-            calques[doc.actif] = Calque.depuis(c.nom, img, visible=c.visible, opacite=c.opacite)
-            actif = doc.actif
+            calques = list(doc.calques)
+            calques[doc.actif] = replace(c, image=img)
+            apres = doc.etat_avec(calques, doc.actif)
         else:
-            calques.insert(doc.actif + 1, Calque.depuis(doc.nom_libre(nom_calque()), img))
-            actif = doc.actif + 1
-        self.f.historique.push(CommandeEtat(doc, avant, doc.etat_avec(calques, actif), tr("Supprimer")))
+            apres = doc.inserer(Calque.depuis(doc.nom_libre(nom_calque()), img))
+        self.f.historique.push(CommandeEtat(doc, avant, apres, tr("Supprimer")))

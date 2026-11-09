@@ -85,6 +85,27 @@ DESSINS = {
     "suppression": '<path d="M5 19c3-1 4-3.5 6.5-6l5-5a2 2 0 0 1 3 3l-5 5c-2.5 2.5-5 3.5-6 6.5"/>'
                    '<path stroke="A" d="M4 5v3M2.5 6.5h3M9 3v2M8 4h2"/>',
     "style": '<path d="M9 20V9.5A3.5 3.5 0 0 1 12.5 6H13M5.5 11.5H12"/><path stroke="A" d="M14.5 12l6 7.5M20.5 12l-6 7.5"/>',
+    # calques : groupes, masques, réglages
+    "dossier": '<path d="M3.5 18.5V6a1.5 1.5 0 0 1 1.5-1.5h4l2 2.5h8A1.5 1.5 0 0 1 20.5 8.5v10A1.5 1.5 0 0 1 19 20H5'
+               'a1.5 1.5 0 0 1-1.5-1.5z"/>',
+    "groupe": '<path d="M3.5 18.5V6a1.5 1.5 0 0 1 1.5-1.5h4l2 2.5h8A1.5 1.5 0 0 1 20.5 8.5v10A1.5 1.5 0 0 1 19 20H5'
+              'a1.5 1.5 0 0 1-1.5-1.5z"/><path stroke="A" d="M12 10.5v6M9 13.5h6"/>',
+    "masque": '<rect x="3.5" y="5" width="17" height="14" rx="1.5"/><circle stroke="A" cx="12" cy="12" r="4"/>',
+    "reglage": '<circle cx="12" cy="12" r="8"/><path stroke="A" d="M12 4a8 8 0 0 1 0 16z"/>',
+    "reglage_calque": '<circle cx="12" cy="12" r="8"/><path stroke="A" d="M12 4a8 8 0 0 1 0 16zM12 8h4M12 12h6M12 16h4"/>',
+    # outils de dessin
+    "degrade": '<rect x="3.5" y="5" width="17" height="14" rx="1.5"/><path stroke="A" d="M7 8v8M10.5 8v8M13.5 9v6M16 10v4"/>',
+    "seau": '<path d="M5 12 11 6l6.5 6.5-5.8 5.8a1.5 1.5 0 0 1-2.1 0L5 13.8a1.3 1.3 0 0 1 0-1.8zM8.5 3.5 11 6"/>'
+            '<path stroke="A" d="M20 15.5c0 1.4-.9 2.5-2 2.5s-2-1.1-2-2.5 2-4 2-4 2 2.6 2 4z"/>',
+    "formes": '<rect x="3.5" y="10" width="9" height="9" rx="1"/><circle stroke="A" cx="15.5" cy="8.5" r="5"/>',
+    "correcteur": '<path d="M7.5 16.5 16.5 7.5a2.6 2.6 0 0 0-3.7-3.7L3.8 12.8a2.6 2.6 0 0 0 3.7 3.7z"/>'
+                  '<path stroke="A" d="M17 14.5l3 3-3 3-3-3zM9 8.5l.01 0M11 10.5l.01 0M8.5 11l.01 0M10.5 6.5l.01 0"/>',
+    "regles": '<path d="M3.5 3.5h17v5h-12v12h-5z"/><path stroke="A" d="M7 3.5v2.5M10.5 3.5v2.5M14 3.5v2.5M17.5 3.5v2.5'
+              'M3.5 12H6M3.5 15.5H6"/>',
+    "onglet": '<path d="M3.5 19.5V7a1.5 1.5 0 0 1 1.5-1.5h5l1.5 2H19a1.5 1.5 0 0 1 1.5 1.5v10.5z"/>',
+    "lot": '<rect x="7" y="3.5" width="13" height="10" rx="1.5"/><path d="M4 7v10a1.5 1.5 0 0 0 1.5 1.5H17"/>'
+           '<path stroke="A" d="M10 10l2.5-2.5L15 10l2-2"/>',
+    "filtre": '<path d="M4 5h16l-6.5 7.5v6L10.5 20v-7.5z"/>',
     # texte
     "texte": '<path d="M5 6.5V4.5h14v2M12 4.5v15M9 19.5h6"/>',
     "aligner_gauche": '<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>',

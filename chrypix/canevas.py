@@ -9,6 +9,7 @@ from PySide6.QtCore import QLineF, QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPainterPath, QPen, QPixmap, QPolygonF, QTransform
 from PySide6.QtWidgets import QWidget
 
+from .composition import argb_vers_masque, masque_vers_argb
 from .document import COULEUR_SELECTION, Document
 from .langue import tr
 from .retouche import Trait
@@ -26,9 +27,13 @@ BAGUETTE = "baguette"                          # baguette magique : zone de coul
 RAPIDE = "rapide"                              # sélection rapide (IA) : peindre sur l'objet
 OBJET = "objet"                                # sélection d'objet (IA) : cadre autour, ou clic dessus
 SUPPRIMER = "supprimer"                        # pinceau Supprimer (IA, LaMa) : le défaut peint disparaît au lâcher
-OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE, PEINTURE, TAMPON, RAPIDE, SUPPRIMER)   # curseur rond (taille)
+CORRECTEUR = "correcteur"                      # pinceau correcteur : comme le tampon, raccordé à la lumière autour
+DEGRADE = "degrade"                            # dégradé : glisser du début à la fin
+SEAU = "seau"                                  # pot de peinture : remplit une zone de couleur proche
+FORMES = "formes"                              # rectangle, ellipse, ligne, flèche (nouveau calque)
+OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE, PEINTURE, TAMPON, RAPIDE, SUPPRIMER, CORRECTEUR)   # curseur rond
 OUTILS_AUTO = (BAGUETTE, RAPIDE, OBJET)                                  # sélections calculées
-OUTILS_CALQUE = (GOMME_CALQUE, PEINTURE, TAMPON)                  # outils qui changent les pixels du calque
+OUTILS_CALQUE = (GOMME_CALQUE, PEINTURE, TAMPON, CORRECTEUR, DEGRADE, SEAU)                  # outils qui changent les pixels du calque
 OPACITE_SELECTION = 0.45
 
 
@@ -59,6 +64,7 @@ class Canevas(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._sur_masque = False             # coup de pinceau / gomme en cours sur le masque du calque
         self.doc: Document | None = None
         self.zoom = 1.0
         self.decalage = QPointF(0, 0)
@@ -88,6 +94,12 @@ class Canevas(QWidget):
         self.couleur_peinture = QColor(0, 0, 0)
         self.opacite = 1.0           # 0..1
         self.durete = 0.8            # 0 = bord très doux, 1 = bord net
+        self.couleur2: QColor | None = None   # dégradé : couleur d'arrivée (None = vers le transparent)
+        self.forme_degrade = "lineaire"
+        self.tolerance_seau = 32
+        self.forme = "rectangle"
+        self.forme_remplie = True
+        self._glisse_dessin = None   # dégradé / forme en cours : [début, fin, Maj]
         self._trait: Trait | None = None
         self.source_tampon: QPointF | None = None    # point (image) choisi par Alt+clic
         self._decalage_tampon: QPointF | None = None # source - point peint, fixé au premier coup (aligné)
@@ -256,7 +268,9 @@ class Canevas(QWidget):
             return
         if self.outil == RECADRER and self.recadre is not None:
             self._dessiner_recadre(p)
-        if self.outil == TAMPON and self.source_tampon is not None and not self._espace:
+        if self._glisse_dessin is not None:
+            self._dessiner_glisse(p)
+        if self.outil in (TAMPON, CORRECTEUR) and self.source_tampon is not None and not self._espace:
             if self._trait is not None and self._souris is not None:
                 croix = self._souris + self._decalage_tampon * self.zoom
             elif self._trait is None and self._decalage_tampon is not None and self._souris is not None:
@@ -569,7 +583,7 @@ class Canevas(QWidget):
             if 0 <= x < self.doc.image.width() and 0 <= y < self.doc.image.height():
                 self.couleur_prise.emit(QColor(self.doc.image.pixel(x, y)).name())
             return
-        if alt and self.outil == TAMPON:                 # point source
+        if alt and self.outil in (TAMPON, CORRECTEUR):   # point source
             self.source_tampon = pt
             self._decalage_tampon = None
             self.message.emit(tr("Endroit à copier choisi : peins maintenant là où il doit être recopié."))
@@ -580,14 +594,29 @@ class Canevas(QWidget):
             self.refus.emit(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour pouvoir le "
                                "modifier.", nom=c.nom))
             return
-        if self.outil == TAMPON and self.source_tampon is None:
-            self.refus.emit(tr("Tampon : fais d'abord Alt+clic sur l'endroit à copier."))
+        if self.outil in (TAMPON, CORRECTEUR) and self.source_tampon is None:
+            self.refus.emit(tr("Fais d'abord Alt+clic sur l'endroit à copier."))
+            return
+        if self.refus_special():
+            return
+        self._sur_masque = self.sur_masque()
+        if self._sur_masque:
+            if self.outil != PEINTURE:
+                self.refus.emit(tr("Sur un masque, peins avec le pinceau de couleur (noir cache, blanc montre) "
+                                   "ou la gomme de calque (cache)."))
+                return
+            self._avant = self.doc.etat()
+            gris = round(QColor(self.couleur_peinture).lightnessF() * 255)
+            self._trait = Trait("peinture", masque_vers_argb(c.masque), self.taille_pinceau, self.durete,
+                                self.opacite, couleur=QColor(gris, gris, gris))
+            self._trait.ajouter(pt)
+            self.doc.apercu_masque(self.doc.actif, argb_vers_masque(self._trait.image))
             return
         if c.texte is not None:
             self.refus.emit(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme texte "
                                "(Ctrl+Z pour revenir).", nom=c.nom))
         self._avant = self.doc.etat()
-        if self.outil == TAMPON:
+        if self.outil in (TAMPON, CORRECTEUR):
             if self._decalage_tampon is None:
                 self._decalage_tampon = self.source_tampon - pt
             self._trait = Trait("tampon", c.image, self.taille_pinceau, self.durete, self.opacite,
@@ -600,13 +629,147 @@ class Canevas(QWidget):
 
     def _glisser_retouche(self, pos: QPointF):
         self._trait.ajouter(self.vers_image(pos))
-        self.doc.apercu_calque(self.doc.actif, self._trait.image)
+        if self._sur_masque:
+            self.doc.apercu_masque(self.doc.actif, argb_vers_masque(self._trait.image))
+        else:
+            self.doc.apercu_calque(self.doc.actif, self._trait.image)
+
+    def sur_masque(self) -> bool:
+        """Les outils de peinture travaillent sur le masque du calque (choisi dans le panneau Calques)."""
+        return bool(self.doc and self.doc.cible_masque and self.doc.calque_actif.masque is not None)
+
+    def refus_special(self) -> bool:
+        """Groupe ou calque de réglage : pas de pixels (seulement son masque)."""
+        c = self.doc.calque_actif
+        if c.special and not self.sur_masque():
+            quoi = tr("un groupe") if c.groupe else tr("un calque de réglage")
+            self.refus.emit(tr("« {nom} » est {quoi} : il n'a pas de pixels. Choisis un calque d'image, ou son "
+                               "masque.", nom=c.nom, quoi=quoi))
+            return True
+        return False
 
     def _lacher_retouche(self):
         nom = tr("Tampon") if self._trait.mode == "tampon" else tr("Pinceau de couleur")
+        if self._sur_masque:
+            nom = tr("Peindre le masque")
+        elif self.outil == CORRECTEUR:
+            from .outils_dessin import corriger
+            t = self._trait
+            img = corriger(t.base, t.source, t.decalage, t.masque, t.opacite)
+            self.doc.apercu_calque(self.doc.actif, img)
+            nom = tr("Pinceau correcteur")
         self._trait = None
         self.selection_modifiee.emit(self._avant, nom)
         self._avant = None
+
+    # ---------------------------------------------------------- dégradé, pot de peinture, formes
+    def _cible_image(self):
+        """(image où dessiner, sur le masque ?) ; None si refusé (verrou, groupe, réglage)."""
+        c = self.doc.calque_actif
+        if c.verrou:
+            self.refus.emit(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour pouvoir le "
+                               "modifier.", nom=c.nom))
+            return None
+        if self.refus_special():
+            return None
+        if self.sur_masque():
+            return masque_vers_argb(c.masque), True
+        return c.image, False
+
+    def _couleur_cible(self, couleur: QColor, sur_masque: bool) -> QColor:
+        if not sur_masque:
+            return QColor(couleur)
+        g = round(QColor(couleur).lightnessF() * 255)
+        return QColor(g, g, g)
+
+    def _poser_dessin(self, img, sur_masque: bool, nom: str, avant):
+        if sur_masque:
+            self.doc.apercu_masque(self.doc.actif, argb_vers_masque(img))
+        else:
+            self.doc.apercu_calque(self.doc.actif, img)
+        self.selection_modifiee.emit(avant, nom)
+
+    def _presser_dessin(self, pos: QPointF, mods):
+        pt = self.vers_image(pos)
+        if self.outil == SEAU:
+            if bool(mods & Qt.AltModifier):           # pipette
+                x, y = int(pt.x()), int(pt.y())
+                if 0 <= x < self.doc.image.width() and 0 <= y < self.doc.image.height():
+                    self.couleur_prise.emit(QColor(self.doc.image.pixel(x, y)).name())
+                return
+            cible = self._cible_image()
+            if cible is None:
+                return
+            img, sur_masque = cible
+            from .document import FORMAT_IMAGE, tableau
+            from .outils_dessin import seau
+            sel = None if self.doc.selection_vide() else self.doc.selection
+            avant = self.doc.etat()
+            res = seau(img, tableau(self.doc.image.convertToFormat(FORMAT_IMAGE)), int(pt.x()), int(pt.y()),
+                       self.tolerance_seau, self._couleur_cible(self.couleur_peinture, sur_masque), self.opacite, sel)
+            if res is not None:
+                if self.doc.calque_actif.texte is not None and not sur_masque:
+                    self.refus.emit(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme "
+                                       "texte (Ctrl+Z pour revenir).", nom=self.doc.calque_actif.nom))
+                self._poser_dessin(res, sur_masque, tr("Pot de peinture"), avant)
+            return
+        if self.outil == DEGRADE and self._cible_image() is None:
+            return
+        self._glisse_dessin = [pt, pt, bool(mods & Qt.ShiftModifier)]
+
+    def _fin_glisse(self):
+        a, b, maj = self._glisse_dessin
+        if maj:
+            from .outils_dessin import contraindre
+            b = contraindre(a, b, "ligne" if self.outil == DEGRADE else self.forme)
+        return a, b
+
+    def _lacher_dessin(self):
+        a, b = self._fin_glisse()
+        self._glisse_dessin = None
+        if (b - a).manhattanLength() < 2:
+            return
+        avant = self.doc.etat()
+        if self.outil == DEGRADE:
+            cible = self._cible_image()
+            if cible is None:
+                return
+            img, sur_masque = cible
+            from .outils_dessin import degrade
+            c2 = None if self.couleur2 is None else self._couleur_cible(self.couleur2, sur_masque)
+            if sur_masque and c2 is None:
+                c2 = QColor(255, 255, 255) if QColor(self.couleur_peinture).lightnessF() < 0.5 else QColor(0, 0, 0)
+            sel = None if self.doc.selection_vide() else self.doc.selection
+            res = degrade(img, a, b, self.forme_degrade, self._couleur_cible(self.couleur_peinture, sur_masque), c2,
+                          self.opacite, sel)
+            self._poser_dessin(res, sur_masque, tr("Dégradé"), avant)
+            return
+        from .outils_dessin import forme, noms_formes
+        w, h = self.doc.taille()
+        img = forme(w, h, self.forme, a, b, QColor(self.couleur_peinture), self.forme_remplie,
+                    self.taille_pinceau)
+        etat = self.doc.etat_nouveau_calque(img, noms_formes()[self.forme])
+        self.doc.appliquer_etat(etat)
+        self.selection_modifiee.emit(avant, tr("Forme"))
+
+    def _dessiner_glisse(self, p: QPainter):
+        a, b = self._fin_glisse()
+        A, B = self.vers_ecran(a), self.vers_ecran(b)
+        for couleur, epaisseur in ((QColor(0, 0, 0), 3), (QColor(255, 255, 255), 1)):
+            stylo = QPen(couleur, epaisseur)
+            p.setPen(stylo)
+            p.setBrush(Qt.NoBrush)
+            if self.outil == DEGRADE:
+                p.drawLine(A, B)
+                p.drawEllipse(A, 4, 4)
+                if self.forme_degrade == "radial":
+                    r = QLineF(A, B).length()
+                    p.drawEllipse(A, r, r)
+            else:
+                from .outils_dessin import chemin_forme, pointe
+                p.drawPath(chemin_forme(self.forme, A, B, self.taille_pinceau * self.zoom))
+                if self.forme == "fleche":
+                    p.drawPolygon(pointe(A, B, self.taille_pinceau * self.zoom))
 
     # ---------------------------------------------------------- recadrer
     def definir_proportion(self, proportion: float | None):
@@ -853,7 +1016,10 @@ class Canevas(QWidget):
             p.setPen(QPen(QColor(0, 0, 0), self.taille_pinceau, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
             p.drawLine(a, b)
         p.end()
-        self.doc.apercu_calque(self.doc.actif, QImage(self._img_calque))
+        if self._sur_masque:
+            self.doc.apercu_masque(self.doc.actif, argb_vers_masque(self._img_calque))
+        else:
+            self.doc.apercu_calque(self.doc.actif, QImage(self._img_calque))
 
     # ---------------------------------------------------------- peinture de la sélection
     def _peintre_selection(self) -> QPainter:
@@ -1035,8 +1201,12 @@ class Canevas(QWidget):
             self._presser_recadre(pos)
             self.update()
             return
-        if self.outil in (PEINTURE, TAMPON):
+        if self.outil in (PEINTURE, TAMPON, CORRECTEUR):
             self._presser_retouche(pos, bool(e.modifiers() & Qt.AltModifier))
+            self.update()
+            return
+        if self.outil in (DEGRADE, SEAU, FORMES):
+            self._presser_dessin(pos, e.modifiers())
             self.update()
             return
         if self.outil in OUTILS_AUTO or self.outil == SUPPRIMER:
@@ -1045,6 +1215,8 @@ class Canevas(QWidget):
         if self.outil == GOMME_CALQUE and self.doc.calque_actif.verrou:
             self.refus.emit(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour pouvoir le "
                                "gommer.", nom=self.doc.calque_actif.nom))
+            return
+        if self.outil == GOMME_CALQUE and self.refus_special():
             return
         mods = e.modifiers()
         self._nouvelle = False
@@ -1059,10 +1231,14 @@ class Canevas(QWidget):
         pt = self.vers_image(pos)
         self._trace = [pt]
         if self.outil == GOMME_CALQUE:
-            if self.doc.calque_actif.texte is not None:
-                self.refus.emit(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme texte "
-                                   "(Ctrl+Z pour revenir).", nom=self.doc.calque_actif.nom))
-            self._img_calque = self.doc.calque_actif.image.copy()   # copie : l'état d'avant reste intact
+            self._sur_masque = self.sur_masque()
+            if self._sur_masque:                       # sur le masque : la gomme cache (peint du noir)
+                self._img_calque = masque_vers_argb(self.doc.calque_actif.masque)
+            else:
+                if self.doc.calque_actif.texte is not None:
+                    self.refus.emit(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme "
+                                       "texte (Ctrl+Z pour revenir).", nom=self.doc.calque_actif.nom))
+                self._img_calque = self.doc.calque_actif.image.copy()   # copie : l'état d'avant reste intact
             self._coup_de_gomme_calque(pt, pt)
         elif self.outil in (PINCEAU, GOMME):
             self._coup_de_pinceau(pt, pt)
@@ -1134,6 +1310,9 @@ class Canevas(QWidget):
                 self.setCursor(Qt.SizeAllCursor)
             else:
                 self.setCursor(Qt.IBeamCursor)
+        if self._glisse_dessin is not None:
+            self._glisse_dessin[1] = self.vers_image(pos)
+            self._glisse_dessin[2] = bool(e.modifiers() & Qt.ShiftModifier)
         if self._trace is not None:
             pt = self.vers_image(pos)
             if self.outil == GOMME_CALQUE:
@@ -1175,6 +1354,10 @@ class Canevas(QWidget):
         if self._recadre_glisse is not None:
             self._lacher_recadre()
             return
+        if self._glisse_dessin is not None:
+            self._lacher_dessin()
+            self.update()
+            return
         if self._trait is not None:
             self._lacher_retouche()
             self.update()
@@ -1191,7 +1374,7 @@ class Canevas(QWidget):
                 self._remplir_forme()
         self._nouvelle = False
         noms = {PINCEAU: "Pinceau de sélection", GOMME: "Gomme de sélection", RECTANGLE: "Sélection rectangle",
-                LASSO: "Lasso", GOMME_CALQUE: "Gomme de calque"}
+                LASSO: "Lasso", GOMME_CALQUE: "Peindre le masque" if self._sur_masque else "Gomme de calque"}
         self._img_calque = None
         self._trace = None
         self.selection_modifiee.emit(self._avant, tr(noms[self.outil]))

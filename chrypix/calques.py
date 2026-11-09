@@ -1,16 +1,25 @@
-"""Panneau Calques : liste (vignette, œil, nom), opacité, boutons nouveau / dupliquer / supprimer / monter /
-descendre / fusionner / aplatir. Chaque action passe par `demande(etat, texte)` pour être annulable."""
+"""Panneau Calques : liste (œil, vignette, masque, nom), mode de fusion, opacité, boutons nouveau / groupe / masque /
+réglage / dupliquer / style / monter / descendre / fusionner / aplatir / supprimer. Chaque action passe par
+`demande(etat, texte)` pour être annulable.
+
+Groupes : leurs calques sont décalés vers la droite ; la flèche du groupe le replie. Masque : clic sur sa vignette =
+les outils de peinture travaillent sur le masque (cadre de couleur autour) ; clic sur la vignette du calque = sur
+les pixels ; Maj+clic sur le masque = le désactiver / réactiver.
+"""
 from __future__ import annotations
 
-from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QColor, QCursor, QImage, QPainter, QPixmap
-from PySide6.QtWidgets import (QGraphicsOpacityEffect, QHBoxLayout, QInputDialog, QLabel, QListWidget, QListWidgetItem, QSlider, QToolButton,
-                               QVBoxLayout, QWidget)
+from PySide6.QtCore import QEvent, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QCursor, QImage, QPainter, QPen, QPixmap
+from PySide6.QtWidgets import (QApplication, QComboBox, QGraphicsOpacityEffect, QHBoxLayout, QInputDialog, QLabel,
+                               QListWidget, QListWidgetItem, QMenu, QSlider, QToolButton, QVBoxLayout, QWidget)
 
+from . import ajustements
+from .composition import GROUPES_MODES, MODES, noms_modes, parents
 from .document import Document
 from .langue import tr
 
 VIGNETTE = QSize(44, 34)
+RETRAIT = 16                       # décalage d'un niveau de groupe
 
 
 def damier(taille: QSize, case: int = 5) -> QPixmap:
@@ -25,23 +34,60 @@ def damier(taille: QSize, case: int = 5) -> QPixmap:
     return pm
 
 
+class Vignette(QLabel):
+    clique = Signal(bool)          # Maj enfoncée ?
+
+    def __init__(self):
+        super().__init__()
+        self.setFixedSize(VIGNETTE.width() + 4, VIGNETTE.height() + 4)
+        self.setAlignment(Qt.AlignCenter)
+        self.choisie = False
+
+    def mousePressEvent(self, e):
+        if e.button() == Qt.LeftButton:
+            self.clique.emit(bool(e.modifiers() & Qt.ShiftModifier))
+        super().mousePressEvent(e)
+
+    def paintEvent(self, e):
+        super().paintEvent(e)
+        if self.choisie:
+            p = QPainter(self)
+            p.setPen(QPen(self.palette().highlight().color(), 2))
+            p.drawRect(self.rect().adjusted(1, 1, -1, -1))
+            p.end()
+
+
 class LigneCalque(QWidget):
-    """Une ligne de la liste : œil, vignette, nom, cadenas."""
+    """Une ligne de la liste : retrait, flèche (groupe), œil, vignette, masque, nom, cadenas."""
     oeil_clique = Signal()
     cadenas_clique = Signal()
+    fleche_cliquee = Signal()
+    vignette_cliquee = Signal(bool)
+    masque_clique = Signal(bool)
 
     def __init__(self, icones):
         super().__init__()
         self.icones = icones            # fonction nom -> QIcon (couleurs du thème)
+        self.index = 0
         lay = QHBoxLayout(self)
         lay.setContentsMargins(4, 3, 6, 3)
-        lay.setSpacing(8)
+        lay.setSpacing(6)
+        self.retrait = QWidget()
+        self.retrait.setFixedWidth(0)
+        self.fleche = QToolButton()
+        self.fleche.setAutoRaise(True)
+        self.fleche.setFixedWidth(18)
+        self.fleche.clicked.connect(self.fleche_cliquee)
         self.oeil = QToolButton()
         self.oeil.setAutoRaise(True)
         self.oeil.setToolTip(tr("Afficher / masquer le calque"))
         self.oeil.clicked.connect(self.oeil_clique)
-        self.vignette = QLabel()
-        self.vignette.setFixedSize(VIGNETTE)
+        self.vignette = Vignette()
+        self.vignette.clique.connect(self.vignette_cliquee)
+        self.masque = Vignette()
+        self.masque.setToolTip(tr("Masque du calque : clic = peindre le masque (noir cache, blanc montre) ; "
+                                  "Maj+clic = le désactiver / réactiver"))
+        self.masque.clique.connect(self.masque_clique)
         self.nom = QLabel()
         self.details = QLabel()
         self.details.setObjectName("discret")
@@ -52,47 +98,88 @@ class LigneCalque(QWidget):
         self.cadenas = QToolButton()
         self.cadenas.setAutoRaise(True)
         self.cadenas.clicked.connect(self.cadenas_clique)
+        lay.addWidget(self.retrait)
+        lay.addWidget(self.fleche)
         lay.addWidget(self.oeil)
         lay.addWidget(self.vignette)
+        lay.addWidget(self.masque)
         lay.addLayout(textes, 1)
         lay.addWidget(self.cadenas)
 
-    def remplir(self, nom: str, visible: bool, opacite: float, vignette: QPixmap, verrou: bool = False,
-                texte: bool = False, style: bool = False):
-        self.oeil.setIcon(self.icones("oeil" if visible else "oeil_ferme"))
-        self.cadenas.setIcon(self.icones("cadenas" if verrou else "cadenas_ouvert"))
-        self.cadenas.setToolTip(tr("Calque verrouillé : cliquer pour le déverrouiller") if verrou else
+    def remplir(self, c, vignette: QPixmap, vignette_masque: QPixmap | None, niveau: int, cible_masque: bool,
+                choisi: bool, visible_en_vrai: bool):
+        self.retrait.setFixedWidth(niveau * RETRAIT)
+        self.fleche.setVisible(c.groupe)
+        if c.groupe:
+            self.fleche.setText("▾" if c.ouvert else "▸")
+            self.fleche.setToolTip(tr("Replier le groupe") if c.ouvert else tr("Déplier le groupe"))
+        self.oeil.setIcon(self.icones("oeil" if c.visible else "oeil_ferme"))
+        self.cadenas.setIcon(self.icones("cadenas" if c.verrou else "cadenas_ouvert"))
+        self.cadenas.setToolTip(tr("Calque verrouillé : cliquer pour le déverrouiller") if c.verrou else
                                 tr("Verrouiller le calque (protège contre les modifications)"))
         effet = self.cadenas.graphicsEffect()
         if effet is None:
             effet = QGraphicsOpacityEffect(self.cadenas)
             self.cadenas.setGraphicsEffect(effet)
-        effet.setOpacity(1.0 if verrou else 0.35)        # cadenas ouvert discret
-        self.nom.setText(nom)
-        self.nom.setEnabled(visible)
-        details = [tr("texte")] if texte else []
-        if style:
+        effet.setOpacity(1.0 if c.verrou else 0.35)        # cadenas ouvert discret
+        self.nom.setText(c.nom)
+        self.nom.setEnabled(visible_en_vrai)
+        details = []
+        if c.groupe:
+            details.append(tr("groupe"))
+        elif c.reglage is not None:
+            details.append(tr("réglage : {quoi}", quoi=ajustements.nom(c.reglage["type"]).lower()))
+        elif c.texte is not None:
+            details.append(tr("texte"))
+        if c.style is not None and not c.style.vide():
             details.append(tr("fx · style"))
-        if opacite < 0.999:
-            details.append(tr("opacité {n} %", n=round(opacite * 100)))
+        if c.mode != "normal":
+            details.append(noms_modes().get(c.mode, c.mode).lower())
+        if c.opacite < 0.999:
+            details.append(tr("opacité {n} %", n=round(c.opacite * 100)))
+        if c.masque is not None and not c.masque_actif:
+            details.append(tr("masque désactivé"))
         self.details.setText(" · ".join(details))
         self.details.setVisible(bool(details))
         self.vignette.setPixmap(vignette)
+        self.vignette.choisie = choisi and not (cible_masque and vignette_masque is not None) and \
+            vignette_masque is not None
+        self.vignette.update()
+        self.masque.setVisible(vignette_masque is not None)
+        if vignette_masque is not None:
+            self.masque.setPixmap(vignette_masque)
+            self.masque.choisie = choisi and cible_masque
+            self.masque.update()
 
 
 class PanneauCalques(QWidget):
     demande = Signal(object, str)      # (nouvel état, texte pour Annuler)
     style_demande = Signal()           # double-clic sur un calque (hors du nom) ou bouton fx
+    reglage_demande = Signal(str)      # nouveau calque de réglage (type) ; "" = modifier celui choisi
 
     def __init__(self, icones):
         super().__init__()
         self.icones = icones
         self.doc: Document | None = None
-        self._vignettes: dict[int, QPixmap] = {}
+        self._vignettes: dict = {}
         self._avant_opacite = None
+        self._indexes: list[int] = []   # index du calque de chaque ligne (du haut vers le bas)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 4, 10, 10)
         lay.setSpacing(6)
+
+        haut = QHBoxLayout()
+        self.mode = QComboBox()
+        self.mode.setToolTip(tr("Mode de fusion : comment le calque se mélange à ce qui est dessous"))
+        noms = noms_modes()
+        for k, groupe in enumerate(GROUPES_MODES):
+            if k:
+                self.mode.insertSeparator(self.mode.count())
+            for m in groupe:
+                self.mode.addItem(noms[m], m)
+        self.mode.activated.connect(self._mode_choisi)
+        haut.addWidget(self.mode, 1)
+        lay.addLayout(haut)
 
         self.liste = QListWidget()
         self.liste.setObjectName("calques")
@@ -115,11 +202,16 @@ class PanneauCalques(QWidget):
         lay.addLayout(opacite)
 
         boutons = QHBoxLayout()
-        boutons.setSpacing(2)
+        boutons.setSpacing(1)
         self.boutons = {}
         # bulles d'aide : tr("Nouveau calque vide"), tr("Fusionner avec le calque du dessous"),
         # tr("Aplatir l'image (un seul calque)") ; les autres sont déjà traduites ailleurs
         for nom, aide, action in (("calque_nouveau", "Nouveau calque vide", self.nouveau),
+                                  ("groupe", tr("Nouveau groupe (Ctrl+G : mettre le calque dans un groupe)"),
+                                   self.nouveau_groupe),
+                                  ("masque", tr("Ajouter un masque (d'après la sélection s'il y en a une)"),
+                                   self.ajouter_masque),
+                                  ("reglage", tr("Nouveau calque de réglage"), self._menu_reglage),
                                   ("dupliquer", tr("Dupliquer le calque"), self.dupliquer),
                                   ("style", tr("Style du calque (ombre, contour, lueur…)"), self.style_demande.emit),
                                   ("monter", tr("Monter le calque"), lambda: self.deplacer(+1)),
@@ -157,66 +249,132 @@ class PanneauCalques(QWidget):
             b.setIcon(self.icones(nom))
         self.rafraichir()
 
-    def _vignette(self, img: QImage) -> QPixmap:
-        cle = img.cacheKey()
+    def _vignette(self, img: QImage, masque: bool = False) -> QPixmap:
+        cle = (img.cacheKey(), masque)
         if cle not in self._vignettes:
-            pm = damier(VIGNETTE)
+            if masque:
+                pm = QPixmap(VIGNETTE)
+                pm.fill(QColor(0, 0, 0))
+            else:
+                pm = damier(VIGNETTE)
             petit = img.scaled(VIGNETTE, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             p = QPainter(pm)
             p.drawImage((VIGNETTE.width() - petit.width()) // 2, (VIGNETTE.height() - petit.height()) // 2, petit)
             p.end()
-            if len(self._vignettes) > 200:
+            if len(self._vignettes) > 300:
                 self._vignettes.clear()
             self._vignettes[cle] = pm
         return self._vignettes[cle]
 
+    def _vignette_icone(self, nom: str) -> QPixmap:
+        cle = ("icone", nom)
+        if cle not in self._vignettes:
+            pm = QPixmap(VIGNETTE)
+            pm.fill(Qt.transparent)
+            p = QPainter(pm)
+            self.icones(nom).paint(p, (VIGNETTE.width() - 26) // 2, (VIGNETTE.height() - 26) // 2, 26, 26)
+            p.end()
+            self._vignettes[cle] = pm
+        return self._vignettes[cle]
+
+    def _lignes(self) -> list[int]:
+        """Index des calques montrés (du haut vers le bas) : ceux d'un groupe replié sont cachés."""
+        doc = self.doc
+        res = []
+        for i in range(len(doc.calques) - 1, -1, -1):
+            if all(g.ouvert for g in parents(doc.calques, i)):
+                res.append(i)
+        return res
+
     def rafraichir(self):
         doc = self.doc
-        n = len(doc.calques) if doc else 0
+        self._indexes = self._lignes() if doc else []
+        n = len(self._indexes)
         self.liste.blockSignals(True)
         while self.liste.count() > n:
             self.liste.takeItem(self.liste.count() - 1)
         while self.liste.count() < n:
             item = QListWidgetItem()
-            item.setSizeHint(QSize(0, VIGNETTE.height() + 8))
+            item.setSizeHint(QSize(0, VIGNETTE.height() + 10))
             self.liste.addItem(item)
             ligne = LigneCalque(self.icones)
             ligne.oeil_clique.connect(lambda l=ligne: self._oeil(l))
             ligne.cadenas_clique.connect(lambda l=ligne: self._cadenas(l))
+            ligne.fleche_cliquee.connect(lambda l=ligne: self._plier(l))
+            ligne.vignette_cliquee.connect(lambda maj, l=ligne: self._vignette_cliquee(l, maj))
+            ligne.masque_clique.connect(lambda maj, l=ligne: self._masque_clique(l, maj))
             self.liste.setItemWidget(item, ligne)
-        for rang in range(n):                       # rang 0 = calque du haut
-            index = n - 1 - rang
+        if doc and doc.calque_actif.masque is None:
+            doc.cible_masque = False
+        for rang, index in enumerate(self._indexes):
             c = doc.calques[index]
             ligne = self.liste.itemWidget(self.liste.item(rang))
             ligne.index = index
-            ligne.remplir(c.nom, c.visible, c.opacite, self._vignette(c.image), c.verrou, c.texte is not None,
-                          c.style is not None and not c.style.vide())
+            if c.groupe:
+                vig = self._vignette_icone("dossier")
+            elif c.reglage is not None:
+                vig = self._vignette_icone("reglage_calque")
+            else:
+                vig = self._vignette(c.image)
+            vm = self._vignette(c.masque, True) if c.masque is not None else None
+            from .composition import visible_en_vrai
+            ligne.remplir(c, vig, vm, len(parents(doc.calques, index)), doc.cible_masque, index == doc.actif,
+                          visible_en_vrai(doc.calques, index))
         if doc:
-            self.liste.setCurrentRow(n - 1 - doc.actif)
+            if doc.actif in self._indexes:
+                self.liste.setCurrentRow(self._indexes.index(doc.actif))
             if not self.curseur.isSliderDown():
                 self.curseur.blockSignals(True)
                 self.curseur.setValue(round(doc.calque_actif.opacite * 100))
                 self.curseur.blockSignals(False)
             self.valeur.setText(f"{self.curseur.value()} %")
+            k = self.mode.findData(doc.calque_actif.mode)
+            self.mode.setCurrentIndex(max(0, k))
         self.liste.blockSignals(False)
         for nom, b in self.boutons.items():
             b.setEnabled(bool(doc))
         verrou = bool(doc) and doc.calque_actif.verrou
         if doc:
+            c = doc.calque_actif
             self.boutons["supprimer"].setEnabled(doc.etat_supprimer() is not None)
-            self.boutons["aplatir"].setEnabled(n > 1 and not any(c.verrou for c in doc.calques))
-            self.boutons["fusionner"].setEnabled(doc.actif > 0 and not verrou and not doc.calques[doc.actif - 1].verrou)
-            self.boutons["monter"].setEnabled(doc.actif < n - 1)
-            self.boutons["descendre"].setEnabled(doc.actif > 0)
+            self.boutons["aplatir"].setEnabled(len(doc.calques) > 1 and not any(x.verrou for x in doc.calques))
+            self.boutons["fusionner"].setEnabled(doc.etat_fusionner_bas() is not None)
+            self.boutons["monter"].setEnabled(doc.etat_deplacer(doc.actif, doc.actif + 1) is not None)
+            self.boutons["descendre"].setEnabled(doc.etat_deplacer(doc.actif, doc.actif - 1) is not None)
+            self.boutons["masque"].setEnabled(c.masque is None and not verrou)
+            self.boutons["style"].setEnabled(not c.special)
         self.curseur.setEnabled(bool(doc) and not verrou)
+        self.mode.setEnabled(bool(doc) and not verrou and not (doc and doc.calque_actif.reglage is not None))
         self.curseur.setToolTip(tr("Calque verrouillé") if verrou else "")
 
     # ---------------------------------------------------------- actions
     def _ligne_choisie(self, rang: int):
         """Changer de calque actif n'est pas une retouche : pas d'entrée dans Annuler."""
-        if self.doc and rang >= 0:
-            self.doc.actif = len(self.doc.calques) - 1 - rang
+        if self.doc and 0 <= rang < len(self._indexes):
+            nouveau = self._indexes[rang]
+            if nouveau != self.doc.actif:
+                self.doc.cible_masque = False
+            self.doc.actif = nouveau
             self.doc.calques_changes.emit()        # panneau, canevas et panneau Texte suivent
+
+    def _choisir(self, index: int):
+        if self.doc.actif != index:
+            self.doc.actif = index
+        self.doc.calques_changes.emit()
+
+    def _vignette_cliquee(self, ligne: LigneCalque, _maj: bool):
+        self.doc.cible_masque = False
+        self._choisir(ligne.index)
+
+    def _masque_clique(self, ligne: LigneCalque, maj: bool):
+        c = self.doc.calques[ligne.index]
+        if maj and c.masque is not None:
+            texte = tr("Réactiver le masque") if not c.masque_actif else tr("Désactiver le masque")
+            self.demande.emit(self.doc.etat_calque_modifie(ligne.index, masque_actif=not c.masque_actif), texte)
+            return
+        self.doc.actif = ligne.index
+        self.doc.cible_masque = True
+        self.doc.calques_changes.emit()
 
     def _oeil(self, ligne: LigneCalque):
         c = self.doc.calques[ligne.index]
@@ -227,6 +385,23 @@ class PanneauCalques(QWidget):
         c = self.doc.calques[ligne.index]
         texte = tr("Déverrouiller le calque") if c.verrou else tr("Verrouiller le calque")
         self.demande.emit(self.doc.etat_calque_modifie(ligne.index, verrou=not c.verrou), texte)
+
+    def _plier(self, ligne: LigneCalque):
+        """Replier / déplier un groupe : simple affichage, sans entrée dans Annuler."""
+        from dataclasses import replace
+        c = self.doc.calques[ligne.index]
+        calques = list(self.doc.calques)
+        calques[ligne.index] = replace(c, ouvert=not c.ouvert)
+        self.doc.calques = tuple(calques)
+        self.doc.actif = ligne.index
+        self.doc.calques_changes.emit()
+
+    def _mode_choisi(self, _k: int):
+        if not self.doc:
+            return
+        m = self.mode.currentData()
+        if m and m != self.doc.calque_actif.mode:
+            self.demande.emit(self.doc.etat_calque_modifie(self.doc.actif, mode=m), tr("Mode de fusion"))
 
     def _opacite_debut(self):
         self._avant_opacite = self.doc.etat()
@@ -250,6 +425,33 @@ class PanneauCalques(QWidget):
 
     def nouveau(self):
         self.demande.emit(self.doc.etat_nouveau_calque(), tr("Nouveau calque"))
+
+    def nouveau_groupe(self):
+        self.demande.emit(self.doc.etat_nouveau_groupe(), tr("Nouveau groupe"))
+
+    def grouper(self):
+        self.demande.emit(self.doc.etat_grouper(), tr("Grouper"))
+
+    def degrouper(self):
+        etat = self.doc.etat_degrouper()
+        if etat:
+            self.demande.emit(etat, tr("Dégrouper"))
+
+    def ajouter_masque(self, quoi: str | None = None):
+        if quoi is None:
+            quoi = "blanc" if self.doc.selection_vide() else "selection"
+        etat = self.doc.etat_ajouter_masque(quoi)
+        if etat:
+            self.demande.emit(etat, tr("Ajouter un masque"))
+            self.doc.cible_masque = True
+            self.doc.calques_changes.emit()
+
+    def _menu_reglage(self):
+        menu = QMenu(self)
+        for t in ajustements.TYPES:
+            menu.addAction(ajustements.nom(t), lambda t=t: self.reglage_demande.emit(t))
+        b = self.boutons["reglage"]
+        menu.exec(b.mapToGlobal(b.rect().bottomLeft()))
 
     def dupliquer(self):
         self.demande.emit(self.doc.etat_dupliquer(), tr("Dupliquer le calque"))
@@ -275,13 +477,15 @@ class PanneauCalques(QWidget):
             self.demande.emit(etat, tr("Supprimer le calque"))
 
     def _double_clic(self, item):
-        """Comme Photoshop : double-clic sur le nom = renommer ; ailleurs sur la ligne = style du calque."""
+        """Comme Photoshop : double-clic sur le nom = renommer ; ailleurs : réglage (calque de réglage) ou style."""
         ligne = self.liste.itemWidget(item)
         p = ligne.nom.mapFromGlobal(QCursor.pos()) if ligne is not None else None
         largeur = ligne.nom.fontMetrics().horizontalAdvance(ligne.nom.text()) + 10 if ligne is not None else 0
         if p is not None and 0 <= p.y() < ligne.nom.height() and p.x() < largeur:
             self.renommer()
-        else:
+        elif self.doc and self.doc.calque_actif.reglage is not None:
+            self.reglage_demande.emit("")
+        elif self.doc and not self.doc.calque_actif.groupe:
             self.style_demande.emit()
 
     def renommer(self):
