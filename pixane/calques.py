@@ -8,6 +8,8 @@ les pixels ; Maj+clic sur le masque = le désactiver / réactiver.
 """
 from __future__ import annotations
 
+from dataclasses import replace
+
 from PySide6.QtCore import QEvent, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QCursor, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGraphicsOpacityEffect, QHBoxLayout, QInputDialog,
@@ -106,6 +108,12 @@ class LigneCalque(QWidget):
         lay.addLayout(textes, 1)
         lay.addWidget(self.cadenas)
 
+    def marquer(self, oui: bool):
+        """Calque choisi en plus du calque actif (Ctrl+clic) : fond surligné, plus discret que le calque actif."""
+        self.setObjectName("ligneCalque")
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setStyleSheet("#ligneCalque { background: rgba(70, 140, 230, 70); border-radius: 3px; }" if oui else "")
+
     def remplir(self, c, vignette: QPixmap, vignette_masque: QPixmap | None, niveau: int, cible_masque: bool,
                 choisi: bool, visible_en_vrai: bool):
         self.retrait.setFixedWidth(niveau * RETRAIT)
@@ -156,6 +164,7 @@ class PanneauCalques(QWidget):
     demande = Signal(object, str)      # (nouvel état, texte pour Annuler)
     style_demande = Signal()           # double-clic sur un calque (hors du nom) ou bouton fx
     reglage_demande = Signal(str)      # nouveau calque de réglage (type) ; "" = modifier celui choisi
+    refus = Signal(str)                # action impossible : message dans la barre d'état
 
     def __init__(self, icones):
         super().__init__()
@@ -164,6 +173,9 @@ class PanneauCalques(QWidget):
         self._vignettes: dict = {}
         self._avant_opacite = None
         self._indexes: list[int] = []   # index du calque de chaque ligne (du haut vers le bas)
+        # calques choisis (Ctrl+clic, Maj+clic, comme Photoshop) : le calque actif en fait toujours partie
+        self.choisis: set[int] = set()
+        self._vu = (None, 0)            # (document, nombre de calques) : la liste des choisis repart à zéro
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 4, 10, 10)
         lay.setSpacing(6)
@@ -186,6 +198,8 @@ class PanneauCalques(QWidget):
         self.liste.setIconSize(VIGNETTE)
         self.liste.currentRowChanged.connect(self._ligne_choisie)
         self.liste.itemDoubleClicked.connect(self._double_clic)
+        self.liste.setContextMenuPolicy(Qt.CustomContextMenu)          # clic droit : menu du calque
+        self.liste.customContextMenuRequested.connect(self._menu_contextuel)
         # glisser un calque à la souris pour changer sa place (comme Photoshop)
         self._glisse = None                 # {"depart": point, "rang": ligne prise, "actif": en cours ?}
         self.liste.viewport().installEventFilter(self)
@@ -313,6 +327,13 @@ class PanneauCalques(QWidget):
             self.liste.setItemWidget(item, ligne)
         if doc and doc.calque_actif.masque is None:
             doc.cible_masque = False
+        if doc is None or self._vu != (doc, len(doc.calques)):
+            self.choisis = set()
+            self._vu = (doc, len(doc.calques)) if doc else (None, 0)
+        if doc:
+            self.choisis = {i for i in self.choisis if 0 <= i < len(doc.calques)}
+            if doc.actif not in self.choisis:
+                self.choisis = {doc.actif}
         for rang, index in enumerate(self._indexes):
             c = doc.calques[index]
             ligne = self.liste.itemWidget(self.liste.item(rang))
@@ -327,6 +348,7 @@ class PanneauCalques(QWidget):
             from .composition import visible_en_vrai
             ligne.remplir(c, vig, vm, len(parents(doc.calques, index)), doc.cible_masque, index == doc.actif,
                           visible_en_vrai(doc.calques, index))
+            ligne.marquer(index in self.choisis and index != doc.actif)
         if doc:
             if doc.actif in self._indexes:
                 self.liste.setCurrentRow(self._indexes.index(doc.actif))
@@ -343,9 +365,15 @@ class PanneauCalques(QWidget):
         verrou = bool(doc) and doc.calque_actif.verrou
         if doc:
             c = doc.calque_actif
-            self.boutons["supprimer"].setEnabled(doc.etat_supprimer() is not None)
+            self.boutons["supprimer"].setEnabled(doc.etat_supprimer_choisis(self.choisis) is not None)
             self.boutons["aplatir"].setEnabled(len(doc.calques) > 1 and not any(x.verrou for x in doc.calques))
-            self.boutons["fusionner"].setEnabled(doc.etat_fusionner_bas() is not None)
+            plusieurs = len(self.choisis) > 1
+            self.boutons["fusionner"].setEnabled((doc.etat_fusionner_choisis(self.choisis) if plusieurs
+                                                  else doc.etat_fusionner_bas()) is not None)
+            self.boutons["fusionner"].setToolTip(tr("Fusionner les {n} calques choisis (Ctrl+E)", n=len(self.choisis))
+                                                 if plusieurs else tr("Fusionner avec le calque du dessous (Ctrl+E)"))
+            self.boutons["supprimer"].setToolTip(tr("Supprimer les {n} calques choisis", n=len(self.choisis))
+                                                 if plusieurs else tr("Supprimer le calque"))
             self.boutons["monter"].setEnabled(doc.etat_deplacer(doc.actif, doc.actif + 1) is not None)
             self.boutons["descendre"].setEnabled(doc.etat_deplacer(doc.actif, doc.actif - 1) is not None)
             self.boutons["masque"].setEnabled(c.masque is None and not verrou)
@@ -371,6 +399,9 @@ class PanneauCalques(QWidget):
         t = ev.type()
         if t == QEvent.MouseButtonPress and ev.button() == Qt.LeftButton:
             it = self.liste.itemAt(ev.position().toPoint())
+            if it is not None and self._choisir_avec_touches(self.liste.row(it), ev.modifiers()):
+                self._glisse = None
+                return True
             self._glisse = {"depart": ev.position(), "rang": self.liste.row(it), "actif": False} if it else None
         elif t == QEvent.MouseMove and self._glisse is not None and ev.buttons() & Qt.LeftButton:
             g = self._glisse
@@ -435,6 +466,103 @@ class PanneauCalques(QWidget):
             doc._fusion = None
         if etat is not None:
             self.demande.emit(etat, tr("Déplacer le calque"))
+
+    # ---------------------------------------------------------- plusieurs calques, menu du clic droit
+    def _choisir_avec_touches(self, rang: int, touches) -> bool:
+        """Ctrl+clic : ajoute ou retire le calque des choisis ; Maj+clic : tous ceux entre le calque actif et celui-ci.
+        Clic simple : ce calque seul. -> True si le clic est traité ici (Ctrl ou Maj)."""
+        doc = self.doc
+        if not (0 <= rang < len(self._indexes)):
+            return False
+        index = self._indexes[rang]
+        if touches & Qt.ControlModifier:
+            if index in self.choisis and len(self.choisis) > 1:
+                self.choisis.discard(index)
+                if doc.actif == index:
+                    doc.actif = max(self.choisis)
+            else:
+                self.choisis.add(index)
+                doc.actif = index
+        elif touches & Qt.ShiftModifier:
+            depart = self._indexes.index(doc.actif) if doc.actif in self._indexes else rang
+            a, b = sorted((depart, rang))
+            self.choisis = set(self._indexes[a:b + 1])
+            doc.actif = index
+        else:
+            self.choisis = {index}
+            return False
+        doc.cible_masque = False
+        doc.calques_changes.emit()
+        return True
+
+    def _menu_contextuel(self, pos):
+        menu = self.menu_calque(pos)
+        if menu is not None:
+            menu.exec(self.liste.viewport().mapToGlobal(pos))
+
+    def menu_calque(self, pos) -> QMenu | None:
+        """Menu du clic droit à l'endroit `pos` de la liste (sur un calque, sur plusieurs choisis, ou dans le vide)."""
+        doc = self.doc
+        if doc is None:
+            return None
+        it = self.liste.itemAt(pos)
+        menu = QMenu(self)
+        if it is not None:
+            index = self._indexes[self.liste.row(it)]
+            if index not in self.choisis:                 # clic droit hors des choisis : ce calque seul
+                self.choisis = {index}
+                doc.actif = index
+                doc.calques_changes.emit()
+            c = doc.calque_actif
+            n = len(self.choisis)
+            if n > 1:
+                a = menu.addAction(tr("Fusionner les {n} calques choisis", n=n), self.fusionner)
+                a.setShortcut("Ctrl+E")
+                a.setEnabled(doc.etat_fusionner_choisis(self.choisis) is not None)
+                a = menu.addAction(tr("Supprimer les {n} calques choisis", n=n), self.supprimer)
+                a.setEnabled(doc.etat_supprimer_choisis(self.choisis) is not None)
+                menu.addSeparator()
+                menu.addAction(tr("Afficher les calques choisis"), lambda: self._visibles(True))
+                menu.addAction(tr("Masquer les calques choisis"), lambda: self._visibles(False))
+            else:
+                menu.addAction(tr("Renommer…"), self.renommer)
+                menu.addAction(tr("Dupliquer le calque"), self.dupliquer).setShortcut("Ctrl+J")
+                a = menu.addAction(tr("Supprimer le calque"), self.supprimer)
+                a.setEnabled(doc.etat_supprimer_choisis(self.choisis) is not None)
+                menu.addSeparator()
+                a = menu.addAction(tr("Fusionner avec le calque du dessous"), self.fusionner)
+                a.setShortcut("Ctrl+E")
+                a.setEnabled(doc.etat_fusionner_bas() is not None)
+                a = menu.addAction(tr("Aplatir l'image"), self.aplatir)
+                a.setEnabled(len(doc.calques) > 1 and not any(x.verrou for x in doc.calques))
+                menu.addSeparator()
+                menu.addAction(tr("Grouper le calque"), self.grouper).setShortcut("Ctrl+G")
+                if c.groupe:
+                    menu.addAction(tr("Dégrouper"), self.degrouper).setShortcut("Ctrl+Shift+G")
+                if not c.special:
+                    menu.addAction(tr("Style du calque…"), self.style_demande.emit).setShortcut("Ctrl+Alt+F")
+                if c.masque is None and not c.verrou:
+                    menu.addAction(tr("Ajouter un masque (d'après la sélection s'il y en a une)"),
+                                   lambda: self.ajouter_masque())
+                if c.texte is not None and not c.verrou:
+                    menu.addAction(tr("Convertir en image"), lambda: self.demande.emit(
+                        doc.etat_en_pixels(doc.actif), tr("Convertir en image")))
+                menu.addSeparator()
+                menu.addAction(tr("Masquer le calque") if c.visible else tr("Afficher le calque"),
+                               lambda: self._visibles(not c.visible))
+                menu.addAction(tr("Déverrouiller le calque") if c.verrou else tr("Verrouiller le calque"),
+                               lambda: self.demande.emit(doc.etat_calque_modifie(doc.actif, verrou=not c.verrou),
+                                                         tr("Déverrouiller le calque") if c.verrou
+                                                         else tr("Verrouiller le calque")))
+            menu.addSeparator()
+        menu.addAction(tr("Nouveau calque"), self.nouveau).setShortcut("Ctrl+Shift+N")
+        menu.addAction(tr("Nouveau groupe"), self.nouveau_groupe)
+        return menu
+
+    def _visibles(self, oui: bool):
+        doc = self.doc
+        calques = [replace(c, visible=oui) if i in self.choisis else c for i, c in enumerate(doc.calques)]
+        self.demande.emit(doc.etat_avec(calques), tr("Afficher le calque") if oui else tr("Masquer le calque"))
 
     # ---------------------------------------------------------- actions
     def _ligne_choisie(self, rang: int):
@@ -551,9 +679,16 @@ class PanneauCalques(QWidget):
             self.demande.emit(etat, tr("Monter le calque") if sens > 0 else tr("Descendre le calque"))
 
     def fusionner(self):
-        etat = self.doc.etat_fusionner_bas()
+        """Plusieurs calques choisis : ils sont fusionnés ensemble ; sinon, avec le calque du dessous (Ctrl+E)."""
+        if self.doc is None:
+            return
+        plusieurs = len(self.choisis) > 1
+        etat = self.doc.etat_fusionner_choisis(self.choisis) if plusieurs else self.doc.etat_fusionner_bas()
         if etat:
             self.demande.emit(etat, tr("Fusionner les calques"))
+        elif plusieurs:
+            self.refus.emit(tr("Impossible de fusionner : un des calques choisis est verrouillé, est un groupe ou un "
+                               "calque de réglage."))
 
     def aplatir(self):
         etat = self.doc.etat_aplatir()
@@ -561,9 +696,9 @@ class PanneauCalques(QWidget):
             self.demande.emit(etat, tr("Aplatir l'image"))
 
     def supprimer(self):
-        etat = self.doc.etat_supprimer()
+        etat = self.doc.etat_supprimer_choisis(self.choisis or {self.doc.actif})
         if etat:
-            self.demande.emit(etat, tr("Supprimer le calque"))
+            self.demande.emit(etat, tr("Supprimer les calques") if len(self.choisis) > 1 else tr("Supprimer le calque"))
 
     def _double_clic(self, item):
         """Comme Photoshop : double-clic sur le nom = renommer ; ailleurs : réglage (calque de réglage) ou style."""

@@ -86,6 +86,15 @@ class ApercuPolices(QStyledItemDelegate):
         p.restore()
 
 
+class ChoixPolice(QFontComboBox):
+    """Liste des polices qui prévient quand elle se referme (fin de l'aperçu sur la photo)."""
+    fermee = Signal()
+
+    def hidePopup(self):
+        super().hidePopup()
+        self.fermee.emit()
+
+
 def _titre(texte: str) -> QLabel:
     l = QLabel(f"<b>{texte}</b>")
     l.setContentsMargins(0, 8, 0, 0)
@@ -94,6 +103,7 @@ def _titre(texte: str) -> QLabel:
 
 class PanneauTexte(QScrollArea):
     modifie = Signal(object, str)        # (nouveau Texte, nom du réglage changé)
+    apercu_police = Signal(str)          # police survolée dans la liste ("" : liste fermée, retour au texte)
 
     def __init__(self, icones):
         super().__init__()
@@ -121,8 +131,11 @@ class PanneauTexte(QScrollArea):
 
         # ---- caractères
         lay.addWidget(_titre(tr("Caractères")))
-        self.police = QFontComboBox()
+        self.police = ChoixPolice()
         self.police.setItemDelegate(ApercuPolices(self.exemple_police, self.police))
+        # survoler une police dans la liste la montre tout de suite sur le texte de la photo (sans rien changer)
+        self.police.highlighted.connect(lambda i: self.apercu_police.emit(self.police.itemText(i)))
+        self.police.fermee.connect(lambda: self.apercu_police.emit(""))
         self.police.view().setMinimumWidth(460)
         self.police.setToolTip(tr("La liste montre chaque police avec le début de ton texte (ou de la partie "
                                   "sélectionnée)"))

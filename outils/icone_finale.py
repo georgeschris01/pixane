@@ -11,12 +11,20 @@ sys.path.insert(0, str(Path(__file__).parent))
 from logos_pixane import BORD, FOND, LOGOS, rendre, svg  # noqa: E402
 
 titre, defs, corps = LOGOS["1-p-pixels"]
-complet = svg(defs, corps)
+
+
+def plein(c):
+    """Le dessin agrandi pour remplir l'icône (le carré arrondi touche presque les bords, comme les icônes de
+    Windows ; avant, il laissait 12 px de vide sur 256 et paraissait plus petit que les autres)."""
+    return f'<g transform="translate(128 128) scale(1.085) translate(-128 -128)">{c}</g>'
+
+
+complet = svg(defs, plein(corps))
 # version simplifiée pour 16 à 24 px : trait plus épais, un seul pixel, pas d'étincelle
-simple = svg(defs, FOND + BORD
-             + '<path d="M88 200 V62 H126 A44 44 0 0 1 166 124" fill="none" stroke="url(#r)" stroke-width="42" '
-               'stroke-linecap="round" stroke-linejoin="round"/>'
-             + '<rect x="128" y="138" width="34" height="34" rx="7" fill="#EC4A60"/>')
+simple = svg(defs, plein(FOND + BORD
+                         + '<path d="M88 200 V62 H126 A44 44 0 0 1 166 124" fill="none" stroke="url(#r)" '
+                           'stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>'
+                         + '<rect x="128" y="138" width="34" height="34" rx="7" fill="#EC4A60"/>'))
 
 app = QGuiApplication(sys.argv)
 racine = Path(__file__).resolve().parents[1]

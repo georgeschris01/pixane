@@ -924,6 +924,40 @@ class Document(QObject):
         calques[self.actif - 1:self.actif + 1] = [fusion]
         return self.etat_avec(calques, self.actif - 1)
 
+    def etat_fusionner_choisis(self, indexes):
+        """Fusionner les calques choisis (Ctrl+clic dans le panneau) en un seul, à la place du plus haut et avec son
+        nom. None si moins de deux, ou si l'un est verrouillé, un groupe ou un calque de réglage."""
+        idx = sorted(set(i for i in indexes if 0 <= i < len(self.calques)))
+        if len(idx) < 2:
+            return None
+        choisis = [self.calques[i] for i in idx]
+        if any(c.verrou or c.special for c in choisis):
+            return None
+        w, h = self.taille()
+        img = fusionner([replace(c, dans=None) for c in choisis], w, h)
+        haut = choisis[-1]
+        fusion = Calque(haut.nom, img, dans=haut.dans)
+        calques = []
+        for i, c in enumerate(self.calques):
+            if i == idx[-1]:
+                calques.append(fusion)
+            elif i not in idx:
+                calques.append(c)
+        return self.etat_avec(calques, idx[-1] - (len(idx) - 1))
+
+    def etat_supprimer_choisis(self, indexes):
+        """Supprimer les calques choisis (et le contenu des groupes choisis). None s'il ne resterait aucun calque
+        ou si l'un est verrouillé."""
+        enlever = set()
+        for i in indexes:
+            if 0 <= i < len(self.calques):
+                enlever |= set(composition.descendants(self.calques, i)) | {i}
+        if not enlever or len(self.calques) - len(enlever) < 1 or any(self.calques[i].verrou for i in enlever):
+            return None
+        calques = [c for i, c in enumerate(self.calques) if i not in enlever]
+        reste = [i for i in range(len(self.calques)) if i not in enlever and i < min(enlever)]
+        return self.etat_avec(calques, len(reste) - 1 if reste else 0)
+
     def etat_aplatir(self):
         if len(self.calques) <= 1 or any(c.verrou for c in self.calques):
             return None

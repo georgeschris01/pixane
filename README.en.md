@@ -4,6 +4,8 @@
 
 Free photo editor for Windows, with artificial intelligence retouching **that runs entirely on your own PC**. Interface in English and French.
 
+**Who is it for?** Pixane is designed for people who are new to photo editing, or have little experience with it: the tools go straight to the point, the AI takes care of the hard work and the help explains every setting step by step. For advanced professional work, software such as Photoshop remains the reference; Pixane aims to make photo editing accessible to everyone.
+
 > **No online AI.** Pixane never sends your photos over the Internet: every AI action runs on your computer, with models installed on your disk. No account, no subscription, no limit. The Internet is only used to download the AI engine once; after that, Pixane works even offline.
 >
 > **Speed depends on your PC**, above all on the **graphics card**: the more powerful it is (and the more memory it has), the faster the AI processing. See [System requirements](#system-requirements).
@@ -494,6 +496,9 @@ it back, shrink it, show it again.
 | **Drag a layer** | Change its place in the stack with the mouse: grab the row (on the name) and drag it up or down; an **orange line** shows where it will go. Dropped just below a layer of an open group, it enters the group; a group moves with its layers. A single Undo step |
 | **Blend mode** (list at the top of the panel) | How the layer mixes with what is below (see below) |
 | **Mask thumbnail** (right of the thumbnail) | The layer's mask, if it has one. Click: you paint the mask (orange frame); click the layer thumbnail: you paint the pixels again. Shift+click: disable / enable the mask (crossed in red) |
+| **Ctrl+click** on a layer | Adds it to the chosen layers (or removes it): you can choose several, they are highlighted in blue |
+| **Shift+click** on a layer | Chooses all the layers between the active layer and this one |
+| **Right-click** | Layer menu: rename, duplicate, delete, merge, flatten, group, style, mask, show / hide, lock, new layer. With several chosen layers: **Merge the chosen layers**, delete, show or hide them |
 
 ### The buttons (left to right)
 | Button | Action |
@@ -505,9 +510,9 @@ it back, shrink it, show it again.
 | **Duplicate** | Copies the selected layer (Ctrl+J); a group is copied with its layers |
 | **fx** | Layer style (see below) |
 | **Move up / down** | Changes the layer's place in the stack; enters an open group, leaves it at the edge; a group moves with its layers |
-| **Merge** | Combines the selected layer with the one below (opacity, mask and mode applied) |
+| **Merge** (Ctrl+E) | Several chosen layers: combines them into one (in place of the top one, with its name). Only one: combines it with the one below (opacity, mask and mode applied). Refused for a locked layer, a group or an adjustment layer |
 | **Flatten** | Combines all visible layers into a single "Background" |
-| **Delete** | Deletes the selected layer (a group: with its layers) |
+| **Delete** | Deletes the selected layer, or all the chosen layers (a group: with its layers) |
 
 ### Blend modes
 The same as Photoshop, sorted by family: **Normal**; **Darken**, **Multiply**, **Colour burn** (darkening);
@@ -608,7 +613,7 @@ All layer actions can be undone with Ctrl+Z (changing the selected layer does no
 ### Panel settings
 | Setting | Effect |
 |---|---|
-| **Font** | All fonts installed in Windows. The list shows each font **with the beginning of your text** (or of the part selected in the box), otherwise "Aa Bb Cc 123" |
+| **Font** | All fonts installed in Windows. The list shows each font **with the beginning of your text** (or of the part selected in the box), otherwise "Aa Bb Cc 123". Hovering over a font **applies it at once to the text on the photo** so you can see the result; closing the list without choosing puts it back as before |
 | **Size** | Letter height, in pixels of the photo |
 | **Colour** (swatch) | Letter colour, with transparency (alpha channel) |
 | **B / I / U / S** | Bold, italic, underline, strikethrough |

@@ -179,10 +179,13 @@ class APropos(QDialog):
         texte = QLabel(
             f"<h2 style='margin:0'>Pixane {__version__}</h2>"
             + tr("<p>Éditeur photo avec retouche par IA sur votre PC.</p>"
+                 "<p>Pixane est pensé pour celles et ceux qui débutent en retouche photo, ou qui en ont peu "
+                 "l'expérience : les outils vont à l'essentiel, l'IA se charge du travail difficile et l'aide "
+                 "explique chaque réglage pas à pas. Pour un travail professionnel poussé, des logiciels comme "
+                 "Photoshop restent la référence ; Pixane, lui, veut rendre la retouche accessible à tous.</p>"
                  "<p>© 2026 Georges Christophe (chrypox)<br>Licence Pixane 1.1 : gratuit, code source ouvert, "
                  "non commercial. Modifications permises en gardant le nom de l'auteur et la même licence.</p>"
-                 "<p>Moteur IA : ComfyUI (GPL-3.0). Modèle Flux Fill : licence FLUX.1 [dev], non commerciale.</p>"
-                 "<p>Écrit avec l'aide de l'IA Claude Code.</p>"))
+                 "<p>Moteur IA : ComfyUI (GPL-3.0). Modèle Flux Fill : licence FLUX.1 [dev], non commerciale.</p>"))
         texte.setWordWrap(True)
         texte.setTextFormat(Qt.RichText)
         texte.setMinimumWidth(420)

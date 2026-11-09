@@ -4,6 +4,8 @@
 
 Éditeur photo gratuit pour Windows, avec de la retouche par intelligence artificielle **qui tourne entièrement sur votre PC**. Interface en français et en anglais.
 
+**Pour qui ?** Pixane est pensé pour celles et ceux qui débutent en retouche photo, ou qui en ont peu l'expérience : les outils vont à l'essentiel, l'IA se charge du travail difficile et l'aide explique chaque réglage pas à pas. Pour un travail professionnel poussé, des logiciels comme Photoshop restent la référence ; Pixane, lui, veut rendre la retouche accessible à tous.
+
 > **Aucune IA en ligne.** Pixane n'envoie jamais vos photos sur Internet : toutes les actions IA tournent sur votre ordinateur, avec des modèles installés sur votre disque. Pas de compte, pas d'abonnement, pas de limite. Internet sert seulement à télécharger le moteur IA une fois ; ensuite, Pixane marche même sans connexion.
 >
 > **La vitesse dépend de votre PC**, surtout de la **carte graphique** : plus elle est puissante (et plus elle a de mémoire), plus les traitements IA vont vite. Voir [Configuration](#configuration).
@@ -509,6 +511,9 @@ coupé** : on peut le ramener, le réduire, le réafficher.
 | **Glisser un calque** | Changer sa place dans la pile à la souris : prenez la ligne (sur le nom) et glissez-la vers le haut ou le bas ; un **trait orange** montre où il ira. Lâché juste sous un calque d'un groupe ouvert, il entre dans le groupe ; un groupe bouge avec ses calques. Une seule étape dans Annuler |
 | **Mode de fusion** (liste en haut du panneau) | Comment le calque se mélange à ce qui est dessous (voir plus bas) |
 | **Vignette du masque** (à droite de la vignette) | Le masque du calque, s'il en a un. Clic : on peint le masque (cadre orange) ; clic sur la vignette du calque : on repeint les pixels. Maj+clic : désactiver / réactiver le masque (barré en rouge) |
+| **Ctrl+clic** sur un calque | L'ajoute aux calques choisis (ou l'en retire) : on peut en choisir plusieurs, ils sont surlignés en bleu |
+| **Maj+clic** sur un calque | Choisit tous les calques entre le calque actif et celui-ci |
+| **Clic droit** | Menu du calque : renommer, dupliquer, supprimer, fusionner, aplatir, grouper, style, masque, afficher / masquer, verrouiller, nouveau calque. Avec plusieurs calques choisis : **Fusionner les calques choisis**, les supprimer, les afficher ou les masquer |
 
 ### Les boutons (de gauche à droite)
 | Bouton | Action |
@@ -520,9 +525,9 @@ coupé** : on peut le ramener, le réduire, le réafficher.
 | **Dupliquer** | Copie le calque choisi (Ctrl+J) ; un groupe est copié avec ses calques |
 | **fx** | Style du calque (voir plus bas) |
 | **Monter / Descendre** | Change la place du calque dans la pile ; entre dans un groupe ouvert, en sort au bord ; un groupe bouge avec ses calques |
-| **Fusionner** | Réunit le calque choisi avec celui du dessous (opacité, masque et mode appliqués) |
+| **Fusionner** (Ctrl+E) | Plusieurs calques choisis : les réunit en un seul (à la place du plus haut, avec son nom). Un seul : le réunit avec celui du dessous (opacité, masque et mode appliqués). Refusé pour un calque verrouillé, un groupe ou un calque de réglage |
 | **Aplatir** | Réunit tous les calques visibles en un seul « Arrière-plan » |
-| **Supprimer** | Supprime le calque choisi (un groupe : avec ses calques) |
+| **Supprimer** | Supprime le calque choisi, ou tous les calques choisis (un groupe : avec ses calques) |
 
 ### Modes de fusion
 Les mêmes que Photoshop, rangés par familles : **Normal** ; **Obscurcir**, **Produit**, **Densité couleur +** (ce qui
@@ -626,7 +631,7 @@ Outil **Texte** (touche **T**, icône « T » dans la barre d'outils). Le pannea
 ### Réglages du panneau
 | Réglage | Effet |
 |---|---|
-| **Police** | Toutes les polices installées dans Windows. La liste montre chaque police **avec le début de votre texte** (ou de la partie sélectionnée dans la case), sinon « Aa Bb Cc 123 » |
+| **Police** | Toutes les polices installées dans Windows. La liste montre chaque police **avec le début de votre texte** (ou de la partie sélectionnée dans la case), sinon « Aa Bb Cc 123 ». En passant la souris sur une police, **le texte de la photo la prend tout de suite** pour voir le résultat ; liste fermée sans choisir : il revient comme avant |
 | **Taille** | Hauteur des lettres, en pixels de la photo |
 | **Couleur** (pastille) | Couleur des lettres, avec la transparence (canal alpha) |
 | **G / I / S / B** | Gras, italique, souligné, barré |

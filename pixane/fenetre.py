@@ -360,6 +360,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                      "a_nouveau_calque")
         self._action(m, tr("Dupliquer le calque"), "Ctrl+J", lambda: self.calques.dupliquer() if self.doc else None,
                      "a_dupliquer_calque")
+        self._action(m, tr("Fusionner les calques"), "Ctrl+E", lambda: self.calques.fusionner() if self.doc else None,
+                     "a_fusionner_calques")
+        self._action(m, tr("Aplatir l'image"), None, lambda: self.calques.aplatir() if self.doc else None,
+                     "a_aplatir")
         self._menus_calques(self._m_image, m)
 
         m = self.menuBar().addMenu(tr("&Affichage"))
@@ -857,6 +861,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.calques = PanneauCalques(lambda nom: icone(nom, self.couleurs.texte, self.couleurs.accent, 20))
         self.calques.demande.connect(self._commande_calques)
         self.calques.style_demande.connect(self.style_calque)
+        self.calques.refus.connect(lambda m: self.statusBar().showMessage(m, 6000))
         self.calques.reglage_demande.connect(lambda t: self.nouveau_calque_reglage(t) if t else self.modifier_reglage())
         dock.setWidget(self.calques)
         dock.setFixedWidth(290)
@@ -887,6 +892,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         except (ValueError, TypeError):
             pass
         self.panneau_texte.modifie.connect(self._texte_modifie)
+        self.panneau_texte.apercu_police.connect(self._apercu_police)
         self.dock_texte.setWidget(self.panneau_texte)
         self.dock_texte.setFixedWidth(290)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_texte)
@@ -934,6 +940,29 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         cle = ("texte", self._session_texte, doc.actif, champ)
         self.historique.push(CommandeEtat(doc, doc.etat(), doc.etat_texte_modifie(doc.actif, t),
                                           tr("Modifier le texte"), cle))
+
+    def _apercu_police(self, famille: str):
+        """Police survolée dans la liste du panneau Texte : le texte de la photo la prend tout de suite (aperçu, pas
+        dans Annuler) ; liste fermée sans choix : il revient comme avant."""
+        from .texte import rendre
+        doc = self.doc
+        if not doc:
+            return
+        avant = getattr(self, "_police_avant", None)
+        if not famille:                                   # liste fermée : le texte d'avant (s'il n'a pas changé)
+            self._police_avant = None
+            if avant is not None and avant[0] is doc and avant[1] < len(doc.calques):
+                c = doc.calques[avant[1]]
+                if c.texte is avant[2]:
+                    doc.apercu_calque(avant[1], rendre(c.texte, *doc.taille()), texte=c.texte)
+            return
+        c = doc.calque_actif
+        if c.texte is None or c.verrou or not self.panneau_texte.lie:
+            return
+        if avant is None or avant[0] is not doc or avant[1] != doc.actif:
+            self._police_avant = (doc, doc.actif, c.texte)
+        t = replace(self._police_avant[2], police=famille)
+        doc.apercu_calque(doc.actif, rendre(t, *doc.taille()), texte=self._police_avant[2])
 
     def _texte_en_pixels(self):
         if self.doc and self.doc.calque_actif.texte is not None and not self.doc.calque_actif.verrou:
@@ -1030,7 +1059,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                   self.a_redresser, self.a_transformer, self.a_reglages_image, self.a_sel_agrandir,
                   self.a_sel_reduire, self.a_sel_adoucir, self.a_contour, self.a_couper, self.a_copier, self.a_supprimer_selection,
                   self.a_style, self.a_copier_style, self.a_coller_style, self.a_enlever_style, self.a_figer_style,
-                  self.a_nouveau_calque, self.a_dupliquer_calque, self.a_zone_travail, self.a_exporter_cmjn, self.a_exporter_sous,
+                  self.a_nouveau_calque, self.a_dupliquer_calque, self.a_fusionner_calques, self.a_aplatir, self.a_zone_travail, self.a_exporter_cmjn, self.a_exporter_sous,
                   self.a_tout_apparaitre,
                   self.a_epreuve, *self._actions_calques_doc()):
             a.setEnabled(a_doc)
