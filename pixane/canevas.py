@@ -5,13 +5,15 @@ from __future__ import annotations
 import math
 from dataclasses import replace
 
+import numpy as np
+
 from PySide6.QtCore import QLineF, QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPainterPath, QPen, QPixmap, QPolygonF, QTransform
 from PySide6.QtWidgets import QWidget
 
 from . import regles
 from .composition import argb_vers_masque, masque_vers_argb
-from .document import COULEUR_SELECTION, Document
+from .document import COULEUR_SELECTION, Document, tableau
 from .langue import tr
 from .retouche import Trait
 from .texte import contient, contour_bloc, rendre
@@ -54,6 +56,7 @@ class Canevas(QWidget):
     transfo_change = Signal()                   # Transformer (Ctrl+T) : taille ou angle modifié
     transfo_valide = Signal()                   # Entrée ou double-clic dans le cadre
     transfo_annule = Signal()                   # Échap
+    transfo_demandee = Signal()                 # outil Déplacer : poignée du cadre attrapée -> Transformer (Ctrl+T)
     message = Signal(str)                       # information (barre d'état)
     baguette_clic = Signal(object, str)         # point (image), mode « nouvelle » / « ajouter » / « retirer »
     baguette_glisse = Signal(float)             # écart horizontal (écran) depuis le clic -> tolérance
@@ -116,6 +119,9 @@ class Canevas(QWidget):
         self._recadre_glisse = None  # (mode « nouveau » / « deplacer » / côtés, point de départ, cadre d'origine)
         # transformer un calque (Ctrl+T)
         self.transfo: Transformation | None = None
+        self.cadre_deplacer = True              # outil Déplacer : cadre à poignées autour du calque (comme Photoshop)
+        self._cle_cadre_deplacer = None
+        self._rect_cadre_deplacer = None
         self._transfo_index = 0
         self._transfo_glisse = False
         # sélections calculées
@@ -279,6 +285,7 @@ class Canevas(QWidget):
         if self.transfo is not None:
             self._dessiner_transfo(p)
             return
+        self._dessiner_cadre_deplacer(p)
         if self.outil == RECADRER and self.recadre is not None:
             self._dessiner_recadre(p)
         if self._glisse_dessin is not None:
@@ -1018,14 +1025,8 @@ class Canevas(QWidget):
     def _curseur_transfo(self, quoi):
         if quoi == "deplacer":
             self.setCursor(Qt.SizeAllCursor)
-        elif quoi == "tourner":
-            self.setCursor(Qt.CrossCursor)
         else:
-            gx, gy = POIGNEES[quoi]
-            a = (math.degrees(math.atan2(gy, gx)) + self.transfo.angle) % 180
-            self.setCursor(Qt.SizeHorCursor if a < 22.5 or a >= 157.5 else
-                           Qt.SizeFDiagCursor if a < 67.5 else
-                           Qt.SizeVerCursor if a < 112.5 else Qt.SizeBDiagCursor)
+            self._curseur_poignee(quoi, self.transfo.angle)
 
     def _dessiner_transfo(self, p: QPainter):
         coins = [self.vers_ecran(c) for c in self.transfo.coins()]
@@ -1045,6 +1046,76 @@ class Canevas(QWidget):
         p.drawLine(QPointF(c.x() - 6, c.y()), QPointF(c.x() + 6, c.y()))
         p.drawLine(QPointF(c.x(), c.y() - 6), QPointF(c.x(), c.y() + 6))
         p.restore()
+
+    # ---------------------------------------------------------- outil Déplacer : cadre à poignées
+    def rect_deplacer(self) -> QRectF | None:
+        """Cadre de l'outil Déplacer (coordonnées image) : les pixels visibles du calque choisi, ou seulement ceux de
+        la sélection. None quand il n'a pas lieu d'être (autre outil, calque vide, verrouillé, caché, texte…)."""
+        if (not self.doc or self.outil != DEPLACER or not self.cadre_deplacer or self.transfo is not None
+                or self.cadre is not None or self.style_ouvert or self.sur_masque()):
+            return None
+        c = self.doc.calque_actif
+        if c.verrou or c.special or c.texte is not None or not c.visible:
+            return None
+        if self._calque_glisse is not None and self._rect_cadre_deplacer is not None:   # pendant un déplacement :
+            dx, dy = getattr(self, "_decalage_calque", (0, 0))                           # le cadre suit
+            return self._rect_cadre_deplacer.translated(dx, dy)
+        cle = (id(self.doc), self.doc.actif, c.image.cacheKey(), self.doc.selection.cacheKey())
+        if cle != self._cle_cadre_deplacer:
+            a = tableau(c.image)[:, :, 3]
+            if self.doc.rect_selection() is not None:
+                a = np.minimum(a, tableau(self.doc.selection)[:, :, 3])
+            ys, xs = (a > 0).nonzero()
+            self._rect_cadre_deplacer = (QRectF(float(xs.min()), float(ys.min()), float(xs.max() - xs.min() + 1),
+                                                float(ys.max() - ys.min() + 1)) if len(ys) else None)
+            self._cle_cadre_deplacer = cle
+        return self._rect_cadre_deplacer
+
+    def _points_cadre_deplacer(self, r: QRectF) -> dict:
+        cx, cy, hw, hh = r.center().x(), r.center().y(), r.width() / 2, r.height() / 2
+        return {nom: self.vers_ecran(QPointF(cx + gx * hw, cy + gy * hh)) for nom, (gx, gy) in POIGNEES.items()}
+
+    def _sous_cadre_deplacer(self, pos: QPointF):
+        """Poignée sous la souris (son nom), « tourner » juste à l'extérieur d'un coin, sinon None."""
+        r = self.rect_deplacer()
+        if r is None:
+            return None
+        points = self._points_cadre_deplacer(r)
+        for nom, pt in points.items():
+            if QLineF(pt, pos).length() <= 8:
+                return nom
+        dedans = r.contains(self.vers_image(pos))
+        if not dedans and any(QLineF(points[n], pos).length() <= 24 for n in ("hg", "hd", "bd", "bg")):
+            return "tourner"
+        return None
+
+    def _dessiner_cadre_deplacer(self, p: QPainter):
+        r = self.rect_deplacer()
+        if r is None:
+            return
+        points = self._points_cadre_deplacer(r)
+        coins = QPolygonF([points[n] for n in ("hg", "hd", "bd", "bg")])
+        p.save()
+        p.setBrush(Qt.NoBrush)
+        p.setPen(QPen(QColor(0, 0, 0, 120), 1))
+        p.drawPolygon(coins)
+        p.setPen(QPen(QColor(255, 255, 255, 200), 1, Qt.DashLine))
+        p.drawPolygon(coins)
+        p.setPen(QPen(QColor(0, 0, 0, 160), 1))
+        p.setBrush(QColor(255, 255, 255))
+        for pt in points.values():
+            p.drawRect(QRectF(pt.x() - 4, pt.y() - 4, 8, 8))
+        p.restore()
+
+    def _curseur_poignee(self, quoi, angle: float = 0.0):
+        if quoi == "tourner":
+            self.setCursor(Qt.CrossCursor)
+            return
+        gx, gy = POIGNEES[quoi]
+        a = (math.degrees(math.atan2(gy, gx)) + angle) % 180
+        self.setCursor(Qt.SizeHorCursor if a < 22.5 or a >= 157.5 else
+                       Qt.SizeFDiagCursor if a < 67.5 else
+                       Qt.SizeVerCursor if a < 112.5 else Qt.SizeBDiagCursor)
 
     def _damier(self) -> QPixmap:
         if getattr(self, "_motif_damier", None) is None:
@@ -1252,6 +1323,14 @@ class Canevas(QWidget):
         if self.outil == DEPLACER and self._repere_sous(pos):
             return
         if self.outil == DEPLACER:
+            quoi = self._sous_cadre_deplacer(pos)
+            if quoi is not None:                         # poignée attrapée : on passe en Transformer (Ctrl+T)
+                self.transfo_demandee.emit()
+                if self.transfo is not None:
+                    self.transfo.commencer(quoi, self.vers_image(pos))
+                    self._transfo_glisse = True
+                    self._curseur_transfo(quoi)
+                return
             self._presser_deplacer(pos)
             return
         if self.outil == RECADRER:
@@ -1374,8 +1453,11 @@ class Canevas(QWidget):
             self.setCursor(Qt.SplitVCursor if self.repere_tire[0] == "h" else Qt.SplitHCursor)
         elif self.outil == DEPLACER and self.doc and not self._espace and not e.buttons():
             r = self._repere_a(pos)
+            quoi = self._sous_cadre_deplacer(pos) if r is None else None
             if r is not None:
                 self.setCursor(Qt.SplitVCursor if r[0] == "h" else Qt.SplitHCursor)
+            elif quoi is not None:
+                self._curseur_poignee(quoi)
             else:
                 self._curseur()
         if self._glisse_dessin is not None:

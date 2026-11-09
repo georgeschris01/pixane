@@ -213,6 +213,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.canevas.transfo_change.connect(self._transfo_change)
         self.canevas.transfo_valide.connect(self._valider_transfo)
         self.canevas.transfo_annule.connect(self._annuler_transfo)
+        self.canevas.transfo_demandee.connect(self.transformer)
         self._transfo_avant = None
         self.groupe_historique.indexChanged.connect(self._historique_bouge)
         self._session_texte = 0      # regroupe les changements d'un même texte dans Annuler
@@ -554,6 +555,18 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         lay.addWidget(self.b_annuler_recadre)
         tout.addWidget(self.opt_recadrer)
         self._recadre_change(None)
+        # outil Déplacer : cadre à poignées (agrandir, réduire, tourner sans passer par Ctrl+T)
+        self.opt_deplacer = QWidget()
+        lay = QHBoxLayout(self.opt_deplacer)
+        lay.setContentsMargins(0, 0, 0, 0)
+        self.c_cadre_deplacer = QCheckBox(tr("Afficher le cadre de transformation"))
+        self.c_cadre_deplacer.setToolTip(tr("Cadre à poignées autour du calque (ou de la sélection) : coins = taille, "
+                                            "juste à l'extérieur d'un coin = tourner"))
+        self.c_cadre_deplacer.setChecked(self.reglages.value("cadre_deplacer", True, type=bool))
+        self.canevas.cadre_deplacer = self.c_cadre_deplacer.isChecked()
+        self.c_cadre_deplacer.toggled.connect(self._cadre_deplacer)
+        lay.addWidget(self.c_cadre_deplacer)
+        tout.addWidget(self.opt_deplacer)
         # baguette magique
         self.opt_baguette = QWidget()
         lay = QHBoxLayout(self.opt_baguette)
@@ -742,8 +755,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         elif outil == PINCEAU:
             (self.p_retirer if self.canevas.mode_retirer else self.p_ajouter).setChecked(True)
         self.p_nouvelle.setVisible(outil in (RECTANGLE, LASSO) + OUTILS_AUTO)
-        self.options.setEnabled(outil not in (MAIN, TEXTE, DEPLACER))
-        self.opt_taille.setVisible(outil in OUTILS_ROND or outil in (MAIN, TEXTE, DEPLACER, RECTANGLE, LASSO,
+        self.options.setEnabled(outil not in (MAIN, TEXTE))
+        self.opt_taille.setVisible(outil in OUTILS_ROND or outil in (MAIN, TEXTE, RECTANGLE, LASSO,
                                                                      FORMES))
         if outil in (BAGUETTE, OBJET):
             self.opt_taille.setVisible(False)
@@ -755,6 +768,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.opt_seau.setVisible(outil == SEAU)
         self.opt_formes.setVisible(outil == FORMES)
         self.opt_recadrer.setVisible(outil == RECADRER)
+        self.opt_deplacer.setVisible(outil == DEPLACER)
         # la barre du haut se remet en page (sinon un groupe trop large la ferait déborder)
         self.options.adjustSize()
         self.barre_haut.layout().invalidate()
@@ -1680,6 +1694,11 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         from .styles import image_rendue
         self._commande_calques(self.doc.etat_calque_modifie(self.doc.actif, image=image_rendue(c), style=None,
                                                             texte=None), tr("Mettre le style dans les pixels"))
+
+    def _cadre_deplacer(self, oui: bool):
+        self.canevas.cadre_deplacer = oui
+        self.reglages.setValue("cadre_deplacer", oui)
+        self.canevas.update()
 
     def transformer(self):
         if not self.doc or self.canevas.transfo is not None or self.canevas.cadre is not None:

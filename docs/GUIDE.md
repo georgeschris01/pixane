@@ -279,7 +279,16 @@ Ils agissent sur le **calque choisi** dans le panneau Calques :
 Un calque **verrouillé** est protégé ; un **texte** coupé ou supprimé devient une image. Ctrl+Z annule tout.
 
 Les autres outils : **Déplacer** (V) bouge le contenu du **calque choisi** (un texte déplacé reste modifiable ; ce qui
-sort de l'image est coupé ; refusé sur un calque verrouillé). La **Gomme de calque** (G) efface **pour de vrai** les
+sort de l'image est coupé ; refusé sur un calque verrouillé).
+- Un **cadre à poignées** entoure ce qu'il y a sur le calque (ou seulement la partie sélectionnée, s'il y a une
+  sélection) : **glisser au milieu** déplace ; **un coin** change la taille en gardant les proportions (Maj : libre) ;
+  **un milieu de côté**, seulement la largeur ou la hauteur ; **juste à l'extérieur d'un coin** (curseur en croix),
+  on tourne. Dès qu'une poignée est touchée, c'est le mode *Transformer* (comme Ctrl+T) : **Entrée** pour garder,
+  **Échap** pour annuler.
+- La case **Afficher le cadre de transformation** (en haut) le cache s'il gêne. Pas de cadre sur un calque vide,
+  verrouillé, caché ou de texte (un texte change de taille avec l'outil Texte).
+
+La **Gomme de calque** (G) efface **pour de vrai** les
 pixels du calque choisi (voir chapitre 6) ; elle est rangée avec le pinceau de couleur et le tampon.
 
 **Conseil (texte, cursive, objet fin)** : couvrez bien chaque lettre, bords compris, avec un pinceau un peu plus large

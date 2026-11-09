@@ -1,15 +1,19 @@
-"""Coller une image plus grande que la photo (réduite, cadre Transformer ouvert, rien de perdu) et Transformer (Ctrl+T)
-seulement la sélection. Usage : essai_transformer_coller.py"""
+"""Coller une image plus grande que la photo (réduite, cadre Transformer ouvert, rien de perdu), Transformer (Ctrl+T)
+seulement la sélection, et cadre à poignées de l'outil Déplacer. Usage : essai_transformer_coller.py"""
 import os
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ["PIXANE_REGLAGES"] = "Pixane-essais"
-from PySide6.QtCore import QPointF
-from PySide6.QtGui import QColor, QImage, QPainter
+from dataclasses import replace
+
+from PySide6.QtCore import QEvent, QPointF, QRectF, Qt
+from PySide6.QtGui import QColor, QImage, QMouseEvent, QPainter
 from PySide6.QtWidgets import QApplication
 
-from pixane.document import FORMAT_IMAGE, Document, nouvelle_selection, tableau
+from pixane.canevas import DEPLACER, RECTANGLE
+from pixane.document import FORMAT_IMAGE, Calque, Document, image_vide, nouvelle_selection, tableau
+from pixane.texte import Texte
 from pixane.fenetre import Fenetre
 from pixane.moteur import Moteur
 
@@ -101,6 +105,78 @@ f.transformer()
 verifier(f.canevas.transfo is not None and f.canevas.transfo.fond is None and f.canevas.transfo.bw == 200,
          "sans sélection : tout le calque")
 f._annuler_transfo()
+
+# 5. outil Déplacer : cadre à poignées
+c = f.canevas
+
+
+def souris_ecran(points):
+    c.event(QMouseEvent(QEvent.MouseButtonPress, points[0], points[0], Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
+    for e in points[1:]:
+        c.event(QMouseEvent(QEvent.MouseMove, e, e, Qt.NoButton, Qt.LeftButton, Qt.NoModifier))
+    c.event(QMouseEvent(QEvent.MouseButtonRelease, points[-1], points[-1], Qt.LeftButton, Qt.NoButton,
+                        Qt.NoModifier))
+
+
+def bbox(img):
+    ys, xs = (tableau(img)[:, :, 3] > 0).nonzero()
+    return int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())
+
+
+fond3 = QImage(200, 100, FORMAT_IMAGE)
+fond3.fill(QColor(255, 255, 255))
+doc3 = Document(fond3)
+carre = image_vide(200, 100)
+p = QPainter(carre)
+p.fillRect(20, 20, 40, 40, QColor(255, 0, 0))
+p.end()
+doc3.calques = doc3.calques + (Calque("Carré", carre),)
+doc3.actif = 1
+doc3._fusion = None
+f._installer_document(doc3)
+f._choisir_outil(DEPLACER)
+verifier(f.opt_deplacer.isVisible() and f.c_cadre_deplacer.isEnabled(), "case « Afficher le cadre de transformation »")
+verifier(c.rect_deplacer() == QRectF(20, 20, 40, 40), f"cadre autour du carré ({c.rect_deplacer()})")
+points = c._points_cadre_deplacer(c.rect_deplacer())
+verifier(c._sous_cadre_deplacer(points["bd"]) == "bd" and c._sous_cadre_deplacer(points["h"]) == "h",
+         "poignées reconnues sous la souris")
+verifier(c._sous_cadre_deplacer(points["hg"] - QPointF(14, 14)) == "tourner", "juste à l'extérieur d'un coin : tourner")
+verifier(c._sous_cadre_deplacer(c.vers_ecran(QPointF(40, 40))) is None, "au milieu : déplacer (pas de poignée)")
+# glisser le coin bas droit de (60, 60) à (100, 100) : le carré double
+souris_ecran([points["bd"], c.vers_ecran(QPointF(80, 80)), c.vers_ecran(QPointF(100, 100))])
+t = c.transfo
+verifier(t is not None and abs(t.sx - 2) < 0.1 and abs(t.sy - 2) < 0.1, "poignée tirée : mode Transformer, taille x2")
+f._valider_transfo()
+x0, y0, x1, y1 = bbox(doc3.calques[1].image)
+verifier(c.transfo is None and abs(x0 - 20) <= 1 and abs(y0 - 20) <= 1 and abs(x1 - 99) <= 2 and abs(y1 - 99) <= 2,
+         f"validé : carré de 80 px, coin haut gauche fixe ({x0}, {y0}, {x1}, {y1})")
+verifier(c.rect_deplacer() is not None and abs(c.rect_deplacer().width() - 80) <= 2, "le cadre suit la nouvelle taille")
+f.historique.undo()
+verifier(bbox(doc3.calques[1].image) == (20, 20, 59, 59), "Ctrl+Z : taille d'origine")
+# glisser au milieu : simple déplacement, pas de transformation
+souris_ecran([c.vers_ecran(QPointF(40, 40)), c.vers_ecran(QPointF(50, 45)), c.vers_ecran(QPointF(60, 50))])
+verifier(c.transfo is None and bbox(doc3.calques[1].image) == (40, 30, 79, 69), "glisser au milieu : déplacé seulement")
+f.historique.undo()
+# sélection : le cadre n'entoure qu'elle
+sel = nouvelle_selection(200, 100)
+p = QPainter(sel)
+p.fillRect(20, 20, 10, 40, QColor(0, 0, 0, 255))
+p.end()
+doc3.selection = sel
+c.update()
+verifier(c.rect_deplacer() == QRectF(20, 20, 10, 40), "avec une sélection : cadre autour de la partie sélectionnée")
+doc3.selection = nouvelle_selection(200, 100)
+# pas de cadre : case décochée, calque verrouillé, texte, autre outil
+f.c_cadre_deplacer.setChecked(False)
+verifier(c.rect_deplacer() is None and c._sous_cadre_deplacer(points["bd"]) is None, "case décochée : pas de cadre")
+f.c_cadre_deplacer.setChecked(True)
+doc3.calques = doc3.calques[:1] + (replace(doc3.calques[1], verrou=True),)
+verifier(c.rect_deplacer() is None, "calque verrouillé : pas de cadre")
+doc3.calques = doc3.calques[:1] + (replace(doc3.calques[1], verrou=False, texte=Texte(texte="A", x=40, y=40)),)
+verifier(c.rect_deplacer() is None, "calque de texte : pas de cadre (il se déplace comme un texte)")
+doc3.calques = doc3.calques[:1] + (replace(doc3.calques[1], texte=None),)
+f._choisir_outil(RECTANGLE)
+verifier(c.rect_deplacer() is None and not f.opt_deplacer.isVisible(), "autre outil : pas de cadre")
 
 print("ERREURS :", erreurs if erreurs else "aucune")
 sys.stdout.flush()

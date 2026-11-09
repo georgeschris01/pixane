@@ -269,7 +269,15 @@ They work on the **layer chosen** in the Layers panel:
 A **locked** layer is protected; a **text** that is cut or deleted becomes an image. Ctrl+Z undoes everything.
 
 The other tools: **Move** (V) moves the content of the **chosen layer** (a moved text stays editable; what goes
-outside the image is cut off; refused on a locked layer). The **Layer eraser** (G) **really** erases the pixels of the
+outside the image is cut off; refused on a locked layer).
+- A **frame with handles** surrounds what is on the layer (or only the selected part, if there is a selection):
+  **drag inside** to move; **a corner** changes the size keeping the proportions (Shift: free); **the middle of a
+  side**, only the width or the height; **just outside a corner** (cross cursor), you rotate. As soon as a handle is
+  touched, it is the *Transform* mode (like Ctrl+T): **Enter** to keep, **Esc** to cancel.
+- The **Show transform controls** box (at the top) hides it if it gets in the way. No frame on an empty, locked,
+  hidden or text layer (a text changes size with the Text tool).
+
+The **Layer eraser** (G) **really** erases the pixels of the
 chosen layer (see chapter 6); it is grouped with the colour brush and the clone stamp.
 
 **Tip (text, cursive, thin objects)**: cover each letter completely, edges included, with a brush slightly wider
