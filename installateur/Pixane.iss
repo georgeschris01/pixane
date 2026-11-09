@@ -20,10 +20,12 @@
 ; arrivé le 08/11/2026.
 [Setup]
 #ifdef Essai
+#define NomRaccourci "Pixane essai"
 AppId={{5D0E3B7A-2C41-4E8B-9F6A-0E55A1000001}
 #define CleDesinst "Software\Microsoft\Windows\CurrentVersion\Uninstall\{5D0E3B7A-2C41-4E8B-9F6A-0E55A1000001}_is1"
 AppName=Pixane essai
 #else
+#define NomRaccourci "Pixane"
 AppId={{89EBA9CC-CDC6-468F-A638-3F71B48EE9A3}
 #define CleDesinst "Software\Microsoft\Windows\CurrentVersion\Uninstall\{89EBA9CC-CDC6-468F-A638-3F71B48EE9A3}_is1"
 AppName=Pixane
@@ -159,15 +161,19 @@ english.DesinstReglages=Also delete Pixane's settings (language, theme, last fol
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreerIcone}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+#ifndef Essai
 Name: "associer"; Description: "{cm:Associer}"; GroupDescription: "{cm:AdditionalIcons}"
+#endif
 
 [InstallDelete]
 ; Mise à jour : l'ancienne version est retirée avant de copier la nouvelle (aucun fichier abandonné ne reste).
 Type: filesandordirs; Name: "{app}\python"
 Type: filesandordirs; Name: "{app}\pixane"
 ; Raccourcis de l'ancien nom (Chrypix)
+#ifndef Essai
 Type: files; Name: "{autoprograms}\Chrypix.lnk"
 Type: files; Name: "{autodesktop}\Chrypix.lnk"
+#endif
 
 [Files]
 ; Seulement le programme, Python et ses bibliothèques : aucun réglage, photo, modèle ni journal.
@@ -179,7 +185,9 @@ Source: "images\accueil-en-*.png"; Flags: dontcopy
 ; Langue choisie dans l'installateur = langue de Pixane (modifiable ensuite dans Affichage > Langue).
 Root: HKCU; Subkey: "Software\Pixane\Pixane"; ValueType: string; ValueName: "langue"; ValueData: "fr"; Languages: french
 Root: HKCU; Subkey: "Software\Pixane\Pixane"; ValueType: string; ValueName: "langue"; ValueData: "en"; Languages: english
-; Fichiers .pixane ouverts par Pixane (seulement si la case est cochée).
+; Fichiers .pixane ouverts par Pixane (seulement si la case est cochée ; jamais par un essai : sa désinstallation
+; effacerait l'association de la vraie installation, arrivé le 09/11/2026).
+#ifndef Essai
 Root: HKA; Subkey: "Software\Classes\.pixane"; ValueType: string; ValueName: ""; ValueData: "Pixane.Projet"; Flags: uninsdeletevalue; Tasks: associer
 Root: HKA; Subkey: "Software\Classes\Pixane.Projet"; ValueType: string; ValueName: ""; ValueData: "{cm:TypeProjet}"; Flags: uninsdeletekey; Tasks: associer
 Root: HKA; Subkey: "Software\Classes\Pixane.Projet\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\pixane.ico"; Tasks: associer
@@ -187,10 +195,11 @@ Root: HKA; Subkey: "Software\Classes\Pixane.Projet\DefaultIcon"; ValueType: stri
 Root: HKA; Subkey: "Software\Classes\Chrypix.Projet"; Flags: deletekey; Check: ChrAssocie
 Root: HKA; Subkey: "Software\Classes\.chr"; ValueType: none; ValueName: ""; Flags: deletevalue; Check: ChrAssocie
 Root: HKA; Subkey: "Software\Classes\Pixane.Projet\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python\Pixane.exe"" -m pixane ""%1"""; Tasks: associer
+#endif
 
 [Icons]
-Name: "{autoprograms}\Pixane"; Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; IconFilename: "{app}\pixane.ico"; AppUserModelID: "chrypox.Pixane"
-Name: "{autodesktop}\Pixane"; Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; IconFilename: "{app}\pixane.ico"; AppUserModelID: "chrypox.Pixane"; Tasks: desktopicon
+Name: "{autoprograms}\{#NomRaccourci}"; Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; IconFilename: "{app}\pixane.ico"; AppUserModelID: "chrypox.Pixane"
+Name: "{autodesktop}\{#NomRaccourci}"; Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; IconFilename: "{app}\pixane.ico"; AppUserModelID: "chrypox.Pixane"; Tasks: desktopicon
 
 [Run]
 ; Moteur IA absent et licence acceptée : le téléchargeur démarre (Pixane sera lancé ensuite par l'utilisateur).
