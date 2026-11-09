@@ -1008,7 +1008,7 @@ class Document(QObject):
 def taille_redressee(w: int, h: int, angle: float, recadrer: bool) -> tuple[int, int]:
     import math
     a = math.radians(abs(angle))
-    c, s = math.cos(a), math.sin(a)
+    c, s = abs(math.cos(a)), abs(math.sin(a))      # au-delà de 90° aussi
     if recadrer:      # plus grand rectangle de mêmes proportions dans la photo tournée
         k = min(w / (w * c + h * s), h / (w * s + h * c))
         return max(1, int(w * k)), max(1, int(h * k))

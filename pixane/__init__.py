@@ -1,2 +1,2 @@
 """Pixane : éditeur photo avec effacement, remplissage, agrandissement et upscale par IA (ComfyUI)."""
-__version__ = "0.8.0"
+__version__ = "0.9.0"

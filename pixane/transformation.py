@@ -3,7 +3,8 @@
 Le cadre entoure tous les pixels du calque, même ceux qui dépassent de la feuille, ou seulement ceux de la sélection
 (le reste du calque, `fond`, ne bouge pas). Rien n'est coupé : `rendu_entier` donne le calque entier, la feuille
 n'en montre qu'une partie. Coin : taille proportionnelle (Maj : libre), autour du coin opposé.
-Milieu d'un côté : une seule direction. Dedans : déplacer. Dehors : tourner autour du centre (Maj : par 15°).
+Milieu d'un côté : une seule direction. Dedans : déplacer. Dehors : tourner autour du centre, degré par degré
+(Maj : par 15°) ; la barre d'options permet aussi de taper l'angle, la largeur et la hauteur.
 """
 from __future__ import annotations
 
@@ -103,9 +104,7 @@ class Transformation:
         if mode == "tourner":
             v0, v = p0 - c0, p - c0
             a = a0 + math.degrees(math.atan2(v.y(), v.x()) - math.atan2(v0.y(), v0.x()))
-            if maj:
-                a = round(a / 15) * 15
-            self.angle = a
+            self.angle = round(a / 15) * 15 if maj else round(a)      # au degré près
             return
         gx, gy = POIGNEES[mode]
         w0, h0 = sx0 * self.bw, sy0 * self.bh

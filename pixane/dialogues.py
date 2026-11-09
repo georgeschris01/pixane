@@ -5,7 +5,7 @@ from PySide6.QtCore import QEvent, QSize, Qt, Signal
 from PySide6.QtGui import QIcon, QImage, QPixmap
 from PySide6.QtWidgets import (QButtonGroup, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QFrame, QGridLayout, QHBoxLayout,
                                QLabel, QListWidget, QListWidgetItem, QProgressBar, QPushButton, QRadioButton, QSpinBox,
-                               QVBoxLayout, QWidget)
+                               QVBoxLayout, QWidget, QCheckBox)
 
 from .langue import tr
 
@@ -202,6 +202,12 @@ class BarreAgrandir(QFrame):
         boutons.addWidget(b_annuler)
         boutons.addWidget(self.b_lancer)
         droite.addLayout(boutons)
+        self.pleine = QCheckBox(tr("Pleine définition"))
+        self.pleine.setToolTip(tr(
+            "Après le choix d'une proposition, l'ajout est redessiné à la vraie taille de la photo, par morceaux : "
+            "aussi net et détaillé que le reste, avec le même grain. Plus long (environ 30 s à 1 min par "
+            "morceau de 1024 px). Sans effet sur une petite photo."))
+        droite.addWidget(self.pleine)
         droite.addStretch()
         bas.addLayout(droite)
         self._px = ((0, 0, 0, 0), (0, 0, 0, 0))

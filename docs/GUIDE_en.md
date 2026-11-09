@@ -352,6 +352,14 @@ Two frames appear on the photo:
 - The join between the photo and the addition is made by Pixane: the original photo is kept **pixel for pixel**,
   with a gradual blend and colour matching, so that no line is visible.
 - 3 options, about 1 minute each.
+- **Full resolution** (box in the bar, ticked by default): the AI invents the addition on an image reduced to about
+  1 million pixels, then the addition is enlarged to the size of the photo; on a large photo it would therefore be
+  blurrier than the rest. With the box ticked, once the option is chosen, the addition is **redrawn at the real
+  size**, in 1024 px pieces, keeping its shape: it becomes as sharp and detailed as the photo, and gets the **same
+  grain**. Slower: about 30 s to 1 min per piece (the waiting window shows "Piece 2 of 6" and the time left).
+  **Cancel** during this work keeps the option as it is. No effect on a small photo (already done at its real size).
+- **Tips** for a realistic addition: expand in small steps (20 to 30% at a time) rather than 100% at once; compare
+  the options ("More options"); mark a border or frame as a damaged edge.
 - **Layers**: all layers are shifted onto the new canvas; an "Expand 1" layer contains the addition and the
   redone edge (only the new pixels).
 - If the photo contains text, the AI sometimes invents meaningless letters in the addition: use "More options".
@@ -709,6 +717,8 @@ selection if there is one, one step in Undo. They also work on a mask.
   for screen and Internet). No AI: to enlarge with more detail, prefer Upscale.
 - **Rotate** 90° right, left or 180°, **Flip** horizontally or vertically: the whole image, all layers, lossless.
   Flipped texts become images; rotated ones stay editable.
+- **Rotate by an angle…**: the whole image rotates by the typed angle, **to the degree** (or tenth of a degree),
+  from -359.9° to +359.9° (positive: clockwise). The canvas grows to keep everything; the corners are transparent.
 - **Straighten…**: rotate by a small angle (-45° to +45°) with a grid to align the horizon or a wall.
   *Crop to remove the empty corners* (ticked by default); unticked, the image grows and the corners are
   transparent.
@@ -716,8 +726,9 @@ selection if there is one, one step in Undo. They also work on a mask.
   single element** of the layer, **select it first** (rectangle, lasso, magic wand…): the frame surrounds only that
   element, the rest of the layer does not move, and its original place becomes transparent.
   - **corner**: size, proportions kept (Shift: free); **side**: width or height only;
-  - **inside**: move; **outside** (the cursor becomes a round arrow): rotate (Shift: by 15°);
-  - the top bar shows width, height and angle; **Enter**, double-click or **Apply** to keep, **Esc** or
+  - **inside**: move; **outside** (the cursor becomes a round arrow): rotate, **degree by degree** (Shift: by 15°);
+  - the top bar shows **Width**, **Height** (in %) and **Angle** (in degrees) in boxes where you can **type the
+    exact value** (arrows: 1°; Shift+arrows: 10°); **Enter**, double-click or **Apply** to keep, **Esc** or
     **Cancel** to go back. Changing tool also applies.
   A transformed text becomes an image (to keep a text editable, use the Text tool).
 

@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import threading
+import time
 from dataclasses import replace
 from pathlib import Path
 
@@ -15,9 +16,9 @@ from PySide6.QtGui import (QAction, QActionGroup, QColor, QDesktopServices, QIco
                            QUndoStack)
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QComboBox, QDialog, QDockWidget, QFileDialog, QHBoxLayout, QLabel,
                                QLineEdit, QMainWindow, QMenu, QMessageBox, QPushButton, QSizePolicy, QSlider,
-                               QSpinBox, QToolBar, QToolButton, QUndoView, QVBoxLayout, QWidget, QInputDialog)
+                               QSpinBox, QToolBar, QToolButton, QUndoView, QVBoxLayout, QWidget, QInputDialog, QDoubleSpinBox)
 
-from . import langue, recettes, theme
+from . import affinage, langue, recettes, theme
 from .icones import icone
 from .langue import tr
 from .actions_calques import ActionsCalques
@@ -199,6 +200,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         cadre, self.regle_h, self.regle_v, self.coin_regles = entourer(self.canevas)
         self.setCentralWidget(self._centre_avec_onglets(cadre))
         self.barre_agrandir = BarreAgrandir(self.canevas)
+        self.barre_agrandir.pleine.setChecked(self.reglages.value("agrandir_pleine", True, type=bool))
+        self.barre_agrandir.pleine.toggled.connect(lambda v: self.reglages.setValue("agrandir_pleine", v))
         self.barre_agrandir.lancer.connect(self._lancer_agrandir)
         self.barre_agrandir.annuler.connect(self._fin_agrandir)
         self.barre_agrandir.valeurs_changees.connect(self.canevas.definir_cadre)
@@ -343,6 +346,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self._action(m, tr("Pivoter de 90° à gauche"), None, lambda: self._geometrie(tr("Pivoter"), -90),
                      "a_pivoter_g")
         self._action(m, tr("Pivoter de 180°"), None, lambda: self._geometrie(tr("Pivoter"), 180), "a_pivoter_180")
+        self._action(m, tr("Pivoter selon un angle…"), None, self.pivoter_angle, "a_pivoter_angle")
         self._action(m, tr("Retourner horizontalement"), None, lambda: self._geometrie(tr("Retourner"), "h"),
                      "a_miroir_h")
         self._action(m, tr("Retourner verticalement"), None, lambda: self._geometrie(tr("Retourner"), "v"),
@@ -483,8 +487,23 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         lay = QHBoxLayout(self.opt_transfo)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(8)
-        self.info_transfo = QLabel()
-        lay.addWidget(self.info_transfo)
+        self.cases_transfo = {}
+        for cle, texte, bas, haut, suffixe, aide in (
+                ("l", tr("Largeur"), 1, 5000, " %", tr("Largeur en % de la taille de départ")),
+                ("h", tr("Hauteur"), 1, 5000, " %", tr("Hauteur en % de la taille de départ")),
+                ("a", tr("Angle"), -180, 180, " °", tr("Angle en degrés (sens des aiguilles d'une montre ; négatif : "
+                                                        "sens inverse). Flèches : 1° ; Maj+flèches : 10°"))):
+            lay.addWidget(QLabel(texte))
+            case = QDoubleSpinBox()
+            case.setRange(bas, haut)
+            case.setDecimals(1)
+            case.setSingleStep(1)
+            case.setSuffix(suffixe)
+            case.setKeyboardTracking(False)
+            case.setToolTip(aide)
+            case.valueChanged.connect(self._transfo_tapee)
+            lay.addWidget(case)
+            self.cases_transfo[cle] = case
         b_ok = QPushButton(tr("Valider"))
         b_ok.clicked.connect(self._valider_transfo)
         b_non = QPushButton(tr("Annuler"))
@@ -1055,7 +1074,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         pret = a_doc and self.moteur.etat == "prêt"
         for a in (self.a_enregistrer, self.a_enregistrer_sous, self.a_fermer, self.a_tout, self.a_rien, self.a_inverser,
                   self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster, self.a_recadrer_selection, self.a_taille,
-                  self.a_pivoter_d, self.a_pivoter_g, self.a_pivoter_180, self.a_miroir_h, self.a_miroir_v,
+                  self.a_pivoter_d, self.a_pivoter_g, self.a_pivoter_180, self.a_pivoter_angle, self.a_miroir_h, self.a_miroir_v,
                   self.a_redresser, self.a_transformer, self.a_reglages_image, self.a_sel_agrandir,
                   self.a_sel_reduire, self.a_sel_adoucir, self.a_contour, self.a_couper, self.a_copier, self.a_supprimer_selection,
                   self.a_style, self.a_copier_style, self.a_coller_style, self.a_enlever_style, self.a_figer_style,
@@ -1703,6 +1722,26 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             QApplication.restoreOverrideCursor()
         self.statusBar().showMessage(tr("Exporté en CMJN : {chemin}", chemin=chemin), 8000)
 
+    def pivoter_angle(self):
+        """Image > Pivoter selon un angle… : toute l'image tourne de l'angle tapé (au degré près, ou au dixième) ;
+        la feuille s'agrandit pour tout garder, les coins sont transparents."""
+        if not self.doc or not self._verifier_verrou(tr("Pivoter"), tous=True):
+            return
+        angle, ok = QInputDialog.getDouble(
+            self, tr("Pivoter selon un angle"),
+            tr("Angle en degrés (sens des aiguilles d'une montre ; négatif : sens inverse) :"),
+            float(self.reglages.value("angle_pivoter", 0.0) or 0.0), -359.9, 359.9, 1)
+        if not ok or abs(angle) < 0.05:
+            return
+        self.reglages.setValue("angle_pivoter", angle)
+        avant = self.doc.etat()
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            apres = self.doc.etat_redresse(angle, recadrer=False)
+        finally:
+            QApplication.restoreOverrideCursor()
+        self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Pivoter")))
+
     def redresser(self):
         if not self.doc or not self._verifier_verrou(tr("Redresser"), tous=True):
             return
@@ -1843,7 +1882,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.opt_transfo.show()
         self._transfo_change()
         self.statusBar().showMessage(tr("Transformer : coins = taille (Maj : libre), dedans = déplacer, dehors = "
-                                        "tourner (Maj : par 15°). Entrée pour valider, Échap pour annuler."), 15000)
+                                        "tourner, au degré près (Maj : par 15°) ; ou tapez l'angle et la taille en "
+                                        "haut. Entrée pour valider, Échap pour annuler."), 15000)
 
     def _historique_bouge(self, _index):
         """Ctrl+Z ou clic dans l'Historique pendant une transformation : elle est abandonnée."""
@@ -1855,9 +1895,21 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
     def _transfo_change(self):
         t = self.canevas.transfo
         if t is not None:
-            l, h, a = t.resume()
-            self.info_transfo.setText(tr("Largeur {l} %  ·  Hauteur {h} %  ·  Angle {a}°", l=f"{l:.0f}",
-                                         h=f"{h:.0f}", a=f"{a:.1f}"))
+            self._transfo_affiche = True                  # ne pas renvoyer ces valeurs au cadre
+            for cle, v in zip("lha", t.resume()):
+                self.cases_transfo[cle].setValue(v)
+            self._transfo_affiche = False
+
+    def _transfo_tapee(self, _v=None):
+        """Largeur, hauteur ou angle tapés dans la barre d'options de Transformer."""
+        t = self.canevas.transfo
+        if t is None or getattr(self, "_transfo_affiche", False):
+            return
+        t.sx = self.cases_transfo["l"].value() / 100 * (1 if t.sx >= 0 else -1)
+        t.sy = self.cases_transfo["h"].value() / 100 * (1 if t.sy >= 0 else -1)
+        t.angle = self.cases_transfo["a"].value()
+        self.canevas._apercu_transfo(lisse=True)
+        self.canevas.update()
 
     def _valider_transfo(self):
         t = self.canevas.transfo
@@ -2091,8 +2143,62 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
 
         def placer(img: QImage):   # calques décalés ; l'ajout de l'IA dans un nouveau calque
             return doc.etat_agrandi(tr("Agrandir"), img, (ajout[2], ajout[0]))
+        affiner = None
+        if self.barre_agrandir.pleine.isChecked() and affinage.utile(geo.taille, geo.travail):
+            m = affinage.masque_ajout(geo.taille, geo.marges, orig.shape[:2], max(geo.bande) * 1.5)
+            affiner = lambda img, fin: self._affiner_agrandir(img, m, fin)
         self._lancer(tr("Agrandir"), False, lambda nom: recettes.agrandir(nom), apres=raccord, png=png,
-                     placer=placer)
+                     placer=placer, affiner=affiner)
+
+    def _affiner_agrandir(self, image: QImage, m, fin):
+        """Pleine définition : la proposition choisie est retravaillée par morceaux à la vraie taille, puis
+        fin(image) l'applique. Annuler pendant le calcul : la proposition est gardée telle quelle."""
+        img = tableau(image)[:, :, :3].copy()
+        s, travail, m_t, rects = affinage.plan(img, m)
+        annuler = threading.Event()
+        titre = tr("Agrandir en pleine définition")
+
+        def calcul(progres):
+            t0 = time.monotonic()
+            res = travail.copy()
+            for i, r in enumerate(rects):
+                if annuler.is_set():
+                    raise ErreurMoteur("")
+                nom = self.moteur.envoyer_image(affinage.png_morceau(res, m_t, r))
+                prompt, sorties = recettes.affiner(nom, affinage.FORCE)
+
+                def suivi(info, i=i):
+                    f = (i + (info.get("fraction") or 0)) / len(rects)
+                    passe = time.monotonic() - t0
+                    progres(dict(info, etape=tr("Morceau {i} sur {n}", i=i + 1, n=len(rects)), fraction=f,
+                                 restant=passe * (1 - f) / f if f > 0.02 else None))
+                for _libelle, donnees in self.moteur.executer(prompt, sorties, annuler, suivi):
+                    morceau = QImage.fromData(donnees)
+                    if morceau.isNull():
+                        raise ErreurMoteur(tr("Résultat illisible."))
+                    res = affinage.coller(res, tableau(morceau.convertToFormat(FORMAT_IMAGE))[:, :, :3], m_t, r)
+            fini = affinage.accorder_grain(affinage.terminer(img, res, m, s), m)
+            return qimage_rgb(fini)
+
+        attente = Attente(titre, self)
+        attente.annuler.connect(annuler.set)
+
+        def ok(resultat):
+            attente.hide()
+            attente.deleteLater()
+            fin(resultat)
+
+        def echec(message):
+            attente.hide()
+            attente.deleteLater()
+            if message:
+                QMessageBox.warning(self, titre, tr("{erreur}\n\nLa proposition choisie est gardée telle quelle.",
+                                                    erreur=message))
+            fin(image)
+        t = self._tache(calcul, ok, echec)
+        t.progres.connect(attente.maj)
+        t.lancer()
+        attente.show()
 
     def ia_upscale(self):
         if not self.doc or not self._verifier_verrou(tr("Upscale"), tous=True):
@@ -2188,9 +2294,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                      nom_calque=nom_calque, suffixe=suffixe)
 
     def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None,
-                placer=None, nom_calque: str | None = None, suffixe: str | None = None):
+                placer=None, nom_calque: str | None = None, suffixe: str | None = None, affiner=None):
         """Envoie l'image au moteur, attend, puis propose les résultats. nom_calque : nom du calque du résultat
-        (le titre sinon) ; suffixe : ajouté au nom proposé à l'enregistrement (ex. « _restauree »)."""
+        (le titre sinon) ; suffixe : ajouté au nom proposé à l'enregistrement (ex. « _restauree »).
+        affiner(image, fin) : travail de plus sur la proposition choisie (pleine définition), fin(image) l'applique."""
         doc = self.doc
         if png is None:
             png = doc.png_pour_ia(avec_selection)
@@ -2222,9 +2329,15 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             attente.deleteLater()
             choix.ajouter(res)
             if choix.exec() and choix.choix() is not None:
-                self._appliquer_resultat(doc, choix.choix(), titre, placer, nom_calque)
-                if suffixe:
-                    doc.suffixe_nom = suffixe
+                def fin(image):
+                    self._appliquer_resultat(doc, image, titre, placer, nom_calque)
+                    if suffixe:
+                        doc.suffixe_nom = suffixe
+                annuler.set()
+                if affiner is not None:
+                    affiner(choix.choix(), fin)
+                else:
+                    fin(choix.choix())
             annuler.set()
 
         def premier_echec(message):

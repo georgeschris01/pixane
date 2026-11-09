@@ -252,6 +252,15 @@ def agrandir(image: str, nb: int = NB_AGRANDIR, graine: int | None = None, charg
     return p, {"32": tr("Proposition")}
 
 
+def affiner(image: str, force: float = 0.4, steps: int = 20, graine: int | None = None,
+            chargeur: dict | None = None):
+    """Agrandir en pleine définition : un morceau de 1024 px à la vraie taille ; la partie transparente (ajout de
+    la première passe) est redessinée légèrement par Flux Fill (force), le reste sert de modèle."""
+    p = {"10": _n("LoadImage", image=image)}
+    _flux_fill(p, ["10", 0], ["10", 1], None, 1, denoise=force, steps=steps, graine=graine, chargeur=chargeur)
+    return p, {"32": tr("Pleine définition")}
+
+
 def upscale_rapide(image: str, facteur: float = 2.0):
     p = {"10": _n("LoadImage", image=image),
          "11": _n("UpscaleModelLoader", model_name="RealESRGAN_x4plus.pth"),

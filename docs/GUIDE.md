@@ -363,6 +363,15 @@ Deux cadres apparaissent sur la photo :
 - Le raccord entre la photo et l'ajout est fait par Pixane : la photo d'origine est gardée **au pixel près**, avec un
   fondu progressif et un accord des couleurs, pour qu'aucune ligne ne soit visible.
 - 3 propositions, environ 1 minute chacune.
+- **Pleine définition** (case dans la barre, cochée par défaut) : l'IA invente l'ajout sur une image réduite à
+  environ 1 million de pixels, puis l'ajout est agrandi à la taille de la photo ; sur une grande photo, il serait
+  donc plus flou que le reste. Avec la case cochée, une fois la proposition choisie, l'ajout est **redessiné à la
+  vraie taille**, par morceaux de 1024 px, en gardant sa forme : il devient aussi net et détaillé que la photo, et
+  reçoit le **même grain**. Plus long : environ 30 s à 1 min par morceau (la fenêtre d'attente montre « Morceau 2
+  sur 6 » et le temps restant). **Annuler** pendant ce travail garde la proposition telle quelle. Sans effet sur une
+  petite photo (déjà travaillée à sa vraie taille).
+- **Conseils** pour un ajout réaliste : agrandir par petites étapes (20 à 30 % à la fois) plutôt que 100 % d'un
+  coup ; comparer les propositions (« Autres propositions ») ; marquer en bord abîmé un liseré ou un cadre.
 - **Calques** : tous les calques sont décalés sur la nouvelle toile ; un calque « Agrandir 1 » contient l'ajout
   et le bord refait (seulement les pixels nouveaux).
 - Si la photo contient du texte, l'IA invente parfois des lettres sans sens dans l'ajout : utilisez
@@ -731,6 +740,9 @@ direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annul
   (par exemple 1920 px pour l'écran et Internet). Sans IA : pour agrandir avec plus de détails, préférez Upscale.
 - **Pivoter** de 90° à droite, à gauche ou de 180°, **Retourner** horizontalement ou verticalement : toute l'image,
   tous les calques, sans perte. Les textes retournés deviennent des images ; pivotés, ils restent modifiables.
+- **Pivoter selon un angle…** : toute l'image tourne de l'angle tapé, **au degré près** (ou au dixième),
+  de -359,9° à +359,9° (positif : sens des aiguilles d'une montre). La feuille s'agrandit pour tout garder, les coins
+  sont transparents.
 - **Redresser…** : tourner d'un petit angle (-45° à +45°) avec une grille pour aligner l'horizon ou un mur.
   *Recadrer pour enlever les coins vides* (coché par défaut) ; décoché, l'image s'agrandit et les coins sont
   transparents.
@@ -738,8 +750,10 @@ direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annul
   tourner **un seul élément** du calque, **sélectionnez-le d'abord** (rectangle, lasso, baguette…) : le cadre
   n'entoure que lui, le reste du calque ne bouge pas, sa place d'origine devient transparente.
   - **coin** : taille, proportions gardées (Maj : libre) ; **bord** : largeur ou hauteur seule ;
-  - **dedans** : déplacer ; **dehors** (le curseur devient une flèche ronde) : tourner (Maj : par 15°) ;
-  - la barre du haut affiche largeur, hauteur et angle ; **Entrée**, double-clic ou **Valider** pour garder,
+  - **dedans** : déplacer ; **dehors** (le curseur devient une flèche ronde) : tourner, **degré par degré**
+    (Maj : par 15°) ;
+  - la barre du haut montre **Largeur**, **Hauteur** (en %) et **Angle** (en degrés) dans des cases où l'on peut
+    **taper la valeur exacte** (flèches : 1° ; Maj+flèches : 10°) ; **Entrée**, double-clic ou **Valider** pour garder,
     **Échap** ou **Annuler** pour revenir. Changer d'outil valide aussi.
   Un texte transformé devient une image (pour garder un texte modifiable, utilisez l'outil Texte).
 
