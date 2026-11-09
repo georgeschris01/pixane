@@ -1114,10 +1114,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         if install is not None:
             racine = Path(install["dir"]).parent
             if racine.name != PORTABLE or not deja_installe(racine.parent):
-                QMessageBox.information(self, tr("Installer le moteur IA"),
-                                        tr("Un ComfyUI est déjà installé sur ce PC et Pixane l'utilise :\n{dossier}"
-                                           "\n\nPour ajouter un modèle, mets-le dans son dossier « models ».",
-                                           dossier=install["dir"]))
+                self.completer_moteur(install)          # ComfyUI installé autrement : seulement ce qui manque
                 return
             dossier = str(racine.parent)        # installé par Pixane : on complète (ex. Flux Schnell)
         schnell = kontext = False
@@ -1133,15 +1130,52 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         if self.moteur.etat == "arrêté":               # arrêté en route : on relance l'ancien
             self._redemarrer_moteur()
 
+    def completer_moteur(self, install: dict | None = None):
+        """ComfyUI déjà installé (pas par Pixane) : fenêtre qui ne télécharge que ce qui lui manque."""
+        from .completer_moteur import FenetreCompleter
+        install = install or trouver_comfyui()
+        if install is None or self.moteur.etat != "prêt":
+            QMessageBox.information(self, tr("Compléter le moteur IA"), tr(
+                "Le moteur IA doit être démarré pour que Pixane voie ce qui lui manque. Attends qu'il soit prêt "
+                "(en bas de la fenêtre), puis recommence."))
+            return
+        f = FenetreCompleter(self.moteur.infos, self.moteur.dossiers_modeles(), install, self.moteur.externe, self)
+        f.fini.connect(lambda _ok: self._redemarrer_moteur())      # relit ce que ComfyUI a maintenant
+        f.exec()
+
+    def _verifier_moteur_complet(self, install: dict):
+        """ComfyUI installé autrement : s'il lui manque des extensions ou des modèles, le proposer (une fois pour
+        une même liste ; ensuite, un message en bas et le menu IA > Installer le moteur IA)."""
+        from .completer_moteur import manquants
+        from .installation_moteur import go
+        elements, _notes = manquants(self.moteur.infos, self.moteur.dossiers_modeles(), install["dir"])
+        if not elements:
+            return
+        cle = ",".join(sorted(e.cle for e in elements))
+        if self.reglages.value("moteur_complet_vu", "") == cle:
+            self.statusBar().showMessage(tr("Il manque des éléments au moteur IA : menu IA > Installer le moteur "
+                                            "IA."), 10000)
+            return
+        self.reglages.setValue("moteur_complet_vu", cle)
+        if QMessageBox.question(self, tr("Moteur IA"), tr(
+                "Pixane utilise le ComfyUI déjà installé sur ce PC, mais il lui manque :\n{liste}\n\n"
+                "À télécharger : environ {taille} (seulement ce qui manque, rien n'est remplacé).\n\n"
+                "Voir le détail et installer maintenant ? (Plus tard : menu IA > Installer le moteur IA.)",
+                liste="\n".join("• " + e.nom for e in elements),
+                taille=go(sum(e.taille or 0 for e in elements)))) == QMessageBox.Yes:
+            self.completer_moteur(install)
+
     def _verifier_moteur_a_jour(self):
         """Après le démarrage du moteur : si Pixane l'a installé et qu'une nouvelle version de Pixane demande
-        d'autres versions (ComfyUI, extension, modèle), le proposer une fois."""
+        d'autres versions (ComfyUI, extension, modèle), le proposer une fois. Installé autrement : proposer ce
+        qui lui manque."""
         from .installation_moteur import PORTABLE, go, mises_a_jour_moteur
         install = trouver_comfyui()
         if install is None:
             return
         r = Path(install["dir"]).parent
         if r.name != PORTABLE:
+            self._verifier_moteur_complet(install)
             return
         maj = mises_a_jour_moteur(r.parent)
         if not maj:

@@ -799,8 +799,13 @@ Everything can be undone with Ctrl+Z.
 
 The same window opens from **AI > Install the AI engine…** (for example to add Flux Schnell later, or **Flux
 Kontext** — 11.9 GB, optional — for *Restore an old photo*), and Pixane
-offers it at start-up if it finds no engine. If a ComfyUI installed another way is already there, Pixane uses it
-and installs nothing.
+offers it at start-up if it finds no engine. If a ComfyUI installed another way is already there (ComfyUI Desktop, portable
+ComfyUI…), Pixane uses it as it is: at start-up it asks ComfyUI what it already has and, if extensions or models are
+missing, offers the **Complete the AI engine** window (also from **AI > Install the AI engine…**). It lists **only
+what is missing** (size, licence, source, folder) and puts it into that ComfyUI's folders, even a shared models
+folder, without replacing or deleting anything. Flux Schnell and Flux Kontext can be added as options. If new
+extensions are added to an open ComfyUI Desktop, close it and open it again so that it loads them. A ComfyUI too
+old for a feature (for example object selection) is reported: Pixane does not update it itself.
 
 **AI engine updates**: the versions of ComfyUI, the extensions and the models are chosen and tested with each
 version of Pixane; nothing changes on its own. When a new version of Pixane needs other versions, Pixane offers

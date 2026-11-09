@@ -57,7 +57,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 
 **Comfort**
 - Light or dark theme, Windows accent colour; built-in guide with search (F1)
-- Installer that checks the PC and downloads the AI engine itself (ComfyUI and the models), resuming after an interruption
+- Installer that checks the PC and downloads the AI engine itself (ComfyUI and the models), resuming after an interruption; with a ComfyUI already installed, only what it is missing
 
 ## System requirements
 
@@ -88,6 +88,8 @@ Pixane has been tested on an **RTX 3060 Ti (8 GB) with 32 GB of RAM**; the minim
 **[Pixane for Windows](../../releases/latest)** (64-bit installer, `Pixane-Setup-<version>-64bits.exe`).
 
 The installer checks the graphics card and free space, then offers to download the AI engine from the official sites (GitHub, Hugging Face): **21.5 GB**, about 31 GB on disk. Two optional extras: **Flux Schnell** for "Sharp upscale" (11.8 GB) and **Flux Kontext** for "Restore an old photo" (11.9 GB). The Flux Fill and Flux Kontext models are under the **non-commercial FLUX.1 [dev] licence**: you must accept it to install them.
+
+**ComfyUI already installed?** Pixane uses it as it is: no second ComfyUI, nothing downloaded twice. At the first start, Pixane checks what it is missing (extensions, AI models) and offers to download **only that**, with the list, size and licence of each item. Everything goes into your ComfyUI's own folders (even a shared models folder), without replacing or deleting anything. If it already has everything, nothing is downloaded.
 
 > **"Windows protected your PC" message:** Pixane is free and not signed, because a code-signing certificate costs money every year. Windows therefore shows this message until the program is well enough known. Click **More info**, then **Run anyway**. Check that the file really comes from this page; its SHA-256 fingerprint is given with each version.
 
@@ -864,8 +866,13 @@ Everything can be undone with Ctrl+Z.
 
 The same window opens from **AI > Install the AI engine…** (for example to add Flux Schnell later, or **Flux
 Kontext** — 11.9 GB, optional — for *Restore an old photo*), and Pixane
-offers it at start-up if it finds no engine. If a ComfyUI installed another way is already there, Pixane uses it
-and installs nothing.
+offers it at start-up if it finds no engine. If a ComfyUI installed another way is already there (ComfyUI Desktop, portable
+ComfyUI…), Pixane uses it as it is: at start-up it asks ComfyUI what it already has and, if extensions or models are
+missing, offers the **Complete the AI engine** window (also from **AI > Install the AI engine…**). It lists **only
+what is missing** (size, licence, source, folder) and puts it into that ComfyUI's folders, even a shared models
+folder, without replacing or deleting anything. Flux Schnell and Flux Kontext can be added as options. If new
+extensions are added to an open ComfyUI Desktop, close it and open it again so that it loads them. A ComfyUI too
+old for a feature (for example object selection) is reported: Pixane does not update it itself.
 
 **AI engine updates**: the versions of ComfyUI, the extensions and the models are chosen and tested with each
 version of Pixane; nothing changes on its own. When a new version of Pixane needs other versions, Pixane offers
@@ -906,7 +913,7 @@ AI models are large (Flux Fill: 12 GB). On an 8 GB card, count about one minute 
 Pixane opens and edits (layers, text, crop…), but the AI actions need an NVIDIA card.
 
 ### I already have ComfyUI. Do I have to download everything again?
-No: the installer looks for it, and the **Browse…** button lets you point to its folder. Pixane then uses it as it is.
+No: the installer looks for it, and the **Browse…** button lets you point to its folder. Pixane then uses it as it is and only offers to download what it is missing (extensions, models), into that ComfyUI's folders, without replacing anything.
 
 ### How do I change the language?
 **View > Language** menu. Pixane restarts to apply it.

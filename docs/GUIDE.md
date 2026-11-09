@@ -825,7 +825,13 @@ Tout s'annule par Ctrl+Z.
 
 La même fenêtre s'ouvre par le menu **IA > Installer le moteur IA…** (par exemple pour ajouter Flux Schnell plus
 tard, ou **Flux Kontext** — 11,9 Go, facultatif — pour *Restaurer une vieille photo*), et Pixane la propose au démarrage s'il ne trouve pas de moteur. Si un ComfyUI installé autrement est déjà
-là, Pixane l'utilise et n'installe rien.
+là (ComfyUI Desktop, ComfyUI portable…), Pixane l'utilise tel quel : au démarrage, il demande à ComfyUI ce qu'il a
+déjà et, s'il manque des extensions ou des modèles, propose la fenêtre **Compléter le moteur IA** (aussi par
+**IA > Installer le moteur IA…**). Elle liste **seulement ce qui manque** (taille, licence, source, dossier) et le
+range dans les dossiers de ce ComfyUI, même un dossier de modèles partagé, sans rien remplacer ni effacer. Flux
+Schnell et Flux Kontext s'y ajoutent en option. Si de nouvelles extensions sont ajoutées à ComfyUI Desktop ouvert,
+fermez-le puis rouvrez-le pour qu'il les charge. Un ComfyUI trop ancien pour une fonction (par exemple la
+sélection d'objet) est signalé : Pixane ne le met pas à jour lui-même.
 
 **Mises à jour du moteur IA** : les versions de ComfyUI, des extensions et des modèles sont choisies et essayées
 avec chaque version de Pixane ; rien ne change tout seul. Quand une nouvelle version de Pixane demande d'autres

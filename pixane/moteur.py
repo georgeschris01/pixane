@@ -130,6 +130,9 @@ class Moteur:
         self.client_id = uuid.uuid4().hex
         self._verrou = threading.Lock()
         self._arret = threading.Event()   # le programme se ferme
+        self.infos: dict = {}             # /object_info de ComfyUI (ce qu'il sait faire, ses modèles)
+        self.noeuds_manquants: list[str] = []
+        self.externe = False              # ComfyUI déjà ouvert (ComfyUI Desktop) : Pixane ne peut pas le relancer
 
     # ------------------------------------------------------------------ réseau
     def _requete(self, chemin: str, donnees: bytes | None = None, type_contenu: str = "application/json",
@@ -158,6 +161,7 @@ class Moteur:
             url = f"http://127.0.0.1:{port}"
             if self._repond(url):
                 self.url = url
+                self.externe = port == PORT_EXTERNE
                 self._verifier_noeuds()
                 self.etat = "prêt"
                 signaler(tr("prêt (ComfyUI déjà ouvert)") if port == PORT_EXTERNE else tr("prêt"))
@@ -199,12 +203,19 @@ class Moteur:
         raise ErreurMoteur(tr("Le moteur ne répond pas après 4 minutes."))
 
     def _verifier_noeuds(self):
+        """Lit ce que ComfyUI a (extensions, modèles). S'il manque quelque chose, Pixane le proposera
+        (completer_moteur) ; les actions qui en ont besoin préviennent en attendant."""
         infos = self._json("/object_info", delai=60)
-        manquants = [n for n in NOEUDS_NECESSAIRES if n not in infos]
-        if manquants:
-            self.etat = "incomplet"
-            raise ErreurMoteur(tr("Extensions ComfyUI manquantes : {liste}", liste=", ".join(manquants)))
+        self.infos = infos
+        self.noeuds_manquants = [n for n in NOEUDS_NECESSAIRES if n not in infos]
         recettes.configurer(infos)          # Flux Fill : version complète ou GGUF, selon ce qui est installé
+
+    def dossiers_modeles(self) -> dict[str, list[str]]:
+        """Dossiers de modèles de ComfyUI, par genre (le premier est celui où il range les nouveaux)."""
+        try:
+            return {d["name"]: d["folders"] for d in self._json("/experiment/models", delai=30)}
+        except Exception:
+            return {}
 
     def arreter(self):
         self._arret.set()

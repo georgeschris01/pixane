@@ -312,10 +312,15 @@ class Installation(QObject):
     message = Signal(str)
     fini = Signal(bool, str)                     # réussi, message
 
-    def __init__(self, dossier: Path, elements: list[Element]):
+    def __init__(self, dossier: Path, elements: list[Element], complement: bool = False, python: Path | None = None):
+        """complement : ComfyUI déjà installé (pas par Pixane) ; les éléments ont un chemin complet (dest) et
+        seuls ceux qui manquent sont donnés ; dossier ne sert qu'aux téléchargements en cours. python : celui de
+        ce ComfyUI (pour la bibliothèque gguf)."""
         super().__init__()
         self.dossier = Path(dossier)
         self.elements = elements
+        self.complement = complement
+        self.python = python
         self.arret = threading.Event()
         self.total = sum(e.taille or 2 * 1024 ** 2 for e in elements)
         self.fait = 0.0
@@ -333,23 +338,25 @@ class Installation(QObject):
         try:
             self.dossier.mkdir(parents=True, exist_ok=True)
             marque = self.dossier / MARQUE
-            if not marque.is_file():
+            if not marque.is_file() and not self.complement:
                 marque.write_text(json.dumps({"commence_le": time.strftime("%Y-%m-%d %H:%M"),
                                               "contenu": [PORTABLE, "telechargements"]}, indent=1),
                                   encoding="utf-8")
-            QSettings("Pixane", os.environ.get("PIXANE_REGLAGES", "Pixane")).setValue("moteur_dossier",
-                                                                                     str(self.dossier))
+            if not self.complement:
+                QSettings("Pixane", os.environ.get("PIXANE_REGLAGES", "Pixane")).setValue("moteur_dossier",
+                                                                                         str(self.dossier))
             telechargements = self.dossier / "telechargements"
             telechargements.mkdir(exist_ok=True)
             r = racine(self.dossier)
-            infos = lire_infos(self.dossier)
+            infos = None if self.complement else lire_infos(self.dossier)
             versions = dict((infos or {}).get("versions") or {})
             outil, outil_e = None, None
             for e in self.elements:
                 if self.arret.is_set():
                     raise Arrete()
                 self._fait_avant[e.cle] = self.fait
-                etat = etat_element(self.dossier, e, infos) if e.genre != "outil" else "ok"
+                etat = "ok" if e.genre == "outil" else "absent" if self.complement else \
+                    etat_element(self.dossier, e, infos)
                 if e.genre == "outil":
                     outil, outil_e = telechargements / e.fichier, e      # téléchargé seulement s'il sert
                     self.etat.emit(e.cle, tr("si besoin"))
@@ -383,7 +390,7 @@ class Installation(QObject):
                 if e.cle == "gguf" and (etat != "ok" or versions.get("_pip") != GGUF_PIP):
                     self._pip(r)
                     versions["_pip"] = GGUF_PIP
-                if e.genre != "outil":
+                if e.genre != "outil" and not self.complement:
                     ancien = versions.get(e.cle, {}).get("dest")
                     if e.genre == "modele" and ancien and ancien != e.dest and (r / ancien).is_file():
                         (r / ancien).unlink()                           # ancienne version d'un modèle
@@ -392,8 +399,12 @@ class Installation(QObject):
                     self._ecrire_infos(r, versions)                     # retenu au fur et à mesure
                 self.fait = self._fait_avant[e.cle] + (e.taille or 2 * 1024 ** 2)
                 self.progres.emit(self.fait, self.total, self._vitesse())
-            self._ecrire_infos(r, versions)
             shutil.rmtree(telechargements, ignore_errors=True)
+            if self.complement:
+                _journal("complément terminé")
+                self.fini.emit(True, tr("Ce qui manquait est installé."))
+                return
+            self._ecrire_infos(r, versions)
             QSettings("Pixane", os.environ.get("PIXANE_REGLAGES", "Pixane")).setValue("comfyui_dir", str(r))
             _journal("terminé")
             self.fini.emit(True, tr("Le moteur IA est installé. Pixane le trouvera tout seul."))
@@ -554,10 +565,17 @@ class Installation(QObject):
 
     def _pip(self, r: Path):
         """Bibliothèque « gguf » pour l'extension ComfyUI-GGUF, dans le Python de ComfyUI."""
-        python = r / "python_embeded" / "python.exe"
+        python = self.python or r / "python_embeded" / "python.exe"
         self.etat.emit("gguf", tr("installation de la bibliothèque gguf…"))
-        res = subprocess.run([str(python), "-s", "-m", "pip", "install", "--disable-pip-version-check",
-                              GGUF_PIP], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
+        def pip():
+            return subprocess.run([str(python), "-s", "-m", "pip", "install", "--disable-pip-version-check",
+                                   GGUF_PIP], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        res = pip()
+        if res.returncode != 0 and "No module named pip" in res.stderr:      # Python sans pip (ComfyUI Desktop)
+            subprocess.run([str(python), "-m", "ensurepip"], capture_output=True, text=True,
+                           creationflags=subprocess.CREATE_NO_WINDOW)
+            res = pip()
         _journal(f"pip {GGUF_PIP} : {res.returncode}\n{res.stdout[-1500:]}{res.stderr[-1500:]}")
         if res.returncode != 0:
             raise OSError(tr("l'installation de la bibliothèque gguf a échoué"))

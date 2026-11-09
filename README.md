@@ -57,7 +57,7 @@
 
 **Confort**
 - Thème clair ou sombre, couleur d'accent de Windows ; guide intégré avec recherche (F1)
-- Installateur qui vérifie le PC et télécharge lui-même le moteur IA (ComfyUI et les modèles), avec reprise après coupure
+- Installateur qui vérifie le PC et télécharge lui-même le moteur IA (ComfyUI et les modèles), avec reprise après coupure ; avec un ComfyUI déjà installé, seulement ce qui lui manque
 
 ## Configuration
 
@@ -88,6 +88,8 @@ Pixane a été testé sur une **RTX 3060 Ti (8 Go) avec 32 Go de mémoire vive**
 **[Pixane pour Windows](../../releases/latest)** (installateur 64 bits, `Pixane-Setup-<version>-64bits.exe`).
 
 L'installateur vérifie la carte graphique et la place libre, puis propose de télécharger le moteur IA depuis les sites officiels (GitHub, Hugging Face) : **21,5 Go**, environ 31 Go sur le disque. Deux options facultatives : **Flux Schnell** pour « Upscale net » (11,8 Go) et **Flux Kontext** pour « Restaurer une vieille photo » (11,9 Go). Les modèles Flux Fill et Flux Kontext sont sous licence **FLUX.1 [dev] non commerciale** : il faut l'accepter pour les installer.
+
+**ComfyUI déjà installé ?** Pixane l'utilise tel quel : pas de second ComfyUI, rien n'est retéléchargé en double. Au premier démarrage, Pixane regarde ce qui lui manque (extensions, modèles d'IA) et propose de télécharger **seulement ça**, avec la liste, la taille et la licence de chaque élément. Tout est rangé dans les dossiers de votre ComfyUI (même un dossier de modèles partagé), sans rien remplacer ni effacer. S'il a déjà tout, rien n'est téléchargé.
 
 > **Message « Windows a protégé votre ordinateur » :** Pixane est gratuit et n'est pas signé, car un certificat de signature est payant chaque année. Windows affiche donc ce message tant que le programme n'est pas assez connu. Cliquez sur **Informations complémentaires**, puis sur **Exécuter quand même**. Vérifiez que le fichier vient bien de cette page ; son empreinte SHA-256 est donnée avec chaque version.
 
@@ -888,7 +890,13 @@ Tout s'annule par Ctrl+Z.
 
 La même fenêtre s'ouvre par le menu **IA > Installer le moteur IA…** (par exemple pour ajouter Flux Schnell plus
 tard, ou **Flux Kontext** — 11,9 Go, facultatif — pour *Restaurer une vieille photo*), et Pixane la propose au démarrage s'il ne trouve pas de moteur. Si un ComfyUI installé autrement est déjà
-là, Pixane l'utilise et n'installe rien.
+là (ComfyUI Desktop, ComfyUI portable…), Pixane l'utilise tel quel : au démarrage, il demande à ComfyUI ce qu'il a
+déjà et, s'il manque des extensions ou des modèles, propose la fenêtre **Compléter le moteur IA** (aussi par
+**IA > Installer le moteur IA…**). Elle liste **seulement ce qui manque** (taille, licence, source, dossier) et le
+range dans les dossiers de ce ComfyUI, même un dossier de modèles partagé, sans rien remplacer ni effacer. Flux
+Schnell et Flux Kontext s'y ajoutent en option. Si de nouvelles extensions sont ajoutées à ComfyUI Desktop ouvert,
+fermez-le puis rouvrez-le pour qu'il les charge. Un ComfyUI trop ancien pour une fonction (par exemple la
+sélection d'objet) est signalé : Pixane ne le met pas à jour lui-même.
 
 **Mises à jour du moteur IA** : les versions de ComfyUI, des extensions et des modèles sont choisies et essayées
 avec chaque version de Pixane ; rien ne change tout seul. Quand une nouvelle version de Pixane demande d'autres
@@ -929,7 +937,7 @@ Les modèles d'IA sont gros (Flux Fill : 12 Go). Sur une carte de 8 Go, comptez 
 Pixane s'ouvre et retouche (calques, texte, recadrage…), mais les actions IA demandent une carte NVIDIA.
 
 ### J'ai déjà ComfyUI. Faut-il tout retélécharger ?
-Non : l'installateur le cherche, et le bouton **Parcourir…** permet d'indiquer son dossier. Pixane l'utilise alors tel quel.
+Non : l'installateur le cherche, et le bouton **Parcourir…** permet d'indiquer son dossier. Pixane l'utilise alors tel quel et ne propose de télécharger que ce qui lui manque (extensions, modèles), dans les dossiers de ce ComfyUI, sans rien remplacer.
 
 ### Comment changer la langue ?
 Menu **Affichage > Langue**. Pixane redémarre pour l'appliquer.
