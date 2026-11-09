@@ -65,6 +65,8 @@ Ce qui suit est le guide complet. C'est le même texte que le fichier `docs\GUID
 | **Barre du haut** | Ouvrir, Enregistrer, Annuler / Rétablir, réglages de l'outil choisi (taille, Nouvelle / Ajouter / Retirer…), zoom |
 | **Outils (à gauche)** | Main, Déplacer, outils de sélection, outils de retouche, Recadrer, Texte. Un petit triangle sur un bouton = plusieurs outils : **clic droit** (ou clic maintenu) pour choisir |
 | **Panneau « Texte » (à gauche)** | Réglages du texte, visible avec l'outil Texte (voir chapitre 7) |
+| **Onglets (au-dessus de la photo)** | Un onglet par photo ouverte (dès qu'il y en a deux) ; un point « • » marque une photo modifiée |
+| **Règles** | En haut et à gauche de la photo, en pixels (Affichage > Règles, Ctrl+R) |
 | **Photo (au centre)** | La photo ; la zone sélectionnée apparaît en rouge transparent |
 | **Panneau « Intelligence artificielle » (à droite)** | Effacer, Remplir, Agrandir l'image, Upscale |
 | **Panneau « Calques » (à droite, en dessous)** | Les calques de l'image (voir chapitre 6) ; onglet **Historique** à côté |
@@ -98,11 +100,14 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
   - Bon à savoir : un .chr est construit comme un .ora ; renommé en .ora, il s'ouvre aussi dans Krita ou GIMP.
   - **.psd** (Photoshop) : pour **travailler avec Photoshop**. Garde les calques (noms, ordre, visibilité,
     opacité, verrou) ; les textes y deviennent des images. Une photo ouverte depuis un PSD est proposée en PSD.
-  - **PSD ouverts dans Chrypix** : RVB ou niveaux de gris, 8 ou 16 bits, avec les calques, les groupes (un groupe
-    masqué masque ses calques) et les masques de calque. Chrypix ne reproduit pas les modes de fusion autres que
-    *Normal*, les styles (ombre, contour…), les calques de réglage ni les masques d'écrêtage : un message le
-    signale à l'ouverture, car l'aspect peut alors différer de Photoshop. Un PSD en CMJN s'ouvre aplati (un seul
+  - **PSD ouverts dans Chrypix** : RVB ou niveaux de gris, 8 ou 16 bits, avec les calques, les **groupes**, les
+    **masques de calque**, les **modes de fusion** et les **styles** (ombre portée et interne, lueurs, contour,
+    biseau, incrustations couleur et dégradé), qui restent modifiables. Chrypix ne reproduit pas les calques de
+    réglage de Photoshop, les masques d'écrêtage, ni les groupes en mode « traverser » (ouverts en mode Normal) :
+    un message le signale à l'ouverture, car l'aspect peut alors différer. Un PSD en CMJN s'ouvre aplati (un seul
     calque). Les grands documents .psb ne sont pas pris en charge.
+  - **PSD enregistrés par Chrypix** : calques, groupes, masques et modes de fusion sont gardés ; les styles sont mis
+    dans les pixels ; un calque de réglage devient un calque d'image (le résultat du réglage).
   - **JPG** (qualité 95), **PNG**, **TIFF**, **WebP** : l'image **à plat** (ce que vous voyez, calques fusionnés).
     Un message le rappelle si l'image a plusieurs calques.
   Les informations de l'appareil (EXIF) et le profil de couleur sont conservés.
@@ -111,6 +116,32 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 - **Panneau Historique** (onglet à côté de « Calques ») : la liste des étapes. Un clic sur une étape revient à ce
   moment-là ; un clic sur une étape plus bas refait les suivantes. Une nouvelle retouche efface les étapes « en avance ».
 - **Fichier > Fichiers récents** : les 10 dernières images ouvertes ou enregistrées (*Effacer la liste* pour la vider).
+- **Plusieurs photos à la fois** : *Ouvrir* accepte plusieurs fichiers d'un coup (Ctrl+clic ou Maj+clic dans la
+  fenêtre), et on peut en glisser plusieurs sur Chrypix. Chaque photo a son **onglet** et son propre **Annuler**
+  (Ctrl+Z ne touche que la photo affichée). Changer de photo : clic sur l'onglet, **Ctrl+Tab** / **Ctrl+Maj+Tab**.
+  **Fichier > Fermer la photo** (Ctrl+W, ou la croix de l'onglet) demande d'enregistrer si besoin. Rouvrir une photo
+  déjà ouverte revient simplement à son onglet.
+- **Enregistrement automatique** : toutes les 3 minutes, chaque photo modifiée est copiée (calques, textes, styles,
+  masques compris) dans `%LOCALAPPDATA%\Chrypix\recuperation`, sans ralentir le travail. Si Chrypix se ferme mal
+  (plantage, coupure de courant), il propose au démarrage suivant de **rouvrir ces copies** ; elles s'ouvrent
+  « à enregistrer », avec le nom du fichier d'origine. Les copies sont effacées quand la photo est enregistrée ou
+  fermée, et quand Chrypix se ferme normalement.
+- **Fichier > Exporter pour le web…** (Ctrl+Alt+Maj+S) : une copie légère pour Internet, sans toucher à la photo.
+  - **Format** : JPEG (photos), **WebP** (plus léger à qualité égale, garde la transparence), PNG (sans perte).
+  - **Réduire : plus grand côté** (par exemple 2048 px) ; jamais agrandie.
+  - **Qualité** (30 à 100 ; 80 environ suffit pour le web).
+  - Le **poids du fichier** s'affiche en direct.
+  - Les informations de l'appareil (EXIF : modèle, date, parfois le lieu) sont **enlevées** par défaut (case pour
+    les garder). Nom proposé : `<photo>_web.jpg`.
+- **Fichier > Traitement par lot…** : le même travail sur **tout un dossier** de photos.
+  - **Photos à traiter** (dossier d'origine, jamais modifié) et **Résultats dans** (un autre dossier).
+  - Au choix : **Réduire** (plus grand côté), **Réglage automatique** (luminosité, contraste, température, comme
+    le bouton Auto), **Upscale IA ×2** (RealESRGAN), **Supprimer l'arrière-plan** (résultats en PNG transparent),
+    **Format** (garder, JPEG, WebP, PNG) et qualité, **Ajouter au nom** (ex. `_web`).
+  - Une barre montre l'avancement ; **Arrêter** termine la photo en cours puis s'arrête. Une photo qui pose
+    problème est signalée à la fin, les autres sont faites.
+  - Sécurité : si les résultats iraient dans le même dossier sous le même nom, Chrypix refuse (les originaux
+    seraient remplacés).
 - **Fichier > Nouvelle image…** (Ctrl+N) : image vide, taille au choix, fond blanc, noir ou transparent.
 - **Fichier > Nouvelle image depuis le presse-papiers** (Ctrl+Alt+V) : ouvre l'image copiée (capture d'écran, autre
   logiciel…). **Ctrl+V** sans photo ouverte fait la même chose.
@@ -126,6 +157,17 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 | Taille réelle (100 %) | Ctrl+1 |
 | Déplacer la vue | Outil **Main** (H), ou maintenir **Espace** et glisser, ou glisser avec le **bouton du milieu** |
 | Déplacer **un calque** | Outil **Déplacer** (V) : seul le calque choisi bouge (la Main, elle, ne déplace que la vue) |
+
+### Règles, repères et grille (menu Affichage)
+- **Règles** (Ctrl+R) : graduées en pixels de l'image, le 0 au coin haut-gauche de la photo ; un trait suit la
+  souris.
+- **Repères** : glissez depuis une règle vers la photo pour poser une ligne bleue (horizontale depuis la règle du
+  haut, verticale depuis celle de gauche). Avec l'outil **Déplacer**, attrapez un repère pour le bouger ; tiré hors
+  de la photo, il disparaît. *Nouveau repère…* le pose à une position exacte, *Effacer les repères* les enlève tous,
+  Ctrl+; les cache ou les montre. Ils sont gardés dans le fichier .chr.
+- **Grille** (Ctrl+') : lignes régulières sur la photo ; *Taille de la grille…* règle l'écart (100 px par défaut).
+- **Magnétisme** (Ctrl+Maj+;, coché par défaut) : la sélection rectangle, le dégradé et les formes s'accrochent aux
+  repères, aux bords de la photo et à la grille (si elle est affichée), à moins de 8 pixels d'écran.
 
 ---
 
@@ -186,6 +228,19 @@ Un clic sur une couleur sélectionne la zone de couleur proche. Sans IA, instant
 - **Boucher les trous** : ajoute ce qui est entièrement entouré (oiseaux dans un ciel, reflets sur un objet…).
 - **Image visible** ou **Calque choisi** : sur quoi les couleurs sont comparées.
 - Maj ajoute, Alt retire, comme le rectangle.
+
+### Améliorer le contour (Ctrl+Alt+R, menu Sélection)
+Pour une sélection grossière autour de **cheveux, poils, feuillage ou bords flous** (par exemple après *Sélectionner
+le sujet* ou un lasso rapide) : Chrypix recalcule le bord d'après les couleurs de la photo.
+- **Rayon** : largeur de la bande recalculée autour du bord. Augmentez-le jusqu'à ce que les mèches apparaissent ;
+  hors de cette bande, rien ne change.
+- **Lissage** : adoucit un bord irrégulier. **Contraste du bord** : bord plus net. **Décaler le bord** : négatif le
+  rentre (enlève un liseré de l'ancien fond), positif le sort.
+- **Voir** : le sujet **sur noir**, **sur blanc**, le masque en **noir et blanc**, ou la sélection en rouge.
+  Choisissez un fond qui contraste avec l'ancien fond pour bien juger les bords.
+- **Résultat** : une **nouvelle sélection**, ou le **masque du calque choisi** (le fond est alors caché sans être
+  effacé, voir *Masques de calque*).
+Une seule étape dans Annuler. Le calcul prend une à trois secondes sur une grande photo.
 
 ### Couper, copier, coller, supprimer (menu Édition)
 Ils agissent sur le **calque choisi** dans le panneau Calques :
@@ -293,6 +348,21 @@ l'ajoute). Quelques secondes.
 - **Sélectionner le sujet** (Ctrl+Alt+S, menu Sélection) : sélectionne le sujet sans rien effacer, par exemple
   pour le régler (Ctrl+U), ou *Inverser* (Ctrl+Maj+I) pour travailler le fond.
 
+### Réduire le bruit, Netteté, Restaurer une vieille photo (menu IA)
+Ces trois actions travaillent sur l'image visible ; s'il y a une **sélection**, le résultat ne change que
+l'intérieur. Comme les autres actions IA, le résultat va dans un **nouveau calque** (Ctrl+Z annule).
+- **Réduire le bruit (IA)** : enlève le grain (photo de nuit, téléphone) et les défauts de compression JPEG en
+  gardant les détails. Modèle **SCUNet** (Apache-2.0, 72 Mo). Quelques secondes.
+- **Netteté (IA)** : rend un flou léger plus net (contours, textes, détails) : la photo est agrandie ×4 par
+  RealESRGAN puis ramenée à sa taille. Elle lisse aussi le grain : sur une photo très texturée, le filtre
+  *Netteté* (menu Filtres) peut être préférable. 15 à 20 secondes.
+- **Restaurer une vieille photo…** : l'IA **redessine** toute la photo en enlevant rayures, taches, poussières,
+  plis et grain, et en rendant le contraste et les visages plus nets. *Restaurer et coloriser* met aussi des
+  couleurs naturelles à une photo en noir et blanc ou sépia. Deux propositions, environ **2 minutes chacune** ;
+  *Autres propositions* en redemande. L'IA peut changer de petits détails (traits d'un visage, lettres) :
+  comparez bien avec l'original (œil du calque). Modèle **Flux Kontext dev** (11,9 Go, licence FLUX.1 [dev], usage
+  **non commercial**), facultatif : case *Flux Kontext* dans **IA > Installer le moteur IA…**.
+
 ---
 
 ## 6. Les calques
@@ -310,16 +380,59 @@ devant. Une photo ouverte a un seul calque, « Arrière-plan ».
 | **Opacité** | Transparence du calque choisi, de 0 % (invisible) à 100 % ; affichée sous le nom quand < 100 % |
 | **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. Les actions IA sont refusées avec un message : Effacer et Remplir si le calque choisi est verrouillé, Agrandir et Upscale si un calque quelconque est verrouillé (ils changent la taille de tous les calques). On peut toujours le masquer, le renommer et le monter / descendre. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .chr et .ora |
 
+| **Mode de fusion** (liste en haut du panneau) | Comment le calque se mélange à ce qui est dessous (voir plus bas) |
+| **Vignette du masque** (à droite de la vignette) | Le masque du calque, s'il en a un. Clic : on peint le masque (cadre orange) ; clic sur la vignette du calque : on repeint les pixels. Maj+clic : désactiver / réactiver le masque (barré en rouge) |
+
 ### Les boutons (de gauche à droite)
 | Bouton | Action |
 |---|---|
 | **Nouveau calque** | Ajoute un calque vide au-dessus du calque choisi (Ctrl+Maj+N) |
-| **Dupliquer** | Copie le calque choisi (Ctrl+J) |
+| **Nouveau groupe** | Crée un dossier de calques (Ctrl+G met le calque choisi dans un groupe) |
+| **Masque** | Ajoute un masque au calque choisi (d'après la sélection s'il y en a une) |
+| **Réglage** | Menu : nouveau calque de réglage (Niveaux, Courbes, Balance, Noir et blanc, Vibrance, Luminosité/contraste…) |
+| **Dupliquer** | Copie le calque choisi (Ctrl+J) ; un groupe est copié avec ses calques |
 | **fx** | Style du calque (voir plus bas) |
-| **Monter / Descendre** | Change la place du calque dans la pile |
-| **Fusionner** | Réunit le calque choisi avec celui du dessous (l'opacité est appliquée) |
+| **Monter / Descendre** | Change la place du calque dans la pile ; entre dans un groupe ouvert, en sort au bord ; un groupe bouge avec ses calques |
+| **Fusionner** | Réunit le calque choisi avec celui du dessous (opacité, masque et mode appliqués) |
 | **Aplatir** | Réunit tous les calques visibles en un seul « Arrière-plan » |
-| **Supprimer** | Supprime le calque choisi (le dernier calque ne peut pas être supprimé) |
+| **Supprimer** | Supprime le calque choisi (un groupe : avec ses calques) |
+
+### Modes de fusion
+Les mêmes que Photoshop, rangés par familles : **Normal** ; **Obscurcir**, **Produit**, **Densité couleur +** (ce qui
+assombrit) ; **Éclaircir**, **Superposition**, **Densité couleur −**, **Densité linéaire − (Ajout)** (ce qui éclaircit) ;
+**Incrustation**, **Lumière tamisée**, **Lumière crue** (contraste) ; **Différence**, **Exclusion** ; **Teinte**,
+**Saturation**, **Couleur**, **Luminosité**. Exemples : *Produit* pour une ombre ou une texture sombre, *Superposition*
+pour une lueur, *Incrustation* pour une texture de papier, *Couleur* pour teinter. Gardés dans les fichiers .chr,
+.ora et .psd.
+
+### Masques de calque
+Un masque **cache une partie du calque sans l'effacer** : noir = caché, blanc = visible, gris = à moitié. On peut
+toujours revenir en arrière en repeignant en blanc.
+- **Calque > Masque de calque** : *Ajouter : tout visible*, *Ajouter : montrer la sélection*, *Ajouter : cacher la
+  sélection* ; *Peindre le masque / les pixels* (Ctrl+\) ; *Désactiver le masque* ; *Inverser le masque* ; *Masque
+  vers sélection* ; *Appliquer le masque* (mis dans les pixels) ; *Supprimer le masque*.
+- **Peindre le masque** : choisissez-le (clic sur sa vignette), puis le **pinceau de couleur** (en noir, il cache ;
+  en blanc, il montre ; en gris, à moitié), la **gomme de calque** (cache), le **dégradé** (fondu progressif, par
+  exemple pour fondre deux photos) ou le pot de peinture. Les réglages et filtres s'appliquent aussi au masque.
+- Exemple : *Supprimer l'arrière-plan* puis un masque plutôt qu'une gomme : un bout de sujet coupé par erreur se
+  récupère en peignant en blanc.
+- Les masques suivent le calque (Ctrl+T, recadrer, taille de l'image, Upscale) et sont gardés en .chr, .ora et .psd.
+
+### Groupes
+Un **groupe** range plusieurs calques dans un dossier : on peut les masquer, les déplacer, les dupliquer ou les
+supprimer d'un coup, et donner au groupe une opacité, un mode de fusion et un masque qui valent pour tout son contenu.
+- **Ctrl+G** : met le calque choisi dans un nouveau groupe ; **Ctrl+Maj+G** : défait le groupe (les calques restent).
+- La flèche à gauche du groupe le **replie** ou le **déplie**. Les calques d'un groupe sont décalés vers la droite.
+- Monter / Descendre fait entrer un calque dans un groupe ouvert, ou l'en fait sortir.
+
+### Calques de réglage
+Un **calque de réglage** applique un réglage (Niveaux, Courbes, Balance des couleurs, Noir et blanc, Vibrance,
+Luminosité/contraste…) à **tout ce qui est dessous**, sans toucher aux pixels : on peut le modifier (double-clic
+dessus, ou **Calque > Modifier le réglage…**), le masquer (œil), baisser son opacité ou le supprimer à tout moment.
+- **Calque > Nouveau calque de réglage**, ou le bouton **Réglage** du panneau. S'il y a une sélection, elle devient
+  le masque du calque de réglage (le réglage ne s'applique que là).
+- Dans un groupe, il ne règle que les calques du groupe placés dessous.
+- Gardé tel quel en .chr ; en .ora et .psd, il devient un calque d'image (le résultat).
 
 ### Style du calque : ombres, contour, lueur, relief… (Ctrl+Alt+F)
 Des **effets ajoutés au calque**, toujours modifiables : les pixels du calque ne sont pas touchés. Pour l'ouvrir :
@@ -413,10 +526,10 @@ ils restent proportionnés quand on change la taille du texte.
 
 ---
 
-## 8. Recadrer, peindre, tamponner
+## 8. Recadrer, peindre, retoucher
 
-Trois outils de retouche à la main, comme dans Photoshop. Tout s'annule par **Ctrl+Z** ; un calque **verrouillé**
-est protégé.
+Les outils de retouche à la main, comme dans Photoshop. Tout s'annule par **Ctrl+Z** ; un calque **verrouillé**
+est protégé. Les outils d'un même bouton (petit triangle) se choisissent par **clic droit** sur le bouton.
 
 ### Recadrer (C)
 1. Tirez un cadre sur la photo : la partie gardée reste claire, le reste est assombri, une grille des tiers aide à
@@ -448,7 +561,36 @@ Recopie une partie de la photo sur une autre : pour effacer un petit défaut à 
 Le tampon copie la photo **telle qu'on la voit** (tous les calques visibles) et peint sur le calque choisi. Taille,
 opacité et dureté comme le pinceau.
 
+### Supprimer (J, IA)
+Peignez sur un petit défaut (fil électrique, tache, bouton, poussière) : **au lâcher**, il disparaît (LaMa). Le
+résultat va dans un calque « Suppressions », réutilisé pour les coups suivants. Pour un gros objet, préférez
+*Effacer* (Maj+E), qui propose plusieurs résultats.
+
+### Pinceau correcteur (R)
+Comme le tampon, mais la copie **prend la lumière et la couleur d'autour** : idéal pour une ride, une tache sur la
+peau, une rayure sur un ciel dégradé.
+1. **Alt+clic** sur une zone saine.
+2. Peignez sur le défaut : pendant le geste, la copie brute s'affiche ; **au lâcher**, elle est raccordée aux
+   alentours.
+
+### Dégradé (D)
+Glissez du début à la fin du dégradé (**Maj** : horizontal, vertical ou à 45°). Barre du haut : **Linéaire** ou
+**Radial**, couleur de départ (la couleur du pinceau) **vers** couleur d'arrivée, ou **transparent** (fondu vers
+rien). Dans la sélection s'il y en a une. Sur un **masque**, il fait un fondu progressif (par exemple pour mélanger
+deux photos).
+
+### Pot de peinture (K)
+Clic sur une zone : elle se remplit de la couleur choisie, en suivant les couleurs de l'image visible.
+**Tolérance** (barre du haut) : plus haut, la couleur déborde sur des teintes plus éloignées. Alt+clic : prendre
+une couleur.
+
+### Formes (U)
+Glissez pour dessiner un **rectangle**, un **rectangle arrondi**, une **ellipse**, une **ligne** ou une **flèche**
+(**Maj** : carré, cercle, ligne droite). Chaque forme va dans un **nouveau calque**, dans la couleur du pinceau.
+**Remplie** (case) ou seulement le contour ; la **taille** règle l'épaisseur du trait.
+
 Un **texte** retouché au pinceau ou au tampon devient une image (un message le rappelle ; Ctrl+Z pour revenir).
+Les groupes et calques de réglage n'ont pas de pixels : un message invite à choisir un calque d'image ou un masque.
 
 ---
 
@@ -474,6 +616,24 @@ Menu **Image > Réglages de l'image…** (Ctrl+U) : corriger la lumière, les co
 - **Auto** : propose d'office une luminosité, un contraste et une température (d'après la photo, ou la sélection) ;
   les curseurs restent ajustables ensuite.
 - Un calque **verrouillé** est protégé ; un **texte** réglé devient une image.
+
+### Niveaux, Courbes, Balance, Noir et blanc, Vibrance (menu Image > Réglages)
+Comme dans Photoshop, avec aperçu en direct et histogramme. Ils changent les pixels du **calque choisi** (dans la
+sélection s'il y en a une). Pour pouvoir y revenir plus tard, utilisez plutôt un **calque de réglage** (chapitre 6).
+
+| Réglage | Raccourci | Ce qu'il fait |
+|---|---|---|
+| **Niveaux** | Ctrl+L | Point noir, gris (gamma) et blanc d'entrée, noir et blanc de sortie ; par canal (RVB, rouge, vert, bleu). **Auto** cale le noir et le blanc sur la photo |
+| **Courbes** | Ctrl+M | Courbe de tons : clic pour ajouter un point, glisser pour le bouger, clic droit pour l'enlever ; par canal. Une courbe en S donne du contraste |
+| **Balance des couleurs** | Ctrl+B | Pousse les **Ombres**, **Tons moyens** ou **Hautes lumières** vers Cyan–Rouge, Magenta–Vert, Jaune–Bleu ; *Préserver la luminosité* |
+| **Noir et blanc** | Ctrl+Alt+Maj+B | Passe en noir et blanc en choisissant la clarté de chaque couleur (rouges, jaunes, verts, cyans, bleus, magentas) ; **Virage** : teinte le gris (sépia…) |
+| **Vibrance** | — | Ravive surtout les couleurs ternes en ménageant celles déjà vives (la peau) ; **Saturation** : toutes les couleurs autant |
+
+### Filtres (menu Filtres)
+**Flou gaussien**, **Flou de mouvement** (angle, distance), **Réduction du bruit** (force, garder les détails, bruit
+de couleur), **Netteté** (quantité, rayon, seuil : le masque flou de Photoshop), **Vignette** (assombrir ou
+éclaircir les bords : force, taille du centre, douceur, rond). Même fonctionnement que les réglages : aperçu en
+direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annuler. Ils marchent aussi sur un masque.
 
 ---
 
@@ -503,7 +663,8 @@ Tout s'annule par Ctrl+Z.
 |---|---|
 | H, V, M, L, B, E, G, T | Main, Déplacer, Rectangle, Lasso, Pinceau, Gomme de sélection, Gomme de calque, Texte |
 | C, P, S | Recadrer, Pinceau de couleur, Tampon |
-| Alt+clic | (Pinceau de couleur) prendre une couleur ; (Tampon) endroit à copier |
+| J, R, D, K, U | Supprimer (IA), Pinceau correcteur, Dégradé, Pot de peinture, Formes |
+| Alt+clic | (Pinceau de couleur, Pot de peinture) prendre une couleur ; (Tampon, Pinceau correcteur) endroit à copier |
 | `[` / `]` | Pinceau plus petit / plus grand |
 | Espace (maintenu) | Déplacer la vue |
 | Maj / Alt (en commençant un rectangle ou un lasso) | Ajouter / Retirer |
@@ -513,6 +674,13 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+A, Ctrl+D, Ctrl+Maj+I | Tout sélectionner, Désélectionner, Inverser |
 | Ctrl+X, Ctrl+C, Ctrl+V, Suppr | Couper, Copier, Coller (nouveau calque), Supprimer la sélection |
 | Ctrl+U | Réglages de l'image |
+| Ctrl+L, Ctrl+M, Ctrl+B, Ctrl+Alt+Maj+B | Niveaux, Courbes, Balance des couleurs, Noir et blanc |
+| Ctrl+G, Ctrl+Maj+G | Grouper, Dégrouper |
+| Ctrl+\ | Peindre le masque / les pixels du calque |
+| Ctrl+Alt+R | Améliorer le contour |
+| Ctrl+R, Ctrl+', Ctrl+;, Ctrl+Maj+; | Règles, Grille, Repères, Magnétisme |
+| Ctrl+W, Ctrl+Tab, Ctrl+Maj+Tab | Fermer la photo, Photo suivante, Photo précédente |
+| Ctrl+Alt+Maj+S | Exporter pour le web |
 | Ctrl+N, Ctrl+Alt+V | Nouvelle image, Nouvelle image depuis le presse-papiers |
 | Ctrl+Alt+I | Taille de l'image |
 | Ctrl+T | Transformer le calque (Entrée valider, Échap annuler) |
@@ -539,7 +707,7 @@ Tout s'annule par Ctrl+Z.
    (ComfyUI) trouvé ou non. Si ComfyUI est installé ailleurs, bouton **Parcourir…** pour indiquer son dossier.
    Sans ComfyUI, Chrypix ouvre, retouche (calques, texte) et enregistre, mais les actions IA ne marchent pas.
 5. **Moteur IA** (seulement si ComfyUI n'est pas trouvé) : liste de ce qui sera téléchargé, avec taille, site et
-   licence (21,4 Go à télécharger, environ 31 Go sur le disque) ; dossier du moteur (par défaut
+   licence (21,5 Go à télécharger, environ 31 Go sur le disque) ; dossier du moteur (par défaut
    `%LOCALAPPDATA%\Chrypix\moteur`) ; case facultative **Flux Schnell** pour « Upscale net » (11,8 Go de plus) ;
    case **J'accepte la licence FLUX.1 [dev]** (usage non commercial) obligatoire pour installer le moteur.
    On peut aussi décocher : Chrypix s'installe sans moteur.
@@ -550,7 +718,7 @@ Tout s'annule par Ctrl+Z.
    vérifié (empreinte SHA-256).
 
 La même fenêtre s'ouvre par le menu **IA > Installer le moteur IA…** (par exemple pour ajouter Flux Schnell plus
-tard), et Chrypix la propose au démarrage s'il ne trouve pas de moteur. Si un ComfyUI installé autrement est déjà
+tard, ou **Flux Kontext** — 11,9 Go, facultatif — pour *Restaurer une vieille photo*), et Chrypix la propose au démarrage s'il ne trouve pas de moteur. Si un ComfyUI installé autrement est déjà
 là, Chrypix l'utilise et n'installe rien.
 
 **Mises à jour du moteur IA** : les versions de ComfyUI, des extensions et des modèles sont choisies et essayées
@@ -574,7 +742,8 @@ Applications. Le désinstalleur pose deux questions (réponse « Non » par déf
   Éléments tiers : `docs\LICENCES_TIERS.md`.
 - Testé sur une carte graphique NVIDIA de 8 Go (RTX 3060 Ti). Les durées indiquées viennent de ce PC.
 - Modèles utilisés : Flux.1 Fill dev (**usage non commercial** ; version GGUF Q8 si installé par Chrypix, même
-  qualité), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3), BiRefNet (MIT), SAM 3.1 (SAM License de Meta).
+  qualité), Flux.1 Kontext dev (**usage non commercial**, facultatif), Flux.1 Schnell (Apache-2.0), LaMa
+  (Apache-2.0), RealESRGAN x4plus (BSD-3), SCUNet (Apache-2.0), BiRefNet (MIT), SAM 3.1 (SAM License de Meta).
 - Moteur : ComfyUI (GPL-3.0) et ses extensions Inpaint nodes, Inpaint Crop and Stitch, Ultimate SD Upscale
   (GPL-3.0), ComfyUI-GGUF (Apache-2.0).
 <!-- /guide -->

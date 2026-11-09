@@ -14,6 +14,8 @@ This guide explains every tool and every setting. It is updated with each new fe
 | **Top bar** | Open, Save, Undo / Redo, settings of the chosen tool (size, New / Add / Remove…), zoom |
 | **Tools (left)** | Hand, Move, selection tools, retouching tools, Crop, Text. A small triangle on a button = several tools: **right-click** (or click and hold) to choose |
 | **"Text" panel (left)** | Text settings, shown with the Text tool (see chapter 7) |
+| **Tabs (above the photo)** | One tab per open photo (as soon as there are two); a "•" marks a modified photo |
+| **Rulers** | Above and left of the photo, in pixels (View > Rulers, Ctrl+R) |
 | **Photo (centre)** | The photo; the selected area appears in transparent red |
 | **"Artificial intelligence" panel (right)** | Erase, Fill, Expand image, Upscale |
 | **"Layers" panel (right, below)** | The layers of the image (see chapter 6) |
@@ -47,10 +49,13 @@ Layer names that already exist keep their original language.
   - Good to know: a .chr file is built like an .ora file; renamed to .ora, it also opens in Krita or GIMP.
   - **.psd** (Photoshop): to **work with Photoshop**. Keeps the layers (names, order, visibility, opacity, lock);
     texts become images. A photo opened from a PSD is suggested as PSD.
-  - **PSD files opened in Chrypix**: RGB or greyscale, 8 or 16-bit, with layers, groups (a hidden group hides its
-    layers) and layer masks. Chrypix does not reproduce blend modes other than *Normal*, layer styles (shadow,
-    stroke…), adjustment layers or clipping masks: a message says so when opening, as the result may then look
-    different from Photoshop. A CMYK PSD opens flattened (a single layer). Large .psb documents are not supported.
+  - **PSD files opened in Chrypix**: RGB or greyscale, 8 or 16-bit, with layers, **groups**, **layer masks**,
+    **blend modes** and **layer styles** (drop and inner shadow, glows, stroke, bevel, colour and gradient overlays),
+    which stay editable. Chrypix does not reproduce Photoshop adjustment layers, clipping masks or groups in "pass
+    through" mode (opened as Normal): a message says so when opening, as the result may then look different. A CMYK
+    PSD opens flattened (a single layer). Large .psb documents are not supported.
+  - **PSD files saved by Chrypix**: layers, groups, masks and blend modes are kept; styles are baked into the
+    pixels; an adjustment layer becomes an image layer (the adjusted result).
   - **JPG** (quality 95), **PNG**, **TIFF**, **WebP**: the **flattened** image (what you see, layers merged).
     A message reminds you of this if the image has several layers.
   Camera information (EXIF) and the colour profile are kept.
@@ -58,6 +63,30 @@ Layer names that already exist keep their original language.
 - **History panel** (tab next to "Layers"): the list of steps. Click a step to go back to that moment; click a step
   further down to redo the next ones. A new edit discards the steps "ahead".
 - **File > Recent files**: the last 10 images opened or saved (*Clear the list* empties it).
+- **Several photos at once**: *Open* accepts several files at a time (Ctrl+click or Shift+click in the dialog),
+  and several files can be dropped on Chrypix. Each photo has its own **tab** and its own **Undo** (Ctrl+Z only
+  affects the photo shown). Switch photos: click the tab, **Ctrl+Tab** / **Ctrl+Shift+Tab**. **File > Close photo**
+  (Ctrl+W, or the tab's cross) asks to save if needed. Opening a photo that is already open just goes to its tab.
+- **Autosave**: every 3 minutes, each modified photo is copied (layers, texts, styles and masks included) to
+  `%LOCALAPPDATA%\Chrypix\recuperation`, without slowing you down. If Chrypix closes badly (crash, power cut), it
+  offers to **reopen these copies** the next time it starts; they open "to be saved", with the original file name.
+  The copies are deleted when the photo is saved or closed, and when Chrypix closes normally.
+- **File > Export for web…** (Ctrl+Alt+Shift+S): a light copy for the Internet, without touching the photo.
+  - **Format**: JPEG (photos), **WebP** (lighter at the same quality, keeps transparency), PNG (lossless).
+  - **Shrink: longest side** (for example 2048 px); never enlarged.
+  - **Quality** (30 to 100; about 80 is enough for the web).
+  - The **file size** is shown live.
+  - Camera information (EXIF: model, date, sometimes location) is **removed** by default (box to keep it).
+    Suggested name: `<photo>_web.jpg`.
+- **File > Batch processing…**: the same work on **a whole folder** of photos.
+  - **Photos to process** (source folder, never modified) and **Results in** (another folder).
+  - Options: **Shrink** (longest side), **Auto adjust** (brightness, contrast, temperature, like the Auto button),
+    **AI upscale ×2** (RealESRGAN), **Remove background** (results as transparent PNG), **Format** (keep, JPEG,
+    WebP, PNG) and quality, **Add to name** (e.g. `_web`).
+  - A bar shows progress; **Stop** finishes the current photo then stops. A photo that causes a problem is listed
+    at the end; the others are done.
+  - Safety: if the results would go into the same folder under the same name, Chrypix refuses (the originals
+    would be replaced).
 - **File > New image…** (Ctrl+N): empty image, any size, white, black or transparent background.
 - **File > New image from clipboard** (Ctrl+Alt+V): opens the copied image (screenshot, other program…).
   **Ctrl+V** with no photo open does the same.
@@ -73,6 +102,16 @@ Layer names that already exist keep their original language.
 | Actual size (100%) | Ctrl+1 |
 | Move the view | **Hand** tool (H), or hold **Space** and drag, or drag with the **middle button** |
 | Move **a layer** | **Move** tool (V): only the selected layer moves (the Hand only moves the view) |
+
+### Rulers, guides and grid (View menu)
+- **Rulers** (Ctrl+R): in image pixels, 0 at the top-left corner of the photo; a line follows the mouse.
+- **Guides**: drag from a ruler onto the photo to place a blue line (horizontal from the top ruler, vertical from
+  the left one). With the **Move** tool, grab a guide to move it; dragged off the photo, it disappears. *New
+  guide…* places one at an exact position, *Clear guides* removes them all, Ctrl+; hides or shows them. They are
+  saved in the .chr file.
+- **Grid** (Ctrl+'): regular lines over the photo; *Grid size…* sets the spacing (100 px by default).
+- **Snap** (Ctrl+Shift+;, on by default): rectangle selection, gradient and shapes snap to guides, to the photo's
+  edges and to the grid (when shown), within 8 screen pixels.
 
 ---
 
@@ -130,6 +169,19 @@ One click on a colour selects the area of similar colour. No AI, instant.
 - **Fill holes**: adds what is completely surrounded (birds in a sky, reflections on an object…).
 - **Visible image** or **Chosen layer**: what the colours are compared on.
 - Shift adds, Alt removes, like the rectangle.
+
+### Refine edge (Ctrl+Alt+R, Select menu)
+For a rough selection around **hair, fur, foliage or soft edges** (for example after *Select subject* or a quick
+lasso): Chrypix recomputes the edge from the photo's colours.
+- **Radius**: width of the band recomputed around the edge. Increase it until the strands appear; outside this
+  band, nothing changes.
+- **Smooth**: softens a jagged edge. **Edge contrast**: sharper edge. **Shift edge**: negative pulls it in (removes
+  a fringe of the old background), positive pushes it out.
+- **View**: the subject **on black**, **on white**, the mask in **black & white**, or the selection in red. Pick a
+  background that contrasts with the old one to judge the edges.
+- **Output**: a **new selection**, or the **mask of the chosen layer** (the background is then hidden, not erased:
+  see *Layer masks*).
+One step in Undo. The computation takes one to three seconds on a large photo.
 
 ### Cut, copy, paste, delete (Edit menu)
 They work on the **layer chosen** in the Layers panel:
@@ -236,6 +288,21 @@ adds it). A few seconds.
 - **Select subject** (Ctrl+Alt+S, Select menu): selects the subject without erasing anything, for example to
   adjust it (Ctrl+U), or *Invert* (Ctrl+Shift+I) to work on the background.
 
+### Reduce noise, Sharpen, Restore an old photo (AI menu)
+These three actions work on the visible image; if there is a **selection**, only its inside changes. Like the other
+AI actions, the result goes on a **new layer** (Ctrl+Z undoes it).
+- **Reduce noise (AI)**: removes grain (night or phone photos) and JPEG compression artefacts while keeping detail.
+  **SCUNet** model (Apache-2.0, 72 MB). A few seconds.
+- **Sharpen (AI)**: makes a slight blur sharper (edges, text, details): the photo is enlarged ×4 by RealESRGAN
+  then brought back to its size. It also smooths grain: on a very textured photo, the *Sharpen* filter (Filters
+  menu) may be better. 15 to 20 seconds.
+- **Restore an old photo…**: the AI **redraws** the whole photo, removing scratches, stains, dust, creases and
+  grain, and making contrast and faces sharper. *Restore and colourise* also adds natural colours to a black &
+  white or sepia photo. Two proposals, about **2 minutes each**; *More proposals* asks for others. The AI may change
+  small details (facial features, letters): compare carefully with the original (layer eye). **Flux Kontext dev**
+  model (11.9 GB, FLUX.1 [dev] licence, **non-commercial** use), optional: *Flux Kontext* box in **AI > Install the
+  AI engine…**.
+
 ---
 
 ## 6. Layers
@@ -253,16 +320,57 @@ An opened photo has a single layer, "Background".
 | **Opacity** | Transparency of the selected layer, from 0% (invisible) to 100%; shown under the name when < 100% |
 | **Padlock** (right of the name) | Locks the layer to protect it: it can no longer be erased, deleted or merged, and its opacity is fixed; Flatten is disabled while a layer is locked. AI actions are refused with a message: Erase and Fill if the selected layer is locked, Expand and Upscale if any layer is locked (they change the size of every layer). It can still be hidden, renamed and moved up / down. The open padlock is discreet, the closed padlock clearly visible. The lock is kept in .chr and .ora files |
 
+| **Blend mode** (list at the top of the panel) | How the layer mixes with what is below (see below) |
+| **Mask thumbnail** (right of the thumbnail) | The layer's mask, if it has one. Click: you paint the mask (orange frame); click the layer thumbnail: you paint the pixels again. Shift+click: disable / enable the mask (crossed in red) |
+
 ### The buttons (left to right)
 | Button | Action |
 |---|---|
 | **New layer** | Adds an empty layer above the selected layer (Ctrl+Shift+N) |
-| **Duplicate** | Copies the selected layer (Ctrl+J) |
+| **New group** | Creates a folder of layers (Ctrl+G puts the selected layer in a group) |
+| **Mask** | Adds a mask to the selected layer (from the selection if there is one) |
+| **Adjustment** | Menu: new adjustment layer (Levels, Curves, Colour balance, Black & white, Vibrance, Brightness/contrast…) |
+| **Duplicate** | Copies the selected layer (Ctrl+J); a group is copied with its layers |
 | **fx** | Layer style (see below) |
-| **Move up / down** | Changes the layer's place in the stack |
-| **Merge** | Combines the selected layer with the one below (opacity is applied) |
+| **Move up / down** | Changes the layer's place in the stack; enters an open group, leaves it at the edge; a group moves with its layers |
+| **Merge** | Combines the selected layer with the one below (opacity, mask and mode applied) |
 | **Flatten** | Combines all visible layers into a single "Background" |
-| **Delete** | Deletes the selected layer (the last layer cannot be deleted) |
+| **Delete** | Deletes the selected layer (a group: with its layers) |
+
+### Blend modes
+The same as Photoshop, sorted by family: **Normal**; **Darken**, **Multiply**, **Colour burn** (darkening);
+**Lighten**, **Screen**, **Colour dodge**, **Linear dodge (Add)** (lightening); **Overlay**, **Soft light**, **Hard
+light** (contrast); **Difference**, **Exclusion**; **Hue**, **Saturation**, **Colour**, **Luminosity**. Examples:
+*Multiply* for a shadow or dark texture, *Screen* for a glow, *Overlay* for a paper texture, *Colour* to tint. Kept
+in .chr, .ora and .psd files.
+
+### Layer masks
+A mask **hides part of a layer without erasing it**: black = hidden, white = visible, grey = half. You can always go
+back by painting white.
+- **Layer > Layer mask**: *Add: reveal all*, *Add: reveal selection*, *Add: hide selection*; *Paint mask / pixels*
+  (Ctrl+\); *Disable mask*; *Invert mask*; *Mask to selection*; *Apply mask* (into the pixels); *Delete mask*.
+- **Painting the mask**: select it (click its thumbnail), then use the **colour brush** (black hides, white
+  reveals, grey half), the **layer eraser** (hides), the **gradient** (gradual fade, for example to blend two
+  photos) or the paint bucket. Adjustments and filters also work on the mask.
+- Example: *Remove background* then a mask rather than an eraser: a bit of the subject cut by mistake comes back by
+  painting white.
+- Masks follow the layer (Ctrl+T, crop, image size, Upscale) and are kept in .chr, .ora and .psd.
+
+### Groups
+A **group** puts several layers in a folder: you can hide, move, duplicate or delete them all at once, and give the
+group an opacity, a blend mode and a mask that apply to everything inside.
+- **Ctrl+G**: puts the selected layer in a new group; **Ctrl+Shift+G**: ungroups (the layers stay).
+- The arrow left of the group **collapses** or **expands** it. Layers inside a group are indented.
+- Move up / down takes a layer into an open group, or out of it.
+
+### Adjustment layers
+An **adjustment layer** applies an adjustment (Levels, Curves, Colour balance, Black & white, Vibrance,
+Brightness/contrast…) to **everything below it**, without touching the pixels: you can edit it (double-click it, or
+**Layer > Edit adjustment…**), hide it (eye), lower its opacity or delete it at any time.
+- **Layer > New adjustment layer**, or the panel's **Adjustment** button. If there is a selection, it becomes the
+  adjustment layer's mask (the adjustment only applies there).
+- Inside a group, it only adjusts the group's layers below it.
+- Kept as is in .chr; in .ora and .psd it becomes an image layer (the result).
 
 ### Layer style: shadows, outline, glow, bevel… (Ctrl+Alt+F)
 **Effects added to the layer**, always editable: the layer's pixels are not touched. To open it: **double-click** a
@@ -355,10 +463,10 @@ they stay in proportion when you change the text size.
 
 ---
 
-## 8. Crop, paint, clone
+## 8. Crop, paint, retouch
 
-Three manual editing tools, as in Photoshop. Everything can be undone with **Ctrl+Z**; a **locked** layer is
-protected.
+The manual editing tools, as in Photoshop. Everything can be undone with **Ctrl+Z**; a **locked** layer is
+protected. Tools sharing a button (small triangle) are chosen by **right-clicking** the button.
 
 ### Crop (C)
 1. Drag a frame on the photo: the part kept stays bright, the rest is darkened, and a rule-of-thirds grid helps
@@ -390,7 +498,33 @@ Copies one part of the photo onto another: to remove a small defect by hand, dup
 The stamp copies the photo **as you see it** (all visible layers) and paints on the chosen layer. Size, opacity
 and hardness as for the brush.
 
+### Remove (J, AI)
+Paint over a small flaw (power line, stain, spot, dust): **on release**, it disappears (LaMa). The result goes on a
+"Removals" layer, reused for the following strokes. For a large object, use *Erase* (Shift+E), which offers several
+results.
+
+### Healing brush (R)
+Like the clone stamp, but the copy **takes on the surrounding light and colour**: ideal for a wrinkle, a skin
+blemish, a scratch on a graded sky.
+1. **Alt+click** a clean area.
+2. Paint over the flaw: the raw copy shows while painting; **on release**, it is blended with its surroundings.
+
+### Gradient (D)
+Drag from the start to the end of the gradient (**Shift**: horizontal, vertical or 45°). Top bar: **Linear** or
+**Radial**, start colour (the brush colour) **to** end colour, or **transparent** (fade to nothing). Inside the
+selection if there is one. On a **mask**, it makes a gradual fade (for example to blend two photos).
+
+### Paint bucket (K)
+Click an area: it fills with the chosen colour, following the colours of the visible image. **Tolerance** (top
+bar): higher, the colour spreads to more distant shades. Alt+click: pick a colour.
+
+### Shapes (U)
+Drag to draw a **rectangle**, **rounded rectangle**, **ellipse**, **line** or **arrow** (**Shift**: square, circle,
+straight line). Each shape goes on a **new layer**, in the brush colour. **Filled** (box) or outline only; the
+**size** sets the stroke thickness.
+
 A **text** retouched with the brush or the stamp becomes an image (a message reminds you; Ctrl+Z to go back).
+Groups and adjustment layers have no pixels: a message asks you to choose an image layer or a mask.
 
 ---
 
@@ -416,6 +550,24 @@ A **text** retouched with the brush or the stamp becomes an image (a message rem
 - **Auto**: suggests a brightness, contrast and temperature (from the photo, or the selection); the sliders can
   still be adjusted afterwards.
 - A **locked** layer is protected; an adjusted **text** becomes an image.
+
+### Levels, Curves, Colour balance, Black & white, Vibrance (Image > Adjustments menu)
+As in Photoshop, with live preview and histogram. They change the pixels of the **selected layer** (inside the
+selection if there is one). To be able to come back to them later, use an **adjustment layer** instead (chapter 6).
+
+| Adjustment | Shortcut | What it does |
+|---|---|---|
+| **Levels** | Ctrl+L | Input black, grey (gamma) and white points, output black and white; per channel (RGB, red, green, blue). **Auto** sets black and white from the photo |
+| **Curves** | Ctrl+M | Tone curve: click to add a point, drag to move it, right-click to remove it; per channel. An S curve adds contrast |
+| **Colour balance** | Ctrl+B | Pushes **Shadows**, **Midtones** or **Highlights** towards Cyan–Red, Magenta–Green, Yellow–Blue; *Preserve luminosity* |
+| **Black & white** | Ctrl+Alt+Shift+B | Converts to black & white choosing the lightness of each colour (reds, yellows, greens, cyans, blues, magentas); **Tint**: colours the greys (sepia…) |
+| **Vibrance** | — | Mostly boosts dull colours, sparing those already vivid (skin); **Saturation**: all colours equally |
+
+### Filters (Filters menu)
+**Gaussian blur**, **Motion blur** (angle, distance), **Noise reduction** (strength, keep details, colour noise),
+**Sharpen** (amount, radius, threshold: Photoshop's unsharp mask), **Vignette** (darken or lighten the edges:
+strength, centre size, softness, round). Same behaviour as adjustments: live preview, selected layer, inside the
+selection if there is one, one step in Undo. They also work on a mask.
 
 ---
 
@@ -445,7 +597,8 @@ Everything can be undone with Ctrl+Z.
 |---|---|
 | H, V, M, L, B, E, G, T | Hand, Move, Rectangle, Lasso, Brush, Selection eraser, Layer eraser, Text |
 | C, P, S | Crop, Colour brush, Clone stamp |
-| Alt+click | (Colour brush) pick a colour; (Clone stamp) area to copy |
+| J, R, D, K, U | Remove (AI), Healing brush, Gradient, Paint bucket, Shapes |
+| Alt+click | (Colour brush, Paint bucket) pick a colour; (Clone stamp, Healing brush) area to copy |
 | `[` / `]` | Smaller / larger brush |
 | Space (held) | Move the view |
 | Shift / Alt (when starting a rectangle or a lasso) | Add / Remove |
@@ -455,6 +608,13 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+A, Ctrl+D, Ctrl+Shift+I | Select all, Deselect, Invert |
 | Ctrl+X, Ctrl+C, Ctrl+V, Del | Cut, Copy, Paste (new layer), Delete selection |
 | Ctrl+U | Image adjustments |
+| Ctrl+L, Ctrl+M, Ctrl+B, Ctrl+Alt+Shift+B | Levels, Curves, Colour balance, Black & white |
+| Ctrl+G, Ctrl+Shift+G | Group, Ungroup |
+| Ctrl+\ | Paint the layer's mask / pixels |
+| Ctrl+Alt+R | Refine edge |
+| Ctrl+R, Ctrl+', Ctrl+;, Ctrl+Shift+; | Rulers, Grid, Guides, Snap |
+| Ctrl+W, Ctrl+Tab, Ctrl+Shift+Tab | Close photo, Next photo, Previous photo |
+| Ctrl+Alt+Shift+S | Export for web |
 | Ctrl+N, Ctrl+Alt+V | New image, New image from clipboard |
 | Ctrl+Alt+I | Image size |
 | Ctrl+T | Transform layer (Enter apply, Esc cancel) |
@@ -481,7 +641,7 @@ Everything can be undone with Ctrl+Z.
    not. If ComfyUI is installed elsewhere, use **Browse…** to select its folder.
    Without ComfyUI, Chrypix opens, edits (layers, text) and saves photos, but the AI actions do not work.
 5. **AI engine** (only if ComfyUI is not found): list of what will be downloaded, with size, site and licence
-   (21.4 GB to download, about 31 GB on disk); engine folder (default `%LOCALAPPDATA%\Chrypix\moteur`); optional
+   (21.5 GB to download, about 31 GB on disk); engine folder (default `%LOCALAPPDATA%\Chrypix\moteur`); optional
    **Flux Schnell** box for "Sharp upscale" (11.8 GB more); the **I accept the FLUX.1 [dev] licence** box
    (non-commercial use) is required to install the engine. You can also untick it: Chrypix installs without the
    engine.
@@ -490,7 +650,8 @@ Everything can be undone with Ctrl+Z.
    extensions, the models). It shows progress, speed and time left. You can **Stop** at any time: the download
    resumes later where it stopped (even after a connection loss). Each file is checked (SHA-256 checksum).
 
-The same window opens from **AI > Install the AI engine…** (for example to add Flux Schnell later), and Chrypix
+The same window opens from **AI > Install the AI engine…** (for example to add Flux Schnell later, or **Flux
+Kontext** — 11.9 GB, optional — for *Restore an old photo*), and Chrypix
 offers it at start-up if it finds no engine. If a ComfyUI installed another way is already there, Chrypix uses it
 and installs nothing.
 
@@ -515,6 +676,7 @@ asks two questions (default answer "No"):
   Third-party items: `docs\LICENCES_TIERS.md`.
 - Tested on an 8 GB NVIDIA graphics card (RTX 3060 Ti). The times given come from this PC.
 - Models used: Flux.1 Fill dev (**non-commercial use**; GGUF Q8 version when installed by Chrypix, same
-  quality), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0), RealESRGAN x4plus (BSD-3), BiRefNet (MIT), SAM 3.1 (Meta SAM License).
+  quality), Flux.1 Kontext dev (**non-commercial use**, optional), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0),
+  RealESRGAN x4plus (BSD-3), SCUNet (Apache-2.0), BiRefNet (MIT), SAM 3.1 (Meta SAM License).
 - Engine: ComfyUI (GPL-3.0) and its extensions Inpaint nodes, Inpaint Crop and Stitch, Ultimate SD Upscale
   (GPL-3.0), ComfyUI-GGUF (Apache-2.0).

@@ -8,6 +8,7 @@ import threading
 from dataclasses import replace
 from pathlib import Path
 
+import numpy as np
 from PySide6.QtCore import QBuffer, QMimeData, QObject, QPoint, QProcess, QSettings, QSize, Qt, QTimer, Signal
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import (QAction, QActionGroup, QColor, QDesktopServices, QIcon, QImage, QKeySequence, QUndoCommand,
@@ -331,6 +332,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self._action(m, tr("Upscale…"), "Shift+U", self.ia_upscale, "a_upscale", "upscale")
         self._action(m, tr("Supprimer l'arrière-plan"), "Shift+B", self.supprimer_arriere_plan, "a_arriere_plan",
                      "arriere_plan")
+        m.addSeparator()
+        self._action(m, tr("Réduire le bruit (IA)"), None, self.ia_debruiter, "a_ia_bruit")
+        self._action(m, tr("Netteté (IA)"), None, self.ia_nettete, "a_ia_nettete")
+        self._action(m, tr("Restaurer une vieille photo…"), None, self.ia_restaurer, "a_ia_restaurer")
         m.addSeparator()
         self._action(m, tr("Installer le moteur IA…"), None, self.installer_moteur, "a_installer_moteur")
 
@@ -947,6 +952,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                   self.a_nouveau_calque, self.a_dupliquer_calque, *self._actions_calques_doc()):
             a.setEnabled(a_doc)
         for a in (self.a_effacer, self.a_remplir, self.a_agrandir, self.a_upscale, self.a_arriere_plan,
+                  self.a_ia_bruit, self.a_ia_nettete, self.a_ia_restaurer,
                   self.a_sujet):
             a.setEnabled(pret)
         for b in (self.b_effacer, self.b_remplir, self.b_agrandir, self.b_upscale, self.b_arriere_plan):
@@ -979,12 +985,13 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                                            dossier=install["dir"]))
                 return
             dossier = str(racine.parent)        # installé par Chrypix : on complète (ex. Flux Schnell)
-        schnell = False
+        schnell = kontext = False
         if dossier is not None:
             from .installation_moteur import lire_infos
             infos = lire_infos(Path(dossier)) or {}
             schnell = "schnell" in infos.get("elements", []) or "schnell" in (infos.get("versions") or {})
-        f = FenetreInstallation(self, dossier=dossier, schnell=schnell)
+            kontext = "kontext" in infos.get("elements", []) or "kontext" in (infos.get("versions") or {})
+        f = FenetreInstallation(self, dossier=dossier, schnell=schnell, kontext=kontext)
         f.commence.connect(self.moteur.arreter)      # ComfyUI ne doit pas tourner pendant qu'on le remplace
         f.installe.connect(lambda _d: self._redemarrer_moteur())
         f.exec()
@@ -1791,6 +1798,65 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                              lambda nom: recettes.upscale_net(nom, v["facteur"], v["force"], taille))
             else:
                 self._lancer(tr("Upscale"), False, lambda nom: recettes.upscale_rapide(nom, v["facteur"]))
+
+    # ---------------------------------------------------------------- améliorer, restaurer
+    def _dans_selection(self, titre: str):
+        """Résultat remis à la taille de la photo ; s'il y a une sélection, seulement dedans."""
+        doc = self.doc
+        w, h = doc.taille()
+        m = None if doc.selection_vide() else tableau(doc.selection.convertToFormat(FORMAT_IMAGE))[:, :, 3].copy()
+        original = tableau(doc.image.convertToFormat(FORMAT_IMAGE)).copy()
+
+        def apres(img: QImage) -> QImage:
+            if (img.width(), img.height()) != (w, h):
+                img = img.scaled(w, h, Qt.IgnoreAspectRatio, Qt.SmoothTransformation).convertToFormat(FORMAT_IMAGE)
+            if m is None:
+                return img
+            a = tableau(img).astype(np.float32)
+            k = m.astype(np.float32)[..., None] / 255
+            res = (a * k + original * (1 - k) + 0.5).astype(np.uint8)
+            return QImage(np.ascontiguousarray(res).data, w, h, w * 4, FORMAT_IMAGE).copy()
+        return apres
+
+    def ia_debruiter(self):
+        titre = tr("Réduire le bruit (IA)")
+        if not self.doc or not self._verifier_verrou(titre):
+            return
+        if not recettes.debruitage_disponible():
+            QMessageBox.information(self, titre, tr(
+                "Cette action a besoin du modèle SCUNet (72 Mo), qui n'est pas installé. Menu IA > Installer le "
+                "moteur IA permet de l'ajouter."))
+            return
+        self._lancer(titre, False, lambda nom: recettes.debruiter(nom), apres=self._dans_selection(titre))
+
+    def ia_nettete(self):
+        titre = tr("Netteté (IA)")
+        if self.doc and self._verifier_verrou(titre):
+            self._lancer(titre, False, lambda nom: recettes.nettete_ia(nom), apres=self._dans_selection(titre))
+
+    def ia_restaurer(self):
+        titre = tr("Restaurer une vieille photo")
+        if not self.doc or not self._verifier_verrou(titre):
+            return
+        if not recettes.restauration_disponible():
+            QMessageBox.information(self, titre, tr(
+                "Cette action a besoin du modèle Flux Kontext (11,9 Go), qui n'est pas installé. Menu IA > Installer "
+                "le moteur IA permet de l'ajouter (case « Flux Kontext »)."))
+            return
+        boite = QMessageBox(QMessageBox.Question, titre, tr(
+            "L'IA redessine toute la photo : rayures, taches, poussières et grain enlevés, contraste et visages "
+            "rendus plus nets. Elle peut changer de petits détails : compare bien les propositions.\n\nCompte "
+            "environ deux minutes par proposition."), parent=self)
+        b_ok = boite.addButton(tr("Restaurer"), QMessageBox.AcceptRole)
+        b_couleur = boite.addButton(tr("Restaurer et coloriser"), QMessageBox.AcceptRole)
+        boite.addButton(tr("Annuler"), QMessageBox.RejectRole)
+        boite.exec()
+        if boite.clickedButton() not in (b_ok, b_couleur):
+            return
+        coloriser = boite.clickedButton() is b_couleur
+        taille = self.doc.taille()
+        self._lancer(titre, False, lambda nom: recettes.restaurer(nom, taille, coloriser),
+                     apres=self._dans_selection(titre))
 
     def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None,
                 placer=None):

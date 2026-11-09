@@ -28,6 +28,18 @@ _detourage = {"ok": False}
 # Sélection rapide et sélection d'objet : nœud SAM3_Detect intégré à ComfyUI + modèle SAM 3.1 (SAM License, Meta)
 SAM = "sam3.1_multiplex_fp16.safetensors"
 _sam: dict = {"fichier": None}
+# Réduction du bruit : SCUNet (Apache-2.0), chargé comme un modèle d'upscale (facteur 1)
+SCUNET = "scunet_color_real_psnr.pth"
+_scunet = {"ok": False}
+# Restaurer une vieille photo : Flux Kontext dev (licence FLUX.1 [dev], non commerciale)
+KONTEXT = "flux1-dev-kontext_fp8_scaled.safetensors"
+_kontext: dict = {"type": None, "fichier": None}
+NB_RESTAURER = 2
+TEXTE_RESTAURER = ("Restore this old damaged photo: remove scratches, dust, creases, stains and film grain, repair "
+                   "torn or missing parts, fix faded contrast, make faces and details sharp and natural. Keep exactly "
+                   "the same people, faces, expressions, clothes, pose, framing and composition.")
+TEXTE_COLORISER = (" Colorize it with natural, realistic colors.")
+TEXTE_GARDER_COULEURS = (" Keep the original colors.")
 
 
 class ModeleManquant(Exception):
@@ -65,6 +77,16 @@ def configurer(infos: dict) -> str | None:
     sams = [f for f in _options(infos, "CheckpointLoaderSimple", "ckpt_name") if "sam3" in f.lower()]
     _sam["fichier"] = (SAM if SAM in sams else sorted(sams)[-1] if sams else None) if "SAM3_Detect" in infos \
         else None
+    _scunet["ok"] = SCUNET in _options(infos, "UpscaleModelLoader", "model_name")
+    kontext_gguf = sorted(f for f in _options(infos, "UnetLoaderGGUF", "unet_name") if "kontext" in f.lower())
+    if "ReferenceLatent" not in infos:
+        _kontext.update(type=None, fichier=None)
+    elif KONTEXT in _options(infos, "UNETLoader", "unet_name"):
+        _kontext.update(type="complet", fichier=KONTEXT)
+    elif kontext_gguf:
+        _kontext.update(type="gguf", fichier=kontext_gguf[-1])
+    else:
+        _kontext.update(type=None, fichier=None)
     for t in PREFERENCE_FILL:
         if t in trouves:
             _fill.update(type=t, fichier=trouves[t])
@@ -263,3 +285,66 @@ def upscale_net(image: str, facteur: float = 2.0, force: float = 0.35, taille: t
     if taille:
         return p, {"31": tr("Upscale net")}, nb_morceaux(*taille, facteur)
     return p, {"31": tr("Upscale net")}
+
+
+# ------------------------------------------------------------------ améliorer (bruit, netteté), restaurer
+def debruitage_disponible() -> bool:
+    return _scunet["ok"]
+
+
+def debruiter(image: str):
+    """SCUNet : enlève le bruit (grain, compression JPEG) en gardant les détails ; même taille."""
+    p = {"10": _n("LoadImage", image=image),
+         "11": _n("UpscaleModelLoader", model_name=SCUNET),
+         "12": _n("ImageUpscaleWithModel", upscale_model=["11", 0], image=["10", 0]),
+         "13": _n("PreviewImage", images=["12", 0])}
+    return p, {"13": tr("Bruit réduit")}
+
+
+def nettete_ia(image: str):
+    """RealESRGAN ×4 puis retour à la taille d'origine : contours et détails plus nets, bruit lissé."""
+    p = {"10": _n("LoadImage", image=image),
+         "11": _n("UpscaleModelLoader", model_name="RealESRGAN_x4plus.pth"),
+         "12": _n("ImageUpscaleWithModel", upscale_model=["11", 0], image=["10", 0]),
+         "13": _n("ImageScaleBy", image=["12", 0], upscale_method="lanczos", scale_by=0.25),
+         "14": _n("PreviewImage", images=["13", 0])}
+    return p, {"14": tr("Plus net")}
+
+
+def restauration_disponible() -> bool:
+    return _kontext["fichier"] is not None
+
+
+def restaurer(image: str, taille: tuple[int, int], coloriser: bool = False, nb: int = NB_RESTAURER,
+              graine: int | None = None, texte: str = ""):
+    """Flux Kontext : la photo est redessinée d'après une consigne (restaurer, coloriser). Une sortie par
+    proposition, remise à la taille de la photo."""
+    if _kontext["type"] == "gguf":
+        chargeur = _n("UnetLoaderGGUF", unet_name=_kontext["fichier"])
+    else:
+        chargeur = _n("UNETLoader", unet_name=_kontext["fichier"] or KONTEXT, weight_dtype="default")
+    consigne = texte.strip() or (TEXTE_RESTAURER + (TEXTE_COLORISER if coloriser else TEXTE_GARDER_COULEURS))
+    p = {"10": _n("LoadImage", image=image),
+         "20": chargeur,
+         "21": _n("DualCLIPLoader", clip_name1="clip_l.safetensors",
+                  clip_name2="t5xxl_fp8_e4m3fn_scaled.safetensors", type="flux", device="default"),
+         "22": _n("VAELoader", vae_name="ae.safetensors"),
+         "11": _n("FluxKontextImageScale", image=["10", 0]),
+         "12": _n("VAEEncode", pixels=["11", 0], vae=["22", 0]),
+         "24": _n("CLIPTextEncode", text=consigne, clip=["21", 0]),
+         "25": _n("ReferenceLatent", conditioning=["24", 0], latent=["12", 0]),
+         "26": _n("FluxGuidance", conditioning=["25", 0], guidance=2.5),
+         "27": _n("ConditioningZeroOut", conditioning=["24", 0])}
+    graine = graine or _graine()
+    sorties = {}
+    for k in range(nb):
+        b = 40 + 10 * k
+        p[str(b)] = _n("KSampler", model=["20", 0], seed=graine + k, steps=20, cfg=1.0, sampler_name="euler",
+                       scheduler="simple", positive=["26", 0], negative=["27", 0], latent_image=["12", 0],
+                       denoise=1.0)
+        p[str(b + 1)] = _n("VAEDecode", samples=[str(b), 0], vae=["22", 0])
+        p[str(b + 2)] = _n("ImageScale", image=[str(b + 1), 0], upscale_method="lanczos", width=taille[0],
+                           height=taille[1], crop="disabled")
+        p[str(b + 3)] = _n("PreviewImage", images=[str(b + 2), 0])
+        sorties[str(b + 3)] = tr("Proposition")
+    return p, sorties

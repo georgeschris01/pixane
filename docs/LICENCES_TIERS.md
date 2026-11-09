@@ -25,9 +25,11 @@ Chrypix itself: Chrypix Licence 1.1 (free of charge, source-available, non-comme
 | 7-Zip (7zr.exe) | LGPL-2.1 |
 | FLUX.1 Fill [dev] (GGUF Q8) | **FLUX.1 [dev] Non-Commercial License** — https://huggingface.co/black-forest-labs/FLUX.1-dev/blob/main/LICENSE.md |
 | FLUX.1 [schnell] (GGUF Q8, facultatif / optional) | Apache-2.0 |
+| FLUX.1 Kontext [dev] (fp8, facultatif / optional) | **FLUX.1 [dev] Non-Commercial License** |
 | Encodeurs T5 et CLIP / T5 and CLIP encoders, VAE | Apache-2.0 |
 | LaMa | Apache-2.0 |
 | RealESRGAN x4plus | BSD-3-Clause |
+| SCUNet (réduire le bruit / noise reduction) | Apache-2.0 |
 | BiRefNet (détourage / background removal) | MIT |
 | SAM 3.1 (sélection d'objet / object selection) | SAM License (Meta) — https://huggingface.co/Comfy-Org/sam3.1/blob/main/LICENSE |
 

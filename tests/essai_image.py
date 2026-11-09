@@ -191,7 +191,7 @@ f.grab().save(str(sortie / "fenetre.png"))
 
 print("ERREURS :", erreurs if erreurs else "aucune")
 sys.stdout.flush()
-if f.doc:
-    f.doc.modifie = False
+for d in f.documents:          # plusieurs onglets : aucune question à la fermeture
+    d.modifie = False
 f.close()
-os._exit(1 if erreurs else 0)
+sys.exit(1 if erreurs else 0)

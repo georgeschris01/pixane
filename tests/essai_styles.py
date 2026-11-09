@@ -195,6 +195,7 @@ verifier(f.doc.calques[1].style is None and (rgba(f.doc.calques[1].image) == att
 
 print("ERREURS :", erreurs if erreurs else "aucune")
 sys.stdout.flush()
-f.doc.modifie = False
+for d in f.documents:          # plusieurs onglets : aucune question à la fermeture
+    d.modifie = False
 f.close()
-os._exit(1 if erreurs else 0)
+sys.exit(1 if erreurs else 0)

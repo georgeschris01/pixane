@@ -26,6 +26,14 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
      Historique, bouton Auto des réglages, À propos, recherche de mise à jour (sur demande ou option).
    - [x] **Sélections automatiques** (08/11/2026, à essayer par Christophe) : sélection d'objet (O) et sélection rapide (Q) avec SAM 3.1, baguette magique (W).
    - [x] **Styles de calque** (08/11/2026, à essayer par Christophe) : ombres (dont réaliste et au sol), lueurs, contours multiples, biseau, incrustations, 14 styles tout prêts, styles enregistrés, menu Calque.
+5b. [x] **Bloc « comme Photoshop »** (09/11/2026, version 0.3.0, à essayer par Christophe ; tout sauf le
+   remplacement du ciel) : pinceau Supprimer (J) ; masques de calque ; groupes ; modes de fusion ; calques de
+   réglage ; Niveaux, Courbes, Balance des couleurs, Noir et blanc, Vibrance ; filtres (flous, bruit, netteté,
+   vignette) ; dégradé (D), pot de peinture (K), formes (U), pinceau correcteur (R) ; PSD : modes, groupes et masques
+   lus et écrits, styles lus (modifiables) ; onglets (plusieurs photos) ; enregistrement automatique et récupération ; règles, repères,
+   grille, magnétisme ; Améliorer le contour ; Exporter pour le web ; Traitement par lot ; IA : Réduire le bruit
+   (SCUNet), Netteté (RealESRGAN), Restaurer une vieille photo (Flux Kontext, facultatif).
+   - [ ] Plus tard (exclu de ce bloc) : remplacement du ciel.
 6. [ ] **Installateur** (même présentation que TwinPanel, Inno Setup 7) :
    - [x] images (validées le 08/11/2026) ;
    - [x] partie 1 (08/11/2026, à essayer par Christophe) : langue, pour moi / pour tous, dossier, vérification du PC
@@ -44,7 +52,7 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
 7. [ ] **Publication** : guide complet, licences (Flux Fill dev = non commercial), dépôt public ou installateur.
 
 ## Numérotation des versions (décidée le 08/11/2026)
-A.B.C : A = 0 tant que Chrypix n'est pas fini (1.0.0 = première version finie) ; B = +1 pour un lot de nouvelles fonctions (C repart à 0) ; C = +1 pour des corrections seulement. Le numéro se change dans chrypix\__init__.py avant de fabriquer l'installateur. Dernière version d'essai : 0.2.0.
+A.B.C : A = 0 tant que Chrypix n'est pas fini (1.0.0 = première version finie) ; B = +1 pour un lot de nouvelles fonctions (C repart à 0) ; C = +1 pour des corrections seulement. Le numéro se change dans chrypix\__init__.py avant de fabriquer l'installateur. Dernière version d'essai : 0.3.0.
 
 ## Idées notées en passant
 - Nettoyer les images d'essai dans les dossiers de sortie de ComfyUI (proposé, pas encore fait).

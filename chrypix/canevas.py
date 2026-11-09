@@ -1431,10 +1431,11 @@ class Canevas(QWidget):
                 self._remplir_forme()
         self._nouvelle = False
         noms = {PINCEAU: "Pinceau de sélection", GOMME: "Gomme de sélection", RECTANGLE: "Sélection rectangle",
-                LASSO: "Lasso", GOMME_CALQUE: "Peindre le masque" if self._sur_masque else "Gomme de calque"}
+                LASSO: "Lasso", GOMME_CALQUE: "Gomme de calque"}
         self._img_calque = None
         self._trace = None
-        self.selection_modifiee.emit(self._avant, tr(noms[self.outil]))
+        nom = tr("Peindre le masque") if self.outil == GOMME_CALQUE and self._sur_masque else tr(noms[self.outil])
+        self.selection_modifiee.emit(self._avant, nom)
         self._avant = None
         self.update()
 

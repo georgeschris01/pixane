@@ -76,7 +76,7 @@ def _comfyui(pilote_recent: bool) -> Element:
                    "GPL-3.0", "7z")
 
 
-def catalogue(pilote_recent: bool = True, schnell: bool = False) -> list[Element]:
+def catalogue(pilote_recent: bool = True, schnell: bool = False, kontext: bool = False) -> list[Element]:
     """Tout ce qu'il faut, dans l'ordre d'installation (ComfyUI d'abord : le reste va dedans)."""
     noeuds = "ComfyUI/custom_nodes/"
     modeles = "ComfyUI/models/"
@@ -133,13 +133,27 @@ def catalogue(pilote_recent: bool = True, schnell: bool = False) -> list[Element
                 "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth", 67040989,
                 "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1", "BSD-3-Clause", "modele",
                 modeles + "upscale_models/RealESRGAN_x4plus.pth"),
+        Element("scunet", tr("SCUNet (réduire le bruit)"),
+                "https://github.com/cszn/KAIR/releases/download/v1.0/scunet_color_real_psnr.pth", 71982841,
+                "fa78899ba2caec9d235a900e91d96c689da71c42029230c2028b00f09f809c2e", "Apache-2.0", "modele",
+                modeles + "upscale_models/scunet_color_real_psnr.pth"),
     ]
     if schnell:
         liste.append(Element("schnell", tr("Flux Schnell (Upscale net, facultatif)"),
                              HF.format("city96/FLUX.1-schnell-gguf", "flux1-schnell-Q8_0.gguf"), 12687821728,
                              "f6694941193b10148dbf1f0f498d4ccd3e9875c127fc53946213b68580c66f10", "Apache-2.0",
                              "modele", modeles + "diffusion_models/flux1-schnell-Q8_0.gguf", facultatif=True))
+    if kontext:
+        liste.append(Element("kontext", tr("Flux Kontext (restaurer une vieille photo, facultatif)"),
+                             HF.format("Comfy-Org/flux1-kontext-dev_ComfyUI",
+                                       "split_files/diffusion_models/flux1-dev-kontext_fp8_scaled.safetensors"),
+                             TAILLE_KONTEXT, "630ba795ec64283b4230ea23cf79406c2c68b7c578229ed139f30043eadb30a2",
+                             "FLUX.1 [dev] (non commerciale)", "modele",
+                             modeles + "diffusion_models/flux1-dev-kontext_fp8_scaled.safetensors", facultatif=True))
     return liste
+
+
+TAILLE_KONTEXT = 11904640136
 
 
 def taille_schnell() -> int:
@@ -260,7 +274,8 @@ def elements_installes(dossier: Path, pilote_recent: bool = True) -> list[Elemen
     """Catalogue actuel pour un moteur déjà installé (avec Flux Schnell s'il l'avait)."""
     infos = lire_infos(dossier) or {}
     schnell = "schnell" in infos.get("elements", []) or "schnell" in infos.get("versions", {})
-    return catalogue(pilote_recent, schnell)
+    kontext = "kontext" in infos.get("elements", []) or "kontext" in infos.get("versions", {})
+    return catalogue(pilote_recent, schnell, kontext)
 
 
 def mises_a_jour_moteur(dossier: Path, pilote_recent: bool = True) -> list[Element]:
@@ -548,7 +563,8 @@ class FenetreInstallation(QDialog):
     """Montre ce qui sera téléchargé (taille, source, licence), fait accepter la licence FLUX.1 [dev], installe."""
     installe = Signal(str)                       # dossier de ComfyUI, une fois tout installé
 
-    def __init__(self, parent=None, dossier: str | None = None, schnell: bool = False, accepte: bool = False):
+    def __init__(self, parent=None, dossier: str | None = None, schnell: bool = False, accepte: bool = False,
+                 kontext: bool = False):
         super().__init__(parent)
         self.setWindowTitle(tr("Installer le moteur IA"))
         self.setMinimumSize(760, 600)
@@ -588,6 +604,11 @@ class FenetreInstallation(QDialog):
         self.c_schnell.setChecked(schnell)
         self.c_schnell.toggled.connect(self._actualiser)
         lay.addWidget(self.c_schnell)
+        self.c_kontext = QCheckBox(tr("Ajouter Flux Kontext ({taille}) pour « Restaurer une vieille photo » "
+                                      "(facultatif)", taille=go(TAILLE_KONTEXT)))
+        self.c_kontext.setChecked(kontext)
+        self.c_kontext.toggled.connect(self._actualiser)
+        lay.addWidget(self.c_kontext)
 
         licence = QLabel(tr("Le modèle Flux Fill est sous licence <b>FLUX.1 [dev] non commerciale</b> : usage "
                             "personnel permis, pas d'usage commercial. <a href=\"{url}\">Lire la licence</a>. "
@@ -631,7 +652,7 @@ class FenetreInstallation(QDialog):
     # ------------------------------------------------------------------
     def elements(self) -> list[Element]:
         recent = self.pilote is None or self.pilote >= PILOTE_CUDA13
-        return catalogue(recent, self.c_schnell.isChecked())
+        return catalogue(recent, self.c_schnell.isChecked(), self.c_kontext.isChecked())
 
     commence = Signal()                          # le travail commence (Chrypix arrête alors son moteur)
 
@@ -702,7 +723,7 @@ class FenetreInstallation(QDialog):
         self.travail.etat.connect(self._etat)
         self.travail.progres.connect(self._progres)
         self.travail.fini.connect(self._fini)
-        for w in (self.b_lancer, self.dossier, self.c_schnell, self.c_licence):
+        for w in (self.b_lancer, self.dossier, self.c_schnell, self.c_kontext, self.c_licence):
             w.setEnabled(False)
         self.b_arreter.setEnabled(True)
         self.statut.setText(tr("Démarrage…"))
@@ -742,7 +763,7 @@ class FenetreInstallation(QDialog):
             self.installe.emit(str(dossier))
             QMessageBox.information(self, tr("Installer le moteur IA"), message)
         else:
-            for w in (self.dossier, self.c_schnell, self.c_licence):
+            for w in (self.dossier, self.c_schnell, self.c_kontext, self.c_licence):
                 w.setEnabled(True)
             self.b_lancer.setText(tr("Reprendre"))
             self._actualiser_bouton()
@@ -769,6 +790,7 @@ def main():
     a = argparse.ArgumentParser(description="Installe le moteur IA de Chrypix")
     a.add_argument("--dossier")
     a.add_argument("--schnell", action="store_true")
+    a.add_argument("--kontext", action="store_true")
     a.add_argument("--accepte", action="store_true", help="licence FLUX.1 [dev] déjà acceptée (installateur)")
     a.add_argument("--demarrer", action="store_true", help="commencer tout de suite")
     args = a.parse_args()
@@ -781,7 +803,7 @@ def main():
     reglages = QSettings("Chrypix", os.environ.get("CHRYPIX_REGLAGES", "Chrypix"))
     traduire_qt(app, langue.choisir(reglages.value("langue", langue.AUTO)))
     theme.appliquer(app, reglages.value("theme", theme.AUTO))
-    f = FenetreInstallation(dossier=args.dossier, schnell=args.schnell, accepte=args.accepte)
+    f = FenetreInstallation(dossier=args.dossier, schnell=args.schnell, accepte=args.accepte, kontext=args.kontext)
     f.show()
     if args.demarrer:
         f.commencer()
