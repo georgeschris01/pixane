@@ -40,9 +40,12 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 - Image adjustments with an **Auto** button (brightness, contrast, saturation, hue, temperature, sharpness)
 - **Levels**, **Curves**, **Colour balance**, **Black & white** (with sepia toning), **Vibrance**
 - Filters: Gaussian blur, motion blur, noise reduction, sharpen, vignette
-- Image size, rotate, flip, straighten; transform a layer (size, rotation)
+- Image size, **canvas size**, rotate, flip, straighten; transform a layer (size, rotation)
+- **RGB colour** or **greyscale** mode
 
 **Files**
+- **New image** with 34 ready-made formats (CD and vinyl covers, Spotify, books, Amazon KDP, social media, A4, posters…), units (px, cm, mm, inches, points, picas), resolution, **bleed** and **safe area** for print
+- **Export for print in CMYK** (TIFF, PDF, JPEG; Windows profiles such as Coated FOGRA39) and **on-screen preview** of the printed colours
 - JPG, PNG, TIFF, WebP, BMP; **PSD** (Photoshop) with layers, groups, masks, modes and styles; `.pixane` (Pixane project, everything stays editable) and `.ora` (Krita, GIMP)
 - **Several photos open** in tabs, each with its own Undo
 - **Autosave** and recovery after a crash
@@ -191,7 +194,34 @@ Layer names that already exist keep their original language.
     at the end; the others are done.
   - Safety: if the results would go into the same folder under the same name, Pixane refuses (the originals
     would be replaced).
-- **File > New image…** (Ctrl+N): empty image, any size, white, black or transparent background.
+- **File > New image…** (Ctrl+N): an empty image, as in Photoshop.
+  - **Ready-made formats** (on the left): **album covers** (CD, 12-inch and 7-inch vinyl, 3000 × 3000 px for
+    Spotify, Deezer, Apple Music), **books** (pocket, novel, Amazon KDP, e-book), **social media** (Instagram, Story,
+    Facebook, YouTube, X), **print** (A3, A4, A5, photos, posters, business card, flyer), **screen** (HD, Full HD,
+    4K). **Save this format…** keeps your own formats in **My formats**; the last format used is offered next time.
+  - **Width, height and unit**: pixels, inches, centimetres, millimetres, points or picas (1 inch = 2.54 cm =
+    72 points = 6 picas). Changing the unit does not change the image.
+  - **Orientation**: Portrait or Landscape swaps width and height.
+  - **Resolution** (dpi, dots per inch): **300** for print, **72** for screen. It is **kept in the file** (.pixane,
+    PSD, JPEG, PNG, TIFF): a printer will see the right size.
+  - **Mode**: RGB colour or **greyscale** (see *Image > Mode*). Pixane works in **8 bits per channel** (16.7 million
+    colours, like JPEG, PNG and the web); 16 and 32 bits are planned for later.
+  - **Background**: white, transparent, black or a colour of your choice.
+  - **Bleed** (print): band added all around, trimmed off by the printer (usually 3 mm): the background must run to
+    the edge of the image. **Safe area**: margin inside the finished size where nothing important goes (text,
+    face). **Guides** are placed automatically on these two lines.
+  - At the bottom: the size in pixels, the printed size and the memory used.
+- **File > Export for print (CMYK)…**: for a printer who asks for CMYK (the four inks). Pixane works in RGB and
+  converts when exporting, as printers recommend.
+  - **Format**: TIFF (the safest), PDF or JPEG.
+  - **CMYK profile**: those installed in Windows, nothing to download. Ask your printer which one they use; in
+    Europe it is often **Coated FOGRA39** (coated paper).
+  - **Rendering intent**: *Perceptual* for photos, *Relative colorimetric* for logos and flat colours. **Black point
+    compensation**: ticked, shadows keep their detail.
+  - The **resolution** is written in the file; the photo is not changed (suggested name: `<photo>_cmyk.tif`).
+  - Before exporting: **View > Print preview (CMYK)** (Ctrl+Alt+Y) shows on screen the colours as they will come out
+    (very bright blues and greens often get duller). Click it again to go back to the normal view; the image is
+    never changed.
 - **File > New image from clipboard** (Ctrl+Alt+V): opens the copied image (screenshot, other program…).
   **Ctrl+V** with no photo open does the same.
 
@@ -294,7 +324,11 @@ They work on the **layer chosen** in the Layers panel:
   transparency; it can also be pasted into another program.
 - **Cut** (Ctrl+X): copies, then erases the selected area (it becomes transparent).
 - **Paste** (Ctrl+V): puts the copied image in a **new layer**, at **the same place** if it comes from Pixane, in the
-  centre if it comes from elsewhere (screenshot, another program…). Then move it with the Move tool (V).
+  centre if it comes from elsewhere (screenshot, another program…). Then move it with the Move tool (V). To enlarge
+  or shrink it: **Ctrl+T** (see *Transform layer*).
+  - **Image larger than the photo**: it arrives **reduced to fit entirely**, with the *Transform* frame already
+    open. Adjust its size and position, then press **Enter**. Nothing is cut off before you apply: you can enlarge
+    it again without loss.
 - **Delete selection** (Del): erases the selected area of the layer (transparent).
 
 A **locked** layer is protected; a **text** that is cut or deleted becomes an image. Ctrl+Z undoes everything.
@@ -691,6 +725,15 @@ selection if there is one, one step in Undo. They also work on a mask.
 
 ## 10. Image menu: size, rotation, transform
 
+- **Mode**: **RGB colour** or **Greyscale**. In greyscale the image is shown and saved in grey (JPEG, PNG, TIFF in
+  true grey); the layers keep their colours, so you can go back to RGB without losing anything.
+- **Canvas size…** (Ctrl+Alt+C): enlarges the sheet **without stretching the image** (for example to add a bleed
+  or a band for a title), or crops it.
+  - New **width** and **height** in pixels, inches, cm, mm, points, picas or **percent**; **Relative**: you type
+    what you add (e.g. +200 px).
+  - **Anchor**: where the image stays (centre, top left…); the arrows show where the sheet grows.
+  - **Added colour** on the bottom layer: white, transparent, black or a colour of your choice.
+  - Texts stay editable, guides follow; Ctrl+Z undoes it.
 - **Image size…** (Ctrl+Alt+I): in pixels or %, proportions kept (tick box), quick buttons (for example 1920 px
   for screen and Internet). No AI: to enlarge with more detail, prefer Upscale.
 - **Rotate** 90° right, left or 180°, **Flip** horizontally or vertically: the whole image, all layers, lossless.
@@ -698,7 +741,9 @@ selection if there is one, one step in Undo. They also work on a mask.
 - **Straighten…**: rotate by a small angle (-45° to +45°) with a grid to align the horizon or a wall.
   *Crop to remove the empty corners* (ticked by default); unticked, the image grows and the corners are
   transparent.
-- **Edit > Transform layer** (Ctrl+T): a frame surrounds the **chosen layer**.
+- **Edit > Transform layer** (Ctrl+T): a frame surrounds the **chosen layer**. To enlarge, shrink or rotate **a
+  single element** of the layer, **select it first** (rectangle, lasso, magic wand…): the frame surrounds only that
+  element, the rest of the layer does not move, and its original place becomes transparent.
   - **corner**: size, proportions kept (Shift: free); **side**: width or height only;
   - **inside**: move; **outside** (the cursor becomes a round arrow): rotate (Shift: by 15°);
   - the top bar shows width, height and angle; **Enter**, double-click or **Apply** to keep, **Esc** or
@@ -734,7 +779,8 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+W, Ctrl+Tab, Ctrl+Shift+Tab | Close photo, Next photo, Previous photo |
 | Ctrl+Alt+Shift+S | Export for web |
 | Ctrl+N, Ctrl+Alt+V | New image, New image from clipboard |
-| Ctrl+Alt+I | Image size |
+| Ctrl+Alt+I, Ctrl+Alt+C | Image size, Canvas size |
+| Ctrl+Alt+Y | Print preview (CMYK) |
 | Ctrl+T | Transform layer (Enter apply, Esc cancel) |
 | Ctrl+Alt+F | Layer style |
 | Ctrl+Shift+N, Ctrl+J | New layer, Duplicate layer |

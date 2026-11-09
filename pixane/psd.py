@@ -345,7 +345,37 @@ def _fiche_vide(nom: str, bloc_extra: bytes):
     return fiche, b"".join(b for _i, b in canaux)
 
 
-def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = None) -> None:
+def lire_resolution_psd(chemin: str | Path) -> float | None:
+    """Résolution (points par pouce) de la ressource 1005 « ResolutionInfo », ou None."""
+    try:
+        lec = _Lecteur(Path(chemin).read_bytes())
+        if lec.lire(4) != b"8BPS":
+            return None
+        lec.lire(22)
+        lec.lire(lec.u32())                              # palette
+        fin = lec.u32() + lec.p
+        while lec.p + 12 <= fin:
+            if lec.lire(4) != b"8BIM":
+                break
+            ident = lec.u16()
+            n = lec.u8()
+            lec.lire(n + (1 - n % 2))
+            taille = lec.u32()
+            donnees = lec.lire(taille)
+            if taille % 2:
+                lec.lire(1)
+            if ident == 1005 and len(donnees) >= 16:
+                h, unite = struct.unpack(">IH", donnees[:6])
+                v = h / 65536
+                if unite == 2:                           # pixels par cm
+                    v *= 2.54
+                return round(v, 3) if 1 <= v <= 10000 else None
+    except Exception:
+        return None
+    return None
+
+
+def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = None, dpi: float = 72.0) -> None:
     chemin = Path(chemin)
     W, H = fusion.width(), fusion.height()
     if W > 30000 or H > 30000:
@@ -410,10 +440,12 @@ def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = 
         infos += b"\x00"
     calques_masques = struct.pack(">I", len(infos)) + infos + struct.pack(">I", 0)
 
-    ressources = b""
+    # résolution (ressource 1005) : points par pouce, en virgule fixe 16.16
+    res = struct.pack(">IHHIHH", round(dpi * 65536), 1, 1, round(dpi * 65536), 1, 1)
+    ressources = b"8BIM" + struct.pack(">H", 1005) + b"\x00\x00" + struct.pack(">I", len(res)) + res
     if icc:
         r = b"8BIM" + struct.pack(">H", 1039) + b"\x00\x00" + struct.pack(">I", len(icc)) + icc
-        ressources = r + (b"\x00" if len(icc) % 2 else b"")
+        ressources += r + (b"\x00" if len(icc) % 2 else b"")
 
     # image fusionnée (sur fond blanc), pour les visionneuses et les logiciels sans calques
     f = tableau(fusion.convertToFormat(FORMAT_IMAGE)).astype(np.uint16)

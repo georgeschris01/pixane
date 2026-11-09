@@ -52,9 +52,11 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
 7. [ ] **Publication** : guide complet, licences (Flux Fill dev = non commercial), dépôt public ou installateur.
 
 ## Numérotation des versions (décidée le 08/11/2026)
-A.B.C : A = 0 tant que Pixane n'est pas fini (1.0.0 = première version finie) ; B = +1 pour un lot de nouvelles fonctions (C repart à 0) ; C = +1 pour des corrections seulement. Le numéro se change dans pixane\__init__.py avant de fabriquer l'installateur. Dernière version d'essai : 0.4.0 (nouveau nom : Pixane, projets .pixane, nouveau logo).
+A.B.C : A = 0 tant que Pixane n'est pas fini (1.0.0 = première version finie) ; B = +1 pour un lot de nouvelles fonctions (C repart à 0) ; C = +1 pour des corrections seulement. Le numéro se change dans pixane\__init__.py avant de fabriquer l'installateur. Dernière version d'essai : 0.5.0 (Nouvelle image avec formats tout prêts, unités, résolution, mode, fond perdu ; taille de la zone de travail ; niveaux de gris ; export CMJN et aperçu de l'impression).
 
 ## Idées notées en passant
 - Nettoyer les images d'essai dans les dossiers de sortie de ComfyUI (proposé, pas encore fait).
 - **Nom du programme** (09/11/2026) : fait. « Chrypix » devient **Pixane** (projets **.pixane**, logo « P en pixels »), version 0.4.0. Les réglages, le dossier %LOCALAPPDATA% et le moteur de Chrypix sont repris au premier démarrage (pixane\ancien_nom.py) ; l'installateur remplace une installation de Chrypix.
+- **16 et 32 bits par couche** (09/11/2026, demandé par Christophe : « il faudra à un moment pouvoir travailler en 16 et 32 bits si on veut que des connaisseurs utilisent le programme ») : aujourd'hui tout le moteur (calques, filtres, styles, IA) travaille en 8 bits. À faire : images internes en 16 bits (numpy uint16 / float32), lecture et écriture 16 bits (PSD, TIFF, PNG), puis 32 bits flottants (HDR, EXR). Gros chantier, à prévoir avant ou juste après la 1.0.0.
+- **Vrai mode CMJN** (travailler directement en CMJN) : pas prévu ; Pixane exporte en CMJN depuis la 0.5.0.
 - **Cartes AMD** (09/11/2026) : pas prévues pour l'instant (moteur et réglages faits pour NVIDIA / CUDA). Possible plus tard avec ComfyUI + ROCm sous Windows (Radeon RX 7000 / 9000), mais il faudrait une carte AMD pour tout essayer.

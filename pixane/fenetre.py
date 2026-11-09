@@ -10,8 +10,8 @@ from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import QBuffer, QMimeData, QObject, QPoint, QProcess, QSettings, QSize, Qt, QTimer, Signal
-from PySide6.QtCore import QUrl
-from PySide6.QtGui import (QAction, QActionGroup, QColor, QDesktopServices, QIcon, QImage, QKeySequence, QUndoCommand,
+from PySide6.QtCore import QPointF, QUrl
+from PySide6.QtGui import (QAction, QActionGroup, QColor, QDesktopServices, QIcon, QImage, QKeySequence, QPainter, QUndoCommand,
                            QUndoStack)
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QComboBox, QDialog, QDockWidget, QFileDialog, QHBoxLayout, QLabel,
                                QLineEdit, QMainWindow, QMenu, QMessageBox, QPushButton, QSizePolicy, QSlider,
@@ -33,7 +33,8 @@ from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
 from .panneau_texte import BoutonCouleur, PanneauTexte
 from .raccord import finaliser, lisere_auto, preparer
 from .reglages_image import FenetreReglages, ajuster, auto, neutre
-from .dialogues_image import APropos, NouvelleImage, Redresser, TailleImage
+from .dialogues_document import ExportImpression, NouvelleImage, ZoneTravail
+from .dialogues_image import APropos, Redresser, TailleImage
 from .transformation import Transformation
 from . import mises_a_jour
 from .texte import Texte
@@ -93,6 +94,22 @@ class CommandeEtat(QUndoCommand):
 
     def undo(self):
         self.doc.appliquer_etat(self.avant)
+
+
+class CommandeZoneTravail(CommandeEtat):
+    """Taille de la zone de travail : les repères suivent aussi avec Annuler / Rétablir."""
+
+    def __init__(self, doc: Document, avant, apres, texte: str, reperes_avant, reperes_apres):
+        super().__init__(doc, avant, apres, texte)
+        self.reperes_avant, self.reperes_apres = list(reperes_avant), list(reperes_apres)
+
+    def redo(self):
+        self.doc.reperes = list(self.reperes_apres)
+        super().redo()
+
+    def undo(self):
+        self.doc.reperes = list(self.reperes_avant)
+        super().undo()
 
 
 class Carte(QPushButton):
@@ -229,6 +246,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self._action(m, tr("Enregistrer"), QKeySequence.Save, self.enregistrer, "a_enregistrer", "enregistrer")
         self._action(m, tr("Enregistrer sous…"), "Ctrl+Shift+S", self.enregistrer_sous, "a_enregistrer_sous")
         self._action(m, tr("Exporter pour le web…"), "Ctrl+Alt+Shift+S", self.exporter_web, "a_exporter_web")
+        self._action(m, tr("Exporter pour l'impression (CMJN)…"), None, self.exporter_impression, "a_exporter_cmjn")
         self._action(m, tr("Traitement par lot…"), None, self.traitement_lot, "a_lot", "lot")
         m.addSeparator()
         self._action(m, tr("Fermer la photo"), "Ctrl+W", lambda: self.fermer_onglet(), "a_fermer")
@@ -274,7 +292,18 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self._m_image = m
         self._action(m, tr("Réglages de l'image…"), "Ctrl+U", self.reglages_image, "a_reglages_image", "reglages")
         m.addSeparator()
+        sous = m.addMenu(tr("Mode"))
+        groupe = QActionGroup(self)
+        for mode, texte in (("rvb", tr("Couleurs RVB")), ("gris", tr("Niveaux de gris"))):
+            a = QAction(texte, self, checkable=True)
+            a.triggered.connect(lambda *_, md=mode: self.changer_mode(md))
+            groupe.addAction(a)
+            sous.addAction(a)
+        self._actions_mode = groupe
+        self._m_mode = sous
+        m.addSeparator()
         self._action(m, tr("Taille de l'image…"), "Ctrl+Alt+I", self.taille_image, "a_taille")
+        self._action(m, tr("Taille de la zone de travail…"), "Ctrl+Alt+C", self.zone_travail, "a_zone_travail")
         self._action(m, tr("Pivoter de 90° à droite"), None, lambda: self._geometrie(tr("Pivoter"), 90), "a_pivoter_d")
         self._action(m, tr("Pivoter de 90° à gauche"), None, lambda: self._geometrie(tr("Pivoter"), -90),
                      "a_pivoter_g")
@@ -303,6 +332,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self._action(m, tr("Zoom arrière"), "Ctrl+-", lambda: self.canevas.zoomer(0.8), "a_zoom_moins", "zoom_moins")
         self._action(m, tr("Ajuster à la fenêtre"), "Ctrl+0", self.canevas.ajuster, "a_ajuster", "ajuster")
         self._action(m, tr("Taille réelle (100 %)"), "Ctrl+1", self.canevas.zoom_100)
+        m.addSeparator()
+        self.a_epreuve = self._action(m, tr("Aperçu de l'impression (CMJN)"), "Ctrl+Alt+Y", self.basculer_epreuve,
+                                      "a_epreuve")
+        self.a_epreuve.setCheckable(True)
         m.addSeparator()
         self._menu_regles(m)
         m.addSeparator()
@@ -949,8 +982,13 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                   self.a_redresser, self.a_transformer, self.a_reglages_image, self.a_sel_agrandir,
                   self.a_sel_reduire, self.a_sel_adoucir, self.a_contour, self.a_couper, self.a_copier, self.a_supprimer_selection,
                   self.a_style, self.a_copier_style, self.a_coller_style, self.a_enlever_style, self.a_figer_style,
-                  self.a_nouveau_calque, self.a_dupliquer_calque, *self._actions_calques_doc()):
+                  self.a_nouveau_calque, self.a_dupliquer_calque, self.a_zone_travail, self.a_exporter_cmjn,
+                  self.a_epreuve, *self._actions_calques_doc()):
             a.setEnabled(a_doc)
+        self._m_mode.setEnabled(a_doc)
+        for a in self._actions_mode.actions():
+            a.setChecked(a_doc and (a.text() == tr("Niveaux de gris")) == (self.doc.mode == "gris"))
+        self.a_epreuve.setChecked(a_doc and bool(self.doc.epreuve))
         for a in (self.a_effacer, self.a_remplir, self.a_agrandir, self.a_upscale, self.a_arriere_plan,
                   self.a_ia_bruit, self.a_ia_nettete, self.a_ia_restaurer,
                   self.a_sujet):
@@ -959,7 +997,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             b.setEnabled(pret)
         titre = NOM
         if self.doc:
-            nom = self.doc.chemin.name if self.doc.chemin else tr("sans titre")
+            nom = self.doc.nom_affiche()
             titre = f"{nom}{' •' if self.doc.modifie else ''} — {NOM}"
         self.setWindowTitle(titre)
 
@@ -1146,8 +1184,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             ajout = getattr(self.doc, "suffixe_nom", None) or tr("_retouche")
             propose = str(self.doc.chemin.with_name(self.doc.chemin.stem + ajout + ext))
         else:
-            propose = str(Path(self.reglages.value("dossier", str(Path.home()))) / ("image.pixane" if plusieurs
-                                                                                     else "image.jpg"))
+            base = self.doc.nom or "image"
+            propose = str(Path(self.reglages.value("dossier", str(Path.home()))) / (base + (".pixane" if plusieurs
+                                                                                           else ".jpg")))
         formats = [tr("Projet Pixane") + " (*.pixane)", tr("Photoshop, avec les calques") + " (*.psd)",
                    tr("OpenRaster, pour Krita et GIMP") + " (*.ora)",
                    "JPEG (*.jpg)", "PNG (*.png)", "TIFF (*.tif)", "WebP (*.webp)"]
@@ -1270,9 +1309,24 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                 place = QPoint(x, y)
             except ValueError:
                 pass
+        img = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
+        w, h = self.doc.taille()
+        t = None
+        if img.width() > w or img.height() > h:
+            # plus grande que la photo : réduite pour tenir entière, puis le cadre Transformer s'ouvre ; tous ses
+            # pixels sont gardés jusqu'à la validation (on peut la réagrandir sans perte)
+            from PySide6.QtCore import QRect
+            t = Transformation(img, QRect(0, 0, img.width(), img.height()))
+            t.centre = QPointF(w / 2, h / 2)
+            t.sx = t.sy = min(w / img.width(), h / img.height())
+            img, place = t.rendu(w, h), QPoint(0, 0)
         avant = self.doc.etat()
-        apres = self.doc.etat_coller(img.convertToFormat(QImage.Format_ARGB32_Premultiplied), place)
+        apres = self.doc.etat_coller(img, place)
         self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Coller")))
+        if t is not None and self.canevas.transfo is None:
+            self._commencer_transfo(t)
+            self.statusBar().showMessage(tr("Image collée plus grande que la photo : réduite à {p} %. Ajuste sa taille "
+                                            "avec les poignées, puis Entrée.", p=round(t.sx * 100)), 15000)
 
     def supprimer_selection(self):
         if not self.doc or not self._verifier_selection_simple() or \
@@ -1354,10 +1408,17 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
     def nouvelle_image(self):
         pp = QApplication.clipboard().image()
         l, h = (pp.width(), pp.height()) if not pp.isNull() else (1920, 1080)
-        d = NouvelleImage(l, h, self)
+        d = NouvelleImage(l if not pp.isNull() else None, h if not pp.isNull() else None, self.reglages, self)
         if d.exec():
-            self._installer_document(Document(d.image()))
+            doc = Document(d.image())
+            doc.dpi = d.format_choisi().dpi
+            doc.mode = d.mode_couleur()
+            doc.nom = d.nom_document()
+            doc.reperes = d.reperes()
+            self._installer_document(doc)
             self.doc.modifie = True
+            if doc.reperes:
+                self.canevas.reperes_visibles = True      # fond perdu et zone de sécurité visibles tout de suite
             self._actualiser()
 
     def nouvelle_depuis_presse_papiers(self):
@@ -1430,6 +1491,86 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             finally:
                 QApplication.restoreOverrideCursor()
             self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Taille de l'image")))
+
+    def zone_travail(self):
+        """Image > Taille de la zone de travail : agrandit (ou rogne) la feuille sans étirer l'image."""
+        if not self.doc or not self._verifier_verrou(tr("Taille de la zone de travail"), tous=True):
+            return
+        w, h = self.doc.taille()
+        d = ZoneTravail(w, h, self.doc.dpi, self)
+        if not d.exec() or d.pixels() == (w, h):
+            return
+        (W, H), (dx, dy) = d.pixels(), d.decalage()
+        avant = self.doc.etat()
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            apres = self.doc.etat_zone_travail(W, H, dx, dy, d.couleur())
+        finally:
+            QApplication.restoreOverrideCursor()
+        decales = [(s, v + (dy if s == "h" else dx)) for s, v in self.doc.reperes]
+        self.historique.push(CommandeZoneTravail(self.doc, avant, apres, tr("Taille de la zone de travail"),
+                                                 self.doc.reperes, decales))
+
+    def changer_mode(self, mode: str):
+        """Image > Mode : couleurs RVB ou niveaux de gris."""
+        if not self.doc or mode == self.doc.mode:
+            return
+        self.doc.changer_mode(mode)
+        self.statusBar().showMessage(tr("Mode : niveaux de gris (l'image est vue et enregistrée en gris ; les "
+                                        "calques gardent leurs couleurs)") if mode == "gris"
+                                     else tr("Mode : couleurs RVB"), 8000)
+        self._actualiser()
+
+    def basculer_epreuve(self):
+        """Affichage > Aperçu de l'impression : couleurs montrées comme une fois imprimées (profil CMJN)."""
+        if not self.doc:
+            return
+        if self.doc.epreuve:
+            self.doc.epreuve = None
+        else:
+            from .impression import profil_defaut, profils_cmjn
+            profil = self.reglages.value("cmjn_profil", "") or profil_defaut()
+            if profil not in [c for _n, c in profils_cmjn()]:
+                profil = profil_defaut()
+            if not profil:
+                QMessageBox.information(self, tr("Aperçu de l'impression"), tr("Aucun profil CMJN trouvé dans Windows."))
+                self.a_epreuve.setChecked(False)
+                return
+            self.doc.epreuve = (profil, self.reglages.value("cmjn_intention", "perceptive") or "perceptive")
+            nom = next((n for n, c in profils_cmjn() if c == profil), profil)
+            self.statusBar().showMessage(tr("Aperçu de l'impression : {profil}", profil=nom), 8000)
+        self.canevas.update()
+        self._actualiser()
+
+    def exporter_impression(self):
+        """Fichier > Exporter pour l'impression : TIFF, PDF ou JPEG en CMJN, profil intégré."""
+        if not self.doc:
+            return
+        d = ExportImpression(self.doc.dpi, self.reglages, self)
+        if not d.exec():
+            return
+        v = d.valeurs()
+        base = self.doc.chemin.stem if self.doc.chemin else (self.doc.nom or "image")
+        dossier = self.doc.chemin.parent if self.doc.chemin else Path(self.reglages.value("dossier", str(Path.home())))
+        filtre = {".tif": "TIFF (*.tif)", ".pdf": "PDF (*.pdf)", ".jpg": "JPEG (*.jpg)"}[v["ext"]]
+        chemin, _ = QFileDialog.getSaveFileName(self, tr("Exporter pour l'impression (CMJN)"),
+                                                str(dossier / (base + tr("_cmjn") + v["ext"])), filtre)
+        if not chemin:
+            return
+        if not Path(chemin).suffix:
+            chemin += v["ext"]
+        from .impression import enregistrer_cmjn
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            enregistrer_cmjn(self.doc.image, Path(chemin), v["profil"], v["intention"], v["compensation"], v["dpi"],
+                             v["qualite"])
+        except Exception as e:
+            QMessageBox.critical(self, tr("Exporter pour l'impression"), tr("Impossible d'enregistrer :\n{erreur}",
+                                                                              erreur=e))
+            return
+        finally:
+            QApplication.restoreOverrideCursor()
+        self.statusBar().showMessage(tr("Exporté en CMJN : {chemin}", chemin=chemin), 8000)
 
     def redresser(self):
         if not self.doc or not self._verifier_verrou(tr("Redresser"), tous=True):
@@ -1516,18 +1657,32 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         if not self._verifier_pixels(tr("Transformer le calque")):
             return
         c = self.doc.calque_actif
-        a = tableau(c.image)[:, :, 3]
+        source, fond = c.image, None
+        if self.doc.rect_selection() is not None:        # sélection : seulement l'élément sélectionné
+            source, fond = c.image.copy(), c.image.copy()
+            for img, mode in ((source, QPainter.CompositionMode_DestinationIn),
+                              (fond, QPainter.CompositionMode_DestinationOut)):
+                p = QPainter(img)
+                p.setCompositionMode(mode)
+                p.drawImage(0, 0, self.doc.selection)
+                p.end()
+        a = tableau(source)[:, :, 3]
         ys, xs = (a > 0).nonzero()
         if not len(ys):
-            self.statusBar().showMessage(tr("Le calque « {nom} » est vide : rien à transformer.", nom=c.nom), 6000)
+            self.statusBar().showMessage(tr("Rien à transformer : la sélection est vide sur ce calque.") if fond
+                                         is not None else tr("Le calque « {nom} » est vide : rien à transformer.",
+                                                             nom=c.nom), 6000)
             return
         from PySide6.QtCore import QRect
         rect = QRect(int(xs.min()), int(ys.min()), int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1))
         if c.texte is not None:
             self.statusBar().showMessage(tr("Le texte « {nom} » devient une image (pour garder un texte modifiable, "
                                             "change sa taille et tourne-le avec l'outil Texte).", nom=c.nom), 8000)
+        self._commencer_transfo(Transformation(source, rect, fond))
+
+    def _commencer_transfo(self, t: Transformation):
         self._transfo_avant = (self.doc.etat(), self.doc.modifie)
-        self.canevas.commencer_transfo(Transformation(c.image, rect), self.doc.actif)
+        self.canevas.commencer_transfo(t, self.doc.actif)
         self.opt_transfo.show()
         self._transfo_change()
         self.statusBar().showMessage(tr("Transformer : coins = taille (Maj : libre), dedans = déplacer, dehors = "
@@ -1563,6 +1718,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         c = self.doc.calques[index]
         style = c.style.mis_a_l_echelle(abs(t.sx * t.sy) ** 0.5) if c.style is not None else None
         apres = self.doc.etat_calque_modifie(index, image=img, texte=None, style=style)
+        if t.fond is not None:                            # élément sélectionné déplacé : l'ancienne sélection part
+            apres = (apres[0], apres[1], nouvelle_selection(w, h))
         self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Transformer le calque")))
 
     def _annuler_transfo(self):

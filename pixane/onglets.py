@@ -68,7 +68,7 @@ class Onglets:
         self._onglet_choisi(k)
 
     def _nom_onglet(self, doc) -> str:
-        nom = doc.chemin.name if doc.chemin else tr("sans titre")
+        nom = doc.nom_affiche()
         return nom + (" •" if doc.modifie else "")
 
     def _titres_onglets(self, *_):
@@ -76,7 +76,7 @@ class Onglets:
             t = self._nom_onglet(d)
             if self.barre_onglets.tabText(k) != t:
                 self.barre_onglets.setTabText(k, t)
-            self.barre_onglets.setTabToolTip(k, str(d.chemin) if d.chemin else tr("sans titre"))
+            self.barre_onglets.setTabToolTip(k, str(d.chemin) if d.chemin else d.nom_affiche())
 
     def _onglet_choisi(self, k: int):
         if not (0 <= k < len(self._docs)):

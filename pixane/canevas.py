@@ -211,12 +211,12 @@ class Canevas(QWidget):
     # ---------------------------------------------------------- dessin
     def _pixmap_reduite(self):
         """Image réduite et lissée, mise en cache, quand le zoom est < 100 %."""
-        cle = (self.doc.image.cacheKey(), round(self.zoom, 4))
+        vue = self.doc.image_affichee()                  # avec l'aperçu d'impression s'il est allumé
+        cle = (vue.cacheKey(), round(self.zoom, 4))
         if self._cache is None or self._cache[0] != cle:
-            w = max(1, round(self.doc.image.width() * self.zoom))
-            h = max(1, round(self.doc.image.height() * self.zoom))
-            self._cache = (cle, QPixmap.fromImage(self.doc.image.scaled(w, h, Qt.IgnoreAspectRatio,
-                                                                         Qt.SmoothTransformation)))
+            w = max(1, round(vue.width() * self.zoom))
+            h = max(1, round(vue.height() * self.zoom))
+            self._cache = (cle, QPixmap.fromImage(vue.scaled(w, h, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)))
         return self._cache[1]
 
     def paintEvent(self, _):
@@ -236,7 +236,7 @@ class Canevas(QWidget):
         else:
             p.save()
             p.setTransform(QTransform(self.zoom, 0, 0, self.zoom, self.decalage.x(), self.decalage.y()))
-            p.drawImage(QPointF(0, 0), self.doc.image)
+            p.drawImage(QPointF(0, 0), self.doc.image_affichee())
             p.restore()
         # sélection (calque rouge semi-transparent)
         p.save()

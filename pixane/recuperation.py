@@ -83,8 +83,9 @@ class Recuperation(QObject):
                 continue
             self._vus[id(doc)] = (ident, doc.calques)
             infos = {"chemin": str(doc.chemin) if doc.chemin else None,
-                     "nom": doc.chemin.name if doc.chemin else tr("sans titre"),
-                     "date": time.strftime("%d/%m/%Y %H:%M"), "pid": os.getpid()}
+                     "nom": doc.nom_affiche(),
+                     "date": time.strftime("%d/%m/%Y %H:%M"), "pid": os.getpid(),
+                     "dpi": doc.dpi, "mode": doc.mode, "reperes": [list(r) for r in doc.reperes]}
             travail.append((ident, doc.calques, doc.image.copy(), infos))
         if not travail:
             return
@@ -98,7 +99,8 @@ class Recuperation(QObject):
             for ident, calques, fusion, infos in travail:
                 chemin = self.dossier / f"{ident}.pixane"
                 try:
-                    ecrire_ora(chemin, calques, fusion, natif=True)
+                    ecrire_ora(chemin, calques, fusion, natif=True, reperes=infos.get("reperes"),
+                               dpi=infos.get("dpi", 72.0), mode=infos.get("mode", "rvb"))
                     (self.dossier / f"{ident}.json").write_text(json.dumps(infos, ensure_ascii=False),
                                                                 encoding="utf-8")
                     self.ecrit.emit(str(chemin))

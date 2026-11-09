@@ -1,4 +1,4 @@
-"""Petites fenêtres du menu Image et de l'aide : taille de l'image, redresser, nouvelle image, à propos."""
+"""Petites fenêtres du menu Image et de l'aide : taille de l'image, redresser, à propos."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -163,36 +163,6 @@ class Redresser(QDialog):
 
     def valeurs(self) -> tuple[float, bool]:
         return self.angle.value(), self.c_recadrer.isChecked()
-
-
-class NouvelleImage(QDialog):
-    def __init__(self, largeur: int = 1920, hauteur: int = 1080, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle(tr("Nouvelle image"))
-        lay = QVBoxLayout(self)
-        g = QGridLayout()
-        self.largeur, self.hauteur = QSpinBox(), QSpinBox()
-        for s, v in ((self.largeur, largeur), (self.hauteur, hauteur)):
-            s.setRange(1, 30000)
-            s.setSuffix(" px")
-            s.setValue(v)
-        self.fond = QComboBox()
-        self.fond.addItem(tr("Blanc"), "#ffffffff")
-        self.fond.addItem(tr("Transparent"), "#00000000")
-        self.fond.addItem(tr("Noir"), "#ff000000")
-        g.addWidget(QLabel(tr("Largeur")), 0, 0)
-        g.addWidget(self.largeur, 0, 1)
-        g.addWidget(QLabel(tr("Hauteur")), 1, 0)
-        g.addWidget(self.hauteur, 1, 1)
-        g.addWidget(QLabel(tr("Fond")), 2, 0)
-        g.addWidget(self.fond, 2, 1)
-        lay.addLayout(g)
-        lay.addWidget(_boutons(self, tr("Créer")))
-
-    def image(self) -> QImage:
-        img = QImage(self.largeur.value(), self.hauteur.value(), QImage.Format_ARGB32_Premultiplied)
-        img.fill(QColor(self.fond.currentData()))
-        return img
 
 
 class APropos(QDialog):

@@ -15,7 +15,8 @@ from PySide6.QtGui import QImage, QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import QApplication, QDialog, QInputDialog, QMessageBox
 from pixane import installation_moteur, mises_a_jour, recettes
 from pixane.canevas import RECTANGLE
-from pixane.dialogues_image import APropos, NouvelleImage, Redresser, TailleImage
+from pixane.dialogues_document import NouvelleImage
+from pixane.dialogues_image import APropos, Redresser, TailleImage
 from pixane.document import FORMAT_IMAGE, masque, tableau
 from pixane.fenetre import Fenetre, reglages
 from pixane.moteur import Moteur
@@ -156,7 +157,8 @@ f.doc.modifie = False
 f.nouvelle_depuis_presse_papiers()
 verifier(f.doc.taille() == (400, 300) and f.doc.chemin is None, "nouvelle image depuis le presse-papiers")
 f.doc.modifie = False
-accepter(NouvelleImage, lambda d: (d.largeur.setValue(640), d.hauteur.setValue(480), d.fond.setCurrentIndex(1)))
+accepter(NouvelleImage, lambda d: (d.unite.setCurrentIndex(0), d.fond_perdu.setValue(0), d.largeur.setValue(640),
+                                   d.hauteur.setValue(480), d.fond.liste.setCurrentIndex(1)))
 f.a_nouvelle.trigger()
 verifier(f.doc.taille() == (640, 480) and tableau(f.doc.image)[:, :, 3].max() == 0, "nouvelle image vide transparente")
 f.doc.modifie = False

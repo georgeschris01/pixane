@@ -135,7 +135,35 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
     problème est signalée à la fin, les autres sont faites.
   - Sécurité : si les résultats iraient dans le même dossier sous le même nom, Pixane refuse (les originaux
     seraient remplacés).
-- **Fichier > Nouvelle image…** (Ctrl+N) : image vide, taille au choix, fond blanc, noir ou transparent.
+- **Fichier > Nouvelle image…** (Ctrl+N) : une image vide, comme dans Photoshop.
+  - **Formats tout prêts** (à gauche) : **pochettes** (CD, vinyle 33 et 45 tours, 3000 × 3000 px pour Spotify,
+    Deezer, Apple Music), **livres** (poche, roman, Amazon KDP, livre numérique), **réseaux sociaux** (Instagram,
+    Story, Facebook, YouTube, X), **impression** (A3, A4, A5, photos, affiches, carte de visite, flyer), **écran**
+    (HD, Full HD, 4K). **Enregistrer ce format…** garde vos propres formats dans **Mes formats** ; le dernier format
+    utilisé est proposé la fois suivante.
+  - **Largeur, hauteur et unité** : pixels, pouces, centimètres, millimètres, points ou picas (1 pouce = 2,54 cm
+    = 72 points = 6 picas). Changer d'unité ne change pas l'image.
+  - **Orientation** : Portrait ou Paysage échange largeur et hauteur.
+  - **Résolution** (ppp, points par pouce) : **300** pour l'impression, **72** pour l'écran. Elle est **gardée dans
+    le fichier** (.pixane, PSD, JPEG, PNG, TIFF) : un imprimeur verra la bonne taille.
+  - **Mode** : couleurs RVB ou **niveaux de gris** (voir *Image > Mode*). Pixane travaille en **8 bits par couche**
+    (16,7 millions de couleurs, comme le JPEG, le PNG et le web) ; le 16 et le 32 bits sont prévus plus tard.
+  - **Fond** : blanc, transparent, noir ou une couleur au choix.
+  - **Fond perdu** (impression) : bande ajoutée tout autour, coupée par l'imprimeur (en général 3 mm) : le fond doit
+    aller jusqu'au bord de l'image. **Zone de sécurité** : marge à l'intérieur du format fini où ne mettre rien
+    d'important (texte, visage). Des **repères** sont posés tout seuls sur ces deux lignes.
+  - En bas : la taille en pixels, la taille imprimée et la mémoire utilisée.
+- **Fichier > Exporter pour l'impression (CMJN)…** : pour un imprimeur qui demande du CMJN (les quatre encres).
+  Pixane travaille en RVB et convertit au moment d'exporter, comme le conseillent les imprimeurs.
+  - **Format** : TIFF (le plus sûr), PDF ou JPEG.
+  - **Profil CMJN** : ceux installés dans Windows, rien à télécharger. Demandez celui de votre imprimeur ; en Europe,
+    c'est souvent **Coated FOGRA39** (papier couché).
+  - **Intention de rendu** : *Perceptive* pour les photos, *Colorimétrie relative* pour les logos et les aplats.
+    **Compensation du point noir** : cochée, les ombres gardent leurs détails.
+  - La **résolution** est notée dans le fichier ; la photo n'est pas modifiée (nom proposé : `<photo>_cmjn.tif`).
+  - Avant d'exporter : **Affichage > Aperçu de l'impression (CMJN)** (Ctrl+Alt+Y) montre à l'écran les couleurs
+    telles qu'elles sortiront (les bleus et les verts très vifs ternissent souvent). Le recliquer revient à l'écran
+    normal ; l'image n'est jamais modifiée.
 - **Fichier > Nouvelle image depuis le presse-papiers** (Ctrl+Alt+V) : ouvre l'image copiée (capture d'écran, autre
   logiciel…). **Ctrl+V** sans photo ouverte fait la même chose.
 
@@ -242,6 +270,10 @@ Ils agissent sur le **calque choisi** dans le panneau Calques :
 - **Couper** (Ctrl+X) : copie, puis efface la zone sélectionnée (elle devient transparente).
 - **Coller** (Ctrl+V) : met l'image copiée dans un **nouveau calque**, à **la même place** si elle vient de Pixane,
   au centre si elle vient d'ailleurs (capture d'écran, autre logiciel…). Bougez-la ensuite avec l'outil Déplacer (V).
+  Pour l'agrandir ou la réduire : **Ctrl+T** (voir *Transformer le calque*).
+  - **Image plus grande que la photo** : elle arrive **réduite pour tenir entière**, avec le cadre *Transformer*
+    déjà ouvert. Ajustez sa taille et sa place, puis **Entrée**. Rien n'est coupé avant de valider : on peut la
+    réagrandir sans perte.
 - **Supprimer la sélection** (Suppr) : efface la zone sélectionnée du calque (transparente).
 
 Un calque **verrouillé** est protégé ; un **texte** coupé ou supprimé devient une image. Ctrl+Z annule tout.
@@ -647,6 +679,15 @@ direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annul
 
 ## 10. Menu Image : taille, rotation, transformer
 
+- **Mode** : **Couleurs RVB** ou **Niveaux de gris**. En niveaux de gris, l'image est montrée et enregistrée en gris
+  (JPEG, PNG, TIFF en vrai gris) ; les calques gardent leurs couleurs, pour revenir en RVB sans rien perdre.
+- **Taille de la zone de travail…** (Ctrl+Alt+C) : agrandit la feuille **sans étirer l'image** (par exemple pour
+  ajouter un fond perdu ou une bande pour un titre), ou la rogne.
+  - Nouvelle **largeur** et **hauteur** en pixels, pouces, cm, mm, points, picas ou **pourcentage** ; **Relative**
+    : on tape ce qu'on ajoute (ex. +200 px).
+  - **Ancrage** : où reste l'image (au centre, en haut à gauche…) ; les flèches montrent où la feuille s'agrandit.
+  - **Couleur ajoutée** sur le calque du bas : blanc, transparent, noir ou une couleur au choix.
+  - Les textes restent modifiables, les repères suivent ; Ctrl+Z annule.
 - **Taille de l'image…** (Ctrl+Alt+I) : en pixels ou en %, proportions gardées (case à décocher), boutons rapides
   (par exemple 1920 px pour l'écran et Internet). Sans IA : pour agrandir avec plus de détails, préférez Upscale.
 - **Pivoter** de 90° à droite, à gauche ou de 180°, **Retourner** horizontalement ou verticalement : toute l'image,
@@ -654,7 +695,9 @@ direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annul
 - **Redresser…** : tourner d'un petit angle (-45° à +45°) avec une grille pour aligner l'horizon ou un mur.
   *Recadrer pour enlever les coins vides* (coché par défaut) ; décoché, l'image s'agrandit et les coins sont
   transparents.
-- **Édition > Transformer le calque** (Ctrl+T) : un cadre entoure le **calque choisi**.
+- **Édition > Transformer le calque** (Ctrl+T) : un cadre entoure le **calque choisi**. Pour agrandir, réduire ou
+  tourner **un seul élément** du calque, **sélectionnez-le d'abord** (rectangle, lasso, baguette…) : le cadre
+  n'entoure que lui, le reste du calque ne bouge pas, sa place d'origine devient transparente.
   - **coin** : taille, proportions gardées (Maj : libre) ; **bord** : largeur ou hauteur seule ;
   - **dedans** : déplacer ; **dehors** (le curseur devient une flèche ronde) : tourner (Maj : par 15°) ;
   - la barre du haut affiche largeur, hauteur et angle ; **Entrée**, double-clic ou **Valider** pour garder,
@@ -690,7 +733,8 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+W, Ctrl+Tab, Ctrl+Maj+Tab | Fermer la photo, Photo suivante, Photo précédente |
 | Ctrl+Alt+Maj+S | Exporter pour le web |
 | Ctrl+N, Ctrl+Alt+V | Nouvelle image, Nouvelle image depuis le presse-papiers |
-| Ctrl+Alt+I | Taille de l'image |
+| Ctrl+Alt+I, Ctrl+Alt+C | Taille de l'image, Taille de la zone de travail |
+| Ctrl+Alt+Y | Aperçu de l'impression (CMJN) |
 | Ctrl+T | Transformer le calque (Entrée valider, Échap annuler) |
 | Ctrl+Alt+F | Style du calque |
 | Ctrl+Maj+N, Ctrl+J | Nouveau calque, Dupliquer le calque |

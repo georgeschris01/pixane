@@ -219,6 +219,11 @@ class Document(QObject):
         self._fusion: QImage | None = None
         self.cible_masque = False           # outils de peinture sur le masque du calque choisi (panneau)
         self.reperes: list = []              # repères : (« h » ou « v », position en pixels) ; hors Annuler
+        self.dpi: float = 72.0               # résolution (points par pouce), gardée dans les fichiers
+        self.mode: str = "rvb"               # « rvb » ou « gris » (niveaux de gris : l'image vue et enregistrée)
+        self.nom: str | None = None          # nom d'une image nouvelle, pas encore enregistrée
+        self.epreuve: tuple | None = None    # (profil CMJN, intention) : aperçu « comme à l'impression » à l'écran
+        self._apercu: tuple | None = None    # (clé, image) de l'aperçu d'impression
 
     # ---------------------------------------------------------- image fusionnée
     def taille(self) -> tuple[int, int]:
@@ -230,7 +235,31 @@ class Document(QObject):
         if self._fusion is None:
             w, h = self.taille()
             self._fusion = fusionner(self.calques, w, h).convertToFormat(FORMAT_IMAGE)
+            if self.mode == "gris":
+                self._fusion = en_gris(self._fusion)
         return self._fusion
+
+    def image_affichee(self) -> QImage:
+        """Image montrée à l'écran : avec l'aperçu d'impression (CMJN) s'il est allumé."""
+        img = self.image
+        if not self.epreuve:
+            return img
+        cle = (img.cacheKey(), self.epreuve)
+        if self._apercu is None or self._apercu[0] != cle:
+            from .impression import apercu_impression
+            self._apercu = (cle, apercu_impression(img, *self.epreuve))
+        return self._apercu[1]
+
+    def nom_affiche(self) -> str:
+        return self.chemin.name if self.chemin else (self.nom or tr("sans titre"))
+
+    def changer_mode(self, mode: str) -> None:
+        """RVB ou niveaux de gris (les calques ne sont pas touchés : seule l'image fusionnée passe en gris)."""
+        if mode != self.mode:
+            self.mode = mode
+            self._fusion = None
+            self.modifie = True
+            self.change.emit()
 
     @property
     def calque_actif(self) -> Calque:
@@ -245,19 +274,27 @@ class Document(QObject):
             calques, icc, remarques = lire_psd(chemin)
             doc = cls(chemin=chemin, calques=calques, icc=icc)
             doc.remarques = remarques
+            from .psd import lire_resolution_psd
+            doc.dpi = lire_resolution_psd(chemin) or 72.0
             return doc
         if chemin.suffix.lower() in EXTENSIONS_CALQUES:
             doc = cls(chemin=chemin, calques=lire_ora(chemin))
-            doc.reperes = lire_reperes_ora(chemin)
+            infos = lire_infos_ora(chemin)
+            doc.reperes, doc.dpi, doc.mode = infos["reperes"], infos["dpi"], infos["mode"]
             return doc
         with Image.open(chemin) as im:
             exif = im.info.get("exif")
             icc = im.info.get("icc_profile")
+            gris = im.mode in ("L", "LA", "I;16", "I;16B", "I", "F", "1")
+            dpi = _dpi_pil(im.info.get("dpi"))
             im = ImageOps.exif_transpose(im)  # remet la photo dans le bon sens
             if im.mode in ("I;16", "I;16B", "I", "F"):
                 im = im.point(lambda v: v / 256).convert("L")
             qimg = pil_vers_qimage(im)
-        return cls(qimg, chemin, exif, icc)
+        doc = cls(qimg, chemin, exif, icc)
+        doc.dpi = dpi
+        doc.mode = "gris" if gris else "rvb"
+        return doc
 
     def enregistrer(self, chemin: str | Path) -> None:
         chemin = Path(chemin)
@@ -265,22 +302,24 @@ class Document(QObject):
         if ext == ".psd":
             from .psd import ecrire_psd
             ecrire_psd(chemin, calques_figes(self.calques, garder_groupes=True, garder_masques=True),
-                       self.image, self.icc)
+                       self.image, self.icc, dpi=self.dpi)
             self.chemin = chemin
             self.modifie = False
             return
         if ext in EXTENSIONS_CALQUES:
             natif = ext == ".pixane"            # .pixane : styles modifiables ; .ora (Krita, GIMP) : effets figés
             ecrire_ora(chemin, self.calques if natif else calques_figes(self.calques, garder_groupes=True),
-                       self.image, natif=natif, reperes=self.reperes)
+                       self.image, natif=natif, reperes=self.reperes, dpi=self.dpi, mode=self.mode)
             self.chemin = chemin
             self.modifie = False
             return
         im = qimage_vers_pil(self.image)
         opaque = bool(np.all(np.asarray(im)[:, :, 3] == 255))
         options = {}
-        if self.icc:
+        if self.icc and self.mode != "gris":
             options["icc_profile"] = self.icc
+        if ext != ".webp":
+            options["dpi"] = (self.dpi, self.dpi)
         if self.exif and ext in (".jpg", ".jpeg", ".tif", ".tiff", ".webp", ".png"):
             try:
                 ex = Image.Exif()
@@ -308,6 +347,10 @@ class Document(QObject):
             im = im.convert("RGB")
         else:
             raise ValueError(tr("Format non pris en charge : {ext}", ext=ext))
+        if self.mode == "gris":                       # niveaux de gris : enregistré en gris (avec la transparence)
+            im = im.convert("LA" if im.mode == "RGBA" and ext in (".png", ".webp") else "L")
+            if ext == ".webp":
+                im = im.convert("RGBA" if im.mode == "LA" else "RGB")   # WebP n'a pas de gris
         im.save(chemin, **options)
         self.chemin = chemin
         self.modifie = False
@@ -436,6 +479,34 @@ class Document(QObject):
                 nouveaux.append(replace(c, image=c.image.copy(r)))
         nouveaux = [_avec_masque_transforme(c, lambda im: im.copy(r)) for c in nouveaux]
         return self.etat_avec(tuple(nouveaux), self.actif, self.selection.copy(r))
+
+    def etat_zone_travail(self, W: int, H: int, dx: int, dy: int, couleur: QColor | None):
+        """Taille de la zone de travail : toile W × H, contenu décalé de (dx, dy) (négatif = rogné). La bande ajoutée
+        est remplie de `couleur` sur le calque du bas (s'il n'est ni un texte ni un groupe), transparente ailleurs."""
+        nouveaux = []
+        for i, c in enumerate(self.calques):
+            if c.texte is not None:
+                t = c.texte.deplace(dx, dy)
+                nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
+                continue
+            img = image_vide(W, H)
+            p = QPainter(img)
+            if i == 0 and couleur is not None and couleur.alpha() and not c.groupe and c.reglage is None:
+                p.fillRect(0, 0, W, H, couleur)
+                p.setCompositionMode(QPainter.CompositionMode_Source)
+            p.drawImage(QPoint(dx, dy), c.image)
+            p.end()
+            nouveaux.append(replace(c, image=img))
+        def poser(im):
+            res = QImage(W, H, im.format())
+            res.fill(0)
+            p = QPainter(res)
+            p.drawImage(QPoint(dx, dy), im)
+            p.end()
+            return res
+        nouveaux = [_avec_masque_transforme(c, poser) for c in nouveaux]
+        sel = poser(self.selection)
+        return self.etat_avec(tuple(nouveaux), self.actif, sel)
 
     # ---------------------------------------------------------- géométrie de toute l'image
     def etat_geometrie(self, transfo: QTransform, W: int, H: int, tourne: float | None, lisse: bool = True):
@@ -818,11 +889,14 @@ def _png(img: QImage) -> bytes:
     return tampon.getvalue()
 
 
-def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False, reperes=None) -> None:
+def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False, reperes=None, dpi: float = 72.0,
+               mode: str = "rvb") -> None:
     """Groupes = piles imbriquées, modes de fusion = composite-op (lus par Krita et GIMP). En .pixane (natif) :
     masques, calques de réglage, styles et textes gardés en attributs « pixane-… »."""
     w, h = calques[0].image.width(), calques[0].image.height()
-    pile = ET.Element("image", w=str(w), h=str(h), version="0.0.5")
+    pile = ET.Element("image", w=str(w), h=str(h), version="0.0.5", xres=f"{dpi:g}", yres=f"{dpi:g}")
+    if natif and mode == "gris":
+        pile.set("pixane-mode", "gris")
     if natif and reperes:
         pile.set("pixane-reperes", json.dumps([list(r) for r in reperes]))
     racine = ET.SubElement(pile, "stack")
@@ -944,10 +1018,44 @@ def _attr(e, nom: str):
     return e.get("pixane-" + nom)
 
 
-def lire_reperes_ora(chemin: Path) -> list:
+def lire_infos_ora(chemin: Path) -> dict:
+    """Repères, résolution (xres de la norme OpenRaster) et mode (gris / rvb) d'un .pixane ou d'un .ora."""
+    infos = {"reperes": [], "dpi": 72.0, "mode": "rvb"}
     try:
         with zipfile.ZipFile(chemin) as z:
-            r = _attr(ET.fromstring(z.read("stack.xml")), "reperes")
-        return [(str(a), float(b)) for a, b in json.loads(r)] if r else []
-    except (KeyError, ValueError, TypeError, OSError, zipfile.BadZipFile):
-        return []
+            e = ET.fromstring(z.read("stack.xml"))
+    except (KeyError, ValueError, OSError, zipfile.BadZipFile, ET.ParseError):
+        return infos
+    try:
+        r = _attr(e, "reperes")
+        infos["reperes"] = [(str(a), float(b)) for a, b in json.loads(r)] if r else []
+    except (ValueError, TypeError):
+        pass
+    try:
+        infos["dpi"] = float(e.get("xres") or 72) or 72.0
+    except ValueError:
+        pass
+    if _attr(e, "mode") == "gris":
+        infos["mode"] = "gris"
+    return infos
+
+
+def lire_reperes_ora(chemin: Path) -> list:
+    return lire_infos_ora(chemin)["reperes"]
+
+
+def _dpi_pil(dpi) -> float:
+    """Résolution lue par Pillow ((x, y) ou rien) ; 72 si absente ou absurde."""
+    try:
+        v = float(dpi[0])
+        return round(v, 3) if 1 <= v <= 10000 else 72.0
+    except (TypeError, ValueError, IndexError):
+        return 72.0
+
+
+def en_gris(img: QImage) -> QImage:
+    """Niveaux de gris (luminance, comme Photoshop), transparence gardée. img au FORMAT_IMAGE (RVBA non prémultiplié)."""
+    t = tableau(img).astype(np.float32)
+    y = (t[:, :, 0] * 0.299 + t[:, :, 1] * 0.587 + t[:, :, 2] * 0.114 + 0.5).clip(0, 255).astype(np.uint8)
+    res = np.dstack([y, y, y, t[:, :, 3].astype(np.uint8)])
+    return qimage_rgba(res)
