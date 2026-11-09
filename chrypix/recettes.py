@@ -195,6 +195,17 @@ def effacer(image: str, nb: int = NB_EFFACER, graine: int | None = None, chargeu
     return p, {"32": "Flux", "15": tr("LaMa seul")}
 
 
+def supprimer(image: str):
+    """Pinceau Supprimer : LaMa seul, sur un petit morceau de la photo (zone à refaire = transparente)."""
+    p = {"10": _n("LoadImage", image=image),
+         "11": _n("ThresholdMask", mask=["10", 1], value=0.02),
+         "12": _n("INPAINT_LoadInpaintModel", model_name="big-lama.pt"),
+         "13": _n("INPAINT_InpaintWithModel", inpaint_model=["12", 0], image=["10", 0], mask=["11", 0],
+                  seed=_graine()),
+         "14": _n("PreviewImage", images=["13", 0])}
+    return p, {"14": "LaMa"}
+
+
 def remplir(image: str, texte: str = "", nb: int = NB_REMPLIR, graine: int | None = None,
             chargeur: dict | None = None):
     if not texte.strip():

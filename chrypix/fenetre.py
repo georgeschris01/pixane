@@ -21,7 +21,7 @@ from .icones import icone
 from .langue import tr
 from .calques import PanneauCalques
 from .canevas import (BAGUETTE, DEPLACER, GOMME, GOMME_CALQUE, LASSO, MAIN, OBJET, OUTILS_AUTO, OUTILS_ROND,
-                      PEINTURE, PINCEAU, RAPIDE, RECADRER, RECTANGLE, TAMPON, TEXTE, Canevas)
+                      PEINTURE, PINCEAU, RAPIDE, RECADRER, RECTANGLE, SUPPRIMER, TAMPON, TEXTE, Canevas)
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, nouvelle_selection, qimage_rgb, tableau
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
@@ -174,6 +174,8 @@ class Fenetre(QMainWindow):
         self._barre_etat()
         from .selection_ia import SelectionAuto
         self.selection_auto = SelectionAuto(self)
+        from .suppression import Suppression
+        self.suppression = Suppression(self)
         self.canevas.fin_session_ia.connect(self.selection_auto.fin_session)
         self._appliquer_theme()
         self._choisir_outil(PINCEAU)
@@ -578,7 +580,9 @@ class Fenetre(QMainWindow):
                                           (PEINTURE, tr("Pinceau de couleur : peint sur le calque choisi (Alt+clic : "
                                                         "prendre une couleur)"), "P", "peinture"),
                                           (TAMPON, tr("Tampon : recopie une zone (Alt+clic : endroit à copier)"),
-                                           "S", "tampon")):
+                                           "S", "tampon"),
+                                          (SUPPRIMER, tr("Supprimer (IA) : peins sur un défaut, il disparaît au "
+                                                         "lâcher"), "J", "suppression")):
             a = QAction(texte, self, checkable=True)
             a.setShortcut(touche)
             a.setToolTip(f"{texte}  ({touche})")
@@ -593,7 +597,7 @@ class Fenetre(QMainWindow):
         # famille ; le bouton montre le dernier outil choisi. Main et Déplacer restent seuls.
         self._bouton_groupe = {}
         for famille in ((MAIN,), (DEPLACER,), (RECTANGLE, LASSO, PINCEAU, GOMME), (OBJET, RAPIDE, BAGUETTE),
-                        (PEINTURE, TAMPON, GOMME_CALQUE), (RECADRER,), (TEXTE,)):
+                        (SUPPRIMER, PEINTURE, TAMPON, GOMME_CALQUE), (RECADRER,), (TEXTE,)):
             if len(famille) == 1:
                 barre.addAction(self._actions_outils[famille[0]])
                 continue
@@ -664,7 +668,9 @@ class Fenetre(QMainWindow):
                               "Échap pour annuler."),
                  PEINTURE: tr("Pinceau de couleur : peint sur le calque choisi. Alt+clic sur la photo : prendre une "
                               "couleur."),
-                 TAMPON: tr("Tampon : Alt+clic sur l'endroit à copier, puis peins là où il doit être recopié.")}
+                 TAMPON: tr("Tampon : Alt+clic sur l'endroit à copier, puis peins là où il doit être recopié."),
+                 SUPPRIMER: tr("Supprimer (IA) : peins sur un fil, une tache, un bouton… ; au lâcher, il disparaît "
+                               "(calque « Suppressions »). Pour un gros objet, préfère Effacer.")}
         if outil in aides:
             self.statusBar().showMessage(aides[outil], 10000)
         if outil == RECADRER:

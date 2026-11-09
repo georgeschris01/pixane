@@ -82,6 +82,8 @@ DESSINS = {
                     '<path stroke="A" d="M12 8a2.3 2.3 0 1 1 0 4.6A2.3 2.3 0 0 1 12 8zM7.5 19.5c.6-3 2.3-4.6 4.5-4.6s3.9 1.6 4.5 4.6"/>',
     "reglages": '<path d="M4 6.5h9M17 6.5h3M4 12h3M11 12h9M4 17.5h11M19 17.5h1"/>'
                 '<path stroke="A" d="M15 4.5v4M9 10v4M17 15.5v4"/>',
+    "suppression": '<path d="M5 19c3-1 4-3.5 6.5-6l5-5a2 2 0 0 1 3 3l-5 5c-2.5 2.5-5 3.5-6 6.5"/>'
+                   '<path stroke="A" d="M4 5v3M2.5 6.5h3M9 3v2M8 4h2"/>',
     "style": '<path d="M9 20V9.5A3.5 3.5 0 0 1 12.5 6H13M5.5 11.5H12"/><path stroke="A" d="M14.5 12l6 7.5M20.5 12l-6 7.5"/>',
     # texte
     "texte": '<path d="M5 6.5V4.5h14v2M12 4.5v15M9 19.5h6"/>',

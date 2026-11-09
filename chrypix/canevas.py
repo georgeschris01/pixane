@@ -25,7 +25,8 @@ TAMPON = "tampon"                              # copier une zone de la photo sur
 BAGUETTE = "baguette"                          # baguette magique : zone de couleur proche (glisser = tolérance)
 RAPIDE = "rapide"                              # sélection rapide (IA) : peindre sur l'objet
 OBJET = "objet"                                # sélection d'objet (IA) : cadre autour, ou clic dessus
-OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE, PEINTURE, TAMPON, RAPIDE)   # outils au curseur rond (taille)
+SUPPRIMER = "supprimer"                        # pinceau Supprimer (IA, LaMa) : le défaut peint disparaît au lâcher
+OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE, PEINTURE, TAMPON, RAPIDE, SUPPRIMER)   # curseur rond (taille)
 OUTILS_AUTO = (BAGUETTE, RAPIDE, OBJET)                                  # sélections calculées
 OUTILS_CALQUE = (GOMME_CALQUE, PEINTURE, TAMPON)                  # outils qui changent les pixels du calque
 OPACITE_SELECTION = 0.45
@@ -53,6 +54,7 @@ class Canevas(QWidget):
     trait_ia = Signal(list, bool, bool)         # sélection rapide : points (image), Alt (retirer), Maj (nouvel objet)
     objet_ia = Signal(object, str)              # sélection d'objet : QRectF (cadre) ou QPointF (clic), mode
     fin_session_ia = Signal()                   # Échap avec la sélection rapide : l'objet suivant repart de zéro
+    suppression = Signal(list, float)           # pinceau Supprimer : points (image), taille du pinceau
     poignee_sol_bouge = Signal(object)          # style « ombre au sol » : bout de l'ombre tiré (point image)
 
     def __init__(self, parent=None):
@@ -877,18 +879,20 @@ class Canevas(QWidget):
         """Trait de la sélection rapide, cadre de la sélection d'objet (en cours ou en calcul), points de l'IA.
         Appelé avec la transformation de l'image (coordonnées image)."""
         trait = None
-        if self._auto is not None and self._auto[0] in (RAPIDE, OBJET):
+        if self._auto is not None and self._auto[0] in (RAPIDE, OBJET, SUPPRIMER):
             trait = (self._auto[0], self._auto[2])
         elif self.trait_en_attente is not None:
             trait = self.trait_en_attente
         if trait is not None:
             genre, d = trait
-            if genre == RAPIDE and len(d["points"]) > 0:
+            if genre in (RAPIDE, SUPPRIMER) and len(d["points"]) > 0:
                 c = QColor(self.couleur_accent)
                 c.setAlpha(110)
+                if genre == SUPPRIMER:
+                    c = QColor(255, 60, 150, 120)
                 if d.get("alt"):
                     c = QColor(255, 255, 255, 130)
-                p.setPen(QPen(c, self.taille_pinceau, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+                p.setPen(QPen(c, d.get("taille", self.taille_pinceau), Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
                 if len(d["points"]) == 1:
                     p.drawPoint(d["points"][0])
                 else:
@@ -919,6 +923,8 @@ class Canevas(QWidget):
             self.baguette_clic.emit(pt, mode)
         elif self.outil == RAPIDE:
             self._auto = (RAPIDE, pos, {"points": [pt], "alt": alt, "maj": maj})
+        elif self.outil == SUPPRIMER:
+            self._auto = (SUPPRIMER, pos, {"points": [pt], "taille": float(self.taille_pinceau)})
         else:
             self._auto = (OBJET, pos, {"debut": pt, "fin": None, "mode": mode})
         self.update()
@@ -927,7 +933,7 @@ class Canevas(QWidget):
         outil, depart, d = self._auto
         if outil == BAGUETTE:
             self.baguette_glisse.emit(pos.x() - depart.x())
-        elif outil == RAPIDE:
+        elif outil in (RAPIDE, SUPPRIMER):
             d["points"].append(self.vers_image(pos))
         elif (pos - depart).manhattanLength() > 4:
             d["fin"] = self.vers_image(pos)
@@ -938,6 +944,9 @@ class Canevas(QWidget):
         self._auto = None
         if outil == BAGUETTE:
             self.baguette_lache.emit()
+        elif outil == SUPPRIMER:
+            self.trait_en_attente = (SUPPRIMER, d)
+            self.suppression.emit([(pt.x(), pt.y()) for pt in d["points"]], d["taille"])
         elif outil == RAPIDE:
             self.trait_en_attente = (RAPIDE, d)
             self.trait_ia.emit([(pt.x(), pt.y()) for pt in d["points"]], d["alt"], d["maj"])
@@ -1030,7 +1039,7 @@ class Canevas(QWidget):
             self._presser_retouche(pos, bool(e.modifiers() & Qt.AltModifier))
             self.update()
             return
-        if self.outil in OUTILS_AUTO:
+        if self.outil in OUTILS_AUTO or self.outil == SUPPRIMER:
             self._presser_auto(e, pos)
             return
         if self.outil == GOMME_CALQUE and self.doc.calque_actif.verrou:
