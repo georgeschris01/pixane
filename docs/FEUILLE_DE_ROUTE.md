@@ -52,7 +52,9 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
 7. [ ] **Publication** : guide complet, licences (Flux Fill dev = non commercial), dépôt public ou installateur.
 
 ## Numérotation des versions (décidée le 08/11/2026)
-A.B.C : A = 0 tant que Chrypix n'est pas fini (1.0.0 = première version finie) ; B = +1 pour un lot de nouvelles fonctions (C repart à 0) ; C = +1 pour des corrections seulement. Le numéro se change dans chrypix\__init__.py avant de fabriquer l'installateur. Dernière version d'essai : 0.3.2 (restauration : couleurs d'origine gardées et taille exacte ; calques glissés à la souris ; README et guide complétés : IA locale, vitesse, configuration).
+A.B.C : A = 0 tant que Chrypix n'est pas fini (1.0.0 = première version finie) ; B = +1 pour un lot de nouvelles fonctions (C repart à 0) ; C = +1 pour des corrections seulement. Le numéro se change dans chrypix\__init__.py avant de fabriquer l'installateur. Dernière version d'essai : 0.3.3 (restauration : calque « Restaurée » / « Restaurée et colorisée » et nom de fichier proposé avec _restaurée / _restaurée_colorisée, traduits).
 
 ## Idées notées en passant
 - Nettoyer les images d'essai dans les dossiers de sortie de ComfyUI (proposé, pas encore fait).
+- **Nom du programme** (09/11/2026) : Christophe trouve que « Chrypix » ne va pas ; nouveau nom à choisir, puis l'extension des projets (.chr est déjà prise par de vieux formats : polices Borland, fiches Baldur's Gate, graphismes NES). À reproposer.
+- **Cartes AMD** (09/11/2026) : pas prévues pour l'instant (moteur et réglages faits pour NVIDIA / CUDA). Possible plus tard avec ComfyUI + ROCm sous Windows (Radeon RX 7000 / 9000), mais il faudrait une carte AMD pour tout essayer.

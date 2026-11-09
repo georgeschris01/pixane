@@ -1143,7 +1143,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         if self.doc.chemin:
             garde = not plusieurs or self.doc.chemin.suffix.lower() in (".psd", ".ora")
             ext = self.doc.chemin.suffix if garde else ".chr"
-            propose = str(self.doc.chemin.with_name(self.doc.chemin.stem + tr("_retouche") + ext))
+            ajout = getattr(self.doc, "suffixe_nom", None) or tr("_retouche")
+            propose = str(self.doc.chemin.with_name(self.doc.chemin.stem + ajout + ext))
         else:
             propose = str(Path(self.reglages.value("dossier", str(Path.home()))) / ("image.chr" if plusieurs
                                                                                      else "image.jpg"))
@@ -1175,6 +1176,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             QApplication.restoreOverrideCursor()
         self._ajouter_recent(str(chemin))
         self._recuperation.enregistree(self.doc)
+        self.doc.suffixe_nom = None                 # déjà dans le nom du fichier enregistré
         ext = chemin.suffix.lower()
         textes = any(c.texte is not None for c in self.doc.calques)
         styles = any(c.style is not None and not c.style.vide() for c in self.doc.calques)
@@ -1869,11 +1871,17 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             def apres(img: QImage) -> QImage:
                 res = garder_teinte(original, tableau(dans_sel(img).convertToFormat(FORMAT_IMAGE)))
                 return QImage(np.ascontiguousarray(res).data, w, h, w * 4, FORMAT_IMAGE).copy()
-        self._lancer(titre, False, lambda nom: recettes.restaurer(nom, taille, coloriser), apres=apres)
+        if coloriser:
+            nom_calque, suffixe = tr("Restaurée et colorisée"), tr("_restaurée_colorisée")
+        else:
+            nom_calque, suffixe = tr("Restaurée"), tr("_restaurée")
+        self._lancer(titre, False, lambda nom: recettes.restaurer(nom, taille, coloriser), apres=apres,
+                     nom_calque=nom_calque, suffixe=suffixe)
 
     def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None,
-                placer=None):
-        """Envoie l'image au moteur, attend, puis propose les résultats."""
+                placer=None, nom_calque: str | None = None, suffixe: str | None = None):
+        """Envoie l'image au moteur, attend, puis propose les résultats. nom_calque : nom du calque du résultat
+        (le titre sinon) ; suffixe : ajouté au nom proposé à l'enregistrement (ex. « _restaurée »)."""
         doc = self.doc
         if png is None:
             png = doc.png_pour_ia(avec_selection)
@@ -1905,7 +1913,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             attente.deleteLater()
             choix.ajouter(res)
             if choix.exec() and choix.choix() is not None:
-                self._appliquer_resultat(doc, choix.choix(), titre, placer)
+                self._appliquer_resultat(doc, choix.choix(), titre, placer, nom_calque)
+                if suffixe:
+                    doc.suffixe_nom = suffixe
             annuler.set()
 
         def premier_echec(message):
@@ -1927,17 +1937,19 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         t.lancer()
         attente.show()
 
-    def _appliquer_resultat(self, doc: Document, image: QImage, titre: str, placer=None):
+    def _appliquer_resultat(self, doc: Document, image: QImage, titre: str, placer=None,
+                            nom_calque: str | None = None):
         """Le résultat choisi devient un nouveau calque (annulable)."""
         if doc is not self.doc:
             return
         avant = doc.etat()
+        nom = nom_calque or titre
         if placer is not None:
             apres = placer(image)
         elif image.size() == doc.image.size():
-            apres = doc.etat_resultat_ia(titre, image)      # seulement les pixels retouchés
+            apres = doc.etat_resultat_ia(nom, image)        # seulement les pixels retouchés
         else:
-            apres = doc.etat_redimensionne(titre, image)    # Upscale
+            apres = doc.etat_redimensionne(nom, image)      # Upscale
         # travail fini : la sélection disparaît (Ctrl+Z la fait revenir avec l'image d'avant)
         calques, actif, _sel = apres
         apres = (calques, actif, nouvelle_selection(calques[0].image.width(), calques[0].image.height()))

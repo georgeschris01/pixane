@@ -77,7 +77,32 @@ verifier(np.all(t[:, : w // 2 - 2, :3] == 255) and np.array_equal(t[:, w // 2 + 
 verifier(lance["fabriquer"]("a.png")[0]["11"]["inputs"]["model_name"] == recettes.SCUNET, "Réduire le bruit : SCUNet")
 f.ia_nettete()
 verifier("RealESRGAN" in str(lance["fabriquer"]("a.png")[0]), "Netteté : RealESRGAN")
+
+# Restaurer : nom du calque et nom proposé à l'enregistrement (« _restaurée », « _restaurée_colorisée »)
+from PySide6.QtWidgets import QFileDialog, QMessageBox  # noqa: E402
+f._lancer = lambda titre, sel, fabriquer, apres=None, **k: lance.update(titre=titre, apres=apres, **k)
+for coloriser, calque_attendu, ajout in ((False, "Restaurée", "_restaurée"),
+                                         (True, "Restaurée et colorisée", "_restaurée_colorisée")):
+    lance.clear()
+    QMessageBox.exec = lambda self, c=coloriser: None
+    QMessageBox.clickedButton = lambda self, c=coloriser: self.buttons()[[b.text() for b in self.buttons()].index(
+        "Restaurer et coloriser" if c else "Restaurer")]
+    recettes.configurer(infos)
+    f.ia_restaurer()
+    verifier(lance.get("nom_calque") == calque_attendu and lance.get("suffixe") == ajout,
+             f"Restaurer (coloriser={coloriser}) : calque « {lance.get('nom_calque')} », ajout « {lance.get('suffixe')} »")
+avant = len(f.doc.calques)
+f._appliquer_resultat(f.doc, f.doc.image.copy(), "Restaurer une vieille photo", None, "Restaurée")
+verifier(f.doc.calques[-1].nom.startswith("Restaurée") or len(f.doc.calques) == avant,
+         "calque du résultat nommé « Restaurée »")
+f.doc.suffixe_nom = "_restaurée"
+propose = {}
+QFileDialog.getSaveFileName = lambda *a, **k: (propose.update(nom=a[2]) or ("", ""))
+f.enregistrer_sous()
+verifier(propose.get("nom", "").endswith(("_restaurée.jpg", "_restaurée.chr")), f"nom proposé : {propose.get('nom')}")
 print("ERREURS :", erreurs if erreurs else "aucune")
 sys.stdout.flush()
+for d in f.documents:          # aucune question à la fermeture
+    d.modifie = False
 f.close()
 sys.exit(1 if erreurs else 0)

@@ -211,6 +211,7 @@ class Document(QObject):
         w, h = self.taille()
         self.selection = nouvelle_selection(w, h)
         self.chemin = chemin
+        self.suffixe_nom: str | None = None   # ajouté au nom proposé à l'enregistrement (ex. « _restaurée »)
         self.exif = exif
         self.icc = icc
         self.modifie = False

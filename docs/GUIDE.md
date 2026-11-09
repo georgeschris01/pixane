@@ -356,6 +356,8 @@ l'intérieur. Comme les autres actions IA, le résultat va dans un **nouveau cal
     garde ses couleurs. L'IA ne fournit que la lumière et les détails ; Chrypix remet ensuite la teinte de
     l'original.
   - **Restaurer et coloriser** met en plus des couleurs naturelles à une photo en noir et blanc ou sépia.
+  - Le résultat arrive dans un calque **« Restaurée »** (ou **« Restaurée et colorisée »**), et *Enregistrer sous*
+    comme *Exporter pour le web* proposent un nom qui le dit : `photo_restaurée.jpg`, `photo_restaurée_colorisée.jpg`.
    Deux propositions, environ **2 minutes chacune** ;
   *Autres propositions* en redemande. L'IA peut changer de petits détails (traits d'un visage, lettres) :
   comparez bien avec l'original (œil du calque). Modèle **Flux Kontext dev** (11,9 Go, licence FLUX.1 [dev], usage

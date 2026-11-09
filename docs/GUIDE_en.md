@@ -344,6 +344,8 @@ AI actions, the result goes on a **new layer** (Ctrl+Z undoes it).
   - **Restore** keeps the **original colours**: a black & white or sepia photo stays so, a colour photo keeps its
     colours. The AI only provides the light and the details; Chrypix then puts back the original's tint.
   - **Restore and colourise** also adds natural colours to a black & white or sepia photo.
+  - The result arrives in a **"Restored"** (or **"Restored and colourised"**) layer, and *Save as* as well as *Export
+    for web* suggest a name that says so: `photo_restored.jpg`, `photo_restored_colourised.jpg`.
    Two proposals, about **2 minutes each**; *More proposals* asks for others. The AI may change
   small details (facial features, letters): compare carefully with the original (layer eye). **Flux Kontext dev**
   model (11.9 GB, FLUX.1 [dev] licence, **non-commercial** use), optional: *Flux Kontext* box in **AI > Install the
