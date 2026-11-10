@@ -2177,9 +2177,14 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             return
         if self.canevas.cadre is not None or not self._verifier_verrou(tr("Agrandir"), tous=True):
             return
-        # bord abîmé proposé d'office : le liseré clair ou foncé détecté sur chaque bord
-        abime = lisere_auto(self.doc.rgb_pour_ia())
-        self.barre_agrandir.ouvrir(self.doc.image.width(), self.doc.image.height(), abime)
+        # vide transparent autour de l'image (photo collée dans une image plus grande) : rempli lui aussi
+        self._contenu_agrandir = self.doc.contenu()
+        if self._contenu_agrandir is not None:
+            abime = (0, 0, 0, 0)
+        else:   # bord abîmé proposé d'office : le liseré clair ou foncé détecté sur chaque bord
+            abime = lisere_auto(self.doc.rgb_pour_ia())
+        self.barre_agrandir.ouvrir(self.doc.image.width(), self.doc.image.height(), abime,
+                                   vide=self._contenu_agrandir is not None)
         self.canevas.commencer_cadre(abime)
 
     def _fin_agrandir(self):
@@ -2191,12 +2196,19 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             return
         ajout, abime = self.barre_agrandir.valeurs_px()
         self._fin_agrandir()
-        # 1. jeter le bord abîmé : la partie saine sert de base
         iw, ih = self.doc.image.width(), self.doc.image.height()
-        ah, ab, ag, ad = abime
-        image = self.doc.image.copy(ag, ah, iw - ag - ad, ih - ah - ab)
-        # 2. l'IA redessine le bord jeté + l'agrandissement (taille finale = photo + ajout)
-        total = [a + m for a, m in zip(ajout, abime)]
+        contenu = getattr(self, "_contenu_agrandir", None)
+        if contenu is not None:
+            # vide autour de l'image : on part de la partie visible ; l'IA remplit le vide + l'agrandissement
+            x0, y0, x1, y1 = contenu
+            image = self.doc.image.copy(x0, y0, x1 - x0, y1 - y0)
+            total = [a + v for a, v in zip(ajout, (y0, ih - y1, x0, iw - x1))]
+        else:
+            # 1. jeter le bord abîmé : la partie saine sert de base
+            ah, ab, ag, ad = abime
+            image = self.doc.image.copy(ag, ah, iw - ag - ad, ih - ah - ab)
+            # 2. l'IA redessine le bord jeté + l'agrandissement (taille finale = photo + ajout)
+            total = [a + m for a, m in zip(ajout, abime)]
         w, h = image.width(), image.height()
         v = {cle: t * 100 / n for cle, t, n in zip(("haut", "bas", "gauche", "droite"), total, (h, h, w, w))}
         png, geo, orig = preparer(a_plat(tableau(image.convertToFormat(FORMAT_IMAGE))), **v, enlever_lisere=False)
@@ -2207,7 +2219,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
 
         def placer(img: QImage):   # calques décalés ; l'ajout de l'IA dans le calque choisi (ou un nouveau)
             return doc.etat_agrandi(tr("Agrandir"), img, (ajout[2], ajout[0]),
-                                    nouveau_calque=self.a_ia_nouveau_calque.isChecked())
+                                    nouveau_calque=self.a_ia_nouveau_calque.isChecked(), contenu=contenu)
         affiner = None
         if self.barre_agrandir.pleine.isChecked() and affinage.utile(geo.taille, geo.travail):
             m = affinage.masque_ajout(geo.taille, geo.marges, orig.shape[:2], max(geo.bande) * 1.5)

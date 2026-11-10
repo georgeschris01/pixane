@@ -458,6 +458,10 @@ Deux cadres apparaissent sur la photo :
   - **Lancer** (ou Entrée) / **Annuler** (ou Échap).
   Les cases et les cadres se suivent : modifier l'un met l'autre à jour.
 - **Taille finale** = photo d'origine + agrandissement. Le bord abîmé ne réduit pas l'image : il est remplacé.
+- **Image entourée de vide** (ex. une photo carrée collée dans une image plus large, avec du transparent à gauche et
+  à droite, ou en haut et en bas) : Agrandir part de **la photo elle-même** et l'IA **remplit le vide** en la
+  prolongeant. Un message le dit dans la barre ; **Lancer** suffit, le cadre peut encore agrandir au-delà. Le bord
+  abîmé n'est pas utilisé dans ce cas. Les trous transparents à l'intérieur de la photo restent transparents.
 - Le raccord entre la photo et l'ajout est fait par Pixane : la photo d'origine est gardée **au pixel près**, avec un
   fondu progressif et un accord des couleurs, pour qu'aucune ligne ne soit visible.
 - 3 propositions, environ 1 minute chacune.

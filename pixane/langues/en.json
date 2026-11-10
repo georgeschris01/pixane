@@ -411,6 +411,7 @@
  "IA": "AI",
  "INTELLIGENCE ARTIFICIELLE": "ARTIFICIAL INTELLIGENCE",
  "Il manque des éléments au moteur IA : menu IA > Installer le moteur IA.": "The AI engine is missing some items: menu AI > Install the AI engine.",
+ "Il y a du vide autour de l'image : l'IA le remplit aussi, en prolongeant l'image (Lancer suffit). Le cadre agrandit encore au-delà.": "There is empty space around the image: the AI fills it too, by extending the image (Start is enough). The frame expands further.",
  "Image : {l} × {h} px": "Image: {l} × {h} px",
  "Image collée plus grande que la photo : réduite à {p} %. Ajuste sa taille avec les poignées, puis Entrée.": "Pasted image larger than the photo: reduced to {p} %. Adjust its size with the handles, then press Enter.",
  "Image trop grande pour un PSD (30 000 pixels au plus de côté).": "Image too large for a PSD (30,000 pixels per side at most).",

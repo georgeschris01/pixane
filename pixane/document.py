@@ -614,9 +614,24 @@ class Document(QObject):
         return self.etat_calque_modifie(cible, image=img)
 
 
-    def etat_agrandi(self, titre: str, resultat: QImage, decalage: tuple[int, int], nouveau_calque: bool = True):
+    def contenu(self) -> tuple[int, int, int, int] | None:
+        """(x0, y0, x1, y1) de la partie visible de l'image, quand du vide transparent l'entoure (ex. une photo
+        carrée collée dans une image plus large) ; None si l'image touche tous les bords (ou est vide)."""
+        a = tableau(self.image.convertToFormat(FORMAT_IMAGE))[:, :, 3] > 8
+        lignes, colonnes = np.nonzero(a.any(axis=1))[0], np.nonzero(a.any(axis=0))[0]
+        if not len(lignes):
+            return None
+        x0, x1, y0, y1 = int(colonnes[0]), int(colonnes[-1]) + 1, int(lignes[0]), int(lignes[-1]) + 1
+        w, h = self.taille()
+        if (x0, y0, x1, y1) == (0, 0, w, h) or x1 - x0 < 16 or y1 - y0 < 16:
+            return None
+        return x0, y0, x1, y1
+
+    def etat_agrandi(self, titre: str, resultat: QImage, decalage: tuple[int, int], nouveau_calque: bool = True,
+                     contenu: tuple[int, int, int, int] | None = None):
         """Agrandir : chaque calque est posé, décalé, sur la nouvelle toile ; l'ajout de l'IA (seulement les pixels
-        qui diffèrent de la photo d'origine) va dans le calque choisi, ou dans un nouveau calque en haut."""
+        qui diffèrent de la photo d'origine) va dans le calque choisi, ou dans un nouveau calque en haut.
+        contenu : partie visible de départ (le vide autour, dans l'ancienne toile, est rempli lui aussi)."""
         W, H = resultat.width(), resultat.height()
         dx, dy = decalage
         nouveaux = []
@@ -635,10 +650,10 @@ class Document(QObject):
         nouveaux = [_avec_masque_transforme(c, poser) for c in nouveaux]
         base = fusionner(nouveaux, W, H)
         # l'ajout (hors de la photo d'origine) est gardé en entier ; dans la photo, sa transparence est respectée
-        w0, h0 = self.taille()
+        x0, y0, x1, y1 = contenu or (0, 0, *self.taille())
         opacite = np.ones((H, W), np.float32)
         b = tableau(base.convertToFormat(FORMAT_IMAGE))[:, :, 3].astype(np.float32) / 255
-        opacite[dy:dy + h0, dx:dx + w0] = b[dy:dy + h0, dx:dx + w0]
+        opacite[dy + y0:dy + y1, dx + x0:dx + x1] = b[dy + y0:dy + y1, dx + x0:dx + x1]
         pose = _image_ia(resultat, base, np.ones((H, W), np.float32), opacite)
         if not nouveau_calque and peut_recevoir_ia(nouveaux[self.actif]):
             img = nouveaux[self.actif].image.convertToFormat(FORMAT_CALQUE)

@@ -380,6 +380,10 @@ Two frames appear on the photo:
   - **Start** (or Enter) / **Cancel** (or Esc).
   The boxes and the frames follow each other: changing one updates the other.
 - **Final size** = original photo + expansion. The damaged edge does not shrink the image: it is replaced.
+- **Image surrounded by empty space** (e.g. a square photo pasted into a wider image, with transparency on the left
+  and right, or top and bottom): Expand starts from **the photo itself** and the AI **fills the empty space** by
+  extending it. A message in the bar says so; **Start** is enough, and the frame can still expand further. The
+  damaged edge is not used in this case. Transparent holes inside the photo stay transparent.
 - The join between the photo and the addition is made by Pixane: the original photo is kept **pixel for pixel**,
   with a gradual blend and colour matching, so that no line is visible.
 - 3 options, about 1 minute each.
