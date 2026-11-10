@@ -47,6 +47,15 @@ rgba[:, 150:450, 3] = 255
 doc = Document(calques=[Calque("Photo collée", qimage_rgba(rgba))])
 f._installer_document(doc)
 verifier(doc.contenu() == (150, 0, 450, 300), f"partie visible trouvée {doc.contenu()}")
+# fins traits blancs dans le vide (restes d'un autre collage) : ils ne comptent pas
+traits = rgba.copy()
+for x in range(30, 140):
+    y = int(150 + 80 * np.sin(x / 25))
+    traits[y:y + 2, x] = [255, 255, 255, 200]
+    traits[y:y + 2, 600 - x] = [255, 255, 255, 120]
+traits[40:42, 460:590] = [255, 255, 255, 255]
+dt = Document(calques=[Calque("Traits", qimage_rgba(traits))])
+verifier(dt.contenu() == (150, 0, 450, 300), f"traits fins dans le vide ignorés {dt.contenu()}")
 
 f.ia_agrandir()
 b = f.barre_agrandir

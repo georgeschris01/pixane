@@ -462,7 +462,8 @@ Deux cadres apparaissent sur la photo :
   à droite, ou en haut et en bas) : le cadre part de **la photo elle-même** (le pointillé montre le bord de
   l'image). **Tu choisis la taille** : tire le cadre dans le vide, juste un peu ou jusqu'au bord de l'image (il s'y
   arrête tout seul, comme un aimant), ou au-delà pour agrandir l'image. L'IA prolonge la photo dans le cadre ; le
-  reste du vide reste transparent. Le bord abîmé n'est pas utilisé dans ce cas. Les trous transparents à l'intérieur
+  reste du vide reste transparent. Les traits fins isolés dans le vide (restes d'un collage) ne comptent pas
+  comme photo. Le bord abîmé n'est pas utilisé dans ce cas. Les trous transparents à l'intérieur
   de la photo restent transparents.
 - Le raccord entre la photo et l'ajout est fait par Pixane : la photo d'origine est gardée **au pixel près**, avec un
   fondu progressif et un accord des couleurs, pour qu'aucune ligne ne soit visible.

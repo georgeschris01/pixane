@@ -616,11 +616,15 @@ class Document(QObject):
 
     def contenu(self) -> tuple[int, int, int, int] | None:
         """(x0, y0, x1, y1) de la partie visible de l'image, quand du vide transparent l'entoure (ex. une photo
-        carrée collée dans une image plus large) ; None si l'image touche tous les bords (ou est vide)."""
+        carrée collée dans une image plus large) ; None si l'image touche tous les bords (ou est vide).
+        Les traits fins isolés dans le vide (restes de collage, liserés) ne comptent pas : une colonne (ou une ligne)
+        n'est gardée que si elle est remplie à au moins 4 % de la plus remplie."""
         a = tableau(self.image.convertToFormat(FORMAT_IMAGE))[:, :, 3] > 8
-        lignes, colonnes = np.nonzero(a.any(axis=1))[0], np.nonzero(a.any(axis=0))[0]
-        if not len(lignes):
+        par_ligne, par_colonne = a.sum(axis=1), a.sum(axis=0)
+        if not par_ligne.any():
             return None
+        lignes = np.nonzero(par_ligne >= max(1, 0.04 * par_ligne.max()))[0]
+        colonnes = np.nonzero(par_colonne >= max(1, 0.04 * par_colonne.max()))[0]
         x0, x1, y0, y1 = int(colonnes[0]), int(colonnes[-1]) + 1, int(lignes[0]), int(lignes[-1]) + 1
         w, h = self.taille()
         if (x0, y0, x1, y1) == (0, 0, w, h) or x1 - x0 < 16 or y1 - y0 < 16:

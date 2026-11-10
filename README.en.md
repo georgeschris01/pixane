@@ -451,7 +451,8 @@ Two frames appear on the photo:
   and right, or top and bottom): the frame starts from **the photo itself** (the dotted line shows the image
   edge). **You choose the size**: drag the frame into the empty space, just a little or up to the image edge (it
   snaps there), or beyond it to enlarge the image. The AI extends the photo inside the frame; the rest of the empty
-  space stays transparent. The damaged edge is not used in this case. Transparent holes inside the photo stay
+  space stays transparent. Thin isolated strokes in the empty space (leftovers from a paste) do not count as
+  photo. The damaged edge is not used in this case. Transparent holes inside the photo stay
   transparent.
 - The join between the photo and the addition is made by Pixane: the original photo is kept **pixel for pixel**,
   with a gradual blend and colour matching, so that no line is visible.
