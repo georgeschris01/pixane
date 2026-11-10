@@ -628,11 +628,25 @@ class Document(QObject):
         return x0, y0, x1, y1
 
     def etat_agrandi(self, titre: str, resultat: QImage, decalage: tuple[int, int], nouveau_calque: bool = True,
-                     contenu: tuple[int, int, int, int] | None = None):
+                     contenu: tuple[int, int, int, int] | None = None, place: tuple[int, int] | None = None,
+                     toile: tuple[int, int] | None = None):
         """Agrandir : chaque calque est posé, décalé, sur la nouvelle toile ; l'ajout de l'IA (seulement les pixels
         qui diffèrent de la photo d'origine) va dans le calque choisi, ou dans un nouveau calque en haut.
-        contenu : partie visible de départ (le vide autour, dans l'ancienne toile, est rempli lui aussi)."""
-        W, H = resultat.width(), resultat.height()
+        contenu : partie visible de départ (le vide autour, dans l'ancienne toile, est rempli lui aussi).
+        place / toile : le résultat ne couvre qu'une partie de la nouvelle image (cadre tiré dans le vide) : il est
+        posé en place (x, y) sur une image de taille toile ; le reste du vide reste transparent."""
+        W, H = toile or (resultat.width(), resultat.height())
+        px, py = place or (0, 0)
+        rw, rh = resultat.width(), resultat.height()
+        if (px, py, W, H) != (0, 0, rw, rh):
+            plein = image_vide(W, H).convertToFormat(FORMAT_IMAGE)
+            p = QPainter(plein)
+            p.setCompositionMode(QPainter.CompositionMode_Source)
+            p.drawImage(px, py, resultat)
+            p.end()
+            resultat = plein
+        poids = np.zeros((H, W), np.float32)
+        poids[max(0, py):py + rh, max(0, px):px + rw] = 1
         dx, dy = decalage
         nouveaux = []
         for c in self.calques:
@@ -654,7 +668,7 @@ class Document(QObject):
         opacite = np.ones((H, W), np.float32)
         b = tableau(base.convertToFormat(FORMAT_IMAGE))[:, :, 3].astype(np.float32) / 255
         opacite[dy + y0:dy + y1, dx + x0:dx + x1] = b[dy + y0:dy + y1, dx + x0:dx + x1]
-        pose = _image_ia(resultat, base, np.ones((H, W), np.float32), opacite)
+        pose = _image_ia(resultat, base, poids, opacite)
         if not nouveau_calque and peut_recevoir_ia(nouveaux[self.actif]):
             img = nouveaux[self.actif].image.convertToFormat(FORMAT_CALQUE)
             p = QPainter(img)

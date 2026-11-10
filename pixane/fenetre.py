@@ -2183,9 +2183,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             abime = (0, 0, 0, 0)
         else:   # bord abîmé proposé d'office : le liseré clair ou foncé détecté sur chaque bord
             abime = lisere_auto(self.doc.rgb_pour_ia())
-        self.barre_agrandir.ouvrir(self.doc.image.width(), self.doc.image.height(), abime,
-                                   vide=self._contenu_agrandir is not None)
-        self.canevas.commencer_cadre(abime)
+        iw, ih = self.doc.image.width(), self.doc.image.height()
+        c = self._contenu_agrandir
+        self.barre_agrandir.ouvrir(iw, ih, abime, vide=None if c is None else (c, (iw, ih)))
+        self.canevas.commencer_cadre(abime, base=c)
 
     def _fin_agrandir(self):
         self.barre_agrandir.hide()
@@ -2199,10 +2200,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         iw, ih = self.doc.image.width(), self.doc.image.height()
         contenu = getattr(self, "_contenu_agrandir", None)
         if contenu is not None:
-            # vide autour de l'image : on part de la partie visible ; l'IA remplit le vide + l'agrandissement
+            # vide autour : on part de la photo ; l'IA la prolonge jusqu'au cadre (dans le vide et/ou au-delà)
             x0, y0, x1, y1 = contenu
             image = self.doc.image.copy(x0, y0, x1 - x0, y1 - y0)
-            total = [a + v for a, v in zip(ajout, (y0, ih - y1, x0, iw - x1))]
+            total = list(ajout)
         else:
             # 1. jeter le bord abîmé : la partie saine sert de base
             ah, ab, ag, ad = abime
@@ -2217,9 +2218,16 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             return qimage_rgb(finaliser(orig, tableau(img)[:, :, :3], geo))
         doc = self.doc
 
+        # rectangle du résultat dans l'image (cadre), et nouvelle image = image d'avant ∪ cadre
+        bx0, by0, bx1, by1 = contenu or (0, 0, iw, ih)
+        rx0, ry0, rx1, ry1 = bx0 - ajout[2], by0 - ajout[0], bx1 + ajout[3], by1 + ajout[1]
+        ux0, uy0 = min(0, rx0), min(0, ry0)
+        toile = (max(iw, rx1) - ux0, max(ih, ry1) - uy0)
+
         def placer(img: QImage):   # calques décalés ; l'ajout de l'IA dans le calque choisi (ou un nouveau)
-            return doc.etat_agrandi(tr("Agrandir"), img, (ajout[2], ajout[0]),
-                                    nouveau_calque=self.a_ia_nouveau_calque.isChecked(), contenu=contenu)
+            return doc.etat_agrandi(tr("Agrandir"), img, (-ux0, -uy0),
+                                    nouveau_calque=self.a_ia_nouveau_calque.isChecked(), contenu=contenu,
+                                    place=(rx0 - ux0, ry0 - uy0), toile=toile)
         affiner = None
         if self.barre_agrandir.pleine.isChecked() and affinage.utile(geo.taille, geo.travail):
             m = affinage.masque_ajout(geo.taille, geo.marges, orig.shape[:2], max(geo.bande) * 1.5)

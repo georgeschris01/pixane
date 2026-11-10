@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ["PIXANE_REGLAGES"] = "Pixane-essais"
 import numpy as np
 from PIL import Image
+from PySide6.QtCore import QPointF
 from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication
 
@@ -49,46 +50,53 @@ verifier(doc.contenu() == (150, 0, 450, 300), f"partie visible trouvée {doc.con
 
 f.ia_agrandir()
 b = f.barre_agrandir
-verifier(b.isVisible() and b.info_vide.isVisible() and b.b_lancer.isEnabled(),
-         "barre Agrandir : message « vide rempli », Lancer possible sans tirer le cadre")
+c = f.canevas
+verifier(b.isVisible() and b.info_vide.isVisible() and not b.b_lancer.isEnabled(),
+         "barre Agrandir : message « le cadre part de la photo », Lancer attend le cadre")
 verifier(not b.abime["haut"].isEnabled(), "bord abîmé : pas utilisé quand il y a du vide")
-f._lancer_agrandir()
-l = lances[-1]
-toile = np.asarray(Image.open(io.BytesIO(l["png"])).convert("RGBA"))
-h, w = toile.shape[:2]
-verifier(abs(w / h - 2) < 0.02, f"toile envoyée à l'IA : proportions de l'image entière ({w} × {h})")
-a = toile[:, :, 3]
-verifier(a[h // 2, w // 2] == 255 and a[h // 2, 3] == 0 and a[h // 2, w - 4] == 0,
-         "toile : la photo au milieu, le vide à gauche et à droite marqué « à remplir »")
-# l'IA « remplit » : on rend la toile avec les côtés peints en orange
-flux = toile[:, :, :3].copy()
-flux[a < 128] = [230, 140, 30]
-res = l["apres"](qimage_rgb(np.ascontiguousarray(flux)))
-verifier((res.width(), res.height()) == (600, 300), f"résultat à la taille de l'image ({res.width()} × {res.height()})")
-doc.appliquer_etat(l["placer"](res))
-k = tableau(doc.calques[0].image.convertToFormat(FORMAT_IMAGE)).astype(int)
-verifier(doc.taille() == (600, 300) and len(doc.calques) == 1, "même taille, toujours un seul calque")
+r = c._rect_cadre()
+p0, p1 = c.vers_ecran(QPointF(150, 0)), c.vers_ecran(QPointF(450, 300))
+verifier(abs(r.left() - p0.x()) < 1 and abs(r.right() - p1.x()) < 1, "le cadre part des bords de la photo")
+# aimant : tiré à gauche presque jusqu'au bord de l'image -> pile au bord
+c._poignee = ("ext", {"g"})
+c._tirer_cadre(c.vers_ecran(QPointF(3, 150)), False)
+verifier(c.cadre[2] == 150 and b.b_lancer.isEnabled(), f"aimant : le cadre s'arrête au bord de l'image ({c.cadre})")
+verifier(b.texte_taille.text().startswith("600 × 300"), f"taille finale : celle de l'image ({b.texte_taille.text()})")
+c._poignee = None
+
+
+def lancer(ajout):
+    """Cadre (haut, bas, gauche, droite) en px depuis la photo ; l'IA « remplit » en orange."""
+    d = Document(calques=[Calque("Photo collée", qimage_rgba(rgba))])
+    f._installer_document(d)
+    f.ia_agrandir()
+    c.cadre = list(ajout)
+    b.definir_px(tuple(ajout), (0, 0, 0, 0))
+    f._lancer_agrandir()
+    l = lances[-1]
+    toile = np.asarray(Image.open(io.BytesIO(l["png"])).convert("RGBA"))
+    flux = toile[:, :, :3].copy()
+    flux[toile[:, :, 3] < 128] = [230, 140, 30]
+    d.appliquer_etat(l["placer"](l["apres"](qimage_rgb(np.ascontiguousarray(flux)))))
+    return d, tableau(d.image.convertToFormat(FORMAT_IMAGE)).astype(int)
+
+
+# 1. tout le vide (gauche et droite jusqu'au bord)
+d, k = lancer((0, 0, 150, 150))
+verifier(d.taille() == (600, 300) and len(d.calques) == 1, "tout le vide : même taille, un seul calque")
 verifier(k[150, 20, 3] == 255 and abs(k[150, 20, 0] - 230) < 25 and k[150, 580, 3] == 255,
          f"le vide à gauche et à droite est rempli {k[150, 20]} {k[150, 580]}")
-verifier(np.abs(k[:, 200:400, :3] - rgba[:, 200:400, :3].astype(int)).max() <= 2,
-         "la photo carrée n'a pas changé")
-
-# avec un agrandissement en plus (100 px en haut) : vide rempli + ajout
-doc = Document(calques=[Calque("Photo collée", qimage_rgba(rgba))])
-f._installer_document(doc)
-f.ia_agrandir()
-f.canevas.cadre = (100, 0, 0, 0)
-b.definir_px((100, 0, 0, 0), (0, 0, 0, 0))
-f._lancer_agrandir()
-l = lances[-1]
-toile = np.asarray(Image.open(io.BytesIO(l["png"])).convert("RGBA"))
-flux = toile[:, :, :3].copy()
-flux[toile[:, :, 3] < 128] = [230, 140, 30]
-res = l["apres"](qimage_rgb(np.ascontiguousarray(flux)))
-doc.appliquer_etat(l["placer"](res))
-k = tableau(doc.image.convertToFormat(FORMAT_IMAGE)).astype(int)
-verifier(doc.taille() == (600, 400) and k[30, 300, 3] == 255 and k[250, 20, 3] == 255,
-         f"vide + 100 px en haut : {doc.taille()}, tout est rempli")
+verifier(np.abs(k[:, 200:400, :3] - rgba[:, 200:400, :3].astype(int)).max() <= 2, "la photo carrée n'a pas changé")
+# 2. seulement 50 px à gauche : le reste du vide reste transparent
+d, k = lancer((0, 0, 50, 0))
+verifier(d.taille() == (600, 300) and k[150, 120, 3] == 255 and k[150, 60, 3] == 0 and k[150, 500, 3] == 0,
+         f"50 px à gauche seulement : rempli de 100 à 150, le reste du vide transparent "
+         f"({k[150, 120, 3]}, {k[150, 60, 3]}, {k[150, 500, 3]})")
+# 3. cadre qui dépasse : 100 px en haut (au-delà de l'image) + tout le vide
+d, k = lancer((100, 0, 150, 150))
+verifier(d.taille() == (600, 400) and k[30, 300, 3] == 255 and k[250, 20, 3] == 255
+         and np.abs(k[160:400, 200:400, :3] - rgba[60:, 200:400, :3].astype(int)).max() <= 2,
+         f"vide + 100 px en haut : {d.taille()}, tout rempli, photo à sa place (hors fondu de raccord)")
 
 # image sans vide : comportement d'avant (pas de message, bord abîmé utilisable)
 plein = np.full((200, 300, 3), 120, np.uint8)

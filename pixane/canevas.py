@@ -98,6 +98,7 @@ class Canevas(QWidget):
         self.couleur_accent = QColor(0, 120, 215)
         self.cadre = None            # Agrandir : px ajoutés [haut, bas, gauche, droite], sinon None
         self.abime = [0, 0, 0, 0]    # Agrandir : px de bord abîmé à refaire [haut, bas, gauche, droite]
+        self.base_cadre = None       # Agrandir : (x0, y0, x1, y1) d'où part le cadre (la photo, sans le vide)
         self._poignee = None         # (cible « ext » / « int » / « ? », côtés parmi "h", "b", "g", "d")
         self._depart = None          # point (image) où le glisser du cadre a commencé
         self._texte_glisse = None    # (index, « deplacer » / « tourner », départ, Texte d'origine, état d'avant)
@@ -179,7 +180,7 @@ class Canevas(QWidget):
             return
         iw, ih = self.doc.image.width(), self.doc.image.height()
         if self.cadre is not None:   # place pour tirer le cadre : au moins 40 % de chaque côté
-            h, b, g, d = self.cadre
+            h, b, g, d = self._depasse()
             tw, th = iw + 2 * max(g, d, iw * 0.4), ih + 2 * max(h, b, ih * 0.4)
         else:
             tw, th = iw, ih
@@ -195,7 +196,7 @@ class Canevas(QWidget):
         iw, ih = self.doc.image.width() * self.zoom, self.doc.image.height() * self.zoom
         self.decalage = QPointF((self.width() - iw) / 2, (self.height() - ih) / 2)
         if self.cadre is not None:   # centrer le cadre entier plutôt que la photo
-            h, b, g, d = self.cadre
+            h, b, g, d = self._depasse()
             self.decalage += QPointF((g - d) * self.zoom / 2, (h - b) * self.zoom / 2)
         self._signaler()
         self.update()
@@ -321,7 +322,9 @@ class Canevas(QWidget):
     # Cadre intérieur (rouge, poignées rondes) : limite de la partie saine ; la bande entre ce cadre et le bord
     # de la photo est « abîmée » : elle est jetée et redessinée par l'IA avec l'agrandissement.
     # Ordre des valeurs partout : (haut, bas, gauche, droite).
-    def commencer_cadre(self, abime=(0, 0, 0, 0)):
+    def commencer_cadre(self, abime=(0, 0, 0, 0), base=None):
+        """base : (x0, y0, x1, y1) de la partie d'où part le cadre (la photo, quand du vide l'entoure)."""
+        self.base_cadre = tuple(base) if base is not None else None
         self.cadre = [0, 0, 0, 0]
         self.abime = [int(v) for v in abime]
         self._poignee = None
@@ -346,17 +349,28 @@ class Canevas(QWidget):
     def _emettre_cadre(self):
         self.cadre_change.emit(tuple(self.cadre), tuple(self.abime))
 
+    def _base(self) -> tuple:
+        """(x0, y0, x1, y1) d'où part le cadre : la photo sans le vide autour, ou toute l'image."""
+        return self.base_cadre or (0, 0, self.doc.image.width(), self.doc.image.height())
+
+    def _depasse(self) -> tuple:
+        """Ce que le cadre dépasse de l'image (haut, bas, gauche, droite), en px."""
+        x0, y0, x1, y1 = self._base()
+        h, b, g, d = self.cadre
+        iw, ih = self.doc.image.width(), self.doc.image.height()
+        return max(0, h - y0), max(0, b - (ih - y1)), max(0, g - x0), max(0, d - (iw - x1))
+
     def _rect_cadre(self) -> QRectF:
         """Cadre extérieur (photo + ajouts) en coordonnées écran."""
         h, b, g, d = self.cadre
-        iw, ih = self.doc.image.width(), self.doc.image.height()
-        return QRectF(self.vers_ecran(QPointF(-g, -h)), self.vers_ecran(QPointF(iw + d, ih + b)))
+        x0, y0, x1, y1 = self._base()
+        return QRectF(self.vers_ecran(QPointF(x0 - g, y0 - h)), self.vers_ecran(QPointF(x1 + d, y1 + b)))
 
     def _rect_sain(self) -> QRectF:
         """Cadre intérieur (partie saine de la photo) en coordonnées écran."""
         h, b, g, d = self.abime
-        iw, ih = self.doc.image.width(), self.doc.image.height()
-        return QRectF(self.vers_ecran(QPointF(g, h)), self.vers_ecran(QPointF(iw - d, ih - b)))
+        x0, y0, x1, y1 = self._base()
+        return QRectF(self.vers_ecran(QPointF(x0 + g, y0 + h)), self.vers_ecran(QPointF(x1 - d, y1 - b)))
 
     @staticmethod
     def _cotes_sous(r: QRectF, pos: QPointF, tol: float = 10) -> set:
@@ -401,13 +415,16 @@ class Canevas(QWidget):
 
     def _tirer_cadre(self, pos: QPointF, symetrique: bool):
         pt = self.vers_image(pos)
-        iw, ih = self.doc.image.width(), self.doc.image.height()
+        x0, y0, x1, y1 = self._base()
+        iw, ih = x1 - x0, y1 - y0
+        W, H = self.doc.image.width(), self.doc.image.height()
+        vide = {"h": y0, "b": H - y1, "g": x0, "d": W - x1}     # vide entre la photo et le bord de l'image
         cible, cotes = self._poignee
         # vecteur « vers l'extérieur » de chaque côté, en px image (positif = on sort de la photo)
-        dehors = {"h": -pt.y(), "b": pt.y() - ih, "g": -pt.x(), "d": pt.x() - iw}
+        dehors = {"h": y0 - pt.y(), "b": pt.y() - y1, "g": x0 - pt.x(), "d": pt.x() - x1}
         if cible == "?":
             depart = self._depart
-            dep = {"h": -depart.y(), "b": depart.y() - ih, "g": -depart.x(), "d": depart.x() - iw}
+            dep = {"h": y0 - depart.y(), "b": depart.y() - y1, "g": x0 - depart.x(), "d": depart.x() - x1}
             cote = next(iter(cotes))
             if abs(dehors[cote] - dep[cote]) < 2 / self.zoom:
                 return                                   # pas encore assez bougé pour décider
@@ -418,8 +435,10 @@ class Canevas(QWidget):
         taille = {"h": ih, "b": ih, "g": iw, "d": iw}
         for cote in cotes:
             n = taille[cote]
-            if cible == "ext":   # agrandir : de 0 à 200 % de la photo
-                v = int(max(0, min(2 * n, round(dehors[cote]))))
+            if cible == "ext":   # agrandir : de 0 à 200 % de la photo (au-delà du vide qui l'entoure)
+                v = int(max(0, min(2 * n + vide[cote], round(dehors[cote]))))
+                if vide[cote] and abs(v - vide[cote]) <= 8 / self.zoom:
+                    v = vide[cote]                       # aimant : juste jusqu'au bord de l'image
                 self.cadre[index[cote]] = v
                 if symetrique:
                     self.cadre[index[oppose[cote]]] = v
@@ -436,7 +455,9 @@ class Canevas(QWidget):
     def _dessiner_cadre(self, p: QPainter):
         r = self._rect_cadre()
         sain = self._rect_sain()
-        photo = QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
+        x0, y0, x1, y1 = self._base()
+        photo = QRectF(self.vers_ecran(QPointF(x0, y0)), self.vers_ecran(QPointF(x1, y1)))
+        image = QRectF(self.decalage, self.decalage + QPointF(self.doc.image.width(),
                                                               self.doc.image.height()) * self.zoom)
 
         def chemin(rect: QRectF) -> QPainterPath:
@@ -451,6 +472,9 @@ class Canevas(QWidget):
         pd.fillRect(8, 8, 8, 8, QColor(240, 240, 240))
         pd.end()
         p.fillPath(chemin(r).subtracted(chemin(photo)), QBrush(damier))
+        if self.base_cadre is not None:          # bord de l'image : repère pour l'aimant
+            p.setPen(QPen(QColor(255, 255, 255, 140), 1, Qt.DotLine))
+            p.drawRect(image)
         # bord abîmé : rouge hachuré (sera redessiné)
         bande = chemin(photo).subtracted(chemin(sain))
         p.fillPath(bande, QColor(230, 40, 40, 90))

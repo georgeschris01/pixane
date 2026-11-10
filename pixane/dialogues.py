@@ -162,9 +162,10 @@ class BarreAgrandir(QFrame):
                          "l'intérieur pour marquer un bord abîmé à refaire.  (Maj : les deux côtés)"))
         aide.setObjectName("discret")
         colonne.addWidget(aide)
-        self.vide = False
-        self.info_vide = QLabel(tr("Il y a du vide autour de l'image : l'IA le remplit aussi, en prolongeant "
-                                   "l'image (Lancer suffit). Le cadre agrandit encore au-delà."))
+        self.vide = None
+        self.info_vide = QLabel(tr("Il y a du vide autour de la photo : le cadre part de la photo. Tire-le "
+                                   "jusqu'où l'IA doit la prolonger : dans le vide (il s'arrête tout seul au bord "
+                                   "de l'image), ou au-delà pour agrandir l'image."))
         self.info_vide.setWordWrap(True)
         self.info_vide.hide()
         colonne.addWidget(self.info_vide)
@@ -225,14 +226,19 @@ class BarreAgrandir(QFrame):
         parent.installEventFilter(self)
         self.hide()
 
-    def ouvrir(self, largeur: int, hauteur: int, abime=(0, 0, 0, 0), vide: bool = False):
-        """vide : l'image est entourée de vide transparent, que l'IA remplit aussi (Lancer possible sans cadre)."""
+    def ouvrir(self, largeur: int, hauteur: int, abime=(0, 0, 0, 0), vide=None):
+        """vide : None, ou ((x0, y0, x1, y1) de la photo, (largeur, hauteur) de l'image) quand du vide transparent
+        entoure la photo : le cadre part alors de la photo, les % sont ceux de la photo."""
         self.taille = (largeur, hauteur)
         self.vide = vide
-        self.info_vide.setVisible(vide)
+        if vide is not None:
+            x0, y0, x1, y1 = vide[0]
+            self.taille = (x1 - x0, y1 - y0)
+            largeur, hauteur = self.taille
+        self.info_vide.setVisible(vide is not None)
         for c in self.abime.values():
             c.setMaximum(max(0, max(largeur, hauteur) - 32))
-            c.setEnabled(not vide)
+            c.setEnabled(vide is None)
         self.definir_px((0, 0, 0, 0), abime)
         self.adjustSize()
         self._placer()
@@ -272,8 +278,12 @@ class BarreAgrandir(QFrame):
     def _maj_texte(self):
         w, h = self.taille
         hh, bb, gg, dd = self._px[0]
-        self.texte_taille.setText(f"{w + gg + dd} × {h + hh + bb} px")
-        self.b_lancer.setEnabled(any(self._px[0]) or any(self._px[1]) or self.vide)
+        if self.vide is not None:                      # l'image ne rétrécit pas : elle grandit si le cadre dépasse
+            (x0, y0, x1, y1), (W, H) = self.vide
+            self.texte_taille.setText(f"{max(W, x1 + dd) - min(0, x0 - gg)} × {max(H, y1 + bb) - min(0, y0 - hh)} px")
+        else:
+            self.texte_taille.setText(f"{w + gg + dd} × {h + hh + bb} px")
+        self.b_lancer.setEnabled(any(self._px[0]) or any(self._px[1]))
 
     def valeurs_px(self) -> tuple:
         """((ajout), (bord abîmé)), chacun (haut, bas, gauche, droite) en px."""
