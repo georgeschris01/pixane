@@ -483,11 +483,29 @@ Increases the resolution (number of pixels) of the photo.
 | **Scale** | ×1.5 to ×4 (×2 by default) | How many times larger |
 | **Strength** (Sharp mode) | 0.10 to 0.60 (0.35 by default) | Freedom given to Flux: low = faithful to the original, high = more invented detail |
 
+**How to set the strength** (Sharp mode): RealESRGAN first enlarges (faithful but a little smooth), then Flux goes
+over it to redraw the details; the strength sets how much this 2nd pass does.
+- **0.10 to 0.25** (light): very faithful, few details added. For **faces, text, logos**, which must stay exact.
+- **0.35** (default): good balance, recommended in most cases.
+- **0.45 to 0.60** (strong): lots of detail, but the AI **invents** some (a face or a text may change a little).
+  For **landscapes, vegetation, fabrics**, which lack texture.
+
+The window recalls this under the Strength box (fuller tooltip on hover).
+
 The window shows the final size before starting; while computing, the progress counts the tiles.
 
-**Layers**: a photo with a single layer is simply replaced by the result. With several layers (or the *new layer*
-option), all layers are enlarged (simple smoothing) and the AI result arrives, complete, on an "Upscale 1" layer on
-top.
+**What should be processed?** (top of the window; the last choice is remembered)
+- **Whole image**: the whole image and all its layers get larger (e.g. 1000 × 1000 -> 2000 × 2000). A photo with a
+  single layer is simply replaced by the result. With several layers (or the *new layer* option), all layers are
+  enlarged (simple smoothing) and the AI result arrives, complete, on an "Upscale 1" layer on top.
+- **The chosen layer, sharper**: it keeps its size and place, the AI redraws it sharper (e.g. a small pasted photo
+  enlarged with Ctrl+T, now blurry). The whole image does not change.
+- **The chosen layer, enlarged**: only this layer gets larger (e.g. pasted photo 400 × 400 -> 800 × 800, in the same
+  place); **the whole image keeps its size** (e.g. 1000 × 1000) and the other layers do not move. What goes beyond the
+  image is hidden but kept (bring it back by moving the layer).
+
+For the chosen layer: only its content is sent to the AI, and around it the layer stays transparent. With the *new
+layer* option, the result arrives in a layer on top and the original stays. A locked layer is refused.
 
 ### Subject and background
 **BiRefNet** model (MIT, 444 MB, installed with the AI engine; if it is missing, **AI > Install the AI engine…**
@@ -545,7 +563,7 @@ it back, shrink it, show it again.
 | **Thumbnail** | Preview of the layer; the grey checkerboard shows transparent parts |
 | **Name** | Double-click the name to rename; double-click elsewhere on the row: layer style |
 | **Opacity** | Transparency of the selected layer, from 0% (invisible) to 100%; shown under the name when < 100% |
-| **Padlock** (right of the name) | Locks the layer to protect it: it can no longer be erased, deleted or merged, and its opacity is fixed; Flatten is disabled while a layer is locked. AI actions are refused with a message: Erase and Fill if the selected layer is locked, Expand and Upscale if any layer is locked (they change the size of every layer). It can still be hidden, renamed and moved up / down. The open padlock is discreet, the closed padlock clearly visible. The lock is kept in .pixane and .ora files |
+| **Padlock** (right of the name) | Locks the layer to protect it: it can no longer be erased, deleted or merged, and its opacity is fixed; Flatten is disabled while a layer is locked. AI actions are refused with a message: Erase and Fill if the selected layer is locked, Expand and whole-image Upscale if any layer is locked (they change the size of every layer), layer Upscale if that layer is locked. It can still be hidden, renamed and moved up / down. The open padlock is discreet, the closed padlock clearly visible. The lock is kept in .pixane and .ora files |
 | **Drag a layer** | Change its place in the stack with the mouse: grab the row (on the name) and drag it up or down; an **orange line** shows where it will go. Dropped just below a layer of an open group, it enters the group; a group moves with its layers. A single Undo step |
 | **Blend mode** (list at the top of the panel) | How the layer mixes with what is below (see below) |
 | **Mask thumbnail** (right of the thumbnail) | The layer's mask, if it has one. Click: you paint the mask (orange frame); click the layer thumbnail: you paint the pixels again. Shift+click: disable / enable the mask (crossed in red) |

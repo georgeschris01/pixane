@@ -495,11 +495,31 @@ Augmente la définition (nombre de pixels) de la photo.
 | **Facteur** | ×1,5 à ×4 (×2 par défaut) | Combien de fois plus grand |
 | **Force** (mode Net) | 0,10 à 0,60 (0,35 par défaut) | Liberté laissée à Flux : bas = fidèle à l'original, haut = plus de détails inventés |
 
+**Comment régler la force** (mode Net) : RealESRGAN agrandit d'abord (fidèle mais un peu lisse), puis Flux repasse
+dessus pour redessiner les détails ; la force règle l'importance de ce 2e passage.
+- **0,10 à 0,25** (léger) : très fidèle, peu de détails ajoutés. Pour les **visages, textes, logos**, qui doivent
+  rester exacts.
+- **0,35** (par défaut) : bon équilibre, conseillé dans la plupart des cas.
+- **0,45 à 0,60** (fort) : beaucoup de détails, mais l'IA en **invente** (un visage ou un texte peut changer un
+  peu). Pour les **paysages, la végétation, les tissus**, qui manquent de matière.
+
+La fenêtre le rappelle sous la case Force (bulle d'aide plus complète au survol).
+
 La fenêtre indique la taille finale avant de lancer ; pendant le calcul, la progression compte les morceaux.
 
-**Calques** : une photo d'un seul calque est simplement remplacée par le résultat. Avec plusieurs calques (ou
-l'option *nouveau calque*), tous les calques sont agrandis (lissage simple) et le résultat de l'IA arrive, complet,
-sur un calque « Upscale 1 » au-dessus.
+**Que faut-il traiter ?** (en haut de la fenêtre ; le dernier choix est retenu)
+- **Toute l'image** : l'image entière et tous ses calques grandissent (ex. 1000 × 1000 -> 2000 × 2000). Une photo
+  d'un seul calque est simplement remplacée par le résultat. Avec plusieurs calques (ou l'option *nouveau calque*),
+  tous les calques sont agrandis (lissage simple) et le résultat de l'IA arrive, complet, sur un calque « Upscale 1 »
+  au-dessus.
+- **Le calque choisi, plus net** : il garde sa taille et sa place, l'IA le redessine plus net (ex. une petite photo
+  collée puis agrandie avec Ctrl+T, devenue floue). L'image entière ne change pas.
+- **Le calque choisi, agrandi** : seul ce calque grandit (ex. photo collée de 400 × 400 -> 800 × 800, au même
+  endroit) ; **l'image entière garde sa taille** (ex. 1000 × 1000) et les autres calques ne bougent pas. Ce qui
+  dépasse de l'image est caché mais gardé (on le ramène en déplaçant le calque).
+
+Pour le calque choisi : seul son contenu est envoyé à l'IA, et autour, le calque reste transparent. Avec l'option
+*nouveau calque*, le résultat arrive dans un calque au-dessus et l'original reste. Un calque verrouillé est refusé.
 
 ### Sujet et arrière-plan
 Modèle **BiRefNet** (MIT, 444 Mo, installé avec le moteur IA ; s'il manque, menu **IA > Installer le moteur IA…**
@@ -562,7 +582,7 @@ coupé** : on peut le ramener, le réduire, le réafficher.
 | **Vignette** | Aperçu du calque ; le damier gris montre les parties transparentes |
 | **Nom** | Double-clic sur le nom pour renommer ; double-clic ailleurs sur la ligne : style du calque |
 | **Opacité** | Transparence du calque choisi, de 0 % (invisible) à 100 % ; affichée sous le nom quand < 100 % |
-| **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. Les actions IA sont refusées avec un message : Effacer et Remplir si le calque choisi est verrouillé, Agrandir et Upscale si un calque quelconque est verrouillé (ils changent la taille de tous les calques). On peut toujours le masquer, le renommer et le monter / descendre. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .pixane et .ora |
+| **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. Les actions IA sont refusées avec un message : Effacer et Remplir si le calque choisi est verrouillé, Agrandir et Upscale de toute l'image si un calque quelconque est verrouillé (ils changent la taille de tous les calques), Upscale du calque si ce calque est verrouillé. On peut toujours le masquer, le renommer et le monter / descendre. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .pixane et .ora |
 | **Glisser un calque** | Changer sa place dans la pile à la souris : prenez la ligne (sur le nom) et glissez-la vers le haut ou le bas ; un **trait orange** montre où il ira. Lâché juste sous un calque d'un groupe ouvert, il entre dans le groupe ; un groupe bouge avec ses calques. Une seule étape dans Annuler |
 | **Mode de fusion** (liste en haut du panneau) | Comment le calque se mélange à ce qui est dessous (voir plus bas) |
 | **Vignette du masque** (à droite de la vignette) | Le masque du calque, s'il en a un. Clic : on peint le masque (cadre orange) ; clic sur la vignette du calque : on repeint les pixels. Maj+clic : désactiver / réactiver le masque (barré en rouge) |

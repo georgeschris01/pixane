@@ -1,6 +1,7 @@
 """Fenêtre principale de Pixane."""
 from __future__ import annotations
 
+import io
 import json
 import os
 import sys
@@ -10,6 +11,7 @@ from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
+from PIL import Image
 from PySide6.QtCore import QBuffer, QMimeData, QObject, QPoint, QProcess, QSettings, QSize, Qt, QTimer, Signal
 from PySide6.QtCore import QEvent, QPointF, QUrl
 from PySide6.QtGui import (QAction, QActionGroup, QColor, QDesktopServices, QIcon, QImage, QKeySequence, QPainter, QUndoCommand,
@@ -2410,15 +2412,34 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         attente.show()
 
     def ia_upscale(self):
-        if not self.doc or not self._verifier_verrou(tr("Upscale"), tous=True):
+        if not self.doc:
             return
-        d = ReglagesUpscale(self.doc.image.width(), self.doc.image.height(), self)
+        doc = self.doc
+        c, index = doc.calque_actif, doc.actif
+        bornes = doc.bornes([index]) if not c.special and c.texte is None and c.visible else None
+        calque = None if bornes is None or c.verrou else (c.nom, (bornes.width(), bornes.height()))
+        image_possible = not any(k.verrou for k in doc.calques)   # toute l'image : tous les calques changent
+        if calque is None and not image_possible:
+            self._verifier_verrou(tr("Upscale"), tous=True)        # rien de possible : message, comme avant
+            return
+        cible = self.reglages.value("upscale_cible", "agrandi") if len(doc.calques) > 1 else "image"
+        if not image_possible and cible == "image":
+            cible = "agrandi"
+        d = ReglagesUpscale(doc.image.width(), doc.image.height(), self, calque=calque, cible=cible,
+                            image_possible=image_possible)
         if d.exec():
             v = d.valeurs()
+            if calque is not None:
+                self.reglages.setValue("upscale_cible", v["cible"])
             if v["net"] and not recettes.schnell_disponible():
                 QMessageBox.information(self, tr("Upscale"), tr(
                     "« Upscale net » a besoin du modèle Flux Schnell, qui n'est pas installé. Menu IA > Installer "
                     "le moteur IA permet de l'ajouter ; l'upscale simple marche sans."))
+                return
+            if v["cible"] != "image":
+                self._upscale_calque(index, bornes, v)
+                return
+            if not self._verifier_verrou(tr("Upscale"), tous=True):
                 return
             if v["net"]:
                 taille = (self.doc.image.width(), self.doc.image.height())
@@ -2426,6 +2447,29 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                              lambda nom: recettes.upscale_net(nom, v["facteur"], v["force"], taille))
             else:
                 self._lancer(tr("Upscale"), False, lambda nom: recettes.upscale_rapide(nom, v["facteur"]))
+
+    def _upscale_calque(self, index: int, bornes, v: dict):
+        """Upscale du seul calque choisi : son contenu est envoyé à l'IA (sur un fond qui contraste), puis remis
+        dans le calque, plus net à sa taille (« net ») ou agrandi (« agrandi ») ; la feuille ne change pas."""
+        doc = self.doc
+        c = doc.calques[index]
+        if c.verrou:
+            QMessageBox.information(self, tr("Upscale"), tr(
+                "Le calque « {nom} » est verrouillé : clique sur son cadenas pour pouvoir le modifier.", nom=c.nom))
+            return
+        img, ox, oy = image_entiere(c)
+        source = img.copy(bornes.translated(-ox, -oy)).convertToFormat(FORMAT_IMAGE)
+        rgb = a_plat(tableau(source))
+        tampon = io.BytesIO()
+        Image.fromarray(np.ascontiguousarray(rgb), "RGB").save(tampon, "PNG")
+        taille = (source.width(), source.height())
+        if v["net"]:
+            fabriquer = lambda nom: recettes.upscale_net(nom, v["facteur"], v["force"], taille)
+        else:
+            fabriquer = lambda nom: recettes.upscale_rapide(nom, v["facteur"])
+        nouveau = self.a_ia_nouveau_calque.isChecked()
+        self._lancer(tr("Upscale"), False, fabriquer, apres=lambda r: vue_ia(r, source), png=tampon.getvalue(),
+                     placer=lambda r: doc.etat_upscale_calque(index, r, v["cible"], nouveau, tr("Upscale")))
 
     # ---------------------------------------------------------------- améliorer, restaurer
     def _dans_selection(self, titre: str):

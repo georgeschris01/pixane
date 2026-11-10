@@ -1151,6 +1151,30 @@ class Document(QObject):
         calques = self._decaler_blocs(decalages)
         return None if calques is None else self.etat_avec(calques)
 
+    def etat_upscale_calque(self, index: int, resultat: QImage, mode: str, nouveau: bool = False,
+                            titre: str = "Upscale"):
+        """Upscale d'un seul calque : `resultat` = son contenu (rectangle `bornes`) refait plus grand par l'IA.
+        mode « net » : remis à sa taille d'avant, à sa place (plus net) ; « agrandi » : gardé grand, centré sur sa
+        place. La feuille ne change pas (ce qui dépasse est gardé hors de la feuille). nouveau : dans un nouveau
+        calque au-dessus (le calque d'origine reste)."""
+        c = self.calques[index]
+        r = self.bornes([index])
+        if r is None:
+            return None
+        w, h = self.taille()
+        res = resultat.convertToFormat(FORMAT_CALQUE)
+        if mode == "net":
+            res = res.scaled(r.width(), r.height(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+        x = round(r.x() + r.width() / 2 - res.width() / 2)
+        y = round(r.y() + r.height() / 2 - res.height() / 2)
+        calques = list(self.calques)
+        if nouveau:
+            nc = avec_image_entiere(Calque(self.nom_libre(titre), image_vide(w, h), dans=c.dans), res, x, y, w, h)
+            calques.insert(index + 1, nc)
+            return self.etat_avec(calques, index + 1)
+        calques[index] = avec_image_entiere(c, res, x, y, w, h)
+        return self.etat_avec(calques, index)
+
     def etat_retourner(self, indexes, horizontal: bool):
         """Retourner en miroir les calques choisis (plusieurs calques, ou un groupe), ensemble, autour du centre de ce
         qu'ils contiennent. Les textes deviennent des images ; les calques verrouillés ne bougent pas."""

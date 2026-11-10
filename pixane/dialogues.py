@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QSize, Qt, Signal
 from PySide6.QtGui import QIcon, QImage, QPixmap
-from PySide6.QtWidgets import (QButtonGroup, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QFrame, QGridLayout, QHBoxLayout,
+from PySide6.QtWidgets import (QButtonGroup, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QFrame, QGridLayout, QGroupBox, QHBoxLayout,
                                QLabel, QListWidget, QListWidgetItem, QProgressBar, QPushButton, QRadioButton, QSpinBox,
                                QVBoxLayout, QWidget, QCheckBox)
 
@@ -299,10 +299,34 @@ class BarreAgrandir(QFrame):
 
 
 class ReglagesUpscale(QDialog):
-    def __init__(self, largeur: int, hauteur: int, parent=None):
+    def __init__(self, largeur: int, hauteur: int, parent=None, calque=None, cible: str = "image",
+                 image_possible: bool = True):
+        """calque : None, ou (nom, (largeur, hauteur) de son contenu) : on peut alors ne traiter que ce calque.
+        cible : choix de départ, « image », « net » (calque plus net à sa taille) ou « agrandi » (calque agrandi)."""
         super().__init__(parent)
         self.setWindowTitle(tr("Upscale"))
         self.taille = (largeur, hauteur)
+        self.calque = calque
+        self.cibles = {}
+        cadre_cible = None
+        if calque is not None:
+            cadre_cible = QGroupBox(tr("Que faut-il traiter ?"))
+            lc = QVBoxLayout(cadre_cible)
+            groupe_c = QButtonGroup(self)
+            for cle, texte in (("image", tr("Toute l'image : l'image entière et tous ses calques grandissent")),
+                               ("net", tr("Le calque « {nom} » plus net, sans changer de taille",
+                                          nom=calque[0])),
+                               ("agrandi", tr("Le calque « {nom} » agrandi (l'image entière garde sa taille)",
+                                              nom=calque[0]))):
+                b = QRadioButton(texte)
+                self.cibles[cle] = b
+                groupe_c.addButton(b)
+                lc.addWidget(b)
+                b.toggled.connect(self._maj)
+            self.cibles.get(cible, self.cibles["image"]).setChecked(True)
+            if not image_possible:                  # un calque est verrouillé : toute l'image ne peut pas changer
+                self.cibles["image"].setEnabled(False)
+                self.cibles["image"].setToolTip(tr("Impossible : un calque est verrouillé (cadenas)."))
         self.net = QRadioButton(tr("Net (Flux redessine les détails, plus lent)"))
         self.rapide = QRadioButton(tr("Rapide (RealESRGAN seul, peut lisser)"))
         self.net.setChecked(True)
@@ -318,6 +342,17 @@ class ReglagesUpscale(QDialog):
         self.force.setRange(0.10, 0.60)
         self.force.setSingleStep(0.05)
         self.force.setValue(0.35)
+        self.force.setToolTip(tr(
+            "Force : la liberté laissée à Flux quand il redessine les détails (mode Net).\n"
+            "0,10 à 0,25 : très fidèle à la photo, peu de détails ajoutés (visages, textes, logos).\n"
+            "0,35 : bon équilibre, conseillé.\n"
+            "0,45 à 0,60 : beaucoup de détails, mais l'IA en invente (un visage ou un texte peut changer un peu) ; "
+            "pour paysages, végétation, tissus."))
+        self.aide_force = QLabel(tr("Force : liberté laissée à l'IA pour redessiner les détails. 0,35 conseillé ; "
+                                    "0,25 pour des visages, textes ou logos (plus fidèle) ; 0,45 pour des paysages "
+                                    "ou des matières (plus de détails, un peu inventés)."))
+        self.aide_force.setWordWrap(True)
+        self.aide_force.setObjectName("discret")
         self.resultat = QLabel()
         self.facteur.valueChanged.connect(self._maj)
         self.net.toggled.connect(self._maj)
@@ -330,20 +365,42 @@ class ReglagesUpscale(QDialog):
         boutons.accepted.connect(self.accept)
         boutons.rejected.connect(self.reject)
         lay = QVBoxLayout(self)
+        if cadre_cible is not None:
+            lay.addWidget(cadre_cible)
         lay.addWidget(self.net)
         lay.addWidget(self.rapide)
         lay.addLayout(form)
+        lay.addWidget(self.aide_force)
         lay.addWidget(self.resultat)
         lay.addWidget(boutons)
         self._maj()
 
-    def _maj(self):
+    def cible(self) -> str:
+        return next((k for k, b in self.cibles.items() if b.isChecked()), "image")
+
+    def _maj(self, *_):
+        if not hasattr(self, "resultat"):            # fenêtre pas encore finie
+            return
         self.force.setEnabled(self.net.isChecked())
-        w, h = (round(v * self.facteur.value()) for v in self.taille)
-        self.resultat.setText(tr("Taille finale : {largeur} × {hauteur} px", largeur=w, hauteur=h))
+        self.aide_force.setVisible(self.net.isChecked())
+        cible = self.cible()
+        self.facteur.setEnabled(cible != "net")
+        if cible == "net":
+            w, h = self.calque[1]
+            self.resultat.setText(tr("Le calque garde sa taille : {largeur} × {hauteur} px", largeur=w, hauteur=h))
+            return
+        taille = self.calque[1] if cible == "agrandi" else self.taille
+        w, h = (round(v * self.facteur.value()) for v in taille)
+        if cible == "agrandi":
+            self.resultat.setText(tr("Calque : {l0} × {h0} -> {largeur} × {hauteur} px (l'image entière reste en {fl} × {fh} "
+                                     "px)", l0=taille[0], h0=taille[1], largeur=w, hauteur=h,
+                                     fl=self.taille[0], fh=self.taille[1]))
+        else:
+            self.resultat.setText(tr("Taille finale : {largeur} × {hauteur} px", largeur=w, hauteur=h))
 
     def valeurs(self) -> dict:
-        return {"net": self.net.isChecked(), "facteur": self.facteur.value(), "force": self.force.value()}
+        return {"net": self.net.isChecked(), "facteur": 2.0 if self.cible() == "net" else self.facteur.value(),
+                "force": self.force.value(), "cible": self.cible()}
 
 
 def duree(s: int) -> str:
