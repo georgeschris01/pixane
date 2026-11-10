@@ -272,13 +272,76 @@ def upscale_net(img="exemple.png", force=0.35):
     return r
 
 
+CONSIGNE_ALPHABET = ("Replace the text 'TEXTE' with the text 'LETTRES'. Keep exactly the same font, the same lettering "
+                     "style, the same stroke thickness, the same color and the same size. Keep everything else "
+                     "unchanged.")
+# majuscules accompagnées de leur minuscule : seules, Kontext les écrivait dans une autre police (essai du 10/11)
+PASSES_ALPHABET = ["abcdef", "ghijkl", "mnopqr", "stuvwx", "yz",
+                   "Aa Bb Cc Dd", "Ee Ff Gg Hh", "Ii Jj Kk Ll", "Mm Nn Oo Pp", "Qq Rr Ss Tt", "Uu Vv Ww Xx", "Yy Zz",
+                   "a1 b2 c3 d4 e5", "f6 g7 h8 i9 j0", "éèêàçù", "âîôûœë"]
+
+
+def alphabet(nb, img="exemple.png"):
+    """Flux Kontext : le texte de l'image est remplacé par d'autres lettres, même style, passe par passe."""
+    r = Recette("Alphabet test")
+    r.note(1, "ALPHABET TEST\n\n"
+           "Refait l'alphabet dans le style d'un texte de l'image\n"
+           "(Flux Kontext, usage personnel seulement).\n\n"
+           "1. Clic droit sur « Ton image » > Open Image : une image où\n"
+           "   le texte se voit bien (recadrée autour du texte, c'est mieux).\n"
+           "2. « Texte écrit sur l'image » : recopie exactement le texte\n"
+           "   à imiter (ex. Oublie-moi).\n"
+           "3. « Nombre de propositions » : 3 conseillé (Kontext se trompe\n"
+           "   parfois de lettre : on garde les meilleures).\n"
+           "4. Bouton « Exécuter » (Run). Environ 2 à 3 min par proposition :\n"
+           "   13 passes x 3 = environ 1 h 30. Pour sauter une passe :\n"
+           "   clic sur son bloc « Lettres … », puis Ctrl+B.\n\n"
+           "Résultats : dossier output\\Alphabet test, un sous-dossier\n"
+           "par passe (abcdef, ghijkl…).", col=0, row=0, size=(400, 420))
+    r.add(10, "LoadImage", "Ton image", {"image": img}, col=0, row=1.8, size=(340, 360), color=VERT)
+    r.add(11, "PrimitiveStringMultiline", "Texte écrit sur l'image", {"value": "Oublie-moi"}, col=1, row=0,
+          size=(340, 110), color=VERT)
+    r.add(20, "UNETLoader", "Flux Kontext", {"unet_name": "flux1-dev-kontext_fp8_scaled.safetensors",
+                                             "weight_dtype": "default"}, col=1, row=1)
+    r.add(21, "DualCLIPLoader", None, {"clip_name1": "clip_l.safetensors",
+                                       "clip_name2": "t5xxl_fp8_e4m3fn_scaled.safetensors", "type": "flux",
+                                       "device": "default"}, col=1, row=2)
+    r.add(22, "VAELoader", None, {"vae_name": "ae.safetensors"}, col=1, row=3)
+    r.add(13, "FluxKontextImageScale", None, {}, {"image": (10, 0)}, col=2, row=0)
+    r.add(14, "VAEEncode", None, {}, {"pixels": (13, 0), "vae": (22, 0)}, col=2, row=1)
+    r.add(12, "RepeatLatentBatch", "Nombre de propositions", {"amount": nb}, {"samples": (14, 0)}, col=2, row=2,
+          color=VERT)
+    r.add(15, "StringReplace", "Consigne (ne pas toucher)", {"string": CONSIGNE_ALPHABET, "find": "TEXTE",
+                                                             "replace": ""}, {"replace": (11, 0)}, col=2, row=3,
+          size=(340, 200))
+    for i, lettres in enumerate(PASSES_ALPHABET):
+        b = 100 + 10 * i
+        col = 3 + (i % 6) * 1.0
+        row = 4 * (i // 6) / 1.0
+        r.add(b, "StringReplace", f"Lettres {lettres}", {"string": "", "find": "LETTRES", "replace": lettres},
+              {"string": (15, 0)}, col=col, row=row, size=(340, 150))
+        r.add(b + 1, "CLIPTextEncode", None, {"text": ""}, {"clip": (21, 0), "text": (b, 0)}, col=col, row=row + 0.7)
+        r.add(b + 2, "ReferenceLatent", None, {}, {"conditioning": (b + 1, 0), "latent": (14, 0)}, col=col,
+              row=row + 1.2)
+        r.add(b + 3, "FluxGuidance", None, {"guidance": 2.5}, {"conditioning": (b + 2, 0)}, col=col, row=row + 1.7)
+        r.add(b + 4, "ConditioningZeroOut", None, {}, {"conditioning": (b + 1, 0)}, col=col, row=row + 2.2)
+        r.add(b + 5, "KSampler", None, {"seed": 1, "steps": 20, "cfg": 1.0, "sampler_name": "euler",
+                                         "scheduler": "simple", "denoise": 1.0},
+              {"model": (20, 0), "positive": (b + 3, 0), "negative": (b + 4, 0), "latent_image": (12, 0)},
+              col=col, row=row + 2.7, size=(320, 270))
+        r.add(b + 6, "VAEDecode", None, {}, {"samples": (b + 5, 0), "vae": (22, 0)}, col=col, row=row + 3.3)
+        r.add(b + 7, "SaveImage", f"Résultat {lettres}", {"filename_prefix": f"Alphabet test/{lettres.replace(' ', '')}/lettres"},
+              {"images": (b + 6, 0)}, col=col, row=row + 3.6, size=(340, 300), color=BLEU)
+    return r
+
+
 if __name__ == "__main__":
     mode, dest = sys.argv[1], sys.argv[2]
     nb = int(sys.argv[3]) if len(sys.argv) > 3 else 2
     img = sys.argv[4] if len(sys.argv) > 4 else "exemple.png"
     seules = sys.argv[5].split(",") if len(sys.argv) > 5 else None
     os.makedirs(dest, exist_ok=True)
-    for r in (effacer(2, img), remplir(3, img), agrandir(3, img), upscale(img), upscale_net(img)):
+    for r in (effacer(2, img), remplir(3, img), agrandir(3, img), upscale(img), upscale_net(img), alphabet(3, img)):
         if seules and r.nom not in seules:
             continue
         data = r.ui() if mode == "ui" else r.api()
