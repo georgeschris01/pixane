@@ -398,7 +398,7 @@ Deux cadres apparaissent sur la photo :
   l'image). **Tu choisis la taille** : tire le cadre dans le vide, juste un peu ou jusqu'au bord de l'image (il s'y
   arrête tout seul, comme un aimant), ou au-delà pour agrandir l'image. L'IA prolonge la photo dans le cadre ; le
   reste du vide reste transparent. Le cadre part de la photo **du calque choisi** : ce qu'il y a dans les autres
-  calques ne compte pas (choisis donc le calque de la photo collée). Les traits fins isolés ne comptent pas non plus. Le bord abîmé n'est pas utilisé dans ce cas. Les trous transparents à l'intérieur
+  calques ne compte pas (choisis donc le calque de la photo collée). Les traits fins isolés ne comptent pas non plus. Les **ronds rouges** (bord abîmé) marchent aussi : tire-les vers l'intérieur pour faire redessiner un bord douteux de la photo. Le bord à demi transparent d'une photo collée puis réduite est toujours redessiné (pas de liseré clair à la jonction). Les trous transparents à l'intérieur
   de la photo restent transparents.
 - Le raccord entre la photo et l'ajout est fait par Pixane : la photo d'origine est gardée **au pixel près**, avec un
   fondu progressif et un accord des couleurs, pour qu'aucune ligne ne soit visible.

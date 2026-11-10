@@ -385,7 +385,7 @@ Two frames appear on the photo:
   edge). **You choose the size**: drag the frame into the empty space, just a little or up to the image edge (it
   snaps there), or beyond it to enlarge the image. The AI extends the photo inside the frame; the rest of the empty
   space stays transparent. The frame starts from the photo **of the selected layer**: what is in other layers
-  does not count (so select the layer of the pasted photo). Thin isolated strokes do not count either. The damaged edge is not used in this case. Transparent holes inside the photo stay
+  does not count (so select the layer of the pasted photo). Thin isolated strokes do not count either. The **red circles** (damaged edge) work too: drag them inwards to have a doubtful edge of the photo redrawn. The half-transparent edge of a photo pasted then shrunk is always redrawn (no light line at the seam). Transparent holes inside the photo stay
   transparent.
 - The join between the photo and the addition is made by Pixane: the original photo is kept **pixel for pixel**,
   with a gradual blend and colour matching, so that no line is visible.

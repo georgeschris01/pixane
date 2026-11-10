@@ -614,20 +614,38 @@ class Document(QObject):
         return self.etat_calque_modifie(cible, image=img)
 
 
+    def _alpha_photo(self) -> np.ndarray:
+        """Transparence (0..255) du calque choisi, ou de l'image entière si ce calque n'a pas de pixels."""
+        k = self.calque_actif
+        if not k.special and k.visible:
+            a = tableau(k.image.convertToFormat(FORMAT_IMAGE))[:, :, 3]
+            if (a > 8).any():
+                return a
+        return tableau(self.image.convertToFormat(FORMAT_IMAGE))[:, :, 3]
+
+    def bord_flou(self, contenu: tuple[int, int, int, int], maxi: int = 8) -> tuple[int, int, int, int]:
+        """Bords à demi transparents de la photo (haut, bas, gauche, droite), en px : une photo collée puis réduite
+        a un bord flou qui laisserait un liseré clair entre la photo et l'ajout de l'IA ; l'IA le redessine."""
+        x0, y0, x1, y1 = contenu
+        a = self._alpha_photo()[y0:y1, x0:x1].astype(np.float32) / 255
+        lignes, colonnes = a.mean(axis=1), a.mean(axis=0)
+
+        def n(v):
+            ref = np.median(v)
+            k = 0
+            for i in range(min(maxi, len(v) // 4)):
+                if v[i] < ref - 0.02:
+                    k = i + 1
+            return k + 1 if k else 0     # 1 px de plus : le pixel d'à côté est souvent mélangé lui aussi
+        return n(lignes), n(lignes[::-1]), n(colonnes), n(colonnes[::-1])
+
     def contenu(self) -> tuple[int, int, int, int] | None:
         """(x0, y0, x1, y1) de la photo du calque choisi, quand du vide transparent l'entoure (ex. une photo carrée
         collée dans une image plus large) ; None si elle touche tous les bords. Les autres calques ne comptent pas
         (sauf si le calque choisi n'a pas de pixels : on prend alors l'image entière).
         Les traits fins isolés dans le vide (restes de collage, liserés) ne comptent pas : une colonne (ou une ligne)
         n'est gardée que si elle est remplie à au moins 4 % de la plus remplie."""
-        k = self.calque_actif
-        a = None
-        if not k.special and k.visible:
-            a = tableau(k.image.convertToFormat(FORMAT_CALQUE))[:, :, 3] > 8
-            if not a.any():
-                a = None
-        if a is None:
-            a = tableau(self.image.convertToFormat(FORMAT_IMAGE))[:, :, 3] > 8
+        a = self._alpha_photo() > 8
         par_ligne, par_colonne = a.sum(axis=1), a.sum(axis=0)
         if not par_ligne.any():
             return None

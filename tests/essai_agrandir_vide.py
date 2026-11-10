@@ -71,7 +71,7 @@ b = f.barre_agrandir
 c = f.canevas
 verifier(b.isVisible() and b.info_vide.isVisible() and not b.b_lancer.isEnabled(),
          "barre Agrandir : message « le cadre part de la photo », Lancer attend le cadre")
-verifier(not b.abime["haut"].isEnabled(), "bord abîmé : pas utilisé quand il y a du vide")
+verifier(b.abime["haut"].isEnabled(), "bord abîmé : utilisable aussi quand il y a du vide")
 r = c._rect_cadre()
 p0, p1 = c.vers_ecran(QPointF(150, 0)), c.vers_ecran(QPointF(450, 300))
 verifier(abs(r.left() - p0.x()) < 1 and abs(r.right() - p1.x()) < 1, "le cadre part des bords de la photo")
@@ -83,13 +83,14 @@ verifier(b.texte_taille.text().startswith("600 × 300"), f"taille finale : celle
 c._poignee = None
 
 
-def lancer(ajout):
+def lancer(ajout, abime=(0, 0, 0, 0), photo=None):
     """Cadre (haut, bas, gauche, droite) en px depuis la photo ; l'IA « remplit » en orange."""
-    d = Document(calques=[Calque("Photo collée", qimage_rgba(rgba))])
+    d = Document(calques=[Calque("Photo collée", qimage_rgba(rgba if photo is None else photo))])
     f._installer_document(d)
     f.ia_agrandir()
     c.cadre = list(ajout)
-    b.definir_px(tuple(ajout), (0, 0, 0, 0))
+    c.abime = list(abime)
+    b.definir_px(tuple(ajout), tuple(abime))
     f._lancer_agrandir()
     l = lances[-1]
     toile = np.asarray(Image.open(io.BytesIO(l["png"])).convert("RGBA"))
@@ -115,6 +116,23 @@ d, k = lancer((100, 0, 150, 150))
 verifier(d.taille() == (600, 400) and k[30, 300, 3] == 255 and k[250, 20, 3] == 255
          and np.abs(k[160:400, 200:400, :3] - rgba[60:, 200:400, :3].astype(int)).max() <= 2,
          f"vide + 100 px en haut : {d.taille()}, tout rempli, photo à sa place (hors fondu de raccord)")
+
+# 4. ronds rouges (bord abîmé) : 10 px du bord gauche de la photo sont redessinés par l'IA
+d, k = lancer((0, 0, 150, 150), abime=(0, 0, 10, 0))
+verifier(abs(k[150, 155, 0] - 230) < 25 and np.abs(k[:, 200:400, :3] - rgba[:, 200:400, :3].astype(int)).max() <= 2,
+         f"bord abîmé avec du vide : 10 px redessinés par l'IA {k[150, 155]}")
+# 5. photo collée puis réduite : bord à demi transparent -> pas de liseré clair entre la photo et l'ajout
+flou = rgba.copy()
+flou[:, 150, 3] = 110
+flou[:, 449, 3] = 160
+flou[:, 151, 3] = 230
+d, k = lancer((0, 0, 150, 150), abime=(0, 0, 0, 0), photo=flou)   # même ronds rouges remis à 0
+verifier(d.taille() == (600, 300) and k[:, 140:460, 3].min() == 255,
+         f"bord flou : jonction opaque, sans liseré (alpha mini {k[:, 140:460, 3].min()})")
+f._installer_document(Document(calques=[Calque("Photo collée", qimage_rgba(flou))]))
+f.ia_agrandir()
+verifier(tuple(c.abime) [2] >= 2 and tuple(c.abime)[3] >= 1, f"bord flou proposé d'office en bord abîmé {c.abime}")
+f._fin_agrandir()
 
 # image sans vide : comportement d'avant (pas de message, bord abîmé utilisable)
 plein = np.full((200, 300, 3), 120, np.uint8)

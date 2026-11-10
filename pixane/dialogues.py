@@ -238,7 +238,6 @@ class BarreAgrandir(QFrame):
         self.info_vide.setVisible(vide is not None)
         for c in self.abime.values():
             c.setMaximum(max(0, max(largeur, hauteur) - 32))
-            c.setEnabled(vide is None)
         self.definir_px((0, 0, 0, 0), abime)
         self.adjustSize()
         self._placer()
