@@ -611,6 +611,26 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.canevas.cadre_deplacer = self.c_cadre_deplacer.isChecked()
         self.c_cadre_deplacer.toggled.connect(self._cadre_deplacer)
         lay.addWidget(self.c_cadre_deplacer)
+        lay.addSpacing(16)
+        from .actions_calques import alignements
+        for k, (mode, texte) in enumerate(alignements()):       # aligner : comme dans Photoshop
+            if k == 3:
+                lay.addSpacing(6)
+            b = QToolButton()
+            b.setAutoRaise(True)
+            b.setDefaultAction(getattr(self, f"a_aligner_{mode}"))
+            b.setToolTip(tr("Aligner : {quoi} (plusieurs calques choisis : entre eux ; un seul : sur la sélection "
+                            "ou l'image)", quoi=texte.lower()))
+            lay.addWidget(b)
+        lay.addSpacing(6)
+        for sens in "hv":
+            b = QToolButton()
+            b.setAutoRaise(True)
+            b.setDefaultAction(getattr(self, f"a_repartir_{sens}"))
+            b.setToolTip(tr("Répartir horizontalement (3 calques choisis ou plus)") if sens == "h"
+                         else tr("Répartir verticalement (3 calques choisis ou plus)"))
+            lay.addWidget(b)
+        lay.addStretch(1)
         tout.addWidget(self.opt_deplacer)
         # baguette magique
         self.opt_baguette = QWidget()
@@ -2021,7 +2041,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.canevas._apercu_transfo(lisse=True)
         self.canevas.update()
 
-    def _valider_transfo(self):
+    def _valider_transfo(self, titre: str | None = None):
         t = self.canevas.transfo
         if t is None or self._transfo_avant is None:
             return
@@ -2039,7 +2059,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         apres = self.doc.etat_calque_entier(index, img, x, y, texte=None, style=style)
         if t.fond is not None:                            # élément sélectionné déplacé : l'ancienne sélection part
             apres = (apres[0], apres[1], nouvelle_selection(w, h))
-        self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Transformer le calque")))
+        self.historique.push(CommandeEtat(self.doc, avant, apres, titre or tr("Transformer le calque")))
 
     def _annuler_transfo(self):
         if self.canevas.transfo is None or self._transfo_avant is None:

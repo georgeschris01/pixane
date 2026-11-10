@@ -13,6 +13,11 @@ from .dialogues_reglage import PANNEAUX, DialogueReglage, PanneauFiltre, histogr
 from .document import FORMAT_IMAGE, masque, tableau
 from .langue import tr
 
+def alignements() -> tuple:
+    """Calque > Aligner (et boutons de l'outil Déplacer) : (mode, texte traduit)."""
+    return (("gauche", tr("Bords gauches")), ("centre_h", tr("Centres horizontaux")), ("droite", tr("Bords droits")),
+            ("haut", tr("Bords hauts")), ("centre_v", tr("Centres verticaux")), ("bas", tr("Bords bas")))
+
 
 class ActionsCalques:
     # ---------------------------------------------------------------- menus
@@ -31,8 +36,23 @@ class ActionsCalques:
         self._action(m_calque, tr("Modifier le réglage…"), None, self.modifier_reglage, "a_modifier_reglage")
         m_calque.addSeparator()
         self._action(m_calque, tr("Nouveau groupe"), None, lambda: self.calques.nouveau_groupe(), "a_nouveau_groupe")
-        self._action(m_calque, tr("Grouper le calque"), "Ctrl+G", lambda: self.calques.grouper(), "a_grouper")
+        self._action(m_calque, tr("Grouper les calques"), "Ctrl+G", lambda: self.calques.grouper(), "a_grouper")
         self._action(m_calque, tr("Dégrouper"), "Ctrl+Shift+G", lambda: self.calques.degrouper(), "a_degrouper")
+        m_calque.addSeparator()
+        sous = m_calque.addMenu(tr("Aligner"))
+        for mode, texte in alignements():
+            self._action(sous, texte, None, lambda *_, m=mode: self.aligner(m), f"a_aligner_{mode}",
+                         f"al_{mode}")
+        sous = m_calque.addMenu(tr("Répartir"))
+        self._action(sous, tr("Répartir horizontalement"), None, lambda: self.repartir("h"), "a_repartir_h",
+                     "rep_h")
+        self._action(sous, tr("Répartir verticalement"), None, lambda: self.repartir("v"), "a_repartir_v",
+                     "rep_v")
+        sous = m_calque.addMenu(tr("Retourner le calque"))
+        self._action(sous, tr("Symétrie horizontale (gauche ↔ droite)"), None, lambda: self.retourner_calques(True),
+                     "a_retourner_calque_h")
+        self._action(sous, tr("Symétrie verticale (haut ↔ bas)"), None, lambda: self.retourner_calques(False),
+                     "a_retourner_calque_v")
         m_calque.addSeparator()
         sous = m_calque.addMenu(tr("Masque de calque"))
         self._action(sous, tr("Ajouter : tout visible"), None, lambda: self.calques.ajouter_masque("blanc"),
@@ -65,6 +85,59 @@ class ActionsCalques:
                  "a_masque_sel", "a_masque_cacher", "a_masque_cible", "a_masque_actif", "a_masque_inverser",
                  "a_masque_selection", "a_masque_appliquer", "a_masque_supprimer"]
         return [getattr(self, n) for n in noms]
+
+    # ---------------------------------------------------------------- aligner, répartir, retourner les calques
+    def _calques_choisis(self) -> set:
+        return set(self.calques.choisis) | {self.doc.actif}
+
+    def aligner(self, mode: str):
+        """Plusieurs calques choisis : alignés entre eux ; un seul : sur la sélection, ou sinon sur l'image."""
+        if not self.doc:
+            return
+        etat = self.doc.etat_aligner(self._calques_choisis(), mode)
+        if etat is None:
+            self.statusBar().showMessage(tr("Rien à aligner : les calques sont déjà alignés, vides ou verrouillés."),
+                                         6000)
+            return
+        self._commande_calques(etat, tr("Aligner les calques"))
+
+    def repartir(self, sens: str):
+        if not self.doc:
+            return
+        if len(self.doc.blocs(self._calques_choisis())) < 3:
+            self.statusBar().showMessage(tr("Répartir : choisis au moins 3 calques (Ctrl+clic dans le panneau "
+                                            "Calques)."), 8000)
+            return
+        etat = self.doc.etat_repartir(self._calques_choisis(), sens)
+        if etat is None:
+            self.statusBar().showMessage(tr("Rien à répartir : les calques sont déjà bien espacés, vides ou "
+                                            "verrouillés."), 6000)
+            return
+        self._commande_calques(etat, tr("Répartir les calques"))
+
+    def retourner_calques(self, horizontal: bool):
+        """Symétrie du calque choisi (ou de la sélection dans ce calque) ; plusieurs calques ou un groupe : ensemble."""
+        if not self.doc or self.canevas.transfo is not None or self.canevas.cadre is not None:
+            return
+        titre = tr("Retourner le calque")
+        blocs = self.doc.blocs(self._calques_choisis())
+        if len(blocs) == 1 and len(blocs[0]) == 1:
+            # un seul calque : comme Transformer avec une taille de -100 % (la sélection seule s'il y en a une)
+            self.transformer()
+            t = self.canevas.transfo
+            if t is None:
+                return
+            if horizontal:
+                t.sx = -t.sx
+            else:
+                t.sy = -t.sy
+            self._valider_transfo(titre)
+            return
+        etat = self.doc.etat_retourner(self._calques_choisis(), horizontal)
+        if etat is None:
+            self.statusBar().showMessage(tr("Rien à retourner : les calques sont vides ou verrouillés."), 6000)
+            return
+        self._commande_calques(etat, titre)
 
     # ---------------------------------------------------------------- export web, lot
     def exporter_web(self):

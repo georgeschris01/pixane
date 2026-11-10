@@ -557,7 +557,7 @@ it back, shrink it, show it again.
 | Button | Action |
 |---|---|
 | **New layer** | Adds an empty layer above the selected layer (Ctrl+Shift+N) |
-| **New group** | Creates a folder of layers (Ctrl+G puts the selected layer in a group) |
+| **New group** | Creates a folder of layers (Ctrl+G puts the chosen layers in a group) |
 | **Mask** | Adds a mask to the selected layer (from the selection if there is one) |
 | **Adjustment** | Menu: new adjustment layer (Levels, Curves, Colour balance, Black & white, Vibrance, Image adjustments) |
 | **Duplicate** | Copies the selected layer (Ctrl+J); a group is copied with its layers |
@@ -589,9 +589,25 @@ back by painting white.
 ### Groups
 A **group** puts several layers in a folder: you can hide, move, duplicate or delete them all at once, and give the
 group an opacity, a blend mode and a mask that apply to everything inside.
-- **Ctrl+G**: puts the selected layer in a new group; **Ctrl+Shift+G**: ungroups (the layers stay).
+- **Ctrl+G** (Layer > Group layers): puts the chosen layers (Ctrl+click or Shift+click in the panel) in one new
+  group, placed where the topmost one was; they keep their order. A chosen group goes in with everything inside it.
+  With a single chosen layer: that layer alone. **Ctrl+Shift+G**: ungroups (the layers stay).
 - The arrow left of the group **collapses** or **expands** it. Layers inside a group are indented.
 - Move up / down takes a layer into an open group, or out of it.
+
+### Align, distribute, flip layers
+In the **Layer** menu, and (Align, Distribute) as buttons in the **Move** tool (V) bar, as in Photoshop. Pixane uses
+what the layers really contain (without the transparent space around). A chosen group moves as one block; locked
+layers do not move; a single Ctrl+Z undoes.
+- **Align**: left edges, horizontal centers, right edges, top edges, vertical centers, bottom edges. **Several chosen
+  layers**: they align with each other (e.g. "left edges": on the leftmost one). **A single layer**: it aligns to the
+  **selection** if there is one, otherwise to **the image** (e.g. horizontal + vertical centers = centered in the
+  image).
+- **Distribute** (3 or more chosen layers): horizontally or vertically, the first and last stay in place; the others
+  are placed so that the space between neighbours is the same everywhere.
+- **Flip layer**: horizontal (left ↔ right) or vertical (top ↔ bottom). A single layer flips in place (with a
+  selection: only the selected part). Several layers or a group flip together, as one drawing. A flipped text
+  becomes an image. (Image > Flip flips the whole image, all layers.)
 
 ### Adjustment layers
 An **adjustment layer** applies an adjustment (Levels, Curves, Colour balance, Black & white, Vibrance,

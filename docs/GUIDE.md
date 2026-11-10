@@ -509,7 +509,7 @@ coupé** : on peut le ramener, le réduire, le réafficher.
 | Bouton | Action |
 |---|---|
 | **Nouveau calque** | Ajoute un calque vide au-dessus du calque choisi (Ctrl+Maj+N) |
-| **Nouveau groupe** | Crée un dossier de calques (Ctrl+G met le calque choisi dans un groupe) |
+| **Nouveau groupe** | Crée un dossier de calques (Ctrl+G met les calques choisis dans un groupe) |
 | **Masque** | Ajoute un masque au calque choisi (d'après la sélection s'il y en a une) |
 | **Réglage** | Menu : nouveau calque de réglage (Niveaux, Courbes, Balance, Noir et blanc, Vibrance, Réglages de l'image) |
 | **Dupliquer** | Copie le calque choisi (Ctrl+J) ; un groupe est copié avec ses calques |
@@ -543,9 +543,26 @@ toujours revenir en arrière en repeignant en blanc.
 ### Groupes
 Un **groupe** range plusieurs calques dans un dossier : on peut les masquer, les déplacer, les dupliquer ou les
 supprimer d'un coup, et donner au groupe une opacité, un mode de fusion et un masque qui valent pour tout son contenu.
-- **Ctrl+G** : met le calque choisi dans un nouveau groupe ; **Ctrl+Maj+G** : défait le groupe (les calques restent).
+- **Ctrl+G** (Calque > Grouper les calques) : met les calques choisis (Ctrl+clic ou Maj+clic dans le panneau) dans
+  un même nouveau groupe, placé à l'endroit du plus haut ; ils gardent leur ordre. Un groupe choisi y entre avec tout
+  son contenu. Avec un seul calque choisi : ce calque seul. **Ctrl+Maj+G** : défait le groupe (les calques restent).
 - La flèche à gauche du groupe le **replie** ou le **déplie**. Les calques d'un groupe sont décalés vers la droite.
 - Monter / Descendre fait entrer un calque dans un groupe ouvert, ou l'en fait sortir.
+
+### Aligner, répartir, retourner les calques
+Dans le menu **Calque**, et (Aligner, Répartir) en boutons dans la barre de l'outil **Déplacer** (V), comme dans
+Photoshop. Pixane prend ce que les calques contiennent vraiment (sans le vide transparent autour). Un groupe choisi
+bouge comme un seul bloc ; les calques verrouillés ne bougent pas ; un seul Ctrl+Z annule.
+- **Aligner** : bords gauches, centres horizontaux, bords droits, bords hauts, centres verticaux, bords bas.
+  **Plusieurs calques choisis** : ils s'alignent entre eux (ex. « bords gauches » : sur celui qui est le plus à
+  gauche). **Un seul calque** : il s'aligne sur la **sélection** s'il y en a une, sinon sur **l'image** (ex. centres
+  horizontaux + centres verticaux = centré dans l'image).
+- **Répartir** (3 calques choisis ou plus) : horizontalement ou verticalement, le premier et le dernier restent en
+  place ; les autres sont placés pour que l'espace entre deux voisins soit le même partout.
+- **Retourner le calque** : symétrie horizontale (gauche ↔ droite) ou verticale (haut ↔ bas). Un seul calque : il se
+  retourne sur place (s'il y a une sélection : seulement la partie sélectionnée). Plusieurs calques ou un groupe : ils
+  se retournent ensemble, comme un seul dessin. Un texte retourné devient une image. (Image > Retourner retourne
+  toute l'image, tous les calques.)
 
 ### Calques de réglage
 Un **calque de réglage** applique un réglage (Niveaux, Courbes, Balance des couleurs, Noir et blanc, Vibrance,

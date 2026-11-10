@@ -536,7 +536,7 @@ class PanneauCalques(QWidget):
                 a = menu.addAction(tr("Aplatir l'image"), self.aplatir)
                 a.setEnabled(len(doc.calques) > 1 and not any(x.verrou for x in doc.calques))
                 menu.addSeparator()
-                menu.addAction(tr("Grouper le calque"), self.grouper).setShortcut("Ctrl+G")
+                menu.addAction(tr("Grouper les calques"), self.grouper).setShortcut("Ctrl+G")
                 if c.groupe:
                     menu.addAction(tr("Dégrouper"), self.degrouper).setShortcut("Ctrl+Shift+G")
                 if not c.special:
@@ -647,7 +647,8 @@ class PanneauCalques(QWidget):
         self.demande.emit(self.doc.etat_nouveau_groupe(), tr("Nouveau groupe"))
 
     def grouper(self):
-        self.demande.emit(self.doc.etat_grouper(), tr("Grouper"))
+        """Ctrl+G : les calques choisis (Ctrl+clic, Maj+clic) dans un même nouveau groupe."""
+        self.demande.emit(self.doc.etat_grouper(set(self.choisis) | {self.doc.actif}), tr("Grouper"))
 
     def degrouper(self):
         etat = self.doc.etat_degrouper()

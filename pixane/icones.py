@@ -113,6 +113,23 @@ DESSINS = {
     "aligner_gauche": '<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>',
     "aligner_centre": '<path d="M4 6h16M7 10h10M4 14h16M7 18h10"/>',
     "aligner_droite": '<path d="M4 6h16M10 10h10M4 14h16M10 18h10"/>',
+    # aligner / répartir les calques : la ligne d'alignement en couleur d'accent
+    "al_gauche": '<path stroke="A" d="M4 3v18"/><rect x="7" y="6" width="12" height="4" rx="1"/>'
+                 '<rect x="7" y="14" width="7" height="4" rx="1"/>',
+    "al_centre_h": '<path stroke="A" d="M12 3v18"/><rect x="5" y="6" width="14" height="4" rx="1"/>'
+                   '<rect x="8.5" y="14" width="7" height="4" rx="1"/>',
+    "al_droite": '<path stroke="A" d="M20 3v18"/><rect x="5" y="6" width="12" height="4" rx="1"/>'
+                 '<rect x="10" y="14" width="7" height="4" rx="1"/>',
+    "al_haut": '<path stroke="A" d="M3 4h18"/><rect x="6" y="7" width="4" height="12" rx="1"/>'
+               '<rect x="14" y="7" width="4" height="7" rx="1"/>',
+    "al_centre_v": '<path stroke="A" d="M3 12h18"/><rect x="6" y="5" width="4" height="14" rx="1"/>'
+                   '<rect x="14" y="8.5" width="4" height="7" rx="1"/>',
+    "al_bas": '<path stroke="A" d="M3 20h18"/><rect x="6" y="5" width="4" height="12" rx="1"/>'
+              '<rect x="14" y="10" width="4" height="7" rx="1"/>',
+    "rep_h": '<rect x="3" y="7" width="4" height="10" rx="1"/><rect x="10" y="5" width="4" height="14" rx="1"/>'
+             '<rect x="17" y="8" width="4" height="8" rx="1"/>',
+    "rep_v": '<rect x="7" y="3" width="10" height="4" rx="1"/><rect x="5" y="10" width="14" height="4" rx="1"/>'
+             '<rect x="8" y="17" width="8" height="4" rx="1"/>',
 }
 
 

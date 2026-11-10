@@ -1043,8 +1043,157 @@ class Document(QObject):
         return self.etat_avec(calques, actif)
 
     # ---------------------------------------------------------- groupes, masques, réglages
-    def etat_grouper(self):
-        """Met le calque choisi (avec ses calques si c'est un groupe) dans un nouveau groupe (Ctrl+G)."""
+    # ---------------------------------------------------------- plusieurs calques choisis : blocs, aligner, répartir
+    def blocs(self, indexes) -> list[list[int]]:
+        """Calques choisis rangés en blocs : un groupe choisi forme un bloc avec tout son contenu ; un calque déjà
+        dans un groupe choisi n'en forme pas un à lui. Chaque bloc : index croissants, la tête (calque ou groupe) en
+        dernier. Les blocs sont rangés du bas vers le haut."""
+        idx = sorted({i for i in indexes if 0 <= i < len(self.calques)})
+        dedans = set()
+        for i in idx:
+            dedans.update(composition.descendants(self.calques, i))
+        return [composition.descendants(self.calques, i) + [i] for i in idx if i not in dedans]
+
+    def bornes(self, bloc) -> QRect | None:
+        """Rectangle (feuille) de ce qui est visible dans les calques du bloc (pixels non transparents, même hors de
+        la feuille) ; None s'il n'y a rien."""
+        r = None
+        for i in bloc:
+            c = self.calques[i]
+            if c.special:
+                continue
+            img, x, y = image_entiere(c)
+            a = tableau(img.convertToFormat(FORMAT_CALQUE))[:, :, 3]
+            ys, xs = np.nonzero(a.any(axis=1))[0], np.nonzero(a.any(axis=0))[0]
+            if not len(ys):
+                continue
+            b = QRect(int(xs[0]) + x, int(ys[0]) + y, int(xs[-1] - xs[0] + 1), int(ys[-1] - ys[0] + 1))
+            r = b if r is None else r.united(b)
+        return r
+
+    def _decaler_blocs(self, decalages: dict) -> list | None:
+        """decalages : {numéro de bloc dans `blocs`: (bloc, dx, dy)} -> nouveaux calques (None si rien ne bouge)."""
+        w, h = self.taille()
+        calques = list(self.calques)
+        bouge = False
+        for bloc, dx, dy in decalages.values():
+            if (dx, dy) == (0, 0) or any(self.calques[i].verrou for i in bloc):
+                continue
+            for i in bloc:
+                c = calques[i]
+                if c.special:
+                    continue
+                if c.texte is not None:                # texte : redessiné à sa nouvelle place (reste modifiable)
+                    t = c.texte.deplace(dx, dy)
+                    calques[i] = replace(c, image=rendre(t, w, h), texte=t)
+                else:
+                    calques[i] = _decale(c, dx, dy, w, h)
+                bouge = True
+        return calques if bouge else None
+
+    def etat_aligner(self, indexes, mode: str):
+        """Aligner les calques choisis (mode : gauche, centre_h, droite, haut, centre_v, bas). Plusieurs blocs : entre
+        eux (sur le rectangle qui les contient tous) ; un seul : sur la sélection s'il y en a une, sinon sur l'image.
+        Les calques verrouillés ne bougent pas. None si rien ne bouge."""
+        blocs = [b for b in self.blocs(indexes) if self.bornes(b) is not None]
+        if not blocs:
+            return None
+        rects = [self.bornes(b) for b in blocs]
+        if len(blocs) > 1:
+            ref = rects[0]
+            for r in rects[1:]:
+                ref = ref.united(r)
+        elif not self.selection_vide():
+            a = masque(self.selection) > 0
+            ys, xs = np.nonzero(a.any(axis=1))[0], np.nonzero(a.any(axis=0))[0]
+            ref = QRect(int(xs[0]), int(ys[0]), int(xs[-1] - xs[0] + 1), int(ys[-1] - ys[0] + 1))
+        else:
+            ref = QRect(0, 0, *self.taille())
+        decalages = {}
+        for k, (b, r) in enumerate(zip(blocs, rects)):
+            dx = dy = 0
+            if mode == "gauche":
+                dx = ref.left() - r.left()
+            elif mode == "droite":
+                dx = (ref.left() + ref.width()) - (r.left() + r.width())
+            elif mode == "centre_h":
+                dx = round(ref.left() + ref.width() / 2 - (r.left() + r.width() / 2))
+            elif mode == "haut":
+                dy = ref.top() - r.top()
+            elif mode == "bas":
+                dy = (ref.top() + ref.height()) - (r.top() + r.height())
+            elif mode == "centre_v":
+                dy = round(ref.top() + ref.height() / 2 - (r.top() + r.height() / 2))
+            decalages[k] = (b, dx, dy)
+        calques = self._decaler_blocs(decalages)
+        return None if calques is None else self.etat_avec(calques)
+
+    def etat_repartir(self, indexes, sens: str):
+        """Répartir (3 blocs ou plus) : le premier et le dernier restent ; les autres sont placés pour que l'espace
+        entre deux voisins soit le même partout. sens : « h » (de gauche à droite) ou « v » (de haut en bas)."""
+        blocs = [(b, self.bornes(b)) for b in self.blocs(indexes)]
+        blocs = [(b, r) for b, r in blocs if r is not None]
+        if len(blocs) < 3:
+            return None
+        if sens == "h":
+            debut, taille = (lambda r: r.left()), (lambda r: r.width())
+        else:
+            debut, taille = (lambda r: r.top()), (lambda r: r.height())
+        blocs.sort(key=lambda br: debut(br[1]) + taille(br[1]) / 2)
+        premier, dernier = blocs[0][1], blocs[-1][1]
+        libre = (debut(dernier) + taille(dernier)) - debut(premier) - sum(taille(r) for _, r in blocs)
+        ecart = libre / (len(blocs) - 1)
+        decalages, pos = {}, debut(premier) + taille(premier) + ecart
+        for k, (b, r) in enumerate(blocs[1:-1], 1):
+            d = round(pos) - debut(r)
+            decalages[k] = (b, d, 0) if sens == "h" else (b, 0, d)
+            pos += taille(r) + ecart
+        calques = self._decaler_blocs(decalages)
+        return None if calques is None else self.etat_avec(calques)
+
+    def etat_retourner(self, indexes, horizontal: bool):
+        """Retourner en miroir les calques choisis (plusieurs calques, ou un groupe), ensemble, autour du centre de ce
+        qu'ils contiennent. Les textes deviennent des images ; les calques verrouillés ne bougent pas."""
+        blocs = [b for b in self.blocs(indexes) if self.bornes(b) is not None
+                 and not any(self.calques[i].verrou for i in b)]
+        if not blocs:
+            return None
+        ref = self.bornes(blocs[0])
+        for b in blocs[1:]:
+            ref = ref.united(self.bornes(b))
+        w, h = self.taille()
+        calques = list(self.calques)
+        for b in blocs:
+            for i in b:
+                c = calques[i]
+                if c.special:
+                    continue
+                img, x, y = image_entiere(c)
+                if horizontal:
+                    x2, y2 = 2 * ref.left() + ref.width() - (x + img.width()), y
+                else:
+                    x2, y2 = x, 2 * ref.top() + ref.height() - (y + img.height())
+                calques[i] = avec_image_entiere(replace(c, texte=None), img.mirrored(horizontal, not horizontal),
+                                                x2, y2, w, h)
+        return self.etat_avec(calques)
+
+    def etat_grouper(self, indexes=None):
+        """Met les calques choisis (un groupe choisi avec tout son contenu) dans un nouveau groupe (Ctrl+G), placé à
+        l'endroit du plus haut d'entre eux ; ils gardent leur ordre. Sans liste (ou un seul) : le calque choisi."""
+        blocs = self.blocs(indexes) if indexes else []
+        if len(blocs) > 1:
+            w, h = self.taille()
+            haut = self.calques[blocs[-1][-1]]
+            g = Calque(self.nom_libre(tr("Groupe")), image_vide(w, h), groupe=True, ident=nouvel_ident(),
+                       dans=haut.dans)
+            tetes = {b[-1] for b in blocs}
+            membres = sorted(i for b in blocs for i in b)
+            pris = set(membres)
+            place = sum(1 for i in range(blocs[-1][-1]) if i not in pris)
+            reste = [c for i, c in enumerate(self.calques) if i not in pris]
+            dans_groupe = [replace(self.calques[i], dans=g.ident) if i in tetes else self.calques[i] for i in membres]
+            calques = reste[:place] + dans_groupe + [g] + reste[place:]
+            return self.etat_avec(calques, place + len(dans_groupe))
         c = self.calque_actif
         w, h = self.taille()
         g = Calque(self.nom_libre(tr("Groupe")), image_vide(w, h), groupe=True, ident=nouvel_ident(), dans=c.dans)
