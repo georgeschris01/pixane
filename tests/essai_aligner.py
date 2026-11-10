@@ -181,6 +181,18 @@ verifier(all(hasattr(f, f"a_aligner_{m}") for m in ("gauche", "centre_h", "droit
          and f.a_grouper.text().startswith("Grouper les calques"), "menu Calque : Grouper les calques, Aligner")
 boutons = [b for b in f.opt_deplacer.findChildren(QToolButton)]
 verifier(len(boutons) == 8, f"outil Déplacer : 6 boutons Aligner + 2 Répartir ({len(boutons)})")
+# barre d'accès rapide (Affichage > Barre d'accès rapide) : les boutons de Déplacer seulement quand elle est masquée
+f.a_barre_rapide.setChecked(True)
+app.processEvents()
+dans_barre = {a.objectName() or a.text() for a in f.barre_rapide.actions() if not a.isSeparator()}
+verifier(f.barre_rapide.isVisible() and f.a_transformer in f.barre_rapide.actions() and f.a_grouper in
+         f.barre_rapide.actions() and f.a_aligner_gauche in f.barre_rapide.actions()
+         and f.a_retourner_calque_h in f.barre_rapide.actions() and f.a_pivoter_g in f.barre_rapide.actions()
+         and len(dans_barre) == 17, f"barre d'accès rapide : 17 commandes ({len(dans_barre)})")
+verifier(f.alignement_deplacer.isHidden(), "barre rapide visible : pas de doublon dans la barre de Déplacer")
+f.a_barre_rapide.setChecked(False)
+verifier(f.barre_rapide.isHidden() and not f.alignement_deplacer.isHidden(), "barre rapide masquée : boutons dans Déplacer")
+f.a_barre_rapide.setChecked(True)
 
 print("ERREURS :", erreurs if erreurs else "aucune")
 sys.stdout.flush()

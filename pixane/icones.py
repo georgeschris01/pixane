@@ -128,6 +128,24 @@ DESSINS = {
               '<rect x="14" y="10" width="4" height="7" rx="1"/>',
     "rep_h": '<rect x="3" y="7" width="4" height="10" rx="1"/><rect x="10" y="5" width="4" height="14" rx="1"/>'
              '<rect x="17" y="8" width="4" height="8" rx="1"/>',
+    # barre d'accès rapide
+    "transformer": '<rect x="5.5" y="5.5" width="13" height="13" stroke-dasharray="2.6 2.2"/>'
+                   '<path stroke="A" d="M3.5 3.5h3v3h-3zM17.5 3.5h3v3h-3zM3.5 17.5h3v3h-3zM17.5 17.5h3v3h-3z"/>',
+    "pivoter_d": '<rect x="3.5" y="10.5" width="10" height="10" rx="1.2"/>'
+                 '<path stroke="A" d="M7.5 6.5C12 3.5 17.5 5 19.5 10.5M16.5 9.5l3 1.5 1.5-3"/>',
+    "pivoter_g": '<g transform="matrix(-1 0 0 1 24 0)"><rect x="3.5" y="10.5" width="10" height="10" rx="1.2"/>'
+                 '<path stroke="A" d="M7.5 6.5C12 3.5 17.5 5 19.5 10.5M16.5 9.5l3 1.5 1.5-3"/></g>',
+    "miroir_h": '<rect x="2.5" y="3.5" width="19" height="17" rx="1.5"/><path stroke="A" d="M12 3.5v17"/>'
+                '<path d="M9.5 8v8l-5 0zM14.5 8v8l5 0z"/>',
+    "miroir_v": '<g transform="rotate(90 12 12)"><rect x="3.5" y="2.5" width="17" height="19" rx="1.5"/>'
+                '<path stroke="A" d="M12 2.5v19"/><path d="M9.5 8v8l-5 0zM14.5 8v8l5 0z"/></g>',
+    "sym_h": '<path stroke="A" stroke-dasharray="2 2" d="M12 3v18"/><path d="M9.5 6v12L3.5 18zM14.5 6v12l6 0z"/>',
+    "sym_v": '<g transform="rotate(90 12 12)"><path stroke="A" stroke-dasharray="2 2" d="M12 3v18"/>'
+             '<path d="M9.5 6v12L3.5 18zM14.5 6v12l6 0z"/></g>',
+    "grouper": '<path d="M3.5 18.5V6a1.5 1.5 0 0 1 1.5-1.5h4l2 2.5h8A1.5 1.5 0 0 1 20.5 8.5v10A1.5 1.5 0 0 1 19 20H5'
+               'a1.5 1.5 0 0 1-1.5-1.5z"/><path stroke="A" d="M8 11h8M8 15h8"/>',
+    "degrouper": '<path stroke-dasharray="2.6 2.2" d="M3.5 18.5V6a1.5 1.5 0 0 1 1.5-1.5h4l2 2.5h8A1.5 1.5 0 0 1 '
+                 '20.5 8.5v10A1.5 1.5 0 0 1 19 20H5a1.5 1.5 0 0 1-1.5-1.5z"/><path stroke="A" d="M8 11h8M8 15h8"/>',
     "rep_v": '<rect x="7" y="3" width="10" height="4" rx="1"/><rect x="5" y="10" width="14" height="4" rx="1"/>'
              '<rect x="8" y="17" width="8" height="4" rx="1"/>',
 }

@@ -549,9 +549,14 @@ supprimer d'un coup, et donner au groupe une opacité, un mode de fusion et un m
 - La flèche à gauche du groupe le **replie** ou le **déplie**. Les calques d'un groupe sont décalés vers la droite.
 - Monter / Descendre fait entrer un calque dans un groupe ouvert, ou l'en fait sortir.
 
+### Barre d'accès rapide
+Une 2e ligne de boutons sous la barre du haut, toujours là quel que soit l'outil : Transformer (Ctrl+T), pivoter
+l'image de 90° à gauche / à droite, retourner l'image entière, Grouper / Dégrouper, retourner le calque (symétries),
+Aligner (6) et Répartir (2). La bulle de chaque bouton dit ce qu'il fait. **Affichage > Barre d'accès rapide** la
+masque ou la remet (masquée : Aligner et Répartir reviennent dans la barre de l'outil Déplacer).
+
 ### Aligner, répartir, retourner les calques
-Dans le menu **Calque**, et (Aligner, Répartir) en boutons dans la barre de l'outil **Déplacer** (V), comme dans
-Photoshop. Pixane prend ce que les calques contiennent vraiment (sans le vide transparent autour). Un groupe choisi
+Dans le menu **Calque** et dans la **barre d'accès rapide**. Pixane prend ce que les calques contiennent vraiment (sans le vide transparent autour). Un groupe choisi
 bouge comme un seul bloc ; les calques verrouillés ne bougent pas ; un seul Ctrl+Z annule.
 - **Aligner** : bords gauches, centres horizontaux, bords droits, bords hauts, centres verticaux, bords bas.
   **Plusieurs calques choisis** : ils s'alignent entre eux (ex. « bords gauches » : sur celui qui est le plus à

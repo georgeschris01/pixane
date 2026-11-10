@@ -227,6 +227,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
 
         self._menus()
         self._barre_commandes()
+        self._barre_rapide()
         self._outils()
         self._panneau_ia()
         self._panneau_calques()
@@ -390,6 +391,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                                       "a_epreuve")
         self.a_epreuve.setCheckable(True)
         m.addSeparator()
+        self.a_barre_rapide = self._action(m, tr("Barre d'accès rapide"), None, None, "a_barre_rapide")
+        self.a_barre_rapide.setCheckable(True)
+        m.addSeparator()
         self._menu_regles(m)
         m.addSeparator()
         sous = m.addMenu(tr("Thème"))
@@ -444,6 +448,48 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         a.toggled.connect(lambda v: self.reglages.setValue("maj_auto", v))
         m.addSeparator()
         self._action(m, tr("À propos de Pixane"), None, self.a_propos)
+
+    def _barre_rapide(self):
+        """2e ligne sous le menu : commandes de calque et d'image toujours à portée (Affichage > Barre d'accès
+        rapide pour la masquer)."""
+        b = QToolBar(tr("Accès rapide"))
+        self.barre_rapide = b
+        b.setObjectName("barre_rapide")
+        b.setMovable(False)
+        b.setIconSize(QSize(18, 18))
+        self.addToolBarBreak(Qt.TopToolBarArea)
+        self.addToolBar(Qt.TopToolBarArea, b)
+        icones = {"a_transformer": "transformer", "a_pivoter_g": "pivoter_g", "a_pivoter_d": "pivoter_d",
+                  "a_miroir_h": "miroir_h", "a_miroir_v": "miroir_v", "a_grouper": "grouper",
+                  "a_degrouper": "degrouper", "a_retourner_calque_h": "sym_h", "a_retourner_calque_v": "sym_v"}
+        for cle, nom in icones.items():
+            self._icone(getattr(self, cle), nom)
+        lots = [("a_transformer", "a_pivoter_g", "a_pivoter_d", "a_miroir_h", "a_miroir_v"),
+                ("a_grouper", "a_degrouper", "a_retourner_calque_h", "a_retourner_calque_v"),
+                tuple(f"a_aligner_{m}" for m in ("gauche", "centre_h", "droite", "haut", "centre_v", "bas")),
+                ("a_repartir_h", "a_repartir_v")]
+        bulles = {"a_pivoter_g": tr("Pivoter l'image de 90° à gauche"), "a_pivoter_d": tr("Pivoter l'image de 90° à droite"),
+                  "a_miroir_h": tr("Retourner l'image entière horizontalement"),
+                  "a_miroir_v": tr("Retourner l'image entière verticalement"),
+                  "a_retourner_calque_h": tr("Retourner le calque : symétrie horizontale"),
+                  "a_retourner_calque_v": tr("Retourner le calque : symétrie verticale")}
+        for k, lot in enumerate(lots):
+            if k:
+                b.addSeparator()
+            for cle in lot:
+                a = getattr(self, cle)
+                bouton = b.addAction(a)
+                texte = bulles.get(cle, a.text().replace("&", ""))
+                if cle.startswith("a_aligner_"):
+                    texte = tr("Aligner : {quoi}", quoi=a.text().lower())
+                raccourci = a.shortcut().toString(QKeySequence.NativeText)
+                b.widgetForAction(a).setToolTip(texte + (f" ({raccourci})" if raccourci else ""))
+        visible = self.reglages.value("barre_rapide", True, type=bool)
+        b.setVisible(visible)
+        self.alignement_deplacer.setVisible(not visible)
+        self.a_barre_rapide.setChecked(visible)
+        self.a_barre_rapide.toggled.connect(lambda v: (b.setVisible(v), self.alignement_deplacer.setVisible(not v),
+                                                       self.reglages.setValue("barre_rapide", v)))
 
     def _barre_commandes(self):
         """Barre du haut : fichiers, annuler, options de l'outil, zoom, thème."""
@@ -612,6 +658,11 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.c_cadre_deplacer.toggled.connect(self._cadre_deplacer)
         lay.addWidget(self.c_cadre_deplacer)
         lay.addSpacing(16)
+        # aligner / répartir : ici seulement quand la barre d'accès rapide (qui les a aussi) est masquée
+        self.alignement_deplacer = QWidget()
+        lay_outil = lay
+        lay = QHBoxLayout(self.alignement_deplacer)
+        lay.setContentsMargins(0, 0, 0, 0)
         from .actions_calques import alignements
         for k, (mode, texte) in enumerate(alignements()):       # aligner : comme dans Photoshop
             if k == 3:
@@ -630,7 +681,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             b.setToolTip(tr("Répartir horizontalement (3 calques choisis ou plus)") if sens == "h"
                          else tr("Répartir verticalement (3 calques choisis ou plus)"))
             lay.addWidget(b)
-        lay.addStretch(1)
+        lay_outil.addWidget(self.alignement_deplacer)
+        lay_outil.addStretch(1)
         tout.addWidget(self.opt_deplacer)
         # baguette magique
         self.opt_baguette = QWidget()

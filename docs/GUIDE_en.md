@@ -528,8 +528,14 @@ group an opacity, a blend mode and a mask that apply to everything inside.
 - The arrow left of the group **collapses** or **expands** it. Layers inside a group are indented.
 - Move up / down takes a layer into an open group, or out of it.
 
+### Quick access bar
+A 2nd row of buttons under the top bar, always there whatever the tool: Transform (Ctrl+T), rotate the image 90°
+left / right, flip the whole image, Group / Ungroup, flip layer, Align (6) and Distribute (2). Each button's tooltip
+says what it does. **View > Quick access bar** hides or shows it (hidden: Align and Distribute come back in the Move
+tool bar).
+
 ### Align, distribute, flip layers
-In the **Layer** menu, and (Align, Distribute) as buttons in the **Move** tool (V) bar, as in Photoshop. Pixane uses
+In the **Layer** menu and in the **quick access bar**. Pixane uses
 what the layers really contain (without the transparent space around). A chosen group moves as one block; locked
 layers do not move; a single Ctrl+Z undoes.
 - **Align**: left edges, horizontal centers, right edges, top edges, vertical centers, bottom edges. **Several chosen
