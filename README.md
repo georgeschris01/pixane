@@ -750,8 +750,9 @@ Le tampon copie la photo **telle qu'on la voit** (tous les calques visibles) et 
 opacité et dureté comme le pinceau.
 
 ### Supprimer (J, IA)
-Peignez sur un petit défaut (fil électrique, tache, bouton, poussière) : **au lâcher**, il disparaît (LaMa). Le
-résultat va dans un calque « Suppressions », réutilisé pour les coups suivants. Pour un gros objet, préférez
+Peignez sur un petit défaut (fil électrique, tache, bouton, poussière) : **au lâcher**, il disparaît (LaMa). Comme
+pour *Effacer*, le résultat va **directement dans le calque choisi**. Avec l'option du menu IA « Mettre les
+résultats dans un nouveau calque », il va dans un calque « Suppressions », réutilisé pour les coups suivants. Pour un gros objet, préférez
 *Effacer* (Maj+E), qui propose plusieurs résultats.
 
 ### Pinceau correcteur (R)

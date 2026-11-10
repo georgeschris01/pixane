@@ -730,7 +730,8 @@ The stamp copies the photo **as you see it** (all visible layers) and paints on 
 and hardness as for the brush.
 
 ### Remove (J, AI)
-Paint over a small flaw (power line, stain, spot, dust): **on release**, it disappears (LaMa). The result goes on a
+Paint over a small flaw (power line, stain, spot, dust): **on release**, it disappears (LaMa). As with *Erase*, the
+result goes **directly into the chosen layer**. With the AI menu option "Put results in a new layer", it goes on a
 "Removals" layer, reused for the following strokes. For a large object, use *Erase* (Shift+E), which offers several
 results.
 

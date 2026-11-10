@@ -773,7 +773,7 @@
  "Supprime le fond, garde le sujet": "Removes the background, keeps the subject",
  "Supprimer": "Remove",
  "Supprimer (IA) : peins sur un défaut, il disparaît au lâcher": "Remove (AI): paint over a flaw, it disappears on release",
- "Supprimer (IA) : peins sur un fil, une tache, un bouton… ; au lâcher, il disparaît (calque « Suppressions »). Pour un gros objet, préfère Effacer.": "Remove (AI): paint over a wire, a stain, a spot…; on release it disappears (\"Removals\" layer). For a large object, use Erase instead.",
+ "Supprimer (IA) : peins sur un fil, une tache, un bouton… ; au lâcher, il disparaît (dans le calque choisi). Pour un gros objet, préfère Effacer.": "Remove (AI): paint over a wire, a stain, a spot…; on release it disappears (in the chosen layer). For a large object, use Erase instead.",
  "Supprimer ce format enregistré": "Delete this saved format",
  "Supprimer ce style": "Delete this style",
  "Supprimer l'arrière-plan": "Remove background",

@@ -1,7 +1,9 @@
 """Pinceau Supprimer (J), comme l'outil Suppression de Photoshop : on peint sur un défaut (fil, tache, bouton,
 passant au loin…) et, au lâcher, il disparaît. Seul LaMa travaille, sur un morceau de la photo autour du trait :
-environ une seconde, sans fenêtre de choix. Le résultat va dans un calque « Suppressions » (créé au-dessus du
-calque choisi, puis réutilisé tant qu'il est choisi) : la photo d'origine n'est jamais touchée.
+environ une seconde, sans fenêtre de choix. Comme Effacer et Ajouter, le résultat va directement dans le calque
+choisi ; avec l'option « Mettre les résultats dans un nouveau calque » (menu IA), ou si le calque choisi ne peut pas
+le recevoir (texte, caché, verrouillé…), il va dans un calque « Suppressions » (créé au-dessus du calque choisi, puis
+réutilisé tant qu'il est choisi).
 """
 from __future__ import annotations
 
@@ -17,7 +19,7 @@ from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from . import recettes
-from .document import FORMAT_IMAGE, Calque, a_plat, image_vide, qimage_rgba, tableau
+from .document import FORMAT_IMAGE, Calque, a_plat, image_vide, peut_recevoir_ia, qimage_rgba, tableau
 from .langue import tr
 from .moteur import ErreurMoteur
 from .styles import dilater
@@ -148,13 +150,15 @@ class Suppression:
         self.f._tache(calcul, ok, echec).lancer()
 
     def _poser(self, doc, zone: QRect, rgb: np.ndarray, mz: np.ndarray):
-        """Le morceau refait, posé dans le calque « Suppressions » (bord fondu sur 1 à 2 px)."""
+        """Le morceau refait (bord fondu sur 1 à 2 px), posé dans le calque choisi, ou dans le calque
+        « Suppressions » (option « nouveau calque » du menu IA, ou calque choisi qui ne peut pas le recevoir)."""
         from .fenetre import CommandeEtat
         avant = doc.etat()
         w, h = doc.taille()
         c = doc.calque_actif
-        reutiliser = (c.nom.startswith(nom_calque()) and c.texte is None and not c.verrou and c.style is None
-                      and not c.special and c.masque is None)
+        direct = not self.f.a_ia_nouveau_calque.isChecked() and peut_recevoir_ia(c)
+        reutiliser = direct or (c.nom.startswith(nom_calque()) and c.texte is None and not c.verrou
+                                and c.style is None and not c.special and c.masque is None)
         a = np.clip(mz, 0, 1)
         morceau = np.dstack([rgb, (a * 255 + 0.5).astype(np.uint8)])
         img = c.image.copy() if reutiliser else image_vide(w, h)
