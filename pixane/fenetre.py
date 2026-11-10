@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import QBuffer, QMimeData, QObject, QPoint, QProcess, QSettings, QSize, Qt, QTimer, Signal
-from PySide6.QtCore import QPointF, QUrl
+from PySide6.QtCore import QEvent, QPointF, QUrl
 from PySide6.QtGui import (QAction, QActionGroup, QColor, QDesktopServices, QIcon, QImage, QKeySequence, QPainter, QUndoCommand,
                            QUndoStack)
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QComboBox, QDialog, QDockWidget, QFileDialog, QHBoxLayout, QLabel,
@@ -222,6 +222,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.canevas.selection_fleche.connect(self.decaler_selection)
         self._transfo_avant = None
         self.groupe_historique.indexChanged.connect(self._historique_bouge)
+        QApplication.instance().installEventFilter(self)     # boutons retour / suivant de la souris
         self._session_texte = 0      # regroupe les changements d'un même texte dans Annuler
 
         self._menus()
@@ -294,10 +295,18 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self._action(m, tr("Quitter"), "Ctrl+Q", self.close)
 
         m = self.menuBar().addMenu(tr("&Édition"))
-        self.a_annuler = self.groupe_historique.createUndoAction(self, tr("Annuler|édition"))
+        # Annuler / Rétablir : pendant un travail pas encore validé (Transformer, Agrandir, Recadrer), geste par geste
+        self.a_annuler = QAction(tr("Annuler|édition"), self)
         self.a_annuler.setShortcut(QKeySequence.Undo)
-        self.a_retablir = self.groupe_historique.createRedoAction(self, tr("Rétablir|édition"))
+        self.a_annuler.triggered.connect(self.retour)
+        self.a_retablir = QAction(tr("Rétablir|édition"), self)
         self.a_retablir.setShortcuts([QKeySequence("Ctrl+Y"), QKeySequence("Ctrl+Shift+Z")])
+        self.a_retablir.triggered.connect(self.suivant)
+        g = self.groupe_historique
+        for s in (g.canUndoChanged, g.canRedoChanged, g.undoTextChanged, g.redoTextChanged, g.activeStackChanged,
+                  self.canevas.travail_change):
+            s.connect(self._maj_annuler)
+        self._maj_annuler()
         self._icone(self.a_annuler, "annuler")
         self._icone(self.a_retablir, "retablir")
         m.addAction(self.a_annuler)
@@ -1421,6 +1430,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.moteur.arreter()
         self._recuperation.tout_effacer()
         self.reglages.setValue("texte_defaut", json.dumps(self.panneau_texte.defaut.vers_dict(), ensure_ascii=False))
+        QApplication.instance().removeEventFilter(self)     # boutons de la souris : plus après la fermeture
         e.accept()
 
     # ================================================================ sélection
@@ -1948,6 +1958,42 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.statusBar().showMessage(tr("Transformer : coins = taille (Maj : libre), dedans = déplacer, dehors = "
                                         "tourner, au degré près (Maj : par 15°) ; ou tapez l'angle et la taille en "
                                         "haut. Entrée pour valider, Échap pour annuler."), 15000)
+
+    def retour(self):
+        """Annuler (Ctrl+Z, bouton « retour » de la souris) : pendant un travail pas encore validé, défait son
+        dernier geste (au début : l'abandonne) ; sinon, annule la dernière action."""
+        if not self.canevas.geste_arriere():
+            self.groupe_historique.undo()
+        self._maj_annuler()
+
+    def suivant(self):
+        """Rétablir (Ctrl+Y, bouton « suivant » de la souris) : refait le geste défait, ou l'action annulée."""
+        if not self.canevas.geste_avant():
+            self.groupe_historique.redo()
+        self._maj_annuler()
+
+    def _maj_annuler(self, *_):
+        a, r, g = self.a_annuler, self.a_retablir, self.groupe_historique
+        pa, pr = tr("Annuler|édition"), tr("Rétablir|édition")
+        if self.canevas.travail() is not None:
+            a.setText(pa)
+            a.setEnabled(True)
+            r.setText(pr)
+            r.setEnabled(self.canevas.peut_refaire_geste())
+        else:
+            a.setText(f"{pa} {g.undoText()}".strip())
+            a.setEnabled(g.canUndo())
+            r.setText(f"{pr} {g.redoText()}".strip())
+            r.setEnabled(g.canRedo())
+
+    def eventFilter(self, objet, e):
+        """Boutons « retour » / « suivant » de la souris, partout dans la fenêtre : Annuler / Rétablir."""
+        if (e.type() in (QEvent.MouseButtonPress, QEvent.MouseButtonDblClick)
+                and e.button() in (Qt.BackButton, Qt.ForwardButton)
+                and isinstance(objet, QWidget) and objet.window() is self):
+            (self.retour if e.button() == Qt.BackButton else self.suivant)()
+            return True
+        return super().eventFilter(objet, e)
 
     def _historique_bouge(self, _index):
         """Ctrl+Z ou clic dans l'Historique pendant une transformation : elle est abandonnée."""

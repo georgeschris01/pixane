@@ -169,6 +169,10 @@ Layer names that already exist keep their original language.
     A message reminds you of this if the image has several layers.
   Camera information (EXIF) and the colour profile are kept.
 - **Undo** (Ctrl+Z) / **Redo** (Ctrl+Y or Ctrl+Shift+Z): every edit and every selection can be undone (30 steps).
+  The mouse **back** and **forward** side buttons do the same.
+- **During work not yet confirmed** (Transform, Expand frame, Crop): Undo (or the back button) undoes **the last
+  gesture** of that work (e.g. the rotation, keeping the size); at the start, it abandons the work. Redo (or the
+  forward button) redoes the undone gesture.
 - **History panel** (tab next to "Layers"): the list of steps. Click a step to go back to that moment; click a step
   further down to redo the next ones. A new edit discards the steps "ahead".
 - **File > Recent files**: the last 10 images opened or saved (*Clear the list* empties it).

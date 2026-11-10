@@ -105,7 +105,10 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
     Un message le rappelle si l'image a plusieurs calques.
   Les informations de l'appareil (EXIF) et le profil de couleur sont conservés.
 - **Annuler** (Ctrl+Z) / **Rétablir** (Ctrl+Y ou Ctrl+Maj+Z) : chaque retouche et chaque sélection peut être annulée
-  (30 étapes).
+  (30 étapes). Les boutons **retour** et **suivant** de la souris (sur le côté) font la même chose.
+- **Pendant un travail pas encore validé** (Transformer, cadre d'Agrandir, Recadrer) : Annuler (ou le bouton retour)
+  défait **le dernier geste** de ce travail (ex. la rotation, en gardant la taille) ; arrivé au début, il abandonne
+  le travail. Rétablir (ou le bouton suivant) refait le geste défait.
 - **Panneau Historique** (onglet à côté de « Calques ») : la liste des étapes. Un clic sur une étape revient à ce
   moment-là ; un clic sur une étape plus bas refait les suivantes. Une nouvelle retouche efface les étapes « en avance ».
 - **Fichier > Fichiers récents** : les 10 dernières images ouvertes ou enregistrées (*Effacer la liste* pour la vider).

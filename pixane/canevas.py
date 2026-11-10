@@ -7,7 +7,7 @@ from dataclasses import replace
 
 import numpy as np
 
-from PySide6.QtCore import QLineF, QPointF, QRectF, Qt, Signal
+from PySide6.QtCore import QLineF, QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPainterPath, QPen, QPixmap, QPolygonF, QTransform
 from PySide6.QtWidgets import QWidget
 
@@ -72,6 +72,7 @@ class Canevas(QWidget):
     texte_sel = Signal(object, str, bool)       # sélection de texte : QRectF (cadre) ou QPointF (clic), mode, Ctrl
     fin_session_ia = Signal()                   # Échap avec la sélection rapide : l'objet suivant repart de zéro
     suppression = Signal(list, float)           # pinceau Supprimer : points (image), taille du pinceau
+    travail_change = Signal()                   # travail en cours (Transformer, Agrandir, Recadrer) : gestes changés
     poignee_sol_bouge = Signal(object)          # style « ombre au sol » : bout de l'ombre tiré (point image)
 
     def __init__(self, parent=None):
@@ -99,6 +100,8 @@ class Canevas(QWidget):
         self.cadre = None            # Agrandir : px ajoutés [haut, bas, gauche, droite], sinon None
         self.abime = [0, 0, 0, 0]    # Agrandir : px de bord abîmé à refaire [haut, bas, gauche, droite]
         self.base_cadre = None       # Agrandir : (x0, y0, x1, y1) d'où part le cadre (la photo, sans le vide)
+        # gestes du travail en cours (pas encore validé) : retour / suivant de la souris, Ctrl+Z / Ctrl+Y
+        self._gestes, self._refaits, self._etat_fixe = [], [], None
         self._poignee = None         # (cible « ext » / « int » / « ? », côtés parmi "h", "b", "g", "d")
         self._depart = None          # point (image) où le glisser du cadre a commencé
         self._texte_glisse = None    # (index, « deplacer » / « tourner », départ, Texte d'origine, état d'avant)
@@ -332,6 +335,7 @@ class Canevas(QWidget):
         self.setCursor(Qt.ArrowCursor)
         self.setFocus()
         self._emettre_cadre()
+        self._gestes_depart()
 
     def definir_cadre(self, ajout, abime):
         """Valeurs venant des cases de la barre (sans changer le zoom)."""
@@ -345,6 +349,95 @@ class Canevas(QWidget):
         self._poignee = None
         self._curseur()
         self.ajuster()
+        self.travail_change.emit()
+
+    # ---------------------------------------------------------- gestes d'un travail pas encore validé
+    def travail(self) -> str | None:
+        """Travail en cours, pas encore validé : « transfo », « cadre » (Agrandir), « recadre », ou None."""
+        if self.transfo is not None:
+            return "transfo"
+        if self.cadre is not None:
+            return "cadre"
+        if self.outil == RECADRER and self.recadre is not None:
+            return "recadre"
+        return None
+
+    def _etat_travail(self):
+        k = self.travail()
+        if k == "transfo":
+            t = self.transfo
+            return k, QPointF(t.centre), t.sx, t.sy, t.angle
+        if k == "cadre":
+            return k, tuple(self.cadre), tuple(self.abime)
+        if k == "recadre":
+            return k, QRectF(self.recadre)
+        return None
+
+    def _gestes_depart(self):
+        self._gestes, self._refaits = [], []
+        self._etat_fixe = self._etat_travail()
+        self.travail_change.emit()
+
+    def noter_geste(self):
+        """Fin d'un geste (souris lâchée, valeur tapée) : l'état d'avant est gardé pour revenir en arrière."""
+        e = self._etat_travail()
+        if e is None:
+            return
+        if self._etat_fixe is None or self._etat_fixe[0] != e[0]:
+            self._gestes_depart()
+        elif e != self._etat_fixe:
+            self._gestes.append(self._etat_fixe)
+            self._refaits.clear()
+            self._etat_fixe = e
+            self.travail_change.emit()
+
+    def peut_refaire_geste(self) -> bool:
+        return self.travail() is not None and bool(self._refaits)
+
+    def geste_arriere(self) -> bool:
+        """Défait le dernier geste du travail en cours ; au début du travail, l'abandonne. False : pas de travail."""
+        k = self.travail()
+        if k is None:
+            return False
+        self.noter_geste()
+        if self._gestes:
+            self._refaits.append(self._etat_fixe)
+            self._remettre(self._gestes.pop())
+        elif k == "transfo":
+            self.transfo_annule.emit()
+        elif k == "cadre":
+            self.cadre_annule.emit()
+        else:
+            self.annuler_recadre()
+        self.travail_change.emit()
+        return True
+
+    def geste_avant(self) -> bool:
+        """Refait le geste défait. False : pas de travail en cours."""
+        if self.travail() is None:
+            return False
+        self.noter_geste()
+        if self._refaits:
+            self._gestes.append(self._etat_fixe)
+            self._remettre(self._refaits.pop())
+            self.travail_change.emit()
+        return True
+
+    def _remettre(self, e):
+        self._etat_fixe = e
+        if e[0] == "transfo":
+            t = self.transfo
+            t.centre = QPointF(e[1])
+            t.sx, t.sy, t.angle = e[2], e[3], e[4]
+            self._apercu_transfo(lisse=True)
+            self.transfo_change.emit()
+        elif e[0] == "cadre":
+            self.cadre, self.abime = list(e[1]), list(e[2])
+            self._emettre_cadre()
+        else:
+            self.recadre = QRectF(e[1])
+            self._emettre_recadre()
+        self.update()
 
     def _emettre_cadre(self):
         self.cadre_change.emit(tuple(self.cadre), tuple(self.abime))
@@ -885,6 +978,7 @@ class Canevas(QWidget):
         self.recadre = None
         self._recadre_glisse = None
         self._emettre_recadre()
+        self.travail_change.emit()
         self.update()
 
     def rect_recadre(self):
@@ -1037,12 +1131,14 @@ class Canevas(QWidget):
         self._transfo_index = index
         self._apercu_transfo(lisse=True)
         self.setFocus()
+        self._gestes_depart()
         self.update()
 
     def finir_transfo(self):
         self.transfo = None
         self._transfo_glisse = False
         self._curseur()
+        self.travail_change.emit()
         self.update()
 
     def _apercu_transfo(self, lisse: bool):
@@ -1331,6 +1427,7 @@ class Canevas(QWidget):
     def mousePressEvent(self, e):
         if not self.doc:
             return
+        self.noter_geste()           # valeurs tapées avant ce geste : un geste à part
         pos = e.position()
         if self.style_ouvert:
             b = self._bout_sol_ecran()
@@ -1520,6 +1617,7 @@ class Canevas(QWidget):
         self.update()
 
     def mouseReleaseEvent(self, e):
+        QTimer.singleShot(0, self.noter_geste)      # le geste fini peut être défait (retour, Ctrl+Z)
         if self.style_ouvert and self._sol_glisse:
             self._sol_glisse = False
             return
