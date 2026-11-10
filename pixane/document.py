@@ -615,11 +615,19 @@ class Document(QObject):
 
 
     def contenu(self) -> tuple[int, int, int, int] | None:
-        """(x0, y0, x1, y1) de la partie visible de l'image, quand du vide transparent l'entoure (ex. une photo
-        carrée collée dans une image plus large) ; None si l'image touche tous les bords (ou est vide).
+        """(x0, y0, x1, y1) de la photo du calque choisi, quand du vide transparent l'entoure (ex. une photo carrée
+        collée dans une image plus large) ; None si elle touche tous les bords. Les autres calques ne comptent pas
+        (sauf si le calque choisi n'a pas de pixels : on prend alors l'image entière).
         Les traits fins isolés dans le vide (restes de collage, liserés) ne comptent pas : une colonne (ou une ligne)
         n'est gardée que si elle est remplie à au moins 4 % de la plus remplie."""
-        a = tableau(self.image.convertToFormat(FORMAT_IMAGE))[:, :, 3] > 8
+        k = self.calque_actif
+        a = None
+        if not k.special and k.visible:
+            a = tableau(k.image.convertToFormat(FORMAT_CALQUE))[:, :, 3] > 8
+            if not a.any():
+                a = None
+        if a is None:
+            a = tableau(self.image.convertToFormat(FORMAT_IMAGE))[:, :, 3] > 8
         par_ligne, par_colonne = a.sum(axis=1), a.sum(axis=0)
         if not par_ligne.any():
             return None

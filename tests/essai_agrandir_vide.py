@@ -56,6 +56,15 @@ for x in range(30, 140):
 traits[40:42, 460:590] = [255, 255, 255, 255]
 dt = Document(calques=[Calque("Traits", qimage_rgba(traits))])
 verifier(dt.contenu() == (150, 0, 450, 300), f"traits fins dans le vide ignorés {dt.contenu()}")
+# photo collée sur un calque au-dessus d'autres calques qui ont des choses dans le vide : seul le calque choisi compte
+dessous = np.zeros((300, 600, 4), np.uint8)
+dessous[20:280, 20:120] = [200, 30, 30, 255]
+dessous[100:160, 480:590] = [30, 30, 200, 255]
+dc = Document(calques=[Calque("Dessous", qimage_rgba(dessous)), Calque("Photo collée", qimage_rgba(rgba))])
+dc.actif = 1
+verifier(dc.contenu() == (150, 0, 450, 300), f"calques du dessous ignorés {dc.contenu()}")
+dc.actif = 0
+verifier(dc.contenu() == (20, 20, 590, 280), f"calque du dessous choisi : sa partie à lui {dc.contenu()}")
 
 f.ia_agrandir()
 b = f.barre_agrandir
