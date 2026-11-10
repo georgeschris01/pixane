@@ -17,15 +17,18 @@
 
 ; ESSAIS SUR LE PC DE CHRISTOPHE : compiler avec /DEssai (identifiant et nom à part). Un essai fait avec le vrai
 ; AppId puis désinstallé efface l'inscription de la vraie installation (registre, menu Démarrer, raccourci Bureau) :
-; arrivé le 08/11/2026.
+; arrivé le 08/11/2026. L'essai a aussi son identifiant de barre des tâches : avec le même (chrypox.Pixane), sa
+; désinstallation retirait l'épingle de Pixane de la barre des tâches (arrivé le 10/11/2026).
 [Setup]
 #ifdef Essai
 #define NomRaccourci "Pixane essai"
+#define IdBarre "chrypox.Pixane.essai"
 AppId={{5D0E3B7A-2C41-4E8B-9F6A-0E55A1000001}
 #define CleDesinst "Software\Microsoft\Windows\CurrentVersion\Uninstall\{5D0E3B7A-2C41-4E8B-9F6A-0E55A1000001}_is1"
 AppName=Pixane essai
 #else
 #define NomRaccourci "Pixane"
+#define IdBarre "chrypox.Pixane"
 AppId={{89EBA9CC-CDC6-468F-A638-3F71B48EE9A3}
 #define CleDesinst "Software\Microsoft\Windows\CurrentVersion\Uninstall\{89EBA9CC-CDC6-468F-A638-3F71B48EE9A3}_is1"
 AppName=Pixane
@@ -198,8 +201,8 @@ Root: HKA; Subkey: "Software\Classes\Pixane.Projet\shell\open\command"; ValueTyp
 #endif
 
 [Icons]
-Name: "{autoprograms}\{#NomRaccourci}"; Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; IconFilename: "{app}\pixane.ico"; AppUserModelID: "chrypox.Pixane"
-Name: "{autodesktop}\{#NomRaccourci}"; Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; IconFilename: "{app}\pixane.ico"; AppUserModelID: "chrypox.Pixane"; Tasks: desktopicon
+Name: "{autoprograms}\{#NomRaccourci}"; Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; IconFilename: "{app}\pixane.ico"; AppUserModelID: "{#IdBarre}"
+Name: "{autodesktop}\{#NomRaccourci}"; Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; IconFilename: "{app}\pixane.ico"; AppUserModelID: "{#IdBarre}"; Tasks: desktopicon
 
 [Run]
 ; Moteur IA absent et licence acceptée : le téléchargeur démarre (Pixane sera lancé ensuite par l'utilisateur).
