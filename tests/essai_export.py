@@ -57,6 +57,15 @@ QFileDialog.getSaveFileName = lambda *a, **k: (str(cible), "")
 d.exporter()
 verifier(cible.is_file() and max(Image.open(cible).size) == 800, "fichier WebP écrit, 800 px")
 d.grab().save(str(sortie / "dialogue_export.png"))
+# par le menu Fichier > Exporter pour le web : enregistrer puis message « Exporté », sans erreur
+from PySide6.QtWidgets import QDialog
+import pixane.export as ex0
+ex0.DialogueExport.exec = lambda self: (setattr(self, "chemin", str(cible)), QDialog.Accepted)[1]
+try:
+    f.exporter_web()
+    verifier("export_web" in f.statusBar().currentMessage(), f"menu Exporter pour le web : {f.statusBar().currentMessage()}")
+except Exception as e:
+    verifier(False, f"menu Exporter pour le web : erreur {e!r}")
 
 # ------------------------------------------------------------- lot
 lot = sortie / "lot"

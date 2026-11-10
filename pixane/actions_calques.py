@@ -75,7 +75,7 @@ class ActionsCalques:
         nom = self.doc.chemin.stem if self.doc.chemin else (self.doc.nom or tr("sans titre"))
         nom += getattr(self.doc, "suffixe_nom", None) or ""      # ex. « photo_restauree » → photo_restauree_web
         d = DialogueExport(self, qimage_vers_pil(self.doc.image), nom, self.doc.exif, self.doc.icc)
-        if d.exec() == d.Accepted:
+        if d.exec() == QDialog.Accepted:
             self.statusBar().showMessage(tr("Exporté : {chemin}", chemin=d.chemin), 8000)
         d.deleteLater()
 
