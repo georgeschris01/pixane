@@ -14,6 +14,7 @@ Pixane itself: Pixane Licence 1.1 (free of charge, source-available, non-commerc
 | numpy | BSD-3-Clause (et composants 0BSD, MIT, Zlib, CC0) |
 | Pillow | MIT-CMU |
 | websocket-client | Apache-2.0 |
+| Pinceaux et motifs de base / Built-in brushes and patterns (`pixaneessourcesase`) : paquets « Krita 3 Default Resources » et « Krita 4 Default Resources » de Krita (krita.org), par / by David Revoy (Deevad), Ramon Miranda, Timothée Giet, Razvanc, Radian, Wolthera van Hövell, Storm, Scottyp et d'autres / and others | CC0 1.0 (domaine public / public domain), déclaré dans chaque paquet / stated in each bundle |
 
 ## Téléchargé seulement si l'utilisateur le choisit / Downloaded only if the user chooses
 

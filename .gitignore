@@ -15,6 +15,8 @@ __pycache__/
 publication/
 # images de l'installateur : fabriquées par Pixane (aucune photo personnelle), à garder
 !installateur/images/*.png
+# pinceaux et motifs de base (Krita, CC-0) : à garder
+!pixane/ressources/base/**
 comparaison/
 image de test/
 installateur.log
