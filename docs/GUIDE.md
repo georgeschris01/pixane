@@ -427,7 +427,9 @@ lunettes »… (modèle **Flux Kontext**, à ajouter dans Installer le moteur IA
   **programme d'installation de Pixane** (page « Traducteur des consignes »), par le bouton « Installer le
   traducteur… », ou par sa case dans **IA > Installer le moteur IA** (fenêtre « Installer »
   ou « Compléter le moteur IA » si ComfyUI était déjà là) : cochée tant qu'il n'est pas installé, grisée ensuite.
-  **Dossier du traducteur… Changer…** : tu choisis où le ranger (par défaut, le dossier de Pixane).
+  **Dossier du traducteur… Changer…** : tu choisis où le ranger (par défaut,
+  `%LOCALAPPDATA%\Pixane\traducteur`). Pas dans le dossier où Pixane est
+  installé (D:\Programmes\Pixane…) : il est remplacé à chaque mise à jour, Pixane le refuse.
 - L'IA travaille sur un morceau autour de la sélection (plus de détail qu'avec toute l'image) ; le résultat n'est
   gardé que dans la sélection et là où il change vraiment : le reste garde ses pixels d'origine.
 - **Calque avec de la transparence** (texte, logo sans fond) : l'IA voit ce calque seul, et le résultat garde un

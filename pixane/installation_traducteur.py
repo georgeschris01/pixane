@@ -45,6 +45,8 @@ class ChoixDossier(QWidget):
 
     def changer(self):
         d = QFileDialog.getExistingDirectory(self, tr("Dossier du traducteur"), str(traduction.dossier_choisi()))
+        if d and traduction.refuser_dossier(self, d, tr("Dossier du traducteur")):
+            return
         if d:
             traduction.choisir_dossier(d)
             self.maj()

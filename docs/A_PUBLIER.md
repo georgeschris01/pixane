@@ -43,6 +43,14 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.19.0 (non publ
 
 ## Corrections
 
+- **Traducteur effacé par la mise à jour** : rangé dans le dossier du programme (D:\Programmes\Pixane\pixane), il
+  était effacé à chaque mise à jour (ce dossier est remplacé en entier), et l'installateur le reproposait. Pixane et
+  l'installateur refusent maintenant un dossier du traducteur ou du moteur IA situé dans le dossier du programme,
+  avec une explication. *(signalé par Christophe)*
+- **Bibliothèque : « Accès refusé » en retirant un groupe** de pinceaux venu d'un fichier en lecture seule
+  (cruiza_2.abr) : la copie gardait l'attribut. Corrigé (copie toujours modifiable, retrait possible des
+  anciennes copies). *(trouvé dans le journal d'erreurs de Christophe)*
+
 - **Enregistrer en .pixane : « 'QPoint' object has no attribute 'convertToFormat' »** après avoir transformé (Ctrl+T,
   poignées de Déplacer) un calque qui dépasse de la feuille (un collage, par exemple) : la position du cadre était
   prise pour la meilleure version du calque. Corrigé. *(signalé par Christophe, capture dans « erreur »)*

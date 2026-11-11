@@ -412,7 +412,9 @@ model, to be added in Install the AI engine).
   It is installed by **Pixane's setup program** (“Instruction translator” page), with the “Install the
   translator…” button, or with its box in **AI > Install the AI engine**
   (“Install” window, or “Complete the AI engine” if ComfyUI was already there): ticked while it is not installed,
-  greyed out afterwards. **Translator folder… Change…**: you choose where to store it (by default, Pixane's folder).
+  greyed out afterwards. **Translator folder… Change…**: you choose where to store it (by default,
+  `%LOCALAPPDATA%\Pixane\traducteur`). Not inside the folder where
+  Pixane is installed (D:\Programmes\Pixane…): it is replaced at each update, Pixane refuses it.
 - The AI works on a piece around the selection (more detail than with the whole image); the result is only kept
   inside the selection and where it really changes: the rest keeps its original pixels.
 - **Layer with transparency** (text, logo without background): the AI sees this layer alone, and the result keeps

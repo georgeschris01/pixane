@@ -26,7 +26,11 @@
 AppId={{5D0E3B7A-2C41-4E8B-9F6A-0E55A1000001}
 #define CleDesinst "Software\Microsoft\Windows\CurrentVersion\Uninstall\{5D0E3B7A-2C41-4E8B-9F6A-0E55A1000001}_is1"
 AppName=Pixane essai
+; l'essai n'écrit jamais dans les réglages de Pixane : il a effacé le dossier du traducteur choisi par Christophe
+; (le nettoyage après l'essai retirait la valeur, arrivé le 11/11/2026)
+#define CleReglages "Software\Pixane\Pixane-essais"
 #else
+#define CleReglages "Software\Pixane\Pixane"
 #define NomRaccourci "Pixane"
 #define IdBarre "chrypox.Pixane"
 AppId={{89EBA9CC-CDC6-468F-A638-3F71B48EE9A3}
@@ -122,6 +126,7 @@ french.MoteurLicence=Flux Fill est sous licence FLUX.1 [dev] non commerciale : u
 french.MoteurLien=Lire la licence FLUX.1 [dev]
 french.MoteurAccepte=J'accepte la licence FLUX.1 [dev] (usage non commercial)
 french.MoteurPasAccepte=Pour installer le moteur IA, il faut accepter la licence FLUX.1 [dev]. Sinon, décoche « Télécharger et installer le moteur IA » : Pixane s'installera sans lui.
+french.DansProgramme=« %1 » est dans le dossier où Pixane est installé (%2). Ce dossier est remplacé en entier à chaque mise à jour : ce qu'on y range serait effacé.%n%nChoisissez un dossier ailleurs, par exemple D:\Pixane-traducteur.
 french.MoteurProtege=Le moteur IA ne peut pas aller dans « %1 » : c'est un dossier protégé (comme Program Files), où le téléchargement n'a pas le droit d'écrire.%n%nChoisissez un autre dossier, par exemple D:\Pixane-moteur.
 french.MoteurPlace=Pas assez de place sur %1 : il faut environ %2 Go, il reste %3 Go. Choisis un autre dossier.
 french.MoteurLancer=Télécharger et installer le moteur IA maintenant
@@ -164,6 +169,7 @@ english.MoteurLicence=Flux Fill is under the FLUX.1 [dev] non-commercial licence
 english.MoteurLien=Read the FLUX.1 [dev] licence
 english.MoteurAccepte=I accept the FLUX.1 [dev] licence (non-commercial use)
 english.MoteurPasAccepte=To install the AI engine, you must accept the FLUX.1 [dev] licence. Otherwise, untick "Download and install the AI engine": Pixane will install without it.
+english.DansProgramme="%1" is inside the folder where Pixane is installed (%2). This folder is replaced entirely at each update: anything stored in it would be erased.%n%nChoose a folder elsewhere, for example D:\Pixane-translator.
 english.MoteurProtege=The AI engine cannot go into "%1": it is a protected folder (like Program Files), where the download is not allowed to write.%n%nChoose another folder, for example D:\Pixane-engine.
 english.MoteurPlace=Not enough space on %1: about %2 GB is needed, %3 GB is left. Choose another folder.
 english.MoteurLancer=Download and install the AI engine now
@@ -202,8 +208,8 @@ Source: "images\accueil-en-*.png"; Flags: dontcopy
 
 [Registry]
 ; Langue choisie dans l'installateur = langue de Pixane (modifiable ensuite dans Affichage > Langue).
-Root: HKCU; Subkey: "Software\Pixane\Pixane"; ValueType: string; ValueName: "langue"; ValueData: "fr"; Languages: french
-Root: HKCU; Subkey: "Software\Pixane\Pixane"; ValueType: string; ValueName: "langue"; ValueData: "en"; Languages: english
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "langue"; ValueData: "fr"; Languages: french
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "langue"; ValueData: "en"; Languages: english
 ; Fichiers .pixane ouverts par Pixane (seulement si la case est cochée ; jamais par un essai : sa désinstallation
 ; effacerait l'association de la vraie installation, arrivé le 09/11/2026).
 #ifndef Essai
@@ -765,6 +771,16 @@ begin
     Result := ExpandConstant('{localappdata}\Pixane\traducteur');
 end;
 
+{ Vrai si D est le dossier du programme ou un de ses sous-dossiers. }
+function DansProgramme(D: String): Boolean;
+var
+  P, X: String;
+begin
+  P := Uppercase(AddBackslash(WizardDirValue));
+  X := Uppercase(AddBackslash(D));
+  Result := (Length(X) >= Length(P)) and (Copy(X, 1, Length(P)) = P);
+end;
+
 function TradInstalle(D: String): Boolean;
 begin
   Result := FileExists(AddBackslash(D) + 'opus-mt-fr-en\model.safetensors') and
@@ -903,6 +919,19 @@ begin
     Result := False;
     Exit;
   end;
+  { le dossier du programme est remplacé à chaque mise à jour : ni le traducteur ni le moteur n'y vont }
+  if (CurPageID = PageTrad.ID) and TraducteurChoisi and DansProgramme(EditTrad.Text) then
+  begin
+    MsgBox(FmtMessage(CustomMessage('DansProgramme'), [EditTrad.Text, WizardDirValue]), mbError, MB_OK);
+    Result := False;
+    Exit;
+  end;
+  if (CurPageID = PageMoteur.ID) and CaseMoteur.Checked and MoteurAbsent and DansProgramme(EditMoteur.Text) then
+  begin
+    MsgBox(FmtMessage(CustomMessage('DansProgramme'), [EditMoteur.Text, WizardDirValue]), mbError, MB_OK);
+    Result := False;
+    Exit;
+  end;
   if (CurPageID = PageTrad.ID) and TraducteurChoisi and not DossierInscriptible(EditTrad.Text) then
   begin
     MsgBox(FmtMessage(CustomMessage('MoteurProtege'), [EditTrad.Text]), mbError, MB_OK);
@@ -964,10 +993,10 @@ begin
     RetirerAncienDossier;
   { dossier de ComfyUI indiqué à la main : retenu dans les réglages de Pixane }
   if (CurStep = ssPostInstall) and (ComfyChoisi <> '') then
-    RegWriteStringValue(HKCU, 'Software\Pixane\Pixane', 'comfyui_dir', ComfyChoisi);
+    RegWriteStringValue(HKCU, '{#CleReglages}', 'comfyui_dir', ComfyChoisi);
   { dossier du traducteur choisi : retenu dans les réglages de Pixane }
   if (CurStep = ssPostInstall) and TraducteurChoisi then
-    RegWriteStringValue(HKCU, 'Software\Pixane\Pixane', 'traducteur_dossier', RemoveBackslashUnlessRoot(EditTrad.Text));
+    RegWriteStringValue(HKCU, '{#CleReglages}', 'traducteur_dossier', RemoveBackslashUnlessRoot(EditTrad.Text));
 end;
 
 { ---------------------------------------------------------------- désinstallation

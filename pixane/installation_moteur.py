@@ -707,6 +707,9 @@ class FenetreInstallation(QDialog):
 
     def _parcourir(self):
         d = QFileDialog.getExistingDirectory(self, tr("Dossier du moteur IA"), self.dossier.text())
+        from . import traduction
+        if d and traduction.refuser_dossier(self, d, tr("Dossier du moteur IA")):
+            return
         if d:
             self.dossier.setText(str(Path(d)))
 

@@ -61,6 +61,33 @@ def choisir_dossier(d: Path | str | None):
         r.setValue("traducteur_dossier", str(Path(d)))
 
 
+def dossier_programme() -> Path:
+    """Dossier où Pixane est installé (D:\\Programmes\\Pixane…) : remplacé en entier à chaque mise à jour."""
+    return Path(__file__).resolve().parents[1]
+
+
+def dans_le_programme(d: Path | str) -> bool:
+    """Vrai si d est dans le dossier du programme : ce qu'on y range est effacé à la mise à jour suivante (arrivé
+    au traducteur de Christophe le 11/11/2026)."""
+    try:
+        return Path(d).resolve().is_relative_to(dossier_programme())
+    except (OSError, ValueError):
+        return False
+
+
+def refuser_dossier(parent, d: Path | str, quoi: str) -> bool:
+    """Message et True si le dossier d est dans celui du programme."""
+    if not dans_le_programme(d):
+        return False
+    from PySide6.QtWidgets import QMessageBox
+    from .langue import tr
+    QMessageBox.warning(parent, quoi, tr(
+        "« {dossier} » est dans le dossier où Pixane est installé ({programme}). Ce dossier est remplacé en entier à "
+        "chaque mise à jour : ce qu'on y range serait effacé.\n\nChoisis un dossier ailleurs, par exemple "
+        "D:\\Pixane-traducteur.", dossier=str(Path(d)), programme=str(dossier_programme())))
+    return True
+
+
 def dossier() -> Path:
     """Dossier du modèle : <dossier choisi>/opus-mt-fr-en."""
     return dossier_choisi() / NOM

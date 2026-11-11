@@ -173,6 +173,22 @@ verifier(len(b2.elements(PINCEAUX)) == len(pinceaux) + 3 and len(b2.elements(MOT
 gr = next(gr for gr in b2.groupes[PINCEAUX] if gr.nom == "Mes pinceaux")
 b2.retirer(gr)
 verifier(not any(gr.nom == "Mes pinceaux" for gr in b2.groupes[PINCEAUX]), "groupe retiré")
+# original en lecture seule (cas de Christophe, cruiza_2.abr : « Accès refusé » au retrait)
+import stat
+seul = dossier / "Protege.abr"
+seul.write_bytes((dossier / "Mes pinceaux.abr").read_bytes())
+seul.chmod(stat.S_IREAD)
+b2.importer(seul)
+copie = tmp / PINCEAUX / "Protege.abr"
+verifier(copie.exists() and os.access(copie, os.W_OK), "original en lecture seule : la copie reste modifiable")
+copie.chmod(stat.S_IREAD)                      # copie faite par une ancienne version (attribut recopié)
+gr = next(gr for gr in b2.groupes[PINCEAUX] if gr.nom == "Protege")
+try:
+    b2.retirer(gr)
+    verifier(not copie.exists(), "groupe en lecture seule retiré sans « Accès refusé »")
+except PermissionError as ex:
+    verifier(False, f"groupe en lecture seule retiré sans « Accès refusé » ({ex})")
+seul.chmod(stat.S_IWRITE | stat.S_IREAD)
 try:
     b2.retirer(b2.groupes[PINCEAUX][0])
     verifier(False, "un groupe de base ne se retire pas")

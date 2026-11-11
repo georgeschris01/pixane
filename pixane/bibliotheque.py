@@ -206,7 +206,8 @@ class Bibliotheque:
             bilan[PINCEAUX], bilan[MOTIFS] = len(c.formes), len(c.motifs)
         else:
             genre = MOTIFS if c.motifs else PINCEAUX
-            shutil.copy2(chemin, self._cible(genre, chemin.name))
+            # copie sans les attributs : un original en lecture seule donnait une copie impossible à retirer
+            shutil.copyfile(chemin, self._cible(genre, chemin.name))
             bilan[genre] = len(c.motifs) if c.motifs else len(c.formes)
         self.recharger()
         return bilan
@@ -224,7 +225,10 @@ class Bibliotheque:
         """Retire un groupe ajouté par l'utilisateur (les groupes de base restent)."""
         if groupe.de_base:
             raise ValueError("groupe de base")
+        import stat
         for f in groupe.fichiers:
+            if f.exists():
+                f.chmod(stat.S_IWRITE | stat.S_IREAD)    # lecture seule (copié d'un original protégé)
             f.unlink(missing_ok=True)
         self.recharger()
 
