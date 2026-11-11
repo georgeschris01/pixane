@@ -540,7 +540,8 @@ class ReglagesUpscale(QDialog):
                 "force": self.force.value(), "cible": self.cible()}
 
 
-def duree(s: int) -> str:
+def duree(s: float) -> str:
+    s = max(0, int(round(s or 0)))          # secondes entières (le temps restant peut être un nombre à virgule)
     return tr("{min} min {s} s", min=s // 60, s=f"{s % 60:02d}") if s >= 60 else tr("{s} s", s=s)
 
 

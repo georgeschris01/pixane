@@ -22,6 +22,9 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.18.0 (non publ
 
 ## Corrections
 
+- **Agrandir en pleine définition : message d'erreur** « Unknown format code 'd' for object of type 'float' »
+  pendant le calcul (le travail continuait quand même) : le temps restant, un nombre à virgule, ne s'affichait
+  pas. Corrigé. *(signalé par Christophe, capture « erreur »)*
 - **Effacer / Remplir sur des trous transparents** (lettres d'un texte coupé dans une pochette) : les trous de la
   sélection entourés par l'image sont maintenant remplis, opaques, avec la couleur autour ; avant, ils restaient
   transparents (on voyait des lettres sombres : le fond de la fenêtre à travers). Le transparent qui continue hors

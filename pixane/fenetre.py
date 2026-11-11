@@ -2396,7 +2396,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                     f = (i + (info.get("fraction") or 0)) / len(rects)
                     passe = time.monotonic() - t0
                     progres(dict(info, etape=tr("Morceau {i} sur {n}", i=i + 1, n=len(rects)), fraction=f,
-                                 restant=passe * (1 - f) / f if f > 0.02 else None))
+                                 restant=int(passe * (1 - f) / f) if f > 0.02 else None))
                 for _libelle, donnees in self.moteur.executer(prompt, sorties, annuler, suivi):
                     morceau = QImage.fromData(donnees)
                     if morceau.isNull():
