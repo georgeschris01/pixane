@@ -195,6 +195,10 @@ verifier(b2.trouver(PINCEAUX, "Krita 4/grass.gih#0") is not None
          and b2.trouver(PINCEAUX, "Krita 4/grass.gih#0").cle == "Nature/grass.gih#0",
          "ancienne clé (« Krita 4/… ») : pinceau retrouvé dans sa famille")
 verifier(not any(g.nom == "Divers" for g in b2.groupes[PINCEAUX]), "chaque pinceau de base a sa famille")
+d.taille_vignettes.setValue(200)
+verifier(d.grille.iconSize().width() == 200 and d.apercu.pixmap() is not None and not d.apercu.pixmap().isNull(),
+         "vignettes agrandies (200 px) ; grand aperçu de l'élément choisi")
+d.taille_vignettes.setValue(72)
 msgs = d.importer([str(dossier / "Mes motifs.pat"), str(dossier / "faux.abr"), str(dossier / "Mes pinceaux.abr")])
 verifier(len(msgs) == 3 and "illisible" in msgs[1] and d.groupe().nom == "Mes pinceaux" and d.grille.count() == 2,
          f"fenêtre : ajout (fichier abîmé signalé, nouveau groupe montré) {msgs}")

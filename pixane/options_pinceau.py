@@ -7,7 +7,7 @@ import json
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QIcon, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QToolButton, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QSpinBox, QToolButton, QWidget
 
 from .bibliotheque import PINCEAUX, STYLES, bibliotheque
 from .canevas import GOMME_CALQUE, GROUPE_OUTIL, GROUPES_PINCEAU
@@ -31,6 +31,17 @@ class OptionsPinceau:
                                           "Photoshop .abr, GIMP…)"))
         self.bouton_pinceau.clicked.connect(self.choisir_pinceau)
         lay.addWidget(self.bouton_pinceau)
+        self.angle_pinceau = QSpinBox()
+        self.angle_pinceau.setRange(-180, 180)
+        self.angle_pinceau.setPrefix("↻ ")
+        self.angle_pinceau.setSuffix("°")
+        self.angle_pinceau.setWrapping(True)
+        self.angle_pinceau.setSingleStep(15)
+        self.angle_pinceau.setKeyboardTracking(False)
+        self.angle_pinceau.setToolTip(tr("Rotation du pinceau, en degrés (flèches : 15° par cran ; tu peux taper "
+                                         "la valeur). Aussi dans Réglages…, onglet Forme."))
+        self.angle_pinceau.valueChanged.connect(self._angle_pinceau)
+        lay.addWidget(self.angle_pinceau)
         self.bouton_reglages_pinceau = QPushButton(tr("Réglages…"))
         self.bouton_reglages_pinceau.setToolTip(tr("Espacement, angle, dispersion, texture, double pinceau, "
                                                    "couleur, tablette"))
@@ -66,6 +77,18 @@ class OptionsPinceau:
             self.bouton_pinceau.setIcon(QIcon(QPixmap.fromImage(vignette(e, 22))))
         regle = choix["reglages"] != Reglages()
         self.bouton_reglages_pinceau.setText(tr("Réglages…") + (" •" if regle else ""))
+        self.angle_pinceau.blockSignals(True)
+        self.angle_pinceau.setValue(int(round(((choix["reglages"].angle + 180) % 360) - 180)))
+        self.angle_pinceau.blockSignals(False)
+
+    def _angle_pinceau(self, v: int):
+        from dataclasses import replace
+        g = self._groupe_pinceau()
+        if g is None:
+            return
+        choix = self.canevas.pinceaux[g]
+        self.canevas.pinceaux[g] = {"cle": choix["cle"], "reglages": replace(choix["reglages"], angle=float(v))}
+        self._enregistrer_pinceau(g)
 
     def _enregistrer_pinceau(self, g: str):
         choix = self.canevas.pinceaux[g]

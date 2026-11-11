@@ -1201,5 +1201,10 @@
  "Herbe": "Grass",
  "Étoiles et paillettes": "Stars and glitter",
  "Nuages et fumée": "Clouds and smoke",
- "Éclaboussures": "Splashes"
+ "Éclaboussures": "Splashes",
+ "Aperçu en grand de l'élément choisi": "Large preview of the chosen item",
+ "Rotation du pinceau, en degrés (flèches : 15° par cran ; tu peux taper la valeur). Aussi dans Réglages…, onglet Forme.": "Brush rotation, in degrees (arrows: 15° per step; you can type the value). Also in Settings…, Shape tab.",
+ "Taille des vignettes : agrandir pour mieux voir les détails": "Thumbnail size: enlarge to see the details better",
+ "Taille du pinceau (2 à {max} px) ; [ et ] pour la changer": "Brush size (2 to {max} px); [ and ] to change it",
+ "Vignettes": "Thumbnails"
 }

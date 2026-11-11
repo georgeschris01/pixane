@@ -2,24 +2,32 @@
 (Photoshop .abr / .pat, GIMP et Krita .gbr / .gih / .pat / .bundle, images), retirer un groupe ajouté."""
 from __future__ import annotations
 
+import os
+
 import numpy as np
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSettings, QSize, Qt
 from PySide6.QtGui import QIcon, QImage, QPixmap
 from PySide6.QtWidgets import (QDialog, QDialogButtonBox, QFileDialog, QHBoxLayout, QLabel, QListView, QListWidget,
-                               QListWidgetItem, QMessageBox, QPushButton, QSplitter, QVBoxLayout, QWidget)
+                               QListWidgetItem, QMessageBox, QPushButton, QSlider, QSplitter, QVBoxLayout, QWidget)
 
 from .bibliotheque import MOTIFS, PINCEAUX, SIMPLES, STYLES, Bibliotheque, Motif, bibliotheque
 from .formats_pinceaux import EXT_IMAGES, EXT_MOTIFS, EXT_PAQUETS, EXT_PINCEAUX
 from .langue import tr
 
 VIGNETTE = 72
+APERCU = 280                       # grand aperçu de l'élément choisi (détails)
 
 
-def vignette(element, t: int = VIGNETTE) -> QImage:
-    """Petite image d'un pinceau (forme sombre sur fond clair) ou d'un motif (répété)."""
+def _reglages() -> QSettings:
+    return QSettings("Pixane", os.environ.get("PIXANE_REGLAGES", "Pixane"))
+
+
+def vignette(element, t: int = VIGNETTE, detail: bool = False) -> QImage:
+    """Petite image d'un pinceau (forme sombre sur fond clair) ou d'un motif (répété). detail : motif à sa taille
+    réelle (pas réduit), pour en voir le grain."""
     if isinstance(element, Motif):
         a = element.image
-        k = min(1.0, 48 / max(a.shape[:2]))
+        k = 1.0 if detail else min(1.0, max(48, t * 2 // 3) / max(a.shape[:2]))
         src = _qimage(a)
         if k < 1:
             src = src.scaled(max(1, round(a.shape[1] * k)), max(1, round(a.shape[0] * k)),
@@ -58,7 +66,7 @@ class ChoixBibliotheque(QDialog):
         super().__init__(parent)
         self.genre, self.biblio, self.choisi = genre, biblio or bibliotheque(), None
         self.setWindowTitle(tr("Pinceaux") if genre == PINCEAUX else tr("Motifs"))
-        self.resize(820, 560)
+        self.resize(1100, 620)
         self.liste_groupes = QListWidget()
         self.liste_groupes.currentRowChanged.connect(self._montrer_groupe)
         self.grille = QListWidget()
@@ -71,10 +79,26 @@ class ChoixBibliotheque(QDialog):
         self.grille.setUniformItemSizes(True)
         self.grille.itemDoubleClicked.connect(lambda _i: self.accept())
         self.grille.currentItemChanged.connect(self._maj_info)
+        self.apercu = QLabel()
+        self.apercu.setAlignment(Qt.AlignCenter)
+        self.apercu.setMinimumSize(APERCU, APERCU)
+        self.apercu.setToolTip(tr("Aperçu en grand de l'élément choisi"))
         separation = QSplitter()
         separation.addWidget(self.liste_groupes)
         separation.addWidget(self.grille)
-        separation.setSizes([200, 620])
+        separation.addWidget(self.apercu)
+        separation.setSizes([180, 560, APERCU + 20])
+        self.taille_vignettes = QSlider(Qt.Horizontal)
+        self.taille_vignettes.setRange(48, 256)
+        self.taille_vignettes.setFixedWidth(160)
+        self.taille_vignettes.setToolTip(tr("Taille des vignettes : agrandir pour mieux voir les détails"))
+        try:
+            t = int(_reglages().value("biblio_vignette", VIGNETTE))
+        except (TypeError, ValueError):
+            t = VIGNETTE
+        self.taille_vignettes.setValue(max(48, min(256, t)))
+        self.taille_vignettes.valueChanged.connect(self._taille_vignettes)
+        self._appliquer_taille(self.taille_vignettes.value())
         self.info = QLabel()
         self.info.setWordWrap(True)
         self.bouton_ajouter = QPushButton(tr("Ajouter des fichiers…"))
@@ -96,6 +120,8 @@ class ChoixBibliotheque(QDialog):
         bas.addWidget(self.bouton_ajouter)
         bas.addWidget(self.bouton_retirer)
         bas.addStretch(1)
+        bas.addWidget(QLabel(tr("Vignettes")))
+        bas.addWidget(self.taille_vignettes)
         bas.addWidget(boutons)
         lay = QVBoxLayout(self)
         lay.addWidget(separation, 1)
@@ -120,6 +146,18 @@ class ChoixBibliotheque(QDialog):
             self.liste_groupes.setCurrentRow(rang)
             self._montrer_groupe(rang)
 
+    def _appliquer_taille(self, t: int) -> None:
+        self.t = t
+        self.grille.setIconSize(QSize(t, t))
+        self.grille.setGridSize(QSize(t + 26, t + 34))
+
+    def _taille_vignettes(self, t: int) -> None:
+        self._appliquer_taille(t)
+        _reglages().setValue("biblio_vignette", t)
+        cle = self.grille.currentItem().data(Qt.UserRole).cle if self.grille.currentItem() else None
+        self._cle_voulue = cle
+        self._montrer_groupe(self.liste_groupes.currentRow())
+
     def groupe(self):
         i = self.liste_groupes.currentRow()
         groupes = self.biblio.groupes[self.genre]
@@ -132,7 +170,7 @@ class ChoixBibliotheque(QDialog):
         if g is None:
             return
         for e in g.elements:
-            it = QListWidgetItem(QIcon(QPixmap.fromImage(vignette(e))), e.nom)
+            it = QListWidgetItem(QIcon(QPixmap.fromImage(vignette(e, self.t))), e.nom)
             it.setData(Qt.UserRole, e)
             it.setToolTip(e.nom)
             self.grille.addItem(it)
@@ -146,8 +184,10 @@ class ChoixBibliotheque(QDialog):
         it = self.grille.currentItem()
         g = self.groupe()
         texte = ""
+        self.apercu.clear()
         if it is not None:
             e = it.data(Qt.UserRole)
+            self.apercu.setPixmap(QPixmap.fromImage(vignette(e, APERCU, detail=True)))
             if isinstance(e, Motif):
                 texte = tr("{nom} : {l} × {h} px", nom=e.nom, l=e.image.shape[1], h=e.image.shape[0])
             else:

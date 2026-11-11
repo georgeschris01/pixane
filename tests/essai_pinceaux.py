@@ -132,7 +132,7 @@ def alpha(doc, i=1):
 
 
 f._choisir_outil(PEINTURE)
-verifier(f.opt_pinceau.isVisible() and f.bouton_pinceau.text() == "Rond", f"pinceau de couleur : bouton « Rond » ({f.opt_pinceau.isVisible()}, {f.bouton_pinceau.text()!r})")
+verifier(f.opt_pinceau.isVisible() and f.bouton_pinceau.text() == "Rond", f"pinceau de couleur : bouton « Rond » ({f.opt_pinceau.isVisible()}, {f.bouton_pinceau.text()!r}, {f.width()}, {f.options.sizeHint().width()}, {f.isVisible()})")
 c.definir_taille(40)
 doc = scene()
 geste(50, 350)
@@ -232,6 +232,19 @@ choix_suivant.append(lambda g: g[1].elements[0])
 f3.choisir_pinceau()
 p = f3.canevas.pinceaux["peinture"]
 verifier(p["cle"] == "Simples/rond_dur#0" and p["reglages"] == Reglages(), "puis « Rond dur » : réglages de départ")
+# ---- taille jusqu'à 5000 px ; angle dans la barre du haut
+f3.valeur_taille.setValue(5000)
+verifier(f3.canevas.taille_pinceau == 5000 and f3.curseur_taille.value() == 1000, "taille : jusqu'à 5000 px")
+f3.curseur_taille.setValue(0)
+verifier(f3.canevas.taille_pinceau == 2 and f3.valeur_taille.value() == 2, "glissière : 2 px en bas")
+f3.canevas.definir_taille(60)
+f3.angle_pinceau.setValue(45)
+verifier(f3.canevas.pinceaux["peinture"]["reglages"].angle == 45.0, "angle du pinceau : barre du haut -> réglages")
+f3.canevas.pinceaux["peinture"]["reglages"].angle  # noqa: B018
+from dataclasses import replace as _remplacer  # noqa: E402
+f3.canevas.pinceaux["peinture"] = {"cle": None, "reglages": _remplacer(Reglages(), angle=-90.0)}
+f3.maj_bouton_pinceau()
+verifier(f3.angle_pinceau.value() == -90, "angle : la case suit le pinceau choisi")
 for dd in f3.documents:
     dd.modifie = False
 f3.close()

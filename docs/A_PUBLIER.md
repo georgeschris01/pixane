@@ -32,6 +32,10 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.19.0 (non publ
   téléchargement puis Pixane (ou avec le moteur IA, dans sa fenêtre). *(vidéo de Christophe : l'installateur ne le
   proposait pas)*
 
+- **Pinceau : taille jusqu'à 5000 px** (glissière progressive + case à taper ; avant 600 px), **rotation** (case ↻
+  dans la barre du haut), bibliothèque : **vignettes agrandissables** (48 à 256 px, gardé) et **grand aperçu** de
+  l'élément choisi. *(demandes de Christophe)*
+
 ## Corrections
 
 - **Enregistrer en .pixane : « 'QPoint' object has no attribute 'convertToFormat' »** après avoir transformé (Ctrl+T,

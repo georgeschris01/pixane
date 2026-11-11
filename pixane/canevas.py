@@ -23,6 +23,7 @@ from .texte import contient, contour_bloc, rendre
 from .transformation import POIGNEES, Transformation
 
 MAIN, RECTANGLE, LASSO, PINCEAU, GOMME = "main", "rectangle", "lasso", "pinceau", "gomme"
+TAILLE_MAX = 5000                              # taille maximale du pinceau, en pixels (comme Photoshop)
 GOMME_CALQUE = "gomme_calque"                  # efface pour de vrai les pixels du calque actif
 TEXTE = "texte"                                # écrire, déplacer, tourner un texte
 DEPLACER = "deplacer"                          # déplacer le contenu du calque choisi
@@ -1831,7 +1832,7 @@ class Canevas(QWidget):
     taille_changee = Signal(int)
 
     def definir_taille(self, taille: float):
-        self.taille_pinceau = int(max(2, min(2000, taille)))
+        self.taille_pinceau = int(max(2, min(TAILLE_MAX, taille)))
         self.taille_changee.emit(self.taille_pinceau)
         self.update()
 

@@ -863,6 +863,10 @@ Le pinceau de couleur (et les masques), la **gomme de calque** et le **pinceau d
   *de sélection*, qui ne peint pas.
 - **Pinceau** (barre du haut) : ouvre la bibliothèque. À gauche les groupes, à droite les vignettes ; double-clic pour
   choisir. **Rond simple** revient au pinceau rond habituel (sa dureté se règle dans la barre du haut).
+- **Taille** : jusqu'à **5000 px** (glissière progressive, ou tape la valeur ; touches [ et ]). **Rotation** : la case
+  **↻** à côté de Pinceau (flèches : 15° par cran, ou tape l'angle).
+- Dans la bibliothèque, la glissière **Vignettes** agrandit les vignettes ; à droite, un **grand aperçu** de l'élément
+  choisi (les motifs à leur taille réelle, pour voir leur grain).
 - Les groupes, dans l'ordre :
   - **Styles prêts** : un clic choisit la forme **et** ses réglages : Crayon, Fusain, Craie, Encre (plume), Feutre,
     Calligraphie, Aquarelle, Peinture à l'huile, Couteau à peindre, Pinceau sec, Aérographe, Bombe, Feuillage,

@@ -836,6 +836,10 @@ grass, leaves, watercolour, splatters… Each tool keeps its own choice.
   and the paint bucket: right-click the button to choose it). Key B is the *selection* brush, which does not paint.
 - **Brush** (top bar): opens the library. Groups on the left, thumbnails on the right; double-click to choose.
   **Plain round** goes back to the usual round brush (its hardness is set in the top bar).
+- **Size**: up to **5000 px** (progressive slider, or type the value; [ and ] keys). **Rotation**: the **↻** box
+  next to Brush (arrows: 15° per step, or type the angle).
+- In the library, the **Thumbnails** slider enlarges the thumbnails; on the right, a **large preview** of the chosen
+  item (patterns at their real size, to see their grain).
 - The groups, in order:
   - **Ready-made styles**: one click chooses the shape **and** its settings: Pencil, Charcoal, Chalk, Ink (pen),
     Felt-tip pen, Calligraphy, Watercolour, Oil paint, Palette knife, Dry brush, Airbrush, Spray can, Foliage,

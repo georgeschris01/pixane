@@ -31,7 +31,7 @@ from .calques import PanneauCalques
 from .canevas import (BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GOMME_CALQUE, LASSO, MAIN, OBJET,
                       SEL_TEXTE,
                       OUTILS_AUTO, OUTILS_ROND, PEINTURE, PINCEAU, RAPIDE, RECADRER, RECTANGLE, SEAU, SUPPRIMER,
-                      TAMPON, TEXTE, Canevas)
+                      TAILLE_MAX, TAMPON, TEXTE, Canevas)
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import (EXTENSIONS_CALQUES, EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, image_entiere,
                        Origine, a_plat, attacher_origine, masque, nouvelle_selection, origine_valide, qimage_rgb,
@@ -55,6 +55,16 @@ def reglages() -> QSettings:
     """Réglages de l'utilisateur ; les essais automatiques ont les leurs (variable PIXANE_REGLAGES)."""
     return QSettings("Pixane", os.environ.get("PIXANE_REGLAGES", "Pixane"))
 
+
+
+def taille_position(v: int) -> int:
+    """Glissière (0..1000) -> taille du pinceau (2..5000 px), progressive : précise pour les petites tailles."""
+    return max(2, min(TAILLE_MAX, round(2 * (TAILLE_MAX / 2) ** (v / 1000))))
+
+
+def position_taille(taille: int) -> int:
+    import math
+    return round(1000 * math.log(max(2, taille) / 2) / math.log(TAILLE_MAX / 2))
 
 class Tache(QObject):
     """Exécute une fonction dans un fil secondaire et renvoie le résultat par signal."""
@@ -521,13 +531,20 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(8)
         lay.addWidget(QLabel(tr("Taille")))
+        # glissière progressive (fine pour les petites tailles, jusqu'à 5000 px) et case où taper la taille
         self.curseur_taille = QSlider(Qt.Horizontal)
-        self.curseur_taille.setRange(2, 600)
-        self.curseur_taille.setFixedWidth(160)
-        self.curseur_taille.setValue(self.canevas.taille_pinceau)
-        self.valeur_taille = QLabel(f"{self.canevas.taille_pinceau} px")
-        self.valeur_taille.setMinimumWidth(52)
-        self.curseur_taille.valueChanged.connect(self.canevas.definir_taille)
+        self.curseur_taille.setRange(0, 1000)
+        self.curseur_taille.setFixedWidth(110)
+        self.curseur_taille.setValue(position_taille(self.canevas.taille_pinceau))
+        self.valeur_taille = QSpinBox()
+        self.valeur_taille.setRange(2, TAILLE_MAX)
+        self.valeur_taille.setSuffix(" px")
+        self.valeur_taille.setKeyboardTracking(False)
+        self.valeur_taille.setValue(self.canevas.taille_pinceau)
+        self.valeur_taille.setToolTip(tr("Taille du pinceau (2 à {max} px) ; [ et ] pour la changer",
+                                         max=TAILLE_MAX))
+        self.curseur_taille.valueChanged.connect(lambda v: self.canevas.definir_taille(taille_position(v)))
+        self.valeur_taille.valueChanged.connect(self.canevas.definir_taille)
         self.canevas.taille_changee.connect(self._taille_changee)
         lay.addWidget(self.curseur_taille)
         lay.addWidget(self.valeur_taille)
@@ -952,10 +969,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             self._sync_texte()
 
     def _taille_changee(self, v: int):
-        self.curseur_taille.blockSignals(True)
-        self.curseur_taille.setValue(min(v, 600))
-        self.curseur_taille.blockSignals(False)
-        self.valeur_taille.setText(f"{v} px")
+        for w, val in ((self.curseur_taille, position_taille(v)), (self.valeur_taille, v)):
+            w.blockSignals(True)
+            w.setValue(val)
+            w.blockSignals(False)
 
     def _panneau_ia(self):
         dock = QDockWidget(tr("INTELLIGENCE ARTIFICIELLE"), self)
