@@ -58,7 +58,6 @@
  "Ajouter : montrer la sélection": "Add: reveal selection",
  "Ajouter : tout visible": "Add: reveal all",
  "Ajouter Flux Kontext ({taille}) pour « Modifier avec une consigne » et « Restaurer une vieille photo » (facultatif)": "Add Flux Kontext ({taille}) for “Edit with an instruction” and “Restore an old photo” (optional)",
- "Ajouter Flux Kontext pour « Restaurer une vieille photo » (facultatif)": "Add Flux Kontext for \"Restore an old photo\" (optional)",
  "Ajouter Flux Schnell ({taille}) pour « Upscale net » (facultatif ; l'upscale simple marche sans)": "Add Flux Schnell ({taille}) for \"Sharp upscale\" (optional; the simple upscale works without it)",
  "Ajouter Flux Schnell pour « Upscale net » (facultatif)": "Add Flux Schnell for \"Sharp upscale\" (optional)",
  "Ajouter au nom": "Add to name",
@@ -617,7 +616,6 @@
  "Modifier le réglage…": "Edit adjustment…",
  "Modifier le texte": "Edit text",
  "Modifié": "Edited",
- "Modèle Opus-MT français → anglais (université d'Helsinki), {taille}, licence {licence}. Téléchargé depuis Hugging Face dans :\n{dossier}": "Opus-MT French → English model (University of Helsinki), {taille}, {licence} licence. Downloaded from Hugging Face into:\n{dossier}",
  "Molette : zoomer · glisser : se déplacer · double-clic : ajuster / 100 %": "Wheel: zoom · drag: move around · double-click: fit / 100 %",
  "Monter l'effet": "Move effect up",
  "Monter le calque": "Move layer up",
@@ -1158,5 +1156,13 @@
  "Étend la photo au-delà des bords": "Extends beyond the edges",
  "Étendue": "Spread",
  "à jour": "up to date",
- "étape {n} sur {total}": "step {n} of {total}"
+ "étape {n} sur {total}": "step {n} of {total}",
+ "Ajouter Flux Kontext pour « Modifier avec une consigne » et « Restaurer une vieille photo » (facultatif)": "Add Flux Kontext for “Edit with an instruction” and “Restore an old photo” (optional)",
+ "Changer…": "Change…",
+ "Dossier du traducteur": "Translator folder",
+ "Dossier du traducteur : {dossier}": "Translator folder: {dossier}",
+ "Flux Kontext (« Modifier avec une consigne », « Restaurer une vieille photo ») : déjà installé": "Flux Kontext (“Edit with an instruction”, “Restore an old photo”): already installed",
+ "Flux Schnell (« Upscale net ») : déjà installé": "Flux Schnell (“Sharp upscale”): already installed",
+ "Modèle Opus-MT français → anglais (université d'Helsinki), {taille}, licence {licence}, téléchargé depuis Hugging Face.": "Opus-MT French → English model (University of Helsinki), {taille}, {licence} licence, downloaded from Hugging Face.",
+ "Traducteur des consignes, français → anglais": "Instruction translator, French → English"
 }

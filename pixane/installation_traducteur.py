@@ -3,8 +3,9 @@ fichiers vérifiés) dans le dossier de Pixane. Ouverte depuis « Modifier avec 
 « Installer le moteur IA »."""
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QProgressBar, QPushButton, QVBoxLayout
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import (QDialog, QFileDialog, QHBoxLayout, QLabel, QProgressBar, QPushButton, QVBoxLayout,
+                               QWidget)
 
 from . import traduction
 from .installation_moteur import DOSSIER_APP, Installation
@@ -18,6 +19,38 @@ def explication() -> str:
               "Sans lui, il faut écrire les consignes en anglais.")
 
 
+class ChoixDossier(QWidget):
+    """« Dossier du traducteur : … [Changer…] ». Grisé quand le traducteur est déjà installé."""
+    change = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(24, 0, 0, 0)
+        self.texte = QLabel()
+        self.texte.setObjectName("discret")
+        self.texte.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.b_changer = QPushButton(tr("Changer…"))
+        self.b_changer.clicked.connect(self.changer)
+        lay.addWidget(self.texte, 1)
+        lay.addWidget(self.b_changer)
+        self.maj()
+
+    def maj(self):
+        self.texte.setText(tr("Dossier du traducteur : {dossier}", dossier=traduction.dossier()))
+        self.b_changer.setEnabled(not traduction.installe())
+
+    def setEnabled(self, oui: bool):
+        self.b_changer.setEnabled(oui and not traduction.installe())
+
+    def changer(self):
+        d = QFileDialog.getExistingDirectory(self, tr("Dossier du traducteur"), str(traduction.dossier_choisi()))
+        if d:
+            traduction.choisir_dossier(d)
+            self.maj()
+            self.change.emit()
+
+
 class FenetreTraducteur(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -27,13 +60,14 @@ class FenetreTraducteur(QDialog):
         t = QLabel(explication())
         t.setWordWrap(True)
         lay.addWidget(t)
-        d = QLabel(tr("Modèle Opus-MT français → anglais (université d'Helsinki), {taille}, licence {licence}. "
-                      "Téléchargé depuis Hugging Face dans :\n{dossier}",
-                      taille=tr("{n} Mo", n=round(traduction.TAILLE / 1024 ** 2)), licence=traduction.LICENCE, dossier=traduction.dossier()))
+        d = QLabel(tr("Modèle Opus-MT français → anglais (université d'Helsinki), {taille}, licence {licence}, "
+                      "téléchargé depuis Hugging Face.",
+                      taille=tr("{n} Mo", n=round(traduction.TAILLE / 1024 ** 2)), licence=traduction.LICENCE))
         d.setWordWrap(True)
         d.setObjectName("discret")
-        d.setTextInteractionFlags(Qt.TextSelectableByMouse)
         lay.addWidget(d)
+        self.choix_dossier = ChoixDossier()
+        lay.addWidget(self.choix_dossier)
         self.barre = QProgressBar()
         self.barre.setRange(0, 1000)
         self.barre.hide()
@@ -55,6 +89,7 @@ class FenetreTraducteur(QDialog):
 
     def installer(self):
         self.b_installer.setEnabled(False)
+        self.choix_dossier.setEnabled(False)
         self.barre.show()
         self.etat.setText(tr("Téléchargement…"))
         self.travail = Installation(DOSSIER_APP / "complement", traduction.elements(), complement=True)
@@ -73,6 +108,7 @@ class FenetreTraducteur(QDialog):
         else:
             self.etat.setText(message)
             self.b_installer.setEnabled(True)
+            self.choix_dossier.setEnabled(True)
             self.b_installer.setText(tr("Réessayer"))
 
     def reject(self):

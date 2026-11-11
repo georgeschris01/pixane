@@ -1271,7 +1271,13 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         une même liste ; ensuite, un message en bas et le menu IA > Installer le moteur IA)."""
         from .completer_moteur import manquants
         from .installation_moteur import go
+        from dataclasses import replace
+        from . import traduction
         elements, _notes = manquants(self.moteur.infos, self.moteur.dossiers_modeles(), install["dir"])
+        if not traduction.installe():               # proposé aussi (une fois), avec l'explication dans la fenêtre
+            elements += traduction.elements()[:1]
+            elements[-1] = replace(elements[-1], nom=tr("Traducteur des consignes, français → anglais"),
+                                   taille=traduction.TAILLE)
         if not elements:
             return
         cle = ",".join(sorted(e.cle for e in elements))
@@ -1279,6 +1285,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             self.statusBar().showMessage(tr("Il manque des éléments au moteur IA : menu IA > Installer le moteur "
                                             "IA."), 10000)
             return
+        if os.environ.get("PIXANE_REGLAGES") and not os.environ.get("PIXANE_PROPOSER"):
+            return          # essais automatiques : pas de question qui bloque (le vrai Pixane, lui, demande)
         self.reglages.setValue("moteur_complet_vu", cle)
         if QMessageBox.question(self, tr("Moteur IA"), tr(
                 "Pixane utilise le ComfyUI déjà installé sur ce PC, mais il lui manque :\n{liste}\n\n"

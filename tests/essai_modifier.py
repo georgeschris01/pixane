@@ -167,9 +167,44 @@ avec = [e.cle for e in fi.elements()]
 verifier(trd.installe() or (fi.c_traducteur.isChecked() and "traducteur_model.safetensors" in avec),
          "Installer le moteur IA : case du traducteur cochée avec Kontext")
 fi.c_kontext.setChecked(False)
-verifier(not fi.c_traducteur.isChecked() and not any(c.startswith("traducteur_") for c in [e.cle for e in fi.elements()]),
-         "sans Kontext : traducteur décoché, rien à télécharger")
+verifier(trd.installe() or fi.c_traducteur.isChecked(), "sans Kontext : traducteur toujours proposé (pas installé)")
+fi.c_traducteur.setChecked(False)
+verifier(not any(c.startswith("traducteur_") for c in [e.cle for e in fi.elements()]),
+         "traducteur décoché : rien à télécharger pour lui")
 fi.close()
+# ---- ComfyUI déjà installé (Compléter le moteur IA) : la case est là aussi
+import tempfile  # noqa: E402
+from pixane.completer_moteur import FenetreCompleter  # noqa: E402
+unet = {"UNETLoader": {"input": {"required": {"unet_name": [["flux1-dev-kontext_fp8_scaled.safetensors"]]}}},
+        "ReferenceLatent": {}}
+tmp = tempfile.mkdtemp()
+fc = FenetreCompleter(unet, {}, {"dir": tmp, "python": "python"}, True, f)
+verifier(fc.c_kontext.isChecked() and not fc.c_kontext.isEnabled() and fc.c_kontext.isVisibleTo(fc),
+         "Compléter : Kontext déjà là -> case visible, grisée")
+if trd.installe():
+    verifier(not fc.c_traducteur.isEnabled() and fc.c_traducteur.isVisibleTo(fc), "Compléter : traducteur installé -> grisé")
+else:
+    verifier(fc.c_traducteur.isChecked() and fc.c_traducteur.isEnabled()
+             and any(e.cle.startswith("traducteur_") for e in fc.elements()),
+             "Compléter : traducteur pas installé -> case cochée, dans la liste")
+    fc.c_traducteur.setChecked(False)
+    verifier(not any(e.cle.startswith("traducteur_") for e in fc.elements()), "Compléter : décoché -> retiré")
+verifier(fc.c_schnell.isEnabled() and not fc.c_schnell.isChecked(), "Compléter : Schnell absent -> proposé, décoché")
+verifier(fc.dossier_trad.isVisibleTo(fc) and "opus-mt-fr-en" in fc.dossier_trad.texte.text(),
+         "Compléter : dossier du traducteur affiché")
+fc.close()
+# ---- dossier du traducteur au choix (gardé dans les réglages)
+autre = Path(tempfile.mkdtemp()) / "Mes modèles"
+trd.choisir_dossier(autre)
+verifier(trd.dossier() == autre / "opus-mt-fr-en" and all(Path(e.dest).parent == autre / "opus-mt-fr-en"
+                                                           for e in trd.elements()),
+         "dossier choisi : les fichiers y vont")
+from pixane.installation_traducteur import ChoixDossier  # noqa: E402
+cd_ = ChoixDossier()
+verifier("Mes modèles" in cd_.texte.text() and cd_.b_changer.isEnabled(), "ligne « Dossier du traducteur » + Changer…")
+trd.choisir_dossier(None)
+verifier(trd.dossier() == trd.dossier_par_defaut() / "opus-mt-fr-en"
+         and not QSettings("Pixane", "Pixane-essais").contains("traducteur_dossier"), "retour au dossier de Pixane")
 for dd in f.documents:
     dd.modifie = False
 f.close()

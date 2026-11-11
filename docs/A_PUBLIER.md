@@ -9,6 +9,12 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.19.0 (non publ
 
 ## Nouveautés
 
+- **Traducteur proposé aussi avec un ComfyUI déjà installé** : case dans « Compléter le moteur IA » (avant : seulement
+  dans la fenêtre d'installation complète, Christophe ne la voyait pas), cochée tant qu'il n'est pas installé, grisée
+  ensuite (de même Flux Schnell et Flux Kontext déjà là : visibles, grisés) ; proposé une fois au démarrage avec ce
+  qui manque. **Dossier du traducteur au choix** (« Changer… », gardé ; par défaut le dossier de Pixane), dans les
+  trois fenêtres. *(demande de Christophe)*
+
 ## Corrections
 
 ## À mettre à jour le jour de la publication

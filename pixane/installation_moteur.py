@@ -637,13 +637,17 @@ class FenetreInstallation(QDialog):
         self.c_traducteur = QCheckBox(tr("Ajouter le traducteur des consignes, français → anglais ({taille})",
                                          taille=tr("{n} Mo", n=round(traduction.TAILLE / 1024 ** 2))))
         self.c_traducteur.setToolTip(explication())
-        self.c_traducteur.setChecked(kontext and not traduction.installe())
+        self.c_traducteur.setChecked(True)                 # pas installé : proposé (coché) ; installé : grisé
         self.c_traducteur.setEnabled(not traduction.installe())
         if traduction.installe():
             self.c_traducteur.setText(tr("Traducteur des consignes : déjà installé"))
         self.c_traducteur.toggled.connect(self._actualiser)
-        self.c_kontext.toggled.connect(lambda v: self.c_traducteur.setChecked(v and not traduction.installe()))
         lay.addWidget(self.c_traducteur)
+        from .installation_traducteur import ChoixDossier
+        self.dossier_trad = ChoixDossier()
+        self.dossier_trad.change.connect(self._actualiser)
+        self.c_traducteur.toggled.connect(lambda v: self.dossier_trad.setEnabled(v))
+        lay.addWidget(self.dossier_trad)
         aide_trad = QLabel(tr("Le traducteur sert avec Flux Kontext : l'IA ne comprend bien que l'anglais ; tu "
                               "écris en français, Pixane traduit sur ton PC (rien n'est envoyé sur Internet)."))
         aide_trad.setWordWrap(True)
@@ -768,7 +772,8 @@ class FenetreInstallation(QDialog):
         self.travail.etat.connect(self._etat)
         self.travail.progres.connect(self._progres)
         self.travail.fini.connect(self._fini)
-        for w in (self.b_lancer, self.dossier, self.c_schnell, self.c_kontext, self.c_traducteur, self.c_licence):
+        for w in (self.b_lancer, self.dossier, self.c_schnell, self.c_kontext, self.c_traducteur, self.c_licence,
+                  self.dossier_trad):
             w.setEnabled(False)
         self.b_arreter.setEnabled(True)
         self.statut.setText(tr("Démarrage…"))
@@ -808,7 +813,8 @@ class FenetreInstallation(QDialog):
             self.installe.emit(str(dossier))
             QMessageBox.information(self, tr("Installer le moteur IA"), message)
         else:
-            for w in (self.dossier, self.c_schnell, self.c_kontext, self.c_traducteur, self.c_licence):
+            for w in (self.dossier, self.c_schnell, self.c_kontext, self.c_traducteur, self.c_licence,
+                      self.dossier_trad):
                 w.setEnabled(True)
             self.b_lancer.setText(tr("Reprendre"))
             self._actualiser_bouton()

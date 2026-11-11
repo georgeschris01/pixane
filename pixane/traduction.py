@@ -34,9 +34,36 @@ SCRIPT = Path(__file__).resolve().parent / "traduire_script.py"
 _GUILLEMETS = re.compile(r"«\s*(.*?)\s*»|\"(.*?)\"|“(.*?)”|„(.*?)“")
 
 
+NOM = "opus-mt-fr-en"
+
+
+def dossier_par_defaut() -> Path:
+    return Path(os.environ.get("LOCALAPPDATA", Path.home())) / "Pixane" / "traducteur"
+
+
+def _reglages():
+    from PySide6.QtCore import QSettings
+    return QSettings("Pixane", os.environ.get("PIXANE_REGLAGES", "Pixane"))
+
+
+def dossier_choisi() -> Path:
+    """Dossier où l'on range le traducteur (choisi par l'utilisateur, sinon celui de Pixane)."""
+    v = _reglages().value("traducteur_dossier", "")
+    return Path(v) if v else dossier_par_defaut()
+
+
+def choisir_dossier(d: Path | str | None):
+    """Retient le dossier choisi (None : celui de Pixane)."""
+    r = _reglages()
+    if d is None or Path(d) == dossier_par_defaut():
+        r.remove("traducteur_dossier")
+    else:
+        r.setValue("traducteur_dossier", str(Path(d)))
+
+
 def dossier() -> Path:
-    """Dossier du modèle (le même pour les essais : il est gros et ne contient rien de personnel)."""
-    return Path(os.environ.get("LOCALAPPDATA", Path.home())) / "Pixane" / "traducteur" / "opus-mt-fr-en"
+    """Dossier du modèle : <dossier choisi>/opus-mt-fr-en."""
+    return dossier_choisi() / NOM
 
 
 def installe() -> bool:

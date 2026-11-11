@@ -400,7 +400,9 @@ model, to be added in Install the AI engine).
 - **Between quotes** (« … » or "…"): text to be written as is (never translated).
 - The AI understands French poorly: with the **translator** (290 MB, on your PC, nothing is sent over the
   Internet), **Translate** shows the English sentence, which you can correct. In English, no translator is needed.
-  It is installed with the “Install the translator…” button or the box of the same name in Install the AI engine.
+  It is installed with the “Install the translator…” button, or with its box in **AI > Install the AI engine**
+  (“Install” window, or “Complete the AI engine” if ComfyUI was already there): ticked while it is not installed,
+  greyed out afterwards. **Translator folder… Change…**: you choose where to store it (by default, Pixane's folder).
 - The AI works on a piece around the selection (more detail than with the whole image); the result is only kept
   inside the selection and where it really changes: the rest keeps its original pixels.
 - **Layer with transparency** (text, logo without background): the AI sees this layer alone, and the result keeps

@@ -414,7 +414,9 @@ lunettes »… (modèle **Flux Kontext**, à ajouter dans Installer le moteur IA
 - **Entre guillemets** (« … » ou "…") : un texte à écrire tel quel (il n'est jamais traduit).
 - L'IA comprend mal le français : avec le **traducteur** (290 Mo, sur ton PC, rien n'est envoyé sur Internet),
   **Traduire** montre la phrase anglaise, que tu peux corriger. Sans lui, écris en anglais. Il s'installe par le
-  bouton « Installer le traducteur… » ou la case du même nom dans Installer le moteur IA.
+  bouton « Installer le traducteur… », ou par sa case dans **IA > Installer le moteur IA** (fenêtre « Installer »
+  ou « Compléter le moteur IA » si ComfyUI était déjà là) : cochée tant qu'il n'est pas installé, grisée ensuite.
+  **Dossier du traducteur… Changer…** : tu choisis où le ranger (par défaut, le dossier de Pixane).
 - L'IA travaille sur un morceau autour de la sélection (plus de détail qu'avec toute l'image) ; le résultat n'est
   gardé que dans la sélection et là où il change vraiment : le reste garde ses pixels d'origine.
 - **Calque avec de la transparence** (texte, logo sans fond) : l'IA voit ce calque seul, et le résultat garde un

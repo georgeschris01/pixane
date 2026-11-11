@@ -134,13 +134,39 @@ class FenetreCompleter(QDialog):
         self.ancien = QLabel()
         self.ancien.setWordWrap(True)
         lay.addWidget(self.ancien)
+        from . import traduction
+        from .installation_traducteur import explication
         self.c_schnell = QCheckBox(tr("Ajouter Flux Schnell pour « Upscale net » (facultatif)"))
-        self.c_kontext = QCheckBox(tr("Ajouter Flux Kontext pour « Restaurer une vieille photo » (facultatif)"))
-        for c in (self.c_schnell, self.c_kontext):
+        self.c_kontext = QCheckBox(tr("Ajouter Flux Kontext pour « Modifier avec une consigne » et « Restaurer une "
+                                      "vieille photo » (facultatif)"))
+        self.c_traducteur = QCheckBox(tr("Ajouter le traducteur des consignes, français → anglais ({taille})",
+                                         taille=tr("{n} Mo", n=round(traduction.TAILLE / 1024 ** 2))))
+        self.c_traducteur.setToolTip(explication())
+        # déjà là : case visible, cochée et grisée (rien à télécharger) ; sinon proposée
+        self._deja = {self.c_schnell: _modele_vu(moteur_infos, "schnell"),
+                      self.c_kontext: _modele_vu(moteur_infos, "kontext"),
+                      self.c_traducteur: traduction.installe()}
+        self.c_traducteur.setChecked(True)               # pas installé : proposé ; installé : coché et grisé
+        for c, (texte, deja) in zip(self._deja, [
+                (tr("Flux Schnell (« Upscale net ») : déjà installé"), self._deja[self.c_schnell]),
+                (tr("Flux Kontext (« Modifier avec une consigne », « Restaurer une vieille photo ») : déjà installé"),
+                 self._deja[self.c_kontext]),
+                (tr("Traducteur des consignes : déjà installé"), self._deja[self.c_traducteur])]):
+            if deja:
+                c.setText(texte)
+                c.setChecked(True)
+                c.setEnabled(False)
             c.toggled.connect(self._actualiser)
             lay.addWidget(c)
-        self.c_schnell.setVisible(not _modele_vu(moteur_infos, "schnell"))
-        self.c_kontext.setVisible(not _modele_vu(moteur_infos, "kontext"))
+        from .installation_traducteur import ChoixDossier
+        self.dossier_trad = ChoixDossier()
+        self.dossier_trad.change.connect(self._actualiser)
+        self.c_traducteur.toggled.connect(lambda v: self.dossier_trad.setEnabled(v))
+        lay.addWidget(self.dossier_trad)
+        aide_trad = QLabel(explication())
+        aide_trad.setWordWrap(True)
+        aide_trad.setObjectName("discret")
+        lay.addWidget(aide_trad)
         self.licence = QLabel(tr("Flux Fill et Flux Kontext sont sous licence <b>FLUX.1 [dev] non commerciale</b> : "
                                  "usage personnel permis, pas d'usage commercial. <a href=\"{url}\">Lire la "
                                  "licence</a>.", url=LICENCE_FLUX))
@@ -177,14 +203,20 @@ class FenetreCompleter(QDialog):
         self._actualiser()
 
     def elements(self) -> list[Element]:
-        return manquants(self.infos, self.dossiers, self.install["dir"], self.c_schnell.isChecked(),
-                         self.c_kontext.isChecked())[0]
+        return self._liste()[0]
+
+    def _liste(self) -> tuple[list[Element], list[str]]:
+        from . import traduction
+        elements, notes = manquants(self.infos, self.dossiers, self.install["dir"], self.c_schnell.isChecked(),
+                                    self.c_kontext.isChecked())
+        if self.c_traducteur.isChecked() and not traduction.installe():
+            elements += traduction.elements()
+        return elements, notes
 
     def _actualiser(self):
         if self.travail is not None:
             return
-        elements, notes = manquants(self.infos, self.dossiers, self.install["dir"], self.c_schnell.isChecked(),
-                                     self.c_kontext.isChecked())
+        elements, notes = self._liste()
         self.liste.clear()
         self._lignes = {}
         for e in elements:
@@ -226,7 +258,8 @@ class FenetreCompleter(QDialog):
                                                                                       fait=go(fait),
                                                                                       total=go(total)))))
         self.travail.fini.connect(self._fini)
-        for w in (self.b_lancer, self.c_schnell, self.c_kontext, self.c_licence):
+        for w in (self.b_lancer, self.c_schnell, self.c_kontext, self.c_traducteur, self.c_licence,
+                  self.dossier_trad):
             w.setEnabled(False)
         self.b_arreter.setEnabled(True)
         self.statut.setText(tr("Démarrage…"))
@@ -248,8 +281,9 @@ class FenetreCompleter(QDialog):
             self.accept()
         else:
             self.statut.setText(message)
-            for w in (self.c_schnell, self.c_kontext, self.c_licence):
-                w.setEnabled(True)
+            for w in (self.c_schnell, self.c_kontext, self.c_traducteur, self.c_licence):
+                w.setEnabled(not self._deja.get(w, False))
+            self.dossier_trad.setEnabled(self.c_traducteur.isChecked())
             self.b_lancer.setText(tr("Reprendre"))
             self._actualiser()
 
