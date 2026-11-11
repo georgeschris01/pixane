@@ -402,6 +402,9 @@ class DialogueStyle(QDialog):
                 champ = Curseur(reglage[4], reglage[5], v)
             elif genre == "angle":
                 champ = ChampAngle(v)
+            elif genre == "motif":
+                from .motifs import BoutonMotif
+                champ = BoutonMotif(v)
             elif genre == "choix":
                 champ = QComboBox()
                 for code, nom in reglage[4].items():

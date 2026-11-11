@@ -62,9 +62,10 @@ def degrade(base: QImage, a: QPointF, b: QPointF, forme: str, c1: QColor, c2: QC
 
 # ------------------------------------------------------------------ pot de peinture
 def seau(base: QImage, visible_rgba: np.ndarray, x: int, y: int, tolerance: float, couleur: QColor, opacite: float,
-         selection: QImage | None = None) -> QImage | None:
+         selection: QImage | None = None, remplissage: QImage | None = None) -> QImage | None:
     """Remplit la zone de couleur proche du point, d'après `visible_rgba` (le calque choisi, ou l'image visible avec
-    « Tous les calques »). None si le point est hors image."""
+    « Tous les calques »). remplissage : image de la taille de base (un motif répété) à la place de la couleur.
+    None si le point est hors image."""
     from .selection_auto import baguette
     h, w = visible_rgba.shape[:2]
     if not (0 <= x < w and 0 <= y < h):
@@ -73,13 +74,21 @@ def seau(base: QImage, visible_rgba: np.ndarray, x: int, y: int, tolerance: floa
     m = np.clip(np.asarray(m, np.float32), 0, 255).astype(np.uint8)
     a = np.ascontiguousarray(m)
     alpha = QImage(a.data, w, h, w, QImage.Format_Alpha8).copy()
-    tmp = QImage(base.size(), QImage.Format_ARGB32_Premultiplied)
-    tmp.fill(couleur)
+    if remplissage is not None:
+        tmp = remplissage.convertToFormat(QImage.Format_ARGB32_Premultiplied).copy()
+    else:
+        tmp = QImage(base.size(), QImage.Format_ARGB32_Premultiplied)
+        tmp.fill(couleur)
     p = QPainter(tmp)
     p.setCompositionMode(QPainter.CompositionMode_DestinationIn)
     p.drawImage(0, 0, alpha)
     p.end()
     return _poser(base, tmp, opacite, selection)
+
+
+def remplir_motif(base: QImage, motif: QImage, opacite: float, selection: QImage | None = None) -> QImage:
+    """Édition > Remplir avec un motif : le motif posé sur tout le calque, ou seulement dans la sélection."""
+    return _poser(base, motif.convertToFormat(QImage.Format_ARGB32_Premultiplied).copy(), opacite, selection)
 
 
 # ------------------------------------------------------------------ formes

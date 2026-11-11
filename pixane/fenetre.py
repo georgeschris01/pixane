@@ -31,7 +31,7 @@ from .calques import PanneauCalques
 from .canevas import (BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GOMME_CALQUE, LASSO, MAIN, OBJET,
                       SEL_TEXTE,
                       OUTILS_AUTO, OUTILS_ROND, PEINTURE, PINCEAU, RAPIDE, RECADRER, RECTANGLE, SEAU, SUPPRIMER,
-                      TAILLE_MAX, TAMPON, TEXTE, Canevas)
+                      TAILLE_MAX, TAMPON, TAMPON_MOTIF, TEXTE, Canevas)
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import (EXTENSIONS_CALQUES, EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, image_entiere,
                        Origine, a_plat, attacher_origine, masque, nouvelle_selection, origine_valide, qimage_rgb,
@@ -333,6 +333,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self._action(m, tr("Coller"), QKeySequence.Paste, self.coller, "a_coller")
         self._action(m, tr("Supprimer la sélection"), QKeySequence.Delete, self.supprimer_selection,
                      "a_supprimer_selection")
+        m.addSeparator()
+        self._action(m, tr("Remplir avec un motif…"), None, self.remplir_motif, "a_remplir_motif")
         m.addSeparator()
         self._action(m, tr("Transformer le calque"), "Ctrl+T", self.transformer, "a_transformer")
 
@@ -842,6 +844,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                                                         "prendre une couleur)"), "P", "peinture"),
                                           (TAMPON, tr("Tampon : recopie une zone (Alt+clic : endroit à copier)"),
                                            "S", "tampon"),
+                                          (TAMPON_MOTIF, tr("Tampon de motif : peint avec un motif de la "
+                                                            "bibliothèque (choisi dans la barre du haut)"), "",
+                                           "tampon_motif"),
                                           (SUPPRIMER, tr("Supprimer (IA) : peins sur un défaut, il disparaît au "
                                                          "lâcher"), "J", "suppression"),
                                           (CORRECTEUR, tr("Pinceau correcteur : recopie une zone en la raccordant "
@@ -854,8 +859,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                                           (FORMES, tr("Formes : rectangle, ellipse, ligne, flèche (nouveau calque)"),
                                            "U", "formes")):
             a = QAction(texte, self, checkable=True)
-            a.setShortcut(touche)
-            a.setToolTip(f"{texte}  ({touche})")
+            if touche:
+                a.setShortcut(touche)
+            a.setToolTip(f"{texte}  ({touche})" if touche else texte)
             a.triggered.connect(lambda _=False, o=outil: self._choisir_outil(o))
             self._icone(a, nom)
             groupe.addAction(a)
@@ -867,7 +873,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         # famille ; le bouton montre le dernier outil choisi. Main et Déplacer restent seuls.
         self._bouton_groupe = {}
         for famille in ((MAIN,), (DEPLACER,), (RECTANGLE, LASSO, PINCEAU, GOMME), (OBJET, RAPIDE, BAGUETTE, SEL_TEXTE),
-                        (SUPPRIMER, CORRECTEUR, TAMPON), (PEINTURE, GOMME_CALQUE, DEGRADE, SEAU), (FORMES,),
+                        (SUPPRIMER, CORRECTEUR, TAMPON, TAMPON_MOTIF), (PEINTURE, GOMME_CALQUE, DEGRADE, SEAU), (FORMES,),
                         (RECADRER,), (TEXTE,)):
             if len(famille) == 1:
                 barre.addAction(self._actions_outils[famille[0]])
@@ -923,9 +929,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.opt_baguette.setVisible(outil == BAGUETTE)
         self.opt_sel_texte.setVisible(outil == SEL_TEXTE)
         self.opt_couleur.setVisible(outil in (PEINTURE, DEGRADE, SEAU, FORMES))
-        self.opt_retouche.setVisible(outil in (PEINTURE, TAMPON, CORRECTEUR, DEGRADE, SEAU))
+        self.opt_retouche.setVisible(outil in (PEINTURE, TAMPON, TAMPON_MOTIF, CORRECTEUR, DEGRADE, SEAU))
         self.opt_degrade.setVisible(outil == DEGRADE)
         self.opt_seau.setVisible(outil == SEAU)
+        self.opt_motif.setVisible(outil == TAMPON_MOTIF or (outil == SEAU and self.canevas.seau_motif))
         self.opt_formes.setVisible(outil == FORMES)
         self.opt_recadrer.setVisible(outil == RECADRER)
         self.opt_deplacer.setVisible(outil == DEPLACER)
@@ -1216,7 +1223,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                   self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster, self.a_recadrer_selection, self.a_taille,
                   self.a_pivoter_d, self.a_pivoter_g, self.a_pivoter_180, self.a_pivoter_angle, self.a_miroir_h, self.a_miroir_v,
                   self.a_redresser, self.a_transformer, self.a_reglages_image, self.a_sel_agrandir,
-                  self.a_sel_reduire, self.a_sel_adoucir, self.a_contour, self.a_couper, self.a_copier, self.a_supprimer_selection,
+                  self.a_sel_reduire, self.a_sel_adoucir, self.a_contour, self.a_couper, self.a_copier, self.a_supprimer_selection, self.a_remplir_motif,
                   self.a_style, self.a_copier_style, self.a_coller_style, self.a_enlever_style, self.a_figer_style,
                   self.a_nouveau_calque, self.a_dupliquer_calque, self.a_fusionner_calques, self.a_aplatir, self.a_zone_travail, self.a_exporter_cmjn, self.a_exporter_sous,
                   self.a_tout_apparaitre,
@@ -1564,6 +1571,33 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.statusBar().showMessage(tr("Copié : {l} × {h} px (calque « {nom} »).", l=img.width(), h=img.height(),
                                         nom=self.doc.calque_actif.nom), 5000)
         return True
+
+    def remplir_motif(self, choix=None):
+        """Édition > Remplir avec un motif… : le calque choisi (dans la sélection s'il y en a une) couvert d'un
+        motif de la bibliothèque. choix : (clé, échelle, opacité) sans fenêtre (essais)."""
+        action = tr("Remplir avec un motif")
+        if not self._verifier_pixels(action):
+            return
+        doc, c = self.doc, self.doc.calque_actif
+        sel = None if doc.selection_vide() else doc.selection
+        if choix is None:
+            from .motifs import DialogueRemplirMotif
+            ou = tr("Calque « {nom} », {ou}.", nom=c.nom,
+                    ou=tr("dans la sélection") if sel is not None else tr("sur tout le calque"))
+            d = DialogueRemplirMotif(self, self.canevas.motif_cle, self.canevas.motif_echelle, 1.0, ou)
+            if not d.exec():
+                return
+            choix = (d.cle, d.echelle, d.opacite)
+        cle, echelle, opacite = choix
+        from .motifs import image_pavee
+        from .outils_dessin import remplir_motif
+        motif = image_pavee(cle, c.image.width(), c.image.height(), echelle)
+        if motif is None:
+            QMessageBox.information(self, action, tr("Motif introuvable dans la bibliothèque."))
+            return
+        avant = doc.etat()
+        apres = doc.etat_calque_modifie(doc.actif, image=remplir_motif(c.image, motif, opacite, sel), texte=None)
+        self.historique.push(CommandeEtat(doc, avant, apres, action))
 
     def couper(self):
         if not self.doc or not self._verifier_selection_simple() or not self._verifier_verrou(tr("Couper")):

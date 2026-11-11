@@ -40,6 +40,7 @@ TYPES = {
     "biseau": "Biseau et relief",
     "couleur": "Incrustation couleur",
     "degrade": "Incrustation dégradé",
+    "motif": "Incrustation de motif",
     "ombre_sol": "Ombre au sol",
 }
 
@@ -117,6 +118,12 @@ REGLAGES = {
         ("echelle", "Échelle", "pourcent", 100, 10, 150),
         ("inverser", "Inverser", "case", False),
     ],
+    "motif": [
+        ("motif", "Motif", "motif", "Krita 4/01_canvas.png#0"),
+        ("mode", "Mode", "choix", "normal", MODES),
+        ("opacite", "Opacité", "pourcent", 100),
+        ("echelle", "Échelle", "pourcent", 100, 10, 1000),
+    ],
     "ombre_sol": [
         ("couleur", "Couleur", "couleur", "#000000"),
         ("opacite", "Opacité", "pourcent", 55),
@@ -129,7 +136,7 @@ REGLAGES = {
 }
 
 # ordre d'empilement (comme Photoshop) : sous le calque, puis dessus
-ORDRE = ["ombre_sol", "ombre", "lueur", "couleur", "degrade", "ombre_interne", "lueur_interne", "biseau", "contour"]
+ORDRE = ["ombre_sol", "ombre", "lueur", "couleur", "degrade", "motif", "ombre_interne", "lueur_interne", "biseau", "contour"]
 SOUS = {"ombre_sol", "ombre", "lueur"}
 
 
@@ -518,6 +525,12 @@ def rendre_style(image: QImage, style: Style) -> QImage:
             poser(acc, _rgb(e.r("couleur")), A * op, e.r("mode"))
         elif e.type == "degrade":
             poser(acc, _degrade(A, e, boite), A * op, e.r("mode"))
+        elif e.type == "motif":
+            from .motifs import pavage, tuile
+            tu = tuile(e.r("motif"), max(0.1, e.r("echelle") / 100))
+            if tu is not None:        # motif répété depuis le coin de l'image (raccord entre calques)
+                pv = pavage(tu, A.shape[1], A.shape[0], int(X0), int(Y0)).astype(np.float32) / 255
+                poser(acc, pv[..., :3], A * op * pv[..., 3], e.r("mode"))
         elif e.type == "ombre_interne":
             poser(acc, _rgb(e.r("couleur")), _ombre_interne(A, e) * op, e.r("mode"))
         elif e.type == "lueur_interne":

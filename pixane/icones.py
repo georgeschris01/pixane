@@ -72,6 +72,8 @@ DESSINS = {
                 '<path stroke="A" d="M10.9 11.1C8.6 11 7 12.6 7 15c0 1.5-.8 2.4-2.5 3 3.7 1.6 9 .7 8.4-4.9z"/>',
     "tampon": '<path d="M9.5 3.5h5l-1 7h-3z"/><path d="M5 14.5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2H5z"/>'
               '<path stroke="A" d="M5 20.5h14"/>',
+    "tampon_motif": '<path d="M9.5 3.5h5l-1 7h-3z"/><path d="M5 14.5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2H5z"/>'
+                    '<path stroke="A" d="M5 20.5h2M9 20.5h2M13 20.5h2M17 20.5h2"/>',
     "baguette": '<path d="M4 20 14.5 9.5"/><path d="M13 8l3 3"/>'
                 '<path stroke="A" d="M17 3v3M15.5 4.5h3M20.5 8v2.5M19.2 9.2h2.6M11 3.5v2M10 4.5h2"/>',
     "rapide": '<path d="M5 15c2-4 5-6 9-6 2.5 0 4 1.3 4 3s-2 3.5-5 4.5"/>'

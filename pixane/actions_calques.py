@@ -280,7 +280,51 @@ class ActionsCalques:
         tous.toggled.connect(maj_tous)
         maj_tous(tous.isChecked())
         lay.addWidget(tous)
+        avec = QComboBox()
+        avec.addItem(tr("Couleur"), "couleur")
+        avec.addItem(tr("Motif"), "motif")
+        avec.setToolTip(tr("Remplir avec : la couleur choisie, ou un motif de la bibliothèque, répété"))
+        avec.setCurrentIndex(max(0, avec.findData(self.reglages.value("seau_remplir", "couleur"))))
+
+        def maj_avec(*_):
+            c.seau_motif = avec.currentData() == "motif"
+            self.reglages.setValue("seau_remplir", avec.currentData())
+            if hasattr(self, "opt_motif") and c.outil == "seau":
+                self._choisir_outil("seau")          # la barre du haut se remet en page
+        avec.currentIndexChanged.connect(maj_avec)
+        maj_avec()
+        lay.addWidget(avec)
         tout.addWidget(self.opt_seau)
+        # motif (pot de peinture en mode motif, tampon de motif)
+        from .motifs import BoutonMotif
+        self.opt_motif = QWidget()
+        lay = QHBoxLayout(self.opt_motif)
+        lay.setContentsMargins(0, 0, 0, 0)
+        self.bouton_motif = BoutonMotif(self.reglages.value("motif_cle", None), compact=True)
+        c.motif_cle = self.bouton_motif.cle
+
+        def maj_motif(cle):
+            c.motif_cle = cle
+            self.reglages.setValue("motif_cle", cle)
+        self.bouton_motif.change.connect(maj_motif)
+        lay.addWidget(self.bouton_motif)
+        echelle = QSpinBox()
+        echelle.setRange(10, 1000)
+        echelle.setSuffix(" %")
+        echelle.setSingleStep(10)
+        echelle.setToolTip(tr("Échelle du motif : 100 % = taille réelle"))
+        try:
+            echelle.setValue(int(self.reglages.value("motif_echelle", 100)))
+        except (TypeError, ValueError):
+            echelle.setValue(100)
+
+        def maj_echelle(v):
+            c.motif_echelle = v / 100
+            self.reglages.setValue("motif_echelle", v)
+        echelle.valueChanged.connect(maj_echelle)
+        maj_echelle(echelle.value())
+        lay.addWidget(echelle)
+        tout.addWidget(self.opt_motif)
         # formes
         self.opt_formes = QWidget()
         lay = QHBoxLayout(self.opt_formes)
@@ -306,7 +350,7 @@ class ActionsCalques:
         lay.addWidget(genre)
         lay.addWidget(remplie)
         tout.addWidget(self.opt_formes)
-        for w in (self.opt_degrade, self.opt_seau, self.opt_formes):
+        for w in (self.opt_degrade, self.opt_seau, self.opt_motif, self.opt_formes):
             w.hide()
 
     # ---------------------------------------------------------------- masques

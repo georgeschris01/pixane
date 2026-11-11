@@ -1206,5 +1206,17 @@
  "Rotation du pinceau, en degrés (flèches : 15° par cran ; tu peux taper la valeur). Aussi dans Réglages…, onglet Forme.": "Brush rotation, in degrees (arrows: 15° per step; you can type the value). Also in Settings…, Shape tab.",
  "Taille des vignettes : agrandir pour mieux voir les détails": "Thumbnail size: enlarge to see the details better",
  "Taille du pinceau (2 à {max} px) ; [ et ] pour la changer": "Brush size (2 to {max} px); [ and ] to change it",
- "Vignettes": "Thumbnails"
+ "Vignettes": "Thumbnails",
+ "Aucun motif trouvé : choisis-en un dans la barre du haut.": "No pattern found: choose one in the top bar.",
+ "Calque « {nom} », {ou}.": "Layer “{nom}”, {ou}.",
+ "Incrustation de motif": "Pattern Overlay",
+ "Motif : clic pour choisir dans la bibliothèque (Krita, Photoshop .pat, GIMP, images…)": "Pattern: click to choose from the library (Krita, Photoshop .pat, GIMP, images…)",
+ "Motif introuvable dans la bibliothèque.": "Pattern not found in the library.",
+ "Motif « {nom} » : clic pour en choisir un autre dans la bibliothèque": "Pattern “{nom}”: click to choose another one from the library",
+ "Remplir avec : la couleur choisie, ou un motif de la bibliothèque, répété": "Fill with: the chosen colour, or a repeated pattern from the library",
+ "Remplir avec un motif": "Fill with a pattern",
+ "Remplir avec un motif…": "Fill with a Pattern…",
+ "Tampon de motif": "Pattern Stamp",
+ "Tampon de motif : peint avec un motif de la bibliothèque (choisi dans la barre du haut)": "Pattern Stamp: paints with a pattern from the library (chosen in the top bar)",
+ "Échelle du motif : 100 % = taille réelle": "Pattern scale: 100 % = actual size"
 }

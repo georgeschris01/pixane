@@ -656,6 +656,7 @@ result live; **OK** keeps the style (a single step in Undo), **Cancel** puts eve
 | **Bevel and emboss** | Adds volume: inner bevel, outer bevel or emboss; up or down; light altitude |
 | **Colour overlay** | Covers the layer with a colour (Normal, Multiply, Screen, Overlay modes) |
 | **Gradient overlay** | Covers the layer with a linear or radial gradient, any angle and scale |
+| **Pattern overlay** | Covers the layer with a repeated pattern from the library (mode, opacity, scale 10 to 1000 %) |
 | **Ground shadow** | For a cut-out object: shadow lying on the ground, in perspective, sharp at the base and blurred at the end. **Drag the round dot on the photo** to choose its direction and length |
 
 - **Ready-made styles** (at the top): Soft shadow, Realistic shadow, Ground shadow, Sticker, Black outline, Outline
@@ -803,6 +804,19 @@ Copies one part of the photo onto another: to remove a small defect by hand, dup
 
 The stamp copies the photo **as you see it** (all visible layers) and paints on the chosen layer. Size, opacity
 and hardness as for the brush.
+
+### Patterns: paint bucket, Fill, Pattern stamp, Pattern overlay
+The **87 shipped patterns** (paper, canvas, wood, stone…) and those you add to the library (Photoshop **.pat**,
+GIMP, Krita, or a plain image) are used in four places. The pattern is **repeated** from the top left corner of the
+image: two fills with the same pattern join seamlessly. **Scale**: 100 % = actual size (10 to 1000 %).
+- **Paint bucket**: in the top bar, the list next to *All layers* switches from **Colour** to **Pattern**; the
+  pattern thumbnail appears (click: choose another pattern) with its scale.
+- **Edit > Fill with a Pattern…**: covers the chosen layer with a pattern (only inside the **selection** if there
+  is one); pattern, scale and opacity of your choice. Ctrl+Z to go back.
+- **Pattern stamp** (in the Clone stamp group: right-click its button): you **paint** with the pattern, at the
+  brush size, opacity and hardness. No Alt+click needed.
+- **Layer style > Pattern overlay**: the layer (a text for instance) takes the pattern, without touching its
+  pixels; can be changed at any time.
 
 ### Remove (J, AI)
 Paint over a small flaw (power line, stain, spot, dust): **on release**, it disappears (LaMa). As with *Erase*, the

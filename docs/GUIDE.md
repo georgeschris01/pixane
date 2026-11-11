@@ -684,6 +684,7 @@ calque…**. La photo montre le résultat en direct ; **OK** garde le style (une
 | **Biseau et relief** | Donne du volume : biseau interne, externe ou estampage ; vers le haut ou le bas ; hauteur de la lumière |
 | **Incrustation couleur** | Recouvre le calque d'une couleur (modes Normal, Produit, Écran, Incrustation) |
 | **Incrustation dégradé** | Recouvre le calque d'un dégradé linéaire ou radial, angle et échelle au choix |
+| **Incrustation de motif** | Recouvre le calque d'un motif de la bibliothèque, répété (mode, opacité, échelle de 10 à 1000 %) |
 | **Ombre au sol** | Pour un objet détouré : ombre couchée sur le sol, en perspective, nette au pied et floue au bout. **Tirez le point rond sur la photo** pour choisir sa direction et sa longueur |
 
 - **Styles tout prêts** (en haut) : Ombre douce, Ombre réaliste, Ombre au sol, Autocollant, Contour noir, Contour
@@ -833,6 +834,20 @@ Recopie une partie de la photo sur une autre : pour effacer un petit défaut à 
 
 Le tampon copie la photo **telle qu'on la voit** (tous les calques visibles) et peint sur le calque choisi. Taille,
 opacité et dureté comme le pinceau.
+
+### Motifs : pot de peinture, Remplir, Tampon de motif, Incrustation de motif
+Les **87 motifs** livrés (papier, toile, bois, pierre…) et ceux que tu ajoutes dans la bibliothèque (Photoshop
+**.pat**, GIMP, Krita, ou une simple image) servent à quatre endroits. Le motif est **répété** à partir du coin haut
+gauche de l'image : deux remplissages avec le même motif se raccordent sans couture. **Échelle** : 100 % = taille
+réelle (de 10 à 1000 %).
+- **Pot de peinture** : dans la barre du haut, la liste à côté de *Tous les calques* passe de **Couleur** à
+  **Motif** ; la vignette du motif apparaît (clic : choisir un autre motif) avec son échelle.
+- **Édition > Remplir avec un motif…** : couvre le calque choisi d'un motif (seulement dans la **sélection** s'il y
+  en a une) ; motif, échelle et opacité au choix. Ctrl+Z pour revenir.
+- **Tampon de motif** (dans le groupe du Tampon : clic droit sur son bouton) : on **peint** avec le motif, à la
+  taille, l'opacité et la dureté du pinceau. Pas besoin d'Alt+clic.
+- **Style du calque > Incrustation de motif** : le calque (un texte par exemple) prend le motif, sans toucher à ses
+  pixels ; modifiable à tout moment.
 
 ### Supprimer (J, IA)
 Peignez sur un petit défaut (fil électrique, tache, bouton, poussière) : **au lâcher**, il disparaît (LaMa). Comme

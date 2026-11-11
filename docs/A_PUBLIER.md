@@ -36,6 +36,11 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.19.0 (non publ
   dans la barre du haut), bibliothèque : **vignettes agrandissables** (48 à 256 px, gardé) et **grand aperçu** de
   l'élément choisi. *(demandes de Christophe)*
 
+- **Motifs** (étape 3 de la bibliothèque) : les 87 motifs livrés et ceux qu'on ajoute (Photoshop .pat, GIMP,
+  Krita, images) servent maintenant à remplir : **pot de peinture** en mode « Motif », **Édition > Remplir avec un
+  motif…** (calque entier ou sélection), nouvel outil **Tampon de motif** (groupe du Tampon), et style de calque
+  **Incrustation de motif**. Échelle de 10 à 1000 % ; le motif se raccorde d'un remplissage à l'autre.
+
 ## Corrections
 
 - **Enregistrer en .pixane : « 'QPoint' object has no attribute 'convertToFormat' »** après avoir transformé (Ctrl+T,

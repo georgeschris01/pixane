@@ -30,6 +30,7 @@ DEPLACER = "deplacer"                          # déplacer le contenu du calque 
 RECADRER = "recadrer"                          # garder une partie de la photo
 PEINTURE = "peinture"                          # pinceau de couleur sur le calque choisi
 TAMPON = "tampon"                              # copier une zone de la photo sur une autre (Alt+clic : source)
+TAMPON_MOTIF = "tampon_motif"                  # tampon de motif : peint un motif de la bibliothèque
 BAGUETTE = "baguette"                          # baguette magique : zone de couleur proche (glisser = tolérance)
 RAPIDE = "rapide"                              # sélection rapide (IA) : peindre sur l'objet
 OBJET = "objet"                                # sélection d'objet (IA) : cadre autour, ou clic dessus
@@ -39,9 +40,10 @@ CORRECTEUR = "correcteur"                      # pinceau correcteur : comme le t
 DEGRADE = "degrade"                            # dégradé : glisser du début à la fin
 SEAU = "seau"                                  # pot de peinture : remplit une zone de couleur proche
 FORMES = "formes"                              # rectangle, ellipse, ligne, flèche (nouveau calque)
-OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE, PEINTURE, TAMPON, RAPIDE, SUPPRIMER, CORRECTEUR)   # curseur rond
+OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE, PEINTURE, TAMPON, TAMPON_MOTIF, RAPIDE, SUPPRIMER,
+               CORRECTEUR)                                                  # curseur rond
 OUTILS_AUTO = (BAGUETTE, RAPIDE, OBJET, SEL_TEXTE)                       # sélections calculées
-OUTILS_CALQUE = (GOMME_CALQUE, PEINTURE, TAMPON, CORRECTEUR, DEGRADE, SEAU)                  # outils qui changent les pixels du calque
+OUTILS_CALQUE = (GOMME_CALQUE, PEINTURE, TAMPON, TAMPON_MOTIF, CORRECTEUR, DEGRADE, SEAU)                  # outils qui changent les pixels du calque
 GROUPES_PINCEAU = ("peinture", "gomme", "selection")   # un pinceau à forme choisi par groupe d'outils
 GROUPE_OUTIL = {PEINTURE: "peinture", GOMME_CALQUE: "gomme", PINCEAU: "selection", GOMME: "selection"}
 OPACITE_SELECTION = 0.45
@@ -120,6 +122,9 @@ class Canevas(QWidget):
         self.forme_degrade = "lineaire"
         self.tolerance_seau = 32
         self.seau_tous_calques = False   # pot de peinture : zone d'après l'image visible (sinon : le calque choisi)
+        self.seau_motif = False          # pot de peinture : remplir avec un motif (sinon : la couleur)
+        self.motif_cle: str | None = None    # motif choisi (pot de peinture, tampon de motif)
+        self.motif_echelle = 1.0             # échelle du motif (1 = taille réelle)
         # pinceaux à forme (bibliothèque) : un choix par groupe d'outils (peinture, gomme, sélection)
         self.pinceaux = {g: {"cle": None, "reglages": Reglages()} for g in GROUPES_PINCEAU}
         self._pointes: dict = {}         # formes prêtes à tamponner (par clé)
@@ -783,6 +788,16 @@ class Canevas(QWidget):
                 self._decalage_tampon = self.source_tampon - pt
             self._trait = Trait("tampon", c.image, self.taille_pinceau, self.durete, self.opacite,
                                 source=self.doc.image.copy(), decalage=self._decalage_tampon)
+        elif self.outil == TAMPON_MOTIF:
+            # le motif, répété depuis le coin de l'image : chaque trait se raccorde aux précédents
+            from .motifs import DEFAUT, image_pavee
+            source = image_pavee(self.motif_cle or DEFAUT, c.image.width(), c.image.height(), self.motif_echelle)
+            if source is None:
+                self.refus.emit(tr("Aucun motif trouvé : choisis-en un dans la barre du haut."))
+                self._avant = None
+                return
+            self._trait = Trait("tampon", c.image, self.taille_pinceau, self.durete, self.opacite,
+                                source=source, decalage=QPointF(0, 0))
         else:
             self._trait = Trait("peinture", c.image, self.taille_pinceau, self.durete, self.opacite,
                                 couleur=self.couleur_peinture, **self.parametres_pinceau(PEINTURE))
@@ -812,6 +827,8 @@ class Canevas(QWidget):
 
     def _lacher_retouche(self):
         nom = tr("Tampon") if self._trait.mode == "tampon" else tr("Pinceau de couleur")
+        if self.outil == TAMPON_MOTIF:
+            nom = tr("Tampon de motif")
         if self._sur_masque:
             nom = tr("Peindre le masque")
         elif self.outil == CORRECTEUR:
@@ -910,8 +927,14 @@ class Canevas(QWidget):
             avant = self.doc.etat()
             # zone à remplir : d'après le calque choisi (comme Photoshop par défaut), ou l'image visible
             reference = self.doc.image if self.seau_tous_calques else img
+            remplissage = None
+            if self.seau_motif:
+                from .motifs import DEFAUT, image_pavee
+                remplissage = image_pavee(self.motif_cle or DEFAUT, img.width(), img.height(), self.motif_echelle,
+                                          gris=sur_masque)
             res = seau(img, tableau(reference.convertToFormat(FORMAT_IMAGE)), int(pt.x()), int(pt.y()),
-                       self.tolerance_seau, self._couleur_cible(self.couleur_peinture, sur_masque), self.opacite, sel)
+                       self.tolerance_seau, self._couleur_cible(self.couleur_peinture, sur_masque), self.opacite, sel,
+                       remplissage)
             if res is not None:
                 if self.doc.calque_actif.texte is not None and not sur_masque:
                     self.refus.emit(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme "
@@ -1560,7 +1583,7 @@ class Canevas(QWidget):
             self._presser_recadre(pos)
             self.update()
             return
-        if self.outil in (PEINTURE, TAMPON, CORRECTEUR):
+        if self.outil in (PEINTURE, TAMPON, TAMPON_MOTIF, CORRECTEUR):
             self._presser_retouche(pos, bool(e.modifiers() & Qt.AltModifier))
             self.update()
             return
