@@ -66,6 +66,29 @@ def dossier() -> Path:
     return dossier_choisi() / NOM
 
 
+_MOTS_ANGLAIS = set("""a an the and or of to in on at by for with from into as is are be it its this that these those
+make change replace remove add keep put turn give same style text color colour word words line lines background
+while without but not only all whole into onto your my his her their of very more less same exactly""".split())
+# petits mots très courants d'autres langues (français, allemand, espagnol, italien, néerlandais, polonais…)
+_MOTS_AUTRES = set("""le la les un une des du de en et par pour dans avec sur au aux ce cette ces est sont qui que
+mets remplace enlève change rends der die das und mit ein eine einen ist zu den dem el los las y con por para del
+il lo gli di da che una het een van op na w z i jest oraz się""".split())
+
+
+def semble_anglais(texte: str) -> bool:
+    """La consigne a-t-elle l'air d'être en anglais ? (textes entre guillemets mis à part : ils restent tels quels).
+    Simple indice : pas de lettres accentuées, et assez de petits mots anglais courants."""
+    hors = _GUILLEMETS.sub(" ", texte)
+    mots = re.findall(r"[^\W\d_]+", hors.lower())
+    if not mots:
+        return True
+    if any(ord(c) > 127 for m in mots for c in m):
+        return False
+    anglais = sum(m in _MOTS_ANGLAIS for m in mots)
+    autres = sum(m in _MOTS_AUTRES for m in mots)
+    return anglais > autres and anglais >= max(1, len(mots) // 5)
+
+
 def installe() -> bool:
     d = dossier()
     return all((d / f).is_file() and (d / f).stat().st_size == t for f, (t, _) in CONTENU.items())

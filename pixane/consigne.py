@@ -3,8 +3,8 @@ est installé) ou directement en anglais ; exemples à cliquer ; nombre de propo
 from __future__ import annotations
 
 from PySide6.QtCore import QSettings, Qt
-from PySide6.QtWidgets import (QComboBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QPlainTextEdit,
-                               QPushButton, QSpinBox, QVBoxLayout)
+from PySide6.QtWidgets import (QComboBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QMessageBox,
+                               QPlainTextEdit, QPushButton, QSpinBox, QVBoxLayout)
 
 from . import traduction
 from .langue import tr
@@ -101,8 +101,8 @@ class DialogueConsigne(QDialog):
             self.bouton_installer.hide()
         else:
             self.bouton_installer.show()
-            self.etat.setText(tr("Traducteur non installé : l'IA comprend mal le français, écris la consigne en "
-                                 "anglais (ou installe-le : menu IA > Installer le moteur IA, case « Traducteur »)."))
+            self.etat.setText(tr("Traducteur non installé : l'IA ne comprend bien que l'anglais. Écris la consigne "
+                                 "en anglais, ou installe le traducteur (français) : sinon le résultat sera au hasard."))
             self.bouton_traduire.setEnabled(False)
 
     def _installer(self):
@@ -147,8 +147,33 @@ class DialogueConsigne(QDialog):
             return
         if not self.anglais.toPlainText().strip() and traduction.installe():
             self.traduire()
+        if not self.anglais.toPlainText().strip() and not traduction.semble_anglais(self.texte.toPlainText()) \
+                and not self._prevenir():
+            return
         _reglages().setValue("consigne_derniere", self.texte.toPlainText())
         super().accept()
+
+    def _prevenir(self) -> bool:
+        """Consigne pas en anglais, sans traduction : on prévient, mais on laisse le choix. -> True : envoyer."""
+        m = QMessageBox(QMessageBox.Warning, tr("Consigne pas en anglais"), tr(
+            "Ta consigne ne semble pas écrite en anglais, et elle n'est pas traduite.\n\n"
+            "L'IA (Flux Kontext) ne comprend bien que l'anglais : dans une autre langue (français, polonais…), elle "
+            "devine, et le résultat est souvent au hasard (rien ne change, ou autre chose que ce que tu voulais).\n\n"
+            "• Installer le traducteur (français → anglais, sur ton PC) ;\n"
+            "• ou corriger : écrire la consigne en anglais ;\n"
+            "• ou l'envoyer quand même, telle quelle."), parent=self)
+        b_installer = m.addButton(tr("Installer le traducteur…"), QMessageBox.ActionRole) \
+            if not traduction.installe() else None
+        b_envoyer = m.addButton(tr("Envoyer quand même"), QMessageBox.AcceptRole)
+        b_corriger = m.addButton(tr("Corriger"), QMessageBox.RejectRole)
+        m.setDefaultButton(b_corriger)
+        m.exec()
+        if b_installer is not None and m.clickedButton() is b_installer:
+            self._installer()
+            if traduction.installe():
+                self.traduire()          # traduit : la phrase anglaise est montrée, on vérifie puis on valide
+            return False
+        return m.clickedButton() is b_envoyer
 
     def consigne(self) -> str:
         """Ce qui part à l'IA : l'anglais s'il est rempli, sinon la consigne telle quelle (guillemets « » -> " ")."""

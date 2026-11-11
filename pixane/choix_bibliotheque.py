@@ -8,7 +8,7 @@ from PySide6.QtGui import QIcon, QImage, QPixmap
 from PySide6.QtWidgets import (QDialog, QDialogButtonBox, QFileDialog, QHBoxLayout, QLabel, QListView, QListWidget,
                                QListWidgetItem, QMessageBox, QPushButton, QSplitter, QVBoxLayout, QWidget)
 
-from .bibliotheque import MOTIFS, PINCEAUX, Bibliotheque, Motif, bibliotheque
+from .bibliotheque import MOTIFS, PINCEAUX, SIMPLES, STYLES, Bibliotheque, Motif, bibliotheque
 from .formats_pinceaux import EXT_IMAGES, EXT_MOTIFS, EXT_PAQUETS, EXT_PINCEAUX
 from .langue import tr
 
@@ -110,7 +110,8 @@ class ChoixBibliotheque(QDialog):
         self.liste_groupes.clear()
         rang = 0
         for i, g in enumerate(self.biblio.groupes[self.genre]):
-            it = QListWidgetItem(g.nom + ("" if not g.de_base else tr(" (de base)")))
+            it = QListWidgetItem(tr(g.nom) if g.de_base and g.genre == PINCEAUX else
+                                 g.nom + ("" if not g.de_base else tr(" (de base)")))
             self.liste_groupes.addItem(it)
             if g.nom == nom:
                 rang = i
@@ -156,7 +157,13 @@ class ChoixBibliotheque(QDialog):
                     texte += tr(" — {n} formes qui alternent pendant le trait", n=len(e.formes))
                 if e.en_couleur:
                     texte += tr(" — en couleur (garde ses couleurs)")
-        if g is not None and g.de_base:
+        if g is not None and g.nom == STYLES:
+            texte += ("\n" if texte else "") + tr("Style prêt : la forme et ses réglages (texture, dispersion, "
+                                                   "flux…) d'un coup ; à ajuster ensuite avec Réglages… si besoin.")
+        elif g is not None and g.nom == SIMPLES:
+            texte += ("\n" if texte else "") + tr("Les pinceaux de tous les jours, pour peindre normalement ; la "
+                                                   "taille et l'opacité se règlent dans la barre du haut.")
+        elif g is not None and g.de_base:
             texte += ("\n" if texte else "") + tr("Livrés avec Pixane (ressources de Krita, licence CC-0).")
         self.info.setText(texte)
 

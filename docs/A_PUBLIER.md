@@ -15,7 +15,23 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.19.0 (non publ
   qui manque. **Dossier du traducteur au choix** (« Changer… », gardé ; par défaut le dossier de Pixane), dans les
   trois fenêtres. *(demande de Christophe)*
 
+- **Consigne pas en anglais, sans traducteur** : avertissement au clic sur Modifier (l'IA ne comprend bien que
+  l'anglais : résultat au hasard), avec le choix Installer le traducteur… / Corriger / Envoyer quand même ; guide
+  FR/EN : explication claire (français, polonais… : traducteur ou anglais), texte entre guillemets exactement comme
+  sur l'image. *(essais de Christophe : « modifier par consigne », consigne en français sans traducteur)*
+
+- **Pinceaux : styles prêts, pinceaux simples, familles** (demande de Christophe : « je ne vois que les textures ») :
+  17 styles prêts en un clic (forme + réglages : crayon, fusain, craie, encre, feutre, calligraphie, aquarelle, huile,
+  couteau, pinceau sec, aérographe, bombe, feuillage, herbe, étoiles, fumée, éclaboussures) ; groupe « Simples »
+  (rond dur, rond doux, aérographe, carré, plat, biseau) ; pinceaux de Krita rangés par familles (Crayon et fusain,
+  Peinture, Nature, Effets, Textures, Formes) ; les choix déjà enregistrés sont retrouvés. Guide : où est le pinceau
+  de couleur (P).
+
 ## Corrections
+
+- **Enregistrer en .pixane : « 'QPoint' object has no attribute 'convertToFormat' »** après avoir transformé (Ctrl+T,
+  poignées de Déplacer) un calque qui dépasse de la feuille (un collage, par exemple) : la position du cadre était
+  prise pour la meilleure version du calque. Corrigé. *(signalé par Christophe, capture dans « erreur »)*
 
 ## À mettre à jour le jour de la publication
 

@@ -126,6 +126,28 @@ verifier(d.consigne() == 'Replace the text "Brûler" with "Flamme"', "avec l'ang
 d._traduit_de = d.texte.toPlainText()                # comme après « Traduire »
 d.exemples.activated.emit(1)
 verifier("…" in d.texte.toPlainText() and d.anglais.toPlainText() == "", "exemple inséré ; traduction périmée effacée")
+# ---- consigne pas en anglais, pas traduite : on prévient, le choix reste
+fr = ['Remplace le texte « Bruler le feu » par « Flamme », dans le même style', "Change la couleur du pull en rouge",
+      "Zmień kolor swetra na czerwony", "Remplace la tasse par un verre"]
+en = ['Replace the text "Brûler le Feu" with "Flamme", in the same style', "Make the jumper red",
+      "Remove the glasses", 'Change "Café" to "Thé"']
+verifier(not any(trd.semble_anglais(t) for t in fr) and all(trd.semble_anglais(t) for t in en),
+         "reconnaît une consigne pas en anglais (français, polonais) ; guillemets mis à part")
+if not trd.installe():
+    vus, choix = [], [False]
+    d._prevenir = lambda: (vus.append(1), choix[0])[1]
+    d.texte.setPlainText(fr[0])
+    d.anglais.setPlainText("")
+    d.setResult(0)
+    d.accept()
+    verifier(vus and d.result() == 0, "français sans traducteur : prévenu ; Corriger -> la fenêtre reste ouverte")
+    choix[0] = True
+    d.accept()
+    verifier(len(vus) == 2 and d.result() == 1, "Envoyer quand même -> envoyé tel quel")
+    vus.clear()
+    d.texte.setPlainText(en[0])
+    d.accept()
+    verifier(not vus, "en anglais : pas d'avertissement")
 lances = []
 Fenetre._lancer = lambda self, titre, sel_, fab, **kw: lances.append((titre, fab, kw))
 recettes._kontext.update(type="complet", fichier=recettes.KONTEXT)

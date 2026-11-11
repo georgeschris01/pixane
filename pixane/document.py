@@ -250,7 +250,7 @@ def transformation_depuis(o: Origine):
     from .transformation import Transformation
     t = Transformation(o.image, QRect(0, 0, o.image.width(), o.image.height()))
     t.sx, t.sy, t.angle, t.centre = o.sx, o.sy, o.angle, QPointF(o.cx, o.cy)
-    t.origine = o.image
+    t.meilleure = o.image                 # (t.origine est la position du cadre : autre chose)
     return t
 
 

@@ -132,7 +132,7 @@ def alpha(doc, i=1):
 
 
 f._choisir_outil(PEINTURE)
-verifier(f.opt_pinceau.isVisible() and f.bouton_pinceau.text() == "Rond", "pinceau de couleur : bouton « Rond »")
+verifier(f.opt_pinceau.isVisible() and f.bouton_pinceau.text() == "Rond", f"pinceau de couleur : bouton « Rond » ({f.opt_pinceau.isVisible()}, {f.bouton_pinceau.text()!r})")
 c.definir_taille(40)
 doc = scene()
 geste(50, 350)
@@ -208,6 +208,33 @@ verifier(f2.canevas.pinceaux["peinture"]["cle"] == herbe.cle
 for dd in f2.documents:
     dd.modifie = False
 f2.close()
+# ---- style prêt : la forme et ses réglages en un clic ; le quitter -> réglages de départ
+from pixane.choix_bibliotheque import ChoixBibliotheque  # noqa: E402
+f3 = Fenetre()
+f3._installer_document(Document(calques=[Calque("Fond", qimage_rgba(np.full((200, 200, 4), 255, np.uint8)))]))
+f3._choisir_outil(PEINTURE)
+choix_suivant = []
+
+
+def faux_exec(self):
+    g = self.biblio.groupes[PINCEAUX]
+    self.choisi = choix_suivant.pop(0)(g)
+    return 1
+
+
+ChoixBibliotheque.exec = faux_exec
+choix_suivant.append(lambda g: next(e for e in g[0].elements if e.cle == "Styles prêts/feuillage#0"))
+f3.choisir_pinceau()
+p = f3.canevas.pinceaux["peinture"]
+verifier(p["cle"] == "Styles prêts/feuillage#0" and p["reglages"].dispersion == 1.0 and p["reglages"].var_angle == 1.0
+         and "Feuillage" in f3.bouton_pinceau.text(), "style prêt « Feuillage » : forme et réglages appliqués")
+choix_suivant.append(lambda g: g[1].elements[0])
+f3.choisir_pinceau()
+p = f3.canevas.pinceaux["peinture"]
+verifier(p["cle"] == "Simples/rond_dur#0" and p["reglages"] == Reglages(), "puis « Rond dur » : réglages de départ")
+for dd in f3.documents:
+    dd.modifie = False
+f3.close()
 for _k in QSettings("Pixane", "Pixane-essais").allKeys():
     if _k.startswith("pinceau_"):
         QSettings("Pixane", "Pixane-essais").remove(_k)

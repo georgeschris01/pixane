@@ -398,8 +398,17 @@ model, to be added in Install the AI engine).
   selection: the whole image.
 - Write the instruction. **Examples**: choose one, it is inserted; replace the “…”.
 - **Between quotes** (« … » or "…"): text to be written as is (never translated).
-- The AI understands French poorly: with the **translator** (290 MB, on your PC, nothing is sent over the
-  Internet), **Translate** shows the English sentence, which you can correct. In English, no translator is needed.
+- **Important: the AI only understands English well.** An instruction in French, Polish or any other language,
+  sent without translation, works badly: the AI guesses, and the result is often random (nothing changes, the text
+  is copied instead of replaced, or replaced twice…). Two solutions, your choice:
+  - install the **translator** (French → English, 290 MB, on your PC, nothing is sent over the Internet): you
+    write in French, **Translate** shows the English sentence, which you can correct;
+  - or write the instruction **directly in English** (the only solution for other languages for now).
+
+  If your instruction does not look like English and is not translated, Pixane warns you when you click Edit; you
+  choose: **Install the translator…**, **Correct**, or **Send anyway**.
+- Write the text between quotes **exactly as in the image** (accents, capitals).
+- The translator
   It is installed with the “Install the translator…” button, or with its box in **AI > Install the AI engine**
   (“Install” window, or “Complete the AI engine” if ComfyUI was already there): ticked while it is not installed,
   greyed out afterwards. **Translator folder… Change…**: you choose where to store it (by default, Pixane's folder).
@@ -752,9 +761,20 @@ touching the photo).
 ### Shaped brushes: the library (like Photoshop, Krita)
 The colour brush (and masks), the **layer eraser** and the **selection brush** can take a **shape**: chalk, pencil,
 grass, leaves, watercolour, splatters… Each tool keeps its own choice.
+- **To paint normally**: the **Colour brush** (key **P**; it shares its button with the layer eraser, the gradient
+  and the paint bucket: right-click the button to choose it). Key B is the *selection* brush, which does not paint.
 - **Brush** (top bar): opens the library. Groups on the left, thumbnails on the right; double-click to choose.
-  **Plain round** goes back to the usual round brush.
-- **Shipped with Pixane**: 235 brushes and 87 patterns (Krita resources, CC-0 licence).
+  **Plain round** goes back to the usual round brush (its hardness is set in the top bar).
+- The groups, in order:
+  - **Ready-made styles**: one click chooses the shape **and** its settings: Pencil, Charcoal, Chalk, Ink (pen),
+    Felt-tip pen, Calligraphy, Watercolour, Oil paint, Palette knife, Dry brush, Airbrush, Spray can, Foliage,
+    Grass, Stars and glitter, Clouds and smoke, Splashes. You can then fine-tune them with **Settings…**; choosing
+    another brush after a style restores the default settings;
+  - **Basic**: everyday brushes: hard round, soft round, airbrush, square, flat, chisel;
+  - then Krita's brushes **by family**: Pencil and charcoal, Paint, Nature, Effects, Textures, Shapes;
+  - finally the files you have added.
+- **Shipped with Pixane**: 235 brushes and 87 patterns (Krita resources, CC-0 licence), plus the basic brushes and
+  the ready-made styles.
 - **Add files…**: Photoshop brushes (**.abr**), GIMP and Krita brushes (**.gbr**, **.gih**), Krita bundles
   (**.bundle**), or a plain image (black paints; a colour image keeps its colours). Each file becomes a group;
   **Remove this group** takes it away. Files are copied into Pixane: the original can be moved or deleted.

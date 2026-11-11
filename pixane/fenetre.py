@@ -2143,7 +2143,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         style = c.style.mis_a_l_echelle(k) if c.style is not None else None
         apres = self.doc.etat_calque_entier(index, img, x, y, texte=None, style=style)
         if t.fond is None:                                # calque entier : il garde sa meilleure version
-            o = Origine(getattr(t, "origine", None) or t.source, t.sx, t.sy, t.angle, t.centre.x(), t.centre.y())
+            o = Origine(getattr(t, "meilleure", None) or t.source, t.sx, t.sy, t.angle, t.centre.x(), t.centre.y())
             calques = list(apres[0])
             calques[index] = attacher_origine(calques[index], o)
             apres = (tuple(calques),) + tuple(apres[1:])

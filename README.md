@@ -480,8 +480,18 @@ lunettes »… (modèle **Flux Kontext**, à ajouter dans Installer le moteur IA
   Sans sélection : toute l'image.
 - Écris la consigne. **Exemples** : choisis-en un, il est inséré ; remplace les « … ».
 - **Entre guillemets** (« … » ou "…") : un texte à écrire tel quel (il n'est jamais traduit).
-- L'IA comprend mal le français : avec le **traducteur** (290 Mo, sur ton PC, rien n'est envoyé sur Internet),
-  **Traduire** montre la phrase anglaise, que tu peux corriger. Sans lui, écris en anglais. Il s'installe par le
+- **Important : l'IA ne comprend bien que l'anglais.** Une consigne en français, en polonais ou dans une autre
+  langue, envoyée sans traduction, marche mal : l'IA devine, et le résultat est souvent au hasard (rien ne change,
+  le texte est recopié au lieu d'être remplacé, ou remplacé deux fois…). Deux solutions, au choix :
+  - installer le **traducteur** (français → anglais, 290 Mo, sur ton PC, rien n'est envoyé sur Internet) : tu
+    écris en français, **Traduire** montre la phrase anglaise, que tu peux corriger ;
+  - ou écrire la consigne **directement en anglais** (seule solution pour les autres langues pour l'instant).
+
+  Si ta consigne n'a pas l'air d'être en anglais et n'est pas traduite, Pixane te prévient au clic sur Modifier ;
+  tu choisis : **Installer le traducteur…**, **Corriger**, ou **Envoyer quand même**.
+- Écris dans les guillemets le texte **exactement comme sur l'image** (accents, majuscules) : « Brûler le Feu »,
+  pas « bruler le feu ».
+- Le traducteur Il s'installe par le
   bouton « Installer le traducteur… », ou par sa case dans **IA > Installer le moteur IA** (fenêtre « Installer »
   ou « Compléter le moteur IA » si ComfyUI était déjà là) : cochée tant qu'il n'est pas installé, grisée ensuite.
   **Dossier du traducteur… Changer…** : tu choisis où le ranger (par défaut, le dossier de Pixane).
@@ -847,9 +857,21 @@ corriger sans toucher à la photo).
 ### Pinceaux à forme : la bibliothèque (comme Photoshop, Krita)
 Le pinceau de couleur (et les masques), la **gomme de calque** et le **pinceau de sélection** peuvent prendre une
 **forme** : craie, crayon, herbe, feuilles, aquarelle, éclaboussures… Chaque outil garde son propre choix.
+- **Pour peindre normalement** : le **Pinceau de couleur** (touche **P** ; il partage son bouton avec la gomme de
+  calque, le dégradé et le pot de peinture : clic droit sur le bouton pour le choisir). La touche B est le pinceau
+  *de sélection*, qui ne peint pas.
 - **Pinceau** (barre du haut) : ouvre la bibliothèque. À gauche les groupes, à droite les vignettes ; double-clic pour
-  choisir. **Rond simple** revient au pinceau rond habituel.
-- **Livrés avec Pixane** : 235 pinceaux et 87 motifs (ressources de Krita, licence CC-0).
+  choisir. **Rond simple** revient au pinceau rond habituel (sa dureté se règle dans la barre du haut).
+- Les groupes, dans l'ordre :
+  - **Styles prêts** : un clic choisit la forme **et** ses réglages : Crayon, Fusain, Craie, Encre (plume), Feutre,
+    Calligraphie, Aquarelle, Peinture à l'huile, Couteau à peindre, Pinceau sec, Aérographe, Bombe, Feuillage,
+    Herbe, Étoiles et paillettes, Nuages et fumée, Éclaboussures. On peut ensuite les ajuster avec **Réglages…** ;
+    choisir un autre pinceau après un style remet les réglages de départ ;
+  - **Simples** : les pinceaux de tous les jours : rond dur, rond doux, aérographe, carré, plat, biseau ;
+  - puis les pinceaux de Krita **par familles** : Crayon et fusain, Peinture, Nature, Effets, Textures, Formes ;
+  - enfin les fichiers que tu as ajoutés.
+- **Livrés avec Pixane** : 235 pinceaux et 87 motifs (ressources de Krita, licence CC-0), plus les pinceaux simples
+  et les styles prêts.
 - **Ajouter des fichiers…** : pinceaux de Photoshop (**.abr**), de GIMP et Krita (**.gbr**, **.gih**), paquets
   Krita (**.bundle**), ou une simple image (le noir peint ; une image en couleur garde ses couleurs). Chaque fichier
   devient un groupe ; **Retirer ce groupe** l'enlève. Les fichiers sont copiés dans Pixane : l'original peut être

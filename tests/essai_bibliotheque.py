@@ -182,7 +182,19 @@ except ValueError:
 # ---- fenêtre
 app = QApplication(sys.argv)
 d = ChoixBibliotheque(PINCEAUX, biblio=b2)
-verifier(d.grille.count() > 50 and "Krita 4" in d.liste_groupes.item(0).text(), "fenêtre : groupes et vignettes")
+noms = [d.liste_groupes.item(i).text() for i in range(d.liste_groupes.count())]
+verifier(d.grille.count() >= 15 and noms[:4] == ["Styles prêts", "Simples", "Crayon et fusain", "Peinture"]
+         and "Nature" in noms and "Effets" in noms, f"fenêtre : styles prêts, simples, puis familles ({noms[:8]})")
+from pixane.bibliotheque import STYLES_PRETS  # noqa: E402
+st = b2.groupes[PINCEAUX][0].elements
+verifier(len(st) == len(STYLES_PRETS) and all(e.reglages for e in st), f"{len(st)} styles prêts, avec leurs réglages")
+si = b2.groupes[PINCEAUX][1].elements
+verifier([e.nom for e in si][:2] == ["Rond dur", "Rond doux"] and all(e.formes[0].ndim == 2 for e in si),
+         "pinceaux simples : rond dur, rond doux…")
+verifier(b2.trouver(PINCEAUX, "Krita 4/grass.gih#0") is not None
+         and b2.trouver(PINCEAUX, "Krita 4/grass.gih#0").cle == "Nature/grass.gih#0",
+         "ancienne clé (« Krita 4/… ») : pinceau retrouvé dans sa famille")
+verifier(not any(g.nom == "Divers" for g in b2.groupes[PINCEAUX]), "chaque pinceau de base a sa famille")
 msgs = d.importer([str(dossier / "Mes motifs.pat"), str(dossier / "faux.abr"), str(dossier / "Mes pinceaux.abr")])
 verifier(len(msgs) == 3 and "illisible" in msgs[1] and d.groupe().nom == "Mes pinceaux" and d.grille.count() == 2,
          f"fenêtre : ajout (fichier abîmé signalé, nouveau groupe montré) {msgs}")

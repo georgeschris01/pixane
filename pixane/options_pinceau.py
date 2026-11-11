@@ -9,7 +9,7 @@ from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QToolButton, QWidget
 
-from .bibliotheque import PINCEAUX, bibliotheque
+from .bibliotheque import PINCEAUX, STYLES, bibliotheque
 from .canevas import GOMME_CALQUE, GROUPE_OUTIL, GROUPES_PINCEAU
 from .langue import tr
 from .pointe import Reglages
@@ -84,7 +84,11 @@ class OptionsPinceau:
         cle = d.choisi.cle if d.choisi is not None else None
         ancien = self.canevas.pinceaux[g]
         r = ancien["reglages"]
-        if cle != ancien["cle"]:
+        if d.choisi is not None and d.choisi.reglages is not None:
+            r = Reglages.depuis_dict(d.choisi.reglages)          # style prêt : ses réglages
+        elif (ancien["cle"] or "").startswith(STYLES + "/") and cle != ancien["cle"]:
+            r = Reglages()                             # on quitte un style prêt : réglages de départ
+        elif cle != ancien["cle"]:
             from dataclasses import replace
             r = replace(r, espacement=None)            # nouvelle forme : son propre espacement
         self.canevas.pinceaux[g] = {"cle": cle, "reglages": r}

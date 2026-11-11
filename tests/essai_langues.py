@@ -48,6 +48,20 @@ def textes_du_code() -> set[str]:
                     getattr(t, "id", "") == "EXEMPLES" for t in n.targets):
                 for c in n.value.elts:
                     cles.update(e.value for e in c.elts)
+            # bibliothèque : noms des groupes de base (familles), des styles prêts et des pinceaux simples
+            if f.name == "bibliotheque.py":
+                if isinstance(n, ast.Assign):
+                    noms = [getattr(t, "id", "") for t in n.targets]
+                    if set(noms) & {"STYLES", "SIMPLES", "DIVERS"} and isinstance(n.value, ast.Constant):
+                        cles.add(n.value.value)
+                    if "FAMILLES" in noms:
+                        cles.update(c.elts[0].value for c in n.value.elts)
+                    if "STYLES_PRETS" in noms:
+                        cles.update(c.elts[1].value for c in n.value.elts)
+                if isinstance(n, ast.FunctionDef) and n.name == "_formes_simples":
+                    for c in ast.walk(n):
+                        if isinstance(c, ast.Return) and isinstance(c.value, ast.List):
+                            cles.update(e.elts[1].value for e in c.value.elts)
             # réglages du pinceau : libellés et aides (CHAMPS), onglets, explications (dictionnaire « explication »)
             if f.name == "reglages_pinceau.py" and isinstance(n, ast.Assign):
                 noms = [getattr(t, "id", "") for t in n.targets]

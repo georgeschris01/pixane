@@ -9,7 +9,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ["PIXANE_REGLAGES"] = "Pixane-essais"
 import numpy as np
-from PySide6.QtCore import QPointF
+from PySide6.QtCore import QPoint, QPointF
+from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication
 
 from pixane.document import (FORMAT_IMAGE, Calque, Document, image_entiere, origine_valide, qimage_rgba,
@@ -164,6 +165,28 @@ doc = nouveau()
 doc.appliquer_etat(doc.etat_taille(400, 400))
 verifier(origine_valide(doc.calques[0]) is not None and origine_valide(doc.calques[1]) is not None,
          "Taille de l'image : chaque calque d'image garde sa meilleure version")
+# 10. calque qui dépasse de la feuille (collage) transformé puis enregistré en .pixane (bug : position prise pour
+#     l'image -> « 'QPoint' object has no attribute 'convertToFormat' »)
+doc = nouveau()
+img = qimage_rgba(photo[200:600, 200:600].copy())
+doc.appliquer_etat(doc.etat_coller(img, QPoint(-150, -100)))
+c = doc.calques[doc.actif]
+verifier(c.hors is not None and origine_valide(c) is None, "collage qui dépasse, sans meilleure version")
+transformer(0.6)
+o = origine_valide(doc.calques[doc.actif])
+verifier(o is not None and isinstance(o.image, QImage), "Transformer : la meilleure version est bien une image")
+import tempfile  # noqa: E402
+with tempfile.TemporaryDirectory() as tmp:
+    chemin = Path(tmp) / "depasse.pixane"
+    try:
+        doc.enregistrer(chemin)
+        ok = chemin.stat().st_size > 1000
+    except Exception as e:  # noqa: BLE001
+        ok = False
+        print("   ", e)
+    verifier(ok, "enregistré en .pixane après Transformer d'un calque qui dépasse")
+    transformer(1.0)
+    verifier(isinstance(origine_valide(doc.calques[doc.actif]).image, QImage), "re-transformé : toujours une image")
 
 print("ERREURS :", erreurs if erreurs else "aucune")
 sys.stdout.flush()
