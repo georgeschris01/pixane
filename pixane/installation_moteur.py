@@ -844,6 +844,7 @@ def main():
     a.add_argument("--kontext", action="store_true")
     a.add_argument("--accepte", action="store_true", help="licence FLUX.1 [dev] déjà acceptée (installateur)")
     a.add_argument("--demarrer", action="store_true", help="commencer tout de suite")
+    a.add_argument("--sans-traducteur", action="store_true", help="traducteur refusé dans l'installateur")
     args = a.parse_args()
 
     from PySide6.QtGui import QIcon
@@ -856,6 +857,8 @@ def main():
     traduire_qt(app, langue.choisir(reglages.value("langue", langue.AUTO)))
     theme.appliquer(app, reglages.value("theme", theme.AUTO))
     f = FenetreInstallation(dossier=args.dossier, schnell=args.schnell, accepte=args.accepte, kontext=args.kontext)
+    if args.sans_traducteur:
+        f.c_traducteur.setChecked(False)
     f.show()
     if args.demarrer:
         f.commencer()

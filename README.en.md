@@ -479,7 +479,8 @@ model, to be added in Install the AI engine).
   choose: **Install the translator…**, **Correct**, or **Send anyway**.
 - Write the text between quotes **exactly as in the image** (accents, capitals).
 - The translator
-  It is installed with the “Install the translator…” button, or with its box in **AI > Install the AI engine**
+  It is installed by **Pixane's setup program** (“Instruction translator” page), with the “Install the
+  translator…” button, or with its box in **AI > Install the AI engine**
   (“Install” window, or “Complete the AI engine” if ComfyUI was already there): ticked while it is not installed,
   greyed out afterwards. **Translator folder… Change…**: you choose where to store it (by default, Pixane's folder).
 - The AI works on a piece around the selection (more detail than with the whole image); the result is only kept

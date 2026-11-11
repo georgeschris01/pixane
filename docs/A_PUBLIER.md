@@ -27,6 +27,11 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.19.0 (non publ
   Peinture, Nature, Effets, Textures, Formes) ; les choix déjà enregistrés sont retrouvés. Guide : où est le pinceau
   de couleur (P).
 
+- **Installateur de Windows : page « Traducteur des consignes »** (montrée que ComfyUI soit là ou non) : explication,
+  case cochée si le traducteur manque, grisée s'il est déjà là, dossier au choix ; à la fin, fenêtre de
+  téléchargement puis Pixane (ou avec le moteur IA, dans sa fenêtre). *(vidéo de Christophe : l'installateur ne le
+  proposait pas)*
+
 ## Corrections
 
 - **Enregistrer en .pixane : « 'QPoint' object has no attribute 'convertToFormat' »** après avoir transformé (Ctrl+T,

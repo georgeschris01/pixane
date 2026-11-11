@@ -125,6 +125,14 @@ french.MoteurPasAccepte=Pour installer le moteur IA, il faut accepter la licence
 french.MoteurProtege=Le moteur IA ne peut pas aller dans « %1 » : c'est un dossier protégé (comme Program Files), où le téléchargement n'a pas le droit d'écrire.%n%nChoisissez un autre dossier, par exemple D:\Pixane-moteur.
 french.MoteurPlace=Pas assez de place sur %1 : il faut environ %2 Go, il reste %3 Go. Choisis un autre dossier.
 french.MoteurLancer=Télécharger et installer le moteur IA maintenant
+french.PageTradTitre=Traducteur des consignes
+french.PageTradDescription=Pour écrire tes consignes à l'IA en français (facultatif).
+french.TradIntro=L'action « Modifier avec une consigne » (changer un texte, une couleur, un objet en l'écrivant) utilise une IA, Flux Kontext, qui ne comprend bien que l'anglais. Une consigne écrite en français (ou dans une autre langue) sans traduction marche mal : le résultat est souvent au hasard.%n%nLe traducteur traduit tes consignes du français vers l'anglais. Il tourne sur ton PC : rien n'est envoyé sur Internet. Sans lui, il faudra écrire les consignes en anglais. Tu pourras aussi l'installer plus tard (menu IA > Installer le moteur IA).
+french.TradCase=Télécharger et installer le traducteur après l'installation (290 Mo)
+french.TradDeja=Traducteur des consignes : déjà installé
+french.TradDossier=Dossier du traducteur :
+french.TradDetail=Modèle Opus-MT français → anglais (université d'Helsinki) — 290 Mo — Hugging Face — licence Apache-2.0
+french.TradLancer=Télécharger et installer le traducteur maintenant
 french.DesinstMoteur=Supprimer aussi le moteur IA installé par Pixane (ComfyUI, ses extensions et les modèles d'IA, environ 20 à 32 Go) ?%n%n%1%n%nNon : il reste sur le PC et resservira si tu réinstalles Pixane.
 french.DesinstReglages=Supprimer aussi les réglages de Pixane (langue, thème, dernier dossier, style de texte, dossier du moteur) et ses journaux ?%n%nNon : ils resserviront si tu réinstalles Pixane.
 english.PagePCTitre=Checking the PC
@@ -159,6 +167,14 @@ english.MoteurPasAccepte=To install the AI engine, you must accept the FLUX.1 [d
 english.MoteurProtege=The AI engine cannot go into "%1": it is a protected folder (like Program Files), where the download is not allowed to write.%n%nChoose another folder, for example D:\Pixane-engine.
 english.MoteurPlace=Not enough space on %1: about %2 GB is needed, %3 GB is left. Choose another folder.
 english.MoteurLancer=Download and install the AI engine now
+english.PageTradTitre=Instruction translator
+english.PageTradDescription=To write your instructions to the AI in French (optional).
+english.TradIntro=The "Edit with an instruction" action (change a text, a colour, an object by writing it) uses an AI, Flux Kontext, that only understands English well. An instruction written in French (or another language) without translation works badly: the result is often random.%n%nThe translator translates your instructions from French into English. It runs on your PC: nothing is sent over the Internet. Without it, instructions must be written in English. You can also install it later (AI menu > Install the AI engine).
+english.TradCase=Download and install the translator after the installation (290 MB)
+english.TradDeja=Instruction translator: already installed
+english.TradDossier=Translator folder:
+english.TradDetail=Opus-MT French → English model (University of Helsinki) — 290 MB — Hugging Face — Apache-2.0 licence
+english.TradLancer=Download and install the translator now
 english.DesinstMoteur=Also delete the AI engine installed by Pixane (ComfyUI, its extensions and the AI models, about 20 to 32 GB)?%n%n%1%n%nNo: it stays on the PC and will be reused if you reinstall Pixane.
 english.DesinstReglages=Also delete Pixane's settings (language, theme, last folder, text style, engine folder) and its logs?%n%nNo: they will be reused if you reinstall Pixane.
 
@@ -207,7 +223,9 @@ Name: "{autodesktop}\{#NomRaccourci}"; Filename: "{app}\python\Pixane.exe"; Para
 [Run]
 ; Moteur IA absent et licence acceptée : le téléchargeur démarre (Pixane sera lancé ensuite par l'utilisateur).
 Filename: "{app}\python\Pixane.exe"; Parameters: "{code:ParamsMoteur}"; WorkingDir: "{app}"; Description: "{cm:MoteurLancer}"; Check: InstallerMoteur; Flags: nowait postinstall skipifsilent runasoriginaluser
-Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,Pixane}"; Check: not InstallerMoteur; Flags: nowait postinstall skipifsilent runasoriginaluser
+; ComfyUI déjà là, traducteur choisi : sa fenêtre de téléchargement, puis Pixane.
+Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane.installation_traducteur --demarrer --puis-pixane"; WorkingDir: "{app}"; Description: "{cm:TradLancer}"; Check: InstallerTraducteurSeul; Flags: nowait postinstall skipifsilent runasoriginaluser
+Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,Pixane}"; Check: not InstallerMoteur and not InstallerTraducteurSeul; Flags: nowait postinstall skipifsilent runasoriginaluser
 
 [UninstallDelete]
 ; Fichiers créés par Python en fonctionnant (__pycache__) dans le dossier du programme.
@@ -234,6 +252,10 @@ var
   CaseMoteur, CaseSchnell, CaseLicence: TNewCheckBox;
   EditMoteur: TNewEdit;
   MoteurAbsent: Boolean;        { ComfyUI introuvable au moment de la page Moteur IA }
+  PageTrad: TWizardPage;
+  CaseTrad: TNewCheckBox;
+  EditTrad: TNewEdit;
+  TradDejaLa: Boolean;
   SupprimerMoteur, SupprimerReglages: Boolean;
   DossierMoteurU: String;
 
@@ -730,11 +752,112 @@ begin
   Result := MoteurAbsent and CaseMoteur.Checked and CaseLicence.Checked;
 end;
 
+{ ---------------------------------------------------------------- page « Traducteur des consignes »
+  Toujours montrée (ComfyUI présent ou non) : case cochée si le traducteur manque, grisée s'il est déjà là ;
+  dossier au choix (retenu dans les réglages de Pixane : traducteur_dossier). }
+function DossierTradParDefaut: String;
+var
+  D: String;
+begin
+  if RegQueryStringValue(HKCU, 'Software\Pixane\Pixane', 'traducteur_dossier', D) and (D <> '') then
+    Result := D
+  else
+    Result := ExpandConstant('{localappdata}\Pixane\traducteur');
+end;
+
+function TradInstalle(D: String): Boolean;
+begin
+  Result := FileExists(AddBackslash(D) + 'opus-mt-fr-en\model.safetensors') and
+            FileExists(AddBackslash(D) + 'opus-mt-fr-en\vocab.json');
+end;
+
+procedure TradParcourirClic(Sender: TObject);
+var
+  D: String;
+begin
+  D := EditTrad.Text;
+  if BrowseForFolder(CustomMessage('TradDossier'), D, True) then
+    EditTrad.Text := D;
+end;
+
+procedure TradCaseClic(Sender: TObject);
+begin
+  EditTrad.Enabled := CaseTrad.Checked and not TradDejaLa;
+end;
+
+procedure CreerPageTrad;
+var
+  Intro, Etiquette, Detail: TNewStaticText;
+  Bouton: TNewButton;
+  Y: Integer;
+begin
+  PageTrad := CreateCustomPage(PageMoteur.ID, CustomMessage('PageTradTitre'), CustomMessage('PageTradDescription'));
+  Intro := Texte(PageTrad, 0);
+  Intro.Caption := CustomMessage('TradIntro');
+  Intro.Height := ScaleY(120);
+  TradDejaLa := TradInstalle(DossierTradParDefaut);
+
+  CaseTrad := TNewCheckBox.Create(PageTrad);
+  CaseTrad.Parent := PageTrad.Surface;
+  CaseTrad.Top := Intro.Top + Intro.Height + ScaleY(6);
+  CaseTrad.Width := PageTrad.SurfaceWidth;
+  CaseTrad.Height := ScaleY(18);
+  CaseTrad.Font.Style := [fsBold];
+  CaseTrad.Checked := True;
+  if TradDejaLa then
+  begin
+    CaseTrad.Caption := CustomMessage('TradDeja');
+    CaseTrad.Enabled := False;
+  end
+  else
+    CaseTrad.Caption := CustomMessage('TradCase');
+  CaseTrad.OnClick := @TradCaseClic;
+
+  Y := CaseTrad.Top + CaseTrad.Height + ScaleY(8);
+  Etiquette := Texte(PageTrad, Y + ScaleY(3));
+  Etiquette.Caption := CustomMessage('TradDossier');
+  Etiquette.AutoSize := True;
+  Etiquette.WordWrap := False;
+  EditTrad := TNewEdit.Create(PageTrad);
+  EditTrad.Parent := PageTrad.Surface;
+  EditTrad.Top := Y;
+  EditTrad.Left := Etiquette.Width + ScaleX(8);
+  EditTrad.Width := PageTrad.SurfaceWidth - EditTrad.Left - ScaleX(100);
+  EditTrad.Text := DossierTradParDefaut;
+  EditTrad.Enabled := not TradDejaLa;
+  Bouton := TNewButton.Create(PageTrad);
+  Bouton.Parent := PageTrad.Surface;
+  Bouton.Caption := CustomMessage('Parcourir');
+  Bouton.Top := Y - ScaleY(1);
+  Bouton.Left := PageTrad.SurfaceWidth - ScaleX(92);
+  Bouton.Width := ScaleX(92);
+  Bouton.Height := ScaleY(23);
+  Bouton.Enabled := not TradDejaLa;
+  Bouton.OnClick := @TradParcourirClic;
+
+  Detail := Texte(PageTrad, Y + ScaleY(32));
+  Detail.Caption := CustomMessage('TradDetail');
+  Detail.Height := ScaleY(32);
+end;
+
+function TraducteurChoisi: Boolean;
+begin
+  Result := CaseTrad.Checked and not TradDejaLa;
+end;
+
+{ ComfyUI déjà là (pas de moteur à installer) : le traducteur se télécharge dans sa propre fenêtre.
+  Avec le moteur, c'est la fenêtre du moteur qui le télécharge (case cochée ou non selon ce choix). }
+function InstallerTraducteurSeul: Boolean;
+begin
+  Result := TraducteurChoisi and not InstallerMoteur;
+end;
+
 function ParamsMoteur(Param: String): String;
 begin
   Result := '-m pixane.installation_moteur --dossier "' + RemoveBackslashUnlessRoot(EditMoteur.Text) +
     '" --accepte --demarrer';
   if CaseSchnell.Checked then Result := Result + ' --schnell';
+  if not TraducteurChoisi then Result := Result + ' --sans-traducteur';
 end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
@@ -780,6 +903,12 @@ begin
     Result := False;
     Exit;
   end;
+  if (CurPageID = PageTrad.ID) and TraducteurChoisi and not DossierInscriptible(EditTrad.Text) then
+  begin
+    MsgBox(FmtMessage(CustomMessage('MoteurProtege'), [EditTrad.Text]), mbError, MB_OK);
+    Result := False;
+    Exit;
+  end;
   if (CurPageID <> PageMoteur.ID) or not CaseMoteur.Checked then Exit;
   if not CaseLicence.Checked then
   begin
@@ -820,6 +949,7 @@ begin
     LoadEnglishWelcomeImage;
   CreerPagePC;
   CreerPageMoteur;
+  CreerPageTrad;
 end;
 
 procedure CurPageChanged(CurPageID: Integer);
@@ -835,6 +965,9 @@ begin
   { dossier de ComfyUI indiqué à la main : retenu dans les réglages de Pixane }
   if (CurStep = ssPostInstall) and (ComfyChoisi <> '') then
     RegWriteStringValue(HKCU, 'Software\Pixane\Pixane', 'comfyui_dir', ComfyChoisi);
+  { dossier du traducteur choisi : retenu dans les réglages de Pixane }
+  if (CurStep = ssPostInstall) and TraducteurChoisi then
+    RegWriteStringValue(HKCU, 'Software\Pixane\Pixane', 'traducteur_dossier', RemoveBackslashUnlessRoot(EditTrad.Text));
 end;
 
 { ---------------------------------------------------------------- désinstallation

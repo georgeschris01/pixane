@@ -115,3 +115,41 @@ class FenetreTraducteur(QDialog):
         if self.travail is not None:
             self.travail.arret.set()
         super().reject()
+
+
+def main():
+    """Lancée par l'installateur de Pixane (case « traducteur ») : télécharge le traducteur, puis ouvre Pixane."""
+    import argparse
+    import os
+    import subprocess
+    import sys
+
+    from PySide6.QtCore import QSettings
+    from PySide6.QtGui import QIcon
+    from PySide6.QtWidgets import QApplication
+
+    if sys.platform == "win32":
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("chrypox.Pixane")
+    a = argparse.ArgumentParser(description="Installe le traducteur des consignes de Pixane")
+    a.add_argument("--demarrer", action="store_true", help="commencer tout de suite")
+    a.add_argument("--puis-pixane", action="store_true", help="ouvrir Pixane à la fin")
+    args = a.parse_args()
+    from . import langue, theme
+    from .__main__ import ICONE, traduire_qt
+    app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon(str(ICONE)))
+    reglages = QSettings("Pixane", os.environ.get("PIXANE_REGLAGES", "Pixane"))
+    traduire_qt(app, langue.choisir(reglages.value("langue", langue.AUTO)))
+    theme.appliquer(app, reglages.value("theme", theme.AUTO))
+    f = FenetreTraducteur()
+    f.show()
+    if args.demarrer and not traduction.installe():
+        f.installer()
+    app.exec()
+    if args.puis_pixane:
+        subprocess.Popen([sys.executable, "-m", "pixane"], close_fds=True)
+
+
+if __name__ == "__main__":
+    main()

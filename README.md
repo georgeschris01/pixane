@@ -492,7 +492,8 @@ lunettes »… (modèle **Flux Kontext**, à ajouter dans Installer le moteur IA
 - Écris dans les guillemets le texte **exactement comme sur l'image** (accents, majuscules) : « Brûler le Feu »,
   pas « bruler le feu ».
 - Le traducteur Il s'installe par le
-  bouton « Installer le traducteur… », ou par sa case dans **IA > Installer le moteur IA** (fenêtre « Installer »
+  **programme d'installation de Pixane** (page « Traducteur des consignes »), par le bouton « Installer le
+  traducteur… », ou par sa case dans **IA > Installer le moteur IA** (fenêtre « Installer »
   ou « Compléter le moteur IA » si ComfyUI était déjà là) : cochée tant qu'il n'est pas installé, grisée ensuite.
   **Dossier du traducteur… Changer…** : tu choisis où le ranger (par défaut, le dossier de Pixane).
 - L'IA travaille sur un morceau autour de la sélection (plus de détail qu'avec toute l'image) ; le résultat n'est
