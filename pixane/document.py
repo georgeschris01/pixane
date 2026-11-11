@@ -413,13 +413,35 @@ def _sans_fond(rgb: np.ndarray, alpha: np.ndarray, fond: int, orig: np.ndarray) 
     return np.where(partiel, np.clip(melange + 0.5, 0, 255), rgb).astype(np.uint8)
 
 
-def vue_ia(resultat: QImage, base: QImage) -> QImage:
-    """Résultat de l'IA tel qu'il sera posé : avec la transparence de l'image (pour la fenêtre de choix)."""
+def trous_a_remplir(rgba: np.ndarray, zone: np.ndarray | None) -> np.ndarray | None:
+    """Effacer / Remplir : pixels transparents de la sélection qui sont des « trous » dans l'image (entourés de
+    pixels opaques, par exemple un texte coupé : ses lettres ont laissé des trous). L'IA les remplit, opaques.
+    Le transparent qui continue hors de la sélection (fond d'un détourage, bord de la feuille) reste transparent.
+    None : aucun trou."""
+    if zone is None:
+        return None
+    alpha = rgba[:, :, 3]
+    vide = alpha < 250
+    dedans = zone > 0
+    if not (vide & dedans).any():
+        return None
+    from .selection_auto import etiquettes
+    lab, _ = etiquettes(vide)
+    dehors = np.unique(lab[vide & ~dedans])            # zones transparentes qui sortent de la sélection
+    trous = vide & dedans & ~np.isin(lab, dehors[dehors >= 0])
+    return trous if trous.any() else None
+
+
+def vue_ia(resultat: QImage, base: QImage, trous: np.ndarray | None = None) -> QImage:
+    """Résultat de l'IA tel qu'il sera posé : avec la transparence de l'image (pour la fenêtre de choix). trous :
+    pixels transparents que l'IA remplit (Effacer, Remplir : voir trous_a_remplir), montrés opaques."""
     b = tableau(base.convertToFormat(FORMAT_IMAGE))
     if b[:, :, 3].min() == 255:
         return resultat
     W, H = resultat.width(), resultat.height()
     alpha = b[:, :, 3]
+    if trous is not None and trous.shape == alpha.shape:
+        alpha = np.where(trous, 255, alpha).astype(np.uint8)
     if (W, H) != (base.width(), base.height()):        # Upscale : transparence agrandie comme le résultat
         alpha = np.asarray(Image.fromarray(alpha, "L").resize((W, H), Image.BICUBIC))
     r = tableau(resultat.convertToFormat(FORMAT_IMAGE)).copy()
@@ -702,12 +724,17 @@ class Document(QObject):
         return self.actif
 
     def etat_resultat_ia(self, titre: str, resultat: QImage, zone: np.ndarray | None = None,
-                         nouveau_calque: bool = True):
+                         nouveau_calque: bool = True, trous: np.ndarray | None = None):
         """Résultat de l'IA de même taille, gardé seulement dans la zone (sélection au lancement, plus un fondu de
         quelques px) et là où il change quelque chose. Posé dans le calque choisi, ou dans un nouveau calque en
-        haut (nouveau_calque, ou si le calque choisi ne peut pas le recevoir)."""
+        haut (nouveau_calque, ou si le calque choisi ne peut pas le recevoir). trous : pixels transparents que
+        l'IA remplit, opaques (Effacer, Remplir : voir trous_a_remplir)."""
         w, h = self.taille()
-        pose = _image_ia(resultat, self.image, poids_zone(zone, w, h))
+        opacite = None
+        if trous is not None and trous.shape == (h, w):
+            a = tableau(self.image.convertToFormat(FORMAT_IMAGE))[:, :, 3].astype(np.float32) / 255
+            opacite = np.where(trous, 1.0, a).astype(np.float32)
+        pose = _image_ia(resultat, self.image, poids_zone(zone, w, h), opacite)
         cible = None if nouveau_calque else self.cible_ia(zone)
         if cible is None:
             calque = Calque.depuis(self.nom_libre(titre), pose)

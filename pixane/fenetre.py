@@ -34,7 +34,7 @@ from .canevas import (BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GO
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import (EXTENSIONS_CALQUES, EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, image_entiere,
                        Origine, a_plat, attacher_origine, masque, nouvelle_selection, origine_valide, qimage_rgb,
-                       tableau, transformation_depuis, vue_ia)
+                       tableau, transformation_depuis, trous_a_remplir, vue_ia)
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
 from .panneau_texte import BoutonCouleur, PanneauTexte
 from .garde_fou import garder_aplats, part_aplats
@@ -2299,12 +2299,12 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
 
     def ia_effacer(self):
         if self.doc and self._verifier_verrou(tr("Effacer")) and self._verifier_selection():
-            self._lancer(tr("Effacer"), True, lambda nom: recettes.effacer(nom))
+            self._lancer(tr("Effacer"), True, lambda nom: recettes.effacer(nom), remplir_trous=True)
 
     def ia_remplir(self):
         if self.doc and self._verifier_verrou(tr("Remplir")) and self._verifier_selection():
             texte = self.texte_remplir.text().strip()
-            self._lancer(tr("Remplir"), True, lambda nom: recettes.remplir(nom, texte))
+            self._lancer(tr("Remplir"), True, lambda nom: recettes.remplir(nom, texte), remplir_trous=True)
 
     def ia_agrandir(self):
         if not self.doc:
@@ -2572,8 +2572,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                      nom_calque=nom_calque, suffixe=suffixe)
 
     def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None,
-                placer=None, nom_calque: str | None = None, suffixe: str | None = None, affiner=None):
-        """Envoie l'image au moteur, attend, puis propose les résultats. nom_calque : nom du calque du résultat
+                placer=None, nom_calque: str | None = None, suffixe: str | None = None, affiner=None,
+                remplir_trous: bool = False):
+        """Envoie l'image au moteur, attend, puis propose les résultats. remplir_trous (Effacer, Remplir) : les trous
+        transparents de la sélection (lettres d'un texte coupé…) sont remplis, opaques. nom_calque : nom du calque du résultat
         (le titre sinon) ; suffixe : ajouté au nom proposé à l'enregistrement (ex. « _restauree »).
         affiner(image, fin) : travail de plus sur la proposition choisie (pleine définition), fin(image) l'applique."""
         doc = self.doc
@@ -2581,9 +2583,11 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             png = doc.png_pour_ia(avec_selection)
         original = doc.image
         zone = None if doc.selection_vide() else masque(doc.selection).copy()   # sélection au lancement
+        trous = (trous_a_remplir(tableau(original.convertToFormat(FORMAT_IMAGE)), zone)
+                 if remplir_trous and placer is None else None)
         choix = ChoixResultat(titre, original, self)
         if placer is None:                       # fond transparent : montré tel qu'il sera posé (pas en noir)
-            choix.vue = lambda img, base=original: vue_ia(img, base)
+            choix.vue = lambda img, base=original: vue_ia(img, base, trous)
         annuler = threading.Event()
         nom_image = {}
 
@@ -2611,7 +2615,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
             choix.ajouter(res)
             if choix.exec() and choix.choix() is not None:
                 def fin(image):
-                    self._appliquer_resultat(doc, image, titre, placer, nom_calque, zone)
+                    self._appliquer_resultat(doc, image, titre, placer, nom_calque, zone, trous)
                     if suffixe:
                         doc.suffixe_nom = suffixe
                 annuler.set()
@@ -2641,7 +2645,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         attente.show()
 
     def _appliquer_resultat(self, doc: Document, image: QImage, titre: str, placer=None,
-                            nom_calque: str | None = None, zone=None):
+                            nom_calque: str | None = None, zone=None, trous=None):
         """Le résultat choisi va dans le calque choisi, ou dans un nouveau calque (option du menu IA, ou si le
         calque choisi ne peut pas le recevoir). zone : sélection au lancement (le résultat n'en sort pas)."""
         if doc is not self.doc:
@@ -2652,7 +2656,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         if placer is not None:
             apres = placer(image)
         elif image.size() == doc.image.size():
-            apres = doc.etat_resultat_ia(nom, image, zone, nouveau)    # seulement les pixels retouchés
+            apres = doc.etat_resultat_ia(nom, image, zone, nouveau, trous)   # seulement les pixels retouchés
         else:
             apres = doc.etat_redimensionne(nom, image, nouveau)        # Upscale
         if len(apres[0]) > len(doc.calques) and not nouveau:

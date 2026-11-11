@@ -22,6 +22,11 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.18.0 (non publ
 
 ## Corrections
 
+- **Effacer / Remplir sur des trous transparents** (lettres d'un texte coupé dans une pochette) : les trous de la
+  sélection entourés par l'image sont maintenant remplis, opaques, avec la couleur autour ; avant, ils restaient
+  transparents (on voyait des lettres sombres : le fond de la fenêtre à travers). Le transparent qui continue hors
+  de la sélection reste transparent. Guide : ce que l'IA regarde (image visible) et les trous.
+
 - **Rétrécir sans valider** : dès la souris lâchée, le calque est en pleine qualité (avant : aperçu rapide, dégradé,
   tant qu'on n'appuyait pas sur Entrée). *(fe5d6b7)*
 - **Upscale** : le calque « plus net » est ramené à sa taille en qualité (Lanczos), et lors d'un Upscale de toute

@@ -351,6 +351,13 @@ see it** (all visible layers together): so choose the photo's layer before start
   (otherwise the others would be copied into it). A message at the bottom says so.
 - **AI > Put results in a new layer** (tick box): each result goes into a new layer, as before; handy to compare
   with the original by hiding the layer.
+- **What the AI looks at**: the **visible image** (all layers together, as in Photoshop), so that the result
+  matches what you see around it. The result itself goes **only** into the selected layer (or a new layer). A
+  hidden layer is not seen by the AI: to make it ignore a layer, hide it before starting.
+- **Transparent holes** (for example the letters of a text cut out of a cover): with **Erase** and **Fill**, the
+  holes that are in the selection and surrounded by the image are **filled**, opaque, with what surrounds them.
+  Transparency that continues outside the selection (around a cut-out photo, beyond the edge of a cover) stays
+  transparent.
 
 ### Result chooser
 - Click a thumbnail to see it full size.

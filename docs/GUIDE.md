@@ -365,6 +365,13 @@ de lancer.
   l'image a plusieurs calques (sinon les autres y seraient recopiés). Un message le dit en bas.
 - **IA > Mettre les résultats dans un nouveau calque** (à cocher) : chaque résultat va dans un nouveau calque,
   comme avant ; pratique pour comparer avec l'original en masquant le calque.
+- **Ce que l'IA regarde** : l'**image visible** (tous les calques ensemble, comme Photoshop), pour que le résultat
+  aille avec ce qu'on voit autour. Le résultat, lui, va **seulement** dans le calque choisi (ou un nouveau calque).
+  Un calque caché n'est pas vu par l'IA : pour qu'elle ne tienne pas compte d'un calque, cachez-le avant de lancer.
+- **Trous transparents** (par exemple les lettres d'un texte coupé dans une pochette) : avec **Effacer** et
+  **Remplir**, les trous qui sont dans la sélection et entourés par l'image sont **remplis**, opaques, avec ce qui
+  les entoure. Le transparent qui continue hors de la sélection (autour d'une photo détourée, au-delà du bord
+  d'une pochette) reste transparent.
 
 ### Fenêtre de choix du résultat
 - Cliquez sur une vignette pour la voir en grand.
