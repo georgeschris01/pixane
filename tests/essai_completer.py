@@ -116,6 +116,8 @@ pip = []
 installation_moteur.Installation._pip = lambda self, r: pip.append(self.python)
 inst = {"dir": comfy, "python": tmp / "python.exe"}
 f = FenetreCompleter(infos, dossiers, inst, externe=True)
+if f.c_traducteur.isEnabled():
+    f.c_traducteur.setChecked(False)          # le traducteur a ses propres essais (essai_modifier)
 verifier(f.liste.topLevelItemCount() == 4 and not f.c_licence.isHidden() and not f.b_lancer.isEnabled(),
          "fenêtre : 4 lignes ; licence FLUX à accepter avant de télécharger")
 f.c_licence.setChecked(True)

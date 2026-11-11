@@ -222,6 +222,7 @@ taille = sum(e.taille or 0 for e in cat)
 print(f"     total sans Schnell : {im.go(taille)} ; avec : {im.go(taille + im.taille_schnell())}")
 with tempfile.TemporaryDirectory() as tmp:
     f = im.FenetreInstallation(dossier=tmp)
+    f.c_traducteur.setChecked(False)          # le traducteur a ses propres essais (essai_modifier)
     verifier(f.liste.topLevelItemCount() == len(f.elements()), "fenêtre : un élément par ligne")
     verifier(not f.b_lancer.isEnabled(), "fenêtre : licence non acceptée -> bouton grisé")
     f.c_licence.setChecked(True)
