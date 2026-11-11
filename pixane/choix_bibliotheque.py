@@ -52,7 +52,9 @@ def _qimage(rgba: np.ndarray) -> QImage:
 class ChoixBibliotheque(QDialog):
     """genre : PINCEAUX ou MOTIFS. Après exec(), self.choisi = l'élément choisi (ou None)."""
 
-    def __init__(self, genre: str, parent=None, cle: str | None = None, biblio: Bibliotheque | None = None):
+    def __init__(self, genre: str, parent=None, cle: str | None = None, biblio: Bibliotheque | None = None,
+                 avec_rond: bool = False):
+        """avec_rond : bouton « Rond simple » (le pinceau rond d'origine : choisi = None)."""
         super().__init__(parent)
         self.genre, self.biblio, self.choisi = genre, biblio or bibliotheque(), None
         self.setWindowTitle(tr("Pinceaux") if genre == PINCEAUX else tr("Motifs"))
@@ -86,6 +88,11 @@ class ChoixBibliotheque(QDialog):
         boutons.accepted.connect(self.accept)
         boutons.rejected.connect(self.reject)
         bas = QHBoxLayout()
+        if avec_rond:
+            self.bouton_rond = QPushButton(tr("Rond simple"))
+            self.bouton_rond.setToolTip(tr("Le pinceau rond habituel (réglé par la dureté)"))
+            self.bouton_rond.clicked.connect(self._rond)
+            bas.addWidget(self.bouton_rond)
         bas.addWidget(self.bouton_ajouter)
         bas.addWidget(self.bouton_retirer)
         bas.addStretch(1)
@@ -201,6 +208,10 @@ class ChoixBibliotheque(QDialog):
         if r == QMessageBox.Yes:
             self.biblio.retirer(g)
             self._remplir_groupes()
+
+    def _rond(self) -> None:
+        self.choisi = None
+        QDialog.accept(self)
 
     def accept(self) -> None:
         it = self.grille.currentItem()

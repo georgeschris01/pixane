@@ -729,6 +729,26 @@ touching the photo).
   (100% sharp edge, 0% very soft edge).
 - Going over the same spot during one stroke does not darken the colour; a new stroke does.
 
+### Shaped brushes: the library (like Photoshop, Krita)
+The colour brush (and masks), the **layer eraser** and the **selection brush** can take a **shape**: chalk, pencil,
+grass, leaves, watercolour, splatters… Each tool keeps its own choice.
+- **Brush** (top bar): opens the library. Groups on the left, thumbnails on the right; double-click to choose.
+  **Plain round** goes back to the usual round brush.
+- **Shipped with Pixane**: 235 brushes and 87 patterns (Krita resources, CC-0 licence).
+- **Add files…**: Photoshop brushes (**.abr**), GIMP and Krita brushes (**.gbr**, **.gih**), Krita bundles
+  (**.bundle**), or a plain image (black paints; a colour image keeps its colours). Each file becomes a group;
+  **Remove this group** takes it away. Files are copied into Pixane: the original can be moved or deleted.
+- An “animated” brush (.gih: grass, leaves…) has several shapes that alternate along the stroke.
+- **Settings…** (a dot “•” shows when a setting is changed), with a stroke preview:
+  - **Shape**: spacing between dabs, angle (or “angle follows the stroke”, like a pen), roundness;
+  - **Scatter**: dabs spread away from the stroke, several at once, random size, angle and roundness;
+  - **Texture**: a pattern carves the stroke (chalk on grainy paper); scale, strength, invert;
+  - **Dual brush**: a second shape cuts into the first;
+  - **Colour**: hue, saturation, brightness varying at each dab, mix with white;
+  - **Transfer**: flow (below 100%, dabs build up, like an airbrush), variations;
+  - **Tablet**: with a stylus, pressure changes the size (and, if you wish, opacity or flow).
+- With a graphics-tablet stylus, even the round brush follows pressure.
+
 ### Clone stamp (S)
 Copies one part of the photo onto another: to remove a small defect by hand, duplicate a texture…
 1. **Alt+click** on the area to copy (a cross marks it).

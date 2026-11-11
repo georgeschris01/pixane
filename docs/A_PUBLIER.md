@@ -20,13 +20,16 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.18.0 (non publ
   visible (ancien comportement), avec une bulle d'aide qui explique la différence. *(signalé par Christophe : un
   calque vide rempli laissait un trou à l'emplacement d'un autre calque supprimé ensuite)*
 
-- **Pinceaux et motifs (en cours)** — étape 1 faite : bibliothèque. Lecture des fichiers de Photoshop (.abr
-  versions 1, 2 et 6+, .pat), de GIMP et Krita (.gbr, .gih animés, .pat, paquets .bundle) et des images ; **235
-  pinceaux et 87 motifs livrés** (ressources de Krita 3 et 4, licence CC-0, auteurs cités dans LICENCES_TIERS) ;
-  fenêtre Bibliothèque (groupes, vignettes, « Ajouter des fichiers… », « Retirer ce groupe »). Pas encore
-  accessible dans Pixane : viendra avec l'étape 2 (moteur de pinceau : espacement, angle, dispersion, texture,
-  double pinceau, couleur, pression de la tablette) et l'étape 3 (utilisations des motifs).
-  *Le jour de la publication : README « Ce que Pixane sait faire » + guide.*
+- **Pinceaux à forme (comme Photoshop, Krita)** : pinceau de couleur (et masques), gomme de calque et pinceau de
+  sélection peuvent prendre une forme de la bibliothèque (bouton « Pinceau » dans la barre du haut, un choix par
+  outil, gardé). **235 pinceaux et 87 motifs livrés** (ressources de Krita 3 et 4, licence CC-0, auteurs cités dans
+  LICENCES_TIERS). « Ajouter des fichiers… » : Photoshop .abr (versions 1, 2 et 6+), GIMP / Krita .gbr, .gih
+  (animés), paquets .bundle, images ; « Retirer ce groupe ». **Réglages…** avec aperçu : espacement, angle (ou qui
+  suit le trait), rondeur, dispersion, nombre, variations, texture (motif), double pinceau, couleur variable, flux,
+  **pression de la tablette** (même le pinceau rond la suit). Guide FR/EN : « Pinceaux à forme ».
+  *Reste (étape 3) : les motifs (pot de peinture, Incrustation de motif, Remplir avec un motif, Tampon de motif).*
+  *Le jour de la publication : README « Ce que Pixane sait faire », partie peinture : ajouter les pinceaux à forme
+  et la tablette.*
 
 ## Corrections
 

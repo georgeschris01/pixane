@@ -24,7 +24,8 @@ def verifier(cond, texte):
         erreurs.append(texte)
 
 
-photos = sorted(p for p in src.iterdir() if p.suffix.lower() in (".jpg", ".png", ".webp"))
+photos = sorted((p for p in src.iterdir() if p.suffix.lower() in (".jpg", ".png", ".webp")),
+                key=lambda p: (p.suffix.lower() != ".jpg", p.name))   # une photo (pas une capture)
 im = Image.open(photos[0]).convert("RGBA")
 petit = preparer(im, 600)
 verifier(max(petit.size) == 600, f"réduction au plus grand côté 600 : {petit.size}")

@@ -43,6 +43,16 @@ def textes_du_code() -> set[str]:
                         if isinstance(c, ast.Tuple) and len(c.elts) == 2 and all(
                                 isinstance(e, ast.Constant) for e in c.elts):
                             cles.add(c.elts[1].value)
+            # réglages du pinceau : libellés et aides (CHAMPS), onglets, explications (dictionnaire « explication »)
+            if f.name == "reglages_pinceau.py" and isinstance(n, ast.Assign):
+                noms = [getattr(t, "id", "") for t in n.targets]
+                if "CHAMPS" in noms:
+                    for c in n.value.elts:
+                        cles.update(c.elts[i].value for i in (1, 6) if c.elts[i].value)
+                if "ONGLETS" in noms:
+                    cles.update(e.value for e in n.value.elts)
+                if "explication" in noms:
+                    cles.update(v.value for v in n.value.values)
             # styles de calque : noms des effets et des modes, libellés et choix des réglages, styles tout prêts
             if f.name == "styles.py":
                 if isinstance(n, ast.Assign) and any(getattr(t, "id", "") in ("TYPES", "MODES", "REGLAGES")

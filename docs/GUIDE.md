@@ -755,6 +755,27 @@ corriger sans toucher à la photo).
   net, 0 % bord très doux).
 - Repasser au même endroit pendant un même coup ne fonce pas la couleur ; un nouveau coup, si.
 
+### Pinceaux à forme : la bibliothèque (comme Photoshop, Krita)
+Le pinceau de couleur (et les masques), la **gomme de calque** et le **pinceau de sélection** peuvent prendre une
+**forme** : craie, crayon, herbe, feuilles, aquarelle, éclaboussures… Chaque outil garde son propre choix.
+- **Pinceau** (barre du haut) : ouvre la bibliothèque. À gauche les groupes, à droite les vignettes ; double-clic pour
+  choisir. **Rond simple** revient au pinceau rond habituel.
+- **Livrés avec Pixane** : 235 pinceaux et 87 motifs (ressources de Krita, licence CC-0).
+- **Ajouter des fichiers…** : pinceaux de Photoshop (**.abr**), de GIMP et Krita (**.gbr**, **.gih**), paquets
+  Krita (**.bundle**), ou une simple image (le noir peint ; une image en couleur garde ses couleurs). Chaque fichier
+  devient un groupe ; **Retirer ce groupe** l'enlève. Les fichiers sont copiés dans Pixane : l'original peut être
+  déplacé ou supprimé.
+- Un pinceau « animé » (.gih : herbe, feuilles…) a plusieurs formes qui alternent pendant le trait.
+- **Réglages…** (un point « • » s'affiche quand un réglage est changé), avec un aperçu du trait :
+  - **Forme** : espacement entre les touches, angle (ou « l'angle suit le trait », comme une plume), rondeur ;
+  - **Dispersion** : les touches s'écartent du trait, plusieurs à la fois, taille, angle et rondeur au hasard ;
+  - **Texture** : un motif creuse le trait (craie sur papier à grain) ; échelle, force, inverser ;
+  - **Double pinceau** : une deuxième forme découpe la première ;
+  - **Couleur** : teinte, saturation, luminosité qui varient à chaque touche, mélange avec le blanc ;
+  - **Transfert** : flux (à moins de 100 %, les touches s'ajoutent, comme un aérographe), variations ;
+  - **Tablette** : avec un stylet, la pression change la taille (et, au choix, l'opacité ou le flux).
+- Avec un stylet de tablette graphique, même le pinceau rond suit la pression.
+
 ### Tampon (S)
 Recopie une partie de la photo sur une autre : pour effacer un petit défaut à la main, dupliquer une texture…
 1. **Alt+clic** sur l'endroit à copier (une croix le marque).

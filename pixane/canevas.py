@@ -8,13 +8,16 @@ from dataclasses import replace
 import numpy as np
 
 from PySide6.QtCore import QLineF, QPointF, QRectF, Qt, QTimer, Signal
-from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPainterPath, QPen, QPixmap, QPolygonF, QTransform
+from PySide6.QtGui import (QBrush, QColor, QImage, QInputDevice, QPainter, QPainterPath, QPen, QPixmap, QPolygonF,
+                           QTransform)
 from PySide6.QtWidgets import QWidget
 
 from . import regles
 from .composition import argb_vers_masque, masque_vers_argb
 from .document import COULEUR_SELECTION, Document, image_entiere, tableau
 from .langue import tr
+from .pointe import Pointe, Reglages
+from .retouche import GOMME as EFFACER
 from .retouche import Trait
 from .texte import contient, contour_bloc, rendre
 from .transformation import POIGNEES, Transformation
@@ -38,6 +41,8 @@ FORMES = "formes"                              # rectangle, ellipse, ligne, flè
 OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE, PEINTURE, TAMPON, RAPIDE, SUPPRIMER, CORRECTEUR)   # curseur rond
 OUTILS_AUTO = (BAGUETTE, RAPIDE, OBJET, SEL_TEXTE)                       # sélections calculées
 OUTILS_CALQUE = (GOMME_CALQUE, PEINTURE, TAMPON, CORRECTEUR, DEGRADE, SEAU)                  # outils qui changent les pixels du calque
+GROUPES_PINCEAU = ("peinture", "gomme", "selection")   # un pinceau à forme choisi par groupe d'outils
+GROUPE_OUTIL = {PEINTURE: "peinture", GOMME_CALQUE: "gomme", PINCEAU: "selection", GOMME: "selection"}
 OPACITE_SELECTION = 0.45
 
 # outils de sélection : les flèches du clavier décalent la sélection (Maj : 10 pixels)
@@ -114,6 +119,13 @@ class Canevas(QWidget):
         self.forme_degrade = "lineaire"
         self.tolerance_seau = 32
         self.seau_tous_calques = False   # pot de peinture : zone d'après l'image visible (sinon : le calque choisi)
+        # pinceaux à forme (bibliothèque) : un choix par groupe d'outils (peinture, gomme, sélection)
+        self.pinceaux = {g: {"cle": None, "reglages": Reglages()} for g in GROUPES_PINCEAU}
+        self._pointes: dict = {}         # formes prêtes à tamponner (par clé)
+        self._trait_forme: Trait | None = None   # gomme de calque / pinceau de sélection avec une forme
+        self._tablette = False           # un stylet a servi : la pression compte
+        self._pression = 1.0             # dernière pression du stylet (0..1)
+        self._pression_evt = 1.0         # pression du geste en cours
         self.forme = "rectangle"
         self.forme_remplie = True
         self._glisse_dessin = None   # dégradé / forme en cours : [début, fin, Maj]
@@ -757,8 +769,8 @@ class Canevas(QWidget):
             self._avant = self.doc.etat()
             gris = round(QColor(self.couleur_peinture).lightnessF() * 255)
             self._trait = Trait("peinture", masque_vers_argb(c.masque), self.taille_pinceau, self.durete,
-                                self.opacite, couleur=QColor(gris, gris, gris))
-            self._trait.ajouter(pt)
+                                self.opacite, couleur=QColor(gris, gris, gris), **self.parametres_pinceau(PEINTURE))
+            self._trait.ajouter(pt, self._pression_evt)
             self.doc.apercu_masque(self.doc.actif, argb_vers_masque(self._trait.image))
             return
         if c.texte is not None:
@@ -772,12 +784,12 @@ class Canevas(QWidget):
                                 source=self.doc.image.copy(), decalage=self._decalage_tampon)
         else:
             self._trait = Trait("peinture", c.image, self.taille_pinceau, self.durete, self.opacite,
-                                couleur=self.couleur_peinture)
-        self._trait.ajouter(pt)
+                                couleur=self.couleur_peinture, **self.parametres_pinceau(PEINTURE))
+        self._trait.ajouter(pt, self._pression_evt)
         self.doc.apercu_calque(self.doc.actif, self._trait.image)
 
     def _glisser_retouche(self, pos: QPointF):
-        self._trait.ajouter(self.vers_image(pos))
+        self._trait.ajouter(self.vers_image(pos), self._pression_evt)
         if self._sur_masque:
             self.doc.apercu_masque(self.doc.actif, argb_vers_masque(self._trait.image))
         else:
@@ -1268,6 +1280,14 @@ class Canevas(QWidget):
 
     # ---------------------------------------------------------- gomme de calque
     def _coup_de_gomme_calque(self, a: QPointF, b: QPointF):
+        if self._trait_forme is not None:              # gomme avec une forme (bibliothèque) ou la tablette
+            self._trait_forme.ajouter(b, self._pression_evt)
+            self._img_calque = self._trait_forme.image
+            if self._sur_masque:
+                self.doc.apercu_masque(self.doc.actif, argb_vers_masque(self._img_calque))
+            else:
+                self.doc.apercu_calque(self.doc.actif, QImage(self._img_calque))
+            return
         p = QPainter(self._img_calque)
         p.setRenderHint(QPainter.Antialiasing)
         p.setCompositionMode(QPainter.CompositionMode_DestinationOut)
@@ -1294,6 +1314,14 @@ class Canevas(QWidget):
         return p
 
     def _coup_de_pinceau(self, a: QPointF, b: QPointF):
+        if self._trait_forme is not None:              # pinceau de sélection avec une forme ou la tablette
+            zone = self._trait_forme.ajouter(b, self._pression_evt)
+            if not zone.isEmpty():
+                p = QPainter(self.doc.selection)
+                p.setCompositionMode(QPainter.CompositionMode_Source)
+                p.drawImage(zone.topLeft(), self._trait_forme.image, zone)
+                p.end()
+            return
         p = self._peintre_selection()
         p.setPen(QPen(COULEUR_SELECTION, self.taille_pinceau, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         if a == b:
@@ -1428,11 +1456,62 @@ class Canevas(QWidget):
         p.drawEllipse(b, 7, 7)
         p.setBrush(Qt.NoBrush)
 
+    # ---------------------------------------------------------- pinceaux à forme, tablette
+    def tabletEvent(self, e):
+        """Stylet : on note la pression ; Qt envoie ensuite l'événement souris habituel."""
+        self._tablette = True
+        self._pression = max(0.0, min(1.0, e.pressure()))
+        e.ignore()
+
+    def _pression_de(self, e) -> float:
+        dev = e.pointingDevice() if hasattr(e, "pointingDevice") else None
+        if self._tablette and dev is not None and dev.type() in (QInputDevice.DeviceType.Stylus,
+                                                                  QInputDevice.DeviceType.Airbrush):
+            return self._pression if self._pression > 0 else 1.0
+        return 1.0
+
+    def parametres_pinceau(self, outil: str) -> dict:
+        """Ce que Trait reçoit pour l'outil : forme choisie, réglages, texture, double pinceau. {} : le rond
+        simple d'avant (aucune forme, aucun réglage, pas de tablette)."""
+        groupe = GROUPE_OUTIL.get(outil)
+        if groupe is None:
+            return {}
+        choix = self.pinceaux[groupe]
+        r, cle = choix["reglages"], choix["cle"]
+        if cle is None and r == Reglages() and not self._tablette:
+            return {}
+        from .bibliotheque import MOTIFS, bibliotheque
+        kw = {"reglages": r, "fond": QColor(255, 255, 255)}
+        if cle:
+            p = self._pointe(cle)
+            if p is not None:
+                kw["pointe"] = p
+        if r.texture:
+            m = bibliotheque().trouver(MOTIFS, r.texture)
+            if m is not None:
+                kw["texture"] = m.image
+        if r.double:
+            d = self._pointe(r.double)
+            if d is not None:
+                kw["double"] = d
+        return kw
+
+    def _pointe(self, cle: str) -> Pointe | None:
+        from .bibliotheque import PINCEAUX, bibliotheque
+        if cle not in self._pointes:
+            e = bibliotheque().trouver(PINCEAUX, cle)
+            self._pointes[cle] = Pointe(e.formes, e.espacement) if e is not None else None
+        p = self._pointes[cle]
+        if p is not None:
+            p.indice = 0                  # pinceau animé : chaque trait repart de la première forme
+        return p
+
     def mousePressEvent(self, e):
         if not self.doc:
             return
         self.noter_geste()           # valeurs tapées avant ce geste : un geste à part
         pos = e.position()
+        self._pression_evt = self._pression_de(e)
         if self.style_ouvert:
             b = self._bout_sol_ecran()
             if e.button() == Qt.LeftButton and b is not None and (pos - b).manhattanLength() < 16:
@@ -1520,14 +1599,23 @@ class Canevas(QWidget):
                     self.refus.emit(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme "
                                        "texte (Ctrl+Z pour revenir).", nom=self.doc.calque_actif.nom))
                 self._img_calque = self.doc.calque_actif.image.copy()   # copie : l'état d'avant reste intact
+            kw = self.parametres_pinceau(GOMME_CALQUE)
+            self._trait_forme = (Trait(EFFACER, self._img_calque, self.taille_pinceau, 1.0, 1.0, **kw)
+                                 if kw else None)
             self._coup_de_gomme_calque(pt, pt)
         elif self.outil in (PINCEAU, GOMME):
+            kw = self.parametres_pinceau(self.outil)
+            efface = self._soustraire or self.outil == GOMME
+            self._trait_forme = (Trait(EFFACER if efface else "peinture", self.doc.selection.copy(),
+                                       self.taille_pinceau, 1.0, 1.0, couleur=COULEUR_SELECTION, **kw)
+                                 if kw else None)
             self._coup_de_pinceau(pt, pt)
         self.update()
 
     def mouseMoveEvent(self, e):
         pos = e.position()
         self._souris = pos
+        self._pression_evt = self._pression_de(e)
         if self.style_ouvert and self._sol_glisse:
             self.poignee_sol_bouge.emit(self.vers_image(pos))
             return

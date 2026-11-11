@@ -26,6 +26,7 @@ from .langue import tr
 from .actions_calques import ActionsCalques
 from .contour import ActionContour
 from .onglets import Onglets
+from .options_pinceau import OptionsPinceau
 from .calques import PanneauCalques
 from .canevas import (BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GOMME_CALQUE, LASSO, MAIN, OBJET,
                       SEL_TEXTE,
@@ -179,7 +180,7 @@ class Carte(QPushButton):
         self.image.setPixmap(ic.pixmap(28, 28))
 
 
-class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
+class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindow):
     etat_moteur = Signal(str)
 
     def __init__(self):
@@ -581,6 +582,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.opt_transfo.hide()
         tout.addWidget(self.opt_transfo)
         self._options_retouche(tout)
+        self._options_pinceau(tout)
         self._options_dessin(tout)
         self._options_recadrer(tout)
         b.addWidget(self.options)
@@ -909,6 +911,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.opt_formes.setVisible(outil == FORMES)
         self.opt_recadrer.setVisible(outil == RECADRER)
         self.opt_deplacer.setVisible(outil == DEPLACER)
+        self.maj_bouton_pinceau()
         # la barre du haut se remet en page (sinon un groupe trop large la ferait déborder)
         self.options.adjustSize()
         self.barre_haut.layout().invalidate()
@@ -2035,7 +2038,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         t.echelle_depart = abs(t.sx * t.sy) or 1.0         # pour mettre le style à l'échelle du geste seul
         self._transfo_avant = (self.doc.etat(), self.doc.modifie)
         self.canevas.commencer_transfo(t, self.doc.actif)
+        self.opt_pinceau.hide()                   # inutile pendant Ctrl+T ; avant show() (sinon la barre déborde)
         self.opt_transfo.show()
+        self.options.adjustSize()
+        self.barre_haut.layout().invalidate()
         self._transfo_change()
         self.statusBar().showMessage(tr("Transformer : coins = taille (Maj : libre), dedans = déplacer, dehors = "
                                         "tourner, au degré près (Maj : par 15°) ; ou tapez l'angle et la taille en "
@@ -2082,6 +2088,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         if self.canevas.transfo is not None:
             self.canevas.finir_transfo()
             self.opt_transfo.hide()
+            if hasattr(self, "opt_pinceau"):
+                self.maj_bouton_pinceau()
             self._transfo_avant = None
 
     def _transfo_change(self):
@@ -2113,6 +2121,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         img, x, y = t.rendu_entier(lisse=True)            # ce qui dépasse de la feuille est gardé
         self.canevas.finir_transfo()
         self.opt_transfo.hide()
+        if hasattr(self, "opt_pinceau"):
+            self.maj_bouton_pinceau()
         self._transfo_avant = None
         self.doc.appliquer_etat(avant)
         self.doc.modifie = _modifie
@@ -2135,6 +2145,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         avant, modifie = self._transfo_avant
         self.canevas.finir_transfo()
         self.opt_transfo.hide()
+        if hasattr(self, "opt_pinceau"):
+            self.maj_bouton_pinceau()
         self._transfo_avant = None
         self.doc.appliquer_etat(avant)
         self.doc.modifie = modifie
