@@ -425,6 +425,15 @@ over it to redraw the details; the strength sets how much this 2nd pass does.
 
 The window recalls this under the Strength box (fuller tooltip on hover).
 
+**Nothing invented in flat areas** (Sharp mode): without instructions, Flux tends to "see" things in a plain area
+(cover background, smooth sky) and adds spots, ghost text or drawings there. So Pixane keeps its work only where the
+original image really has detail (lines, text, photo texture); flat areas are taken from the original image simply
+enlarged, and the colours stay those of the original. Nothing to set: it is automatic.
+
+**Graphic image** (cover, logo, poster: mostly flat areas): Pixane recognises it and suggests strength **0.25** right
+away, because on text Flux may change a letter (seen in a test: "fig. 5" became "ftp. 5"). For a very simple graphic,
+**Fast** mode is often enough.
+
 The window shows the final size before starting; while computing, the progress counts the tiles.
 
 **What should be processed?** (top of the window; the last choice is remembered)

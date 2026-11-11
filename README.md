@@ -505,6 +505,15 @@ dessus pour redessiner les détails ; la force règle l'importance de ce 2e pass
 
 La fenêtre le rappelle sous la case Force (bulle d'aide plus complète au survol).
 
+**Rien d'inventé dans les aplats** (mode Net) : sans consigne, Flux a tendance à « voir » des choses dans une zone
+unie (fond de pochette, ciel lisse) et y ajoute taches, textes fantômes ou dessins. Pixane ne garde donc son travail
+que là où l'image d'origine a vraiment du détail (traits, texte, matière d'une photo) ; les aplats sont repris de
+l'image d'origine simplement agrandie, et les couleurs restent celles de l'origine. Rien à régler : c'est automatique.
+
+**Image graphique** (pochette, logo, affiche : surtout des aplats) : Pixane le reconnaît et propose d'office la force
+**0,25**, car sur du texte Flux peut changer une lettre (vu en essai : « fig. 5 » devenu « ftp. 5 »). Pour un graphisme
+très simple, le mode **Rapide** suffit souvent.
+
 La fenêtre indique la taille finale avant de lancer ; pendant le calcul, la progression compte les morceaux.
 
 **Que faut-il traiter ?** (en haut de la fenêtre ; le dernier choix est retenu)

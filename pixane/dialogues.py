@@ -300,8 +300,9 @@ class BarreAgrandir(QFrame):
 
 class ReglagesUpscale(QDialog):
     def __init__(self, largeur: int, hauteur: int, parent=None, calque=None, cible: str = "image",
-                 image_possible: bool = True):
-        """calque : None, ou (nom, (largeur, hauteur) de son contenu) : on peut alors ne traiter que ce calque.
+                 image_possible: bool = True, graphique: bool = False):
+        """graphique : image faite surtout d'aplats (pochette, logo, affiche) : force douce proposée d'office.
+        calque : None, ou (nom, (largeur, hauteur) de son contenu) : on peut alors ne traiter que ce calque.
         cible : choix de départ, « image », « net » (calque plus net à sa taille) ou « agrandi » (calque agrandi)."""
         super().__init__(parent)
         self.setWindowTitle(tr("Upscale"))
@@ -341,7 +342,7 @@ class ReglagesUpscale(QDialog):
         self.force = QDoubleSpinBox()
         self.force.setRange(0.10, 0.60)
         self.force.setSingleStep(0.05)
-        self.force.setValue(0.35)
+        self.force.setValue(0.25 if graphique else 0.35)
         self.force.setToolTip(tr(
             "Force : la liberté laissée à Flux quand il redessine les détails (mode Net).\n"
             "0,10 à 0,25 : très fidèle à la photo, peu de détails ajoutés (visages, textes, logos).\n"
@@ -351,6 +352,9 @@ class ReglagesUpscale(QDialog):
         self.aide_force = QLabel(tr("Force : liberté laissée à l'IA pour redessiner les détails. 0,35 conseillé ; "
                                     "0,25 pour des visages, textes ou logos (plus fidèle) ; 0,45 pour des paysages "
                                     "ou des matières (plus de détails, un peu inventés)."))
+        if graphique:
+            self.aide_force.setText(tr("Image graphique (aplats, texte, logo) : force 0,25 proposée, pour que l'IA ne "
+                                       "change pas les lettres. Les aplats sont protégés : rien n'y est inventé."))
         self.aide_force.setWordWrap(True)
         self.aide_force.setObjectName("discret")
         self.resultat = QLabel()

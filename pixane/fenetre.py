@@ -36,6 +36,7 @@ from .document import (EXTENSIONS_CALQUES, EXTENSIONS_LECTURE, FORMAT_IMAGE, Doc
                        a_plat, masque, nouvelle_selection, qimage_rgb, tableau, vue_ia)
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
 from .panneau_texte import BoutonCouleur, PanneauTexte
+from .garde_fou import garder_aplats, part_aplats
 from .raccord import finaliser, lisere_auto, preparer
 from .reglages_image import FenetreReglages, ajuster, auto, neutre
 from .dialogues_document import ExportImpression, NouvelleImage, ZoneTravail
@@ -2425,8 +2426,12 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         cible = self.reglages.value("upscale_cible", "agrandi") if len(doc.calques) > 1 else "image"
         if not image_possible and cible == "image":
             cible = "agrandi"
+        try:
+            graphique = part_aplats(doc.rgb_pour_ia()) > 0.5      # pochette, logo : force douce proposée
+        except Exception:
+            graphique = False
         d = ReglagesUpscale(doc.image.width(), doc.image.height(), self, calque=calque, cible=cible,
-                            image_possible=image_possible)
+                            image_possible=image_possible, graphique=graphique)
         if d.exec():
             v = d.valeurs()
             if calque is not None:
@@ -2443,8 +2448,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                 return
             if v["net"]:
                 taille = (self.doc.image.width(), self.doc.image.height())
+                origine = self.doc.rgb_pour_ia()           # garde-fou : Flux n'invente rien dans les aplats
                 self._lancer(tr("Upscale"), False,
-                             lambda nom: recettes.upscale_net(nom, v["facteur"], v["force"], taille))
+                             lambda nom: recettes.upscale_net(nom, v["facteur"], v["force"], taille),
+                             apres=lambda r: garder_aplats(origine, r))
             else:
                 self._lancer(tr("Upscale"), False, lambda nom: recettes.upscale_rapide(nom, v["facteur"]))
 
@@ -2468,7 +2475,12 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         else:
             fabriquer = lambda nom: recettes.upscale_rapide(nom, v["facteur"])
         nouveau = self.a_ia_nouveau_calque.isChecked()
-        self._lancer(tr("Upscale"), False, fabriquer, apres=lambda r: vue_ia(r, source), png=tampon.getvalue(),
+
+        def apres(r):
+            if v["net"]:                                   # garde-fou : Flux n'invente rien dans les aplats
+                r = garder_aplats(rgb, r)
+            return vue_ia(r, source)
+        self._lancer(tr("Upscale"), False, fabriquer, apres=apres, png=tampon.getvalue(),
                      placer=lambda r: doc.etat_upscale_calque(index, r, v["cible"], nouveau, tr("Upscale")))
 
     # ---------------------------------------------------------------- améliorer, restaurer

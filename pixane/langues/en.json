@@ -429,6 +429,7 @@
  "Il y a du vide autour de la photo : le cadre part de la photo. Tire-le jusqu'où l'IA doit la prolonger : dans le vide (il s'arrête tout seul au bord de l'image), ou au-delà pour agrandir l'image.": "There is empty space around the photo: the frame starts from the photo. Drag it as far as the AI should extend it: into the empty space (it stops by itself at the image edge), or beyond to enlarge the image.",
  "Image : {l} × {h} px": "Image: {l} × {h} px",
  "Image collée plus grande que la photo : réduite à {p} %. Ajuste sa taille avec les poignées, puis Entrée.": "Pasted image larger than the photo: reduced to {p} %. Adjust its size with the handles, then press Enter.",
+ "Image graphique (aplats, texte, logo) : force 0,25 proposée, pour que l'IA ne change pas les lettres. Les aplats sont protégés : rien n'y est inventé.": "Graphic image (flat areas, text, logo): strength 0.25 suggested, so the AI does not change the letters. Flat areas are protected: nothing is invented there.",
  "Image trop grande pour un PSD (30 000 pixels au plus de côté).": "Image too large for a PSD (30,000 pixels per side at most).",
  "Image visible": "Visible image",
  "Images": "Images",
