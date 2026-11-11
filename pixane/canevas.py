@@ -718,7 +718,8 @@ class Canevas(QWidget):
         self._calque_glisse = None
         dx, dy = getattr(self, "_decalage_calque", (0, 0))
         if (dx, dy) != (0, 0):
-            self.doc.apercu_calque_entier(index, image, x + dx, y + dy)     # ce qui sort de la feuille est gardé
+            self.doc.apercu_calque_entier(index, image, x + dx, y + dy,      # ce qui sort de la feuille est gardé
+                                          avant=avant[0][index], decalage=(dx, dy))
             self.selection_modifiee.emit(avant, tr("Déplacer le calque"))
         self._decalage_calque = (0, 0)
 

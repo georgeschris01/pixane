@@ -8,6 +8,7 @@ immuables : une modification crée un nouveau Calque (les QImage sont partagées
 from __future__ import annotations
 
 import io
+import math
 import json
 import xml.etree.ElementTree as ET
 import zipfile
@@ -109,6 +110,9 @@ class Calque:
     hors: QImage | None = None
     hors_x: int = 0
     hors_y: int = 0
+    # meilleure version du calque (comme un objet dynamique de Photoshop) : réduire puis réagrandir repart d'elle,
+    # sans perte. Valable tant que les pixels n'ont pas été modifiés autrement (voir origine_valide).
+    origine: "Origine | None" = None
 
     @staticmethod
     def depuis(nom: str, image: QImage, **kw) -> "Calque":
@@ -162,13 +166,107 @@ def avec_image_entiere(c: Calque, img: QImage, x: int, y: int, W: int, H: int, *
 
 
 def _decale(c: Calque, dx: int, dy: int, W: int, H: int) -> Calque:
-    """Calque posé, décalé de (dx, dy), sur une feuille W × H (ce qui dépasse est gardé)."""
+    """Calque posé, décalé de (dx, dy), sur une feuille W × H (ce qui dépasse est gardé ; sa meilleure version
+    suit)."""
+    o = origine_valide(c)
     img, x, y = image_entiere(c)
-    return avec_image_entiere(c, img, x + dx, y + dy, W, H)
+    n = avec_image_entiere(c, img, x + dx, y + dy, W, H)
+    return attacher_origine(n, replace(o, cx=o.cx + dx, cy=o.cy + dy)) if o is not None else n
+
+
+# ------------------------------------------------------------------ meilleure version d'un calque
+@dataclass(frozen=True, eq=False)
+class Origine:
+    """Meilleure version d'un calque et sa pose dans la feuille : centre (cx, cy), échelles sx, sy (négatives =
+    miroir), angle en degrés. Le calque affiché = cette image posée ainsi (voir transformation.Transformation)."""
+    image: QImage
+    sx: float = 1.0
+    sy: float = 1.0
+    angle: float = 0.0
+    cx: float = 0.0
+    cy: float = 0.0
+    cles: tuple = ()              # empreinte des pixels du calque quand elle était juste (voir _cles)
+
+
+def _cles(c: Calque) -> tuple:
+    return (c.image.cacheKey(), c.hors.cacheKey() if c.hors is not None else 0, c.hors_x, c.hors_y)
+
+
+def origine_valide(c: Calque) -> Origine | None:
+    """La meilleure version du calque, si ses pixels n'ont pas été modifiés depuis (pinceau, IA, filtre…)."""
+    o = c.origine
+    if o is None or c.texte is not None or c.special or o.cles != _cles(c):
+        return None
+    return o
+
+
+def attacher_origine(c: Calque, o: Origine | None) -> Calque:
+    """Le calque `c` (pixels déjà calculés) avec sa meilleure version `o` (None : plus de meilleure version)."""
+    return replace(c, origine=None if o is None else replace(o, cles=_cles(c)))
+
+
+def origine_ou_actuelle(c: Calque) -> Origine | None:
+    """La meilleure version du calque, ou sa version actuelle (rognée à son contenu) s'il n'en a pas ; None : vide."""
+    o = origine_valide(c)
+    if o is not None:
+        return o
+    if c.texte is not None or c.special:
+        return None
+    img, x, y = image_entiere(c)
+    a = tableau(img.convertToFormat(FORMAT_CALQUE))[:, :, 3]
+    ys, xs = np.nonzero(a)
+    if not len(ys):
+        return None
+    r = QRect(int(xs.min()), int(ys.min()), int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1))
+    return Origine(img.copy(r), cx=x + r.x() + r.width() / 2, cy=y + r.y() + r.height() / 2)
+
+
+def composer_origine(o: Origine, t: QTransform) -> Origine | None:
+    """La pose de `o` suivie de la transformation `t` de toute la feuille (déplacer, agrandir, tourner, miroir).
+    None si le résultat n'est plus « tourné + étiré » (étirement en biais d'un calque tourné)."""
+    a = math.radians(o.angle)
+    c, s = math.cos(a), math.sin(a)
+    # partie linéaire de la pose : colonnes R(a)·S
+    c1 = (c * o.sx, s * o.sx)
+    c2 = (-s * o.sy, c * o.sy)
+    def lin(v):
+        return (t.m11() * v[0] + t.m21() * v[1], t.m12() * v[0] + t.m22() * v[1])
+    n1, n2 = lin(c1), lin(c2)
+    l1, l2 = math.hypot(*n1), math.hypot(*n2)
+    if l1 < 1e-9 or l2 < 1e-9 or abs(n1[0] * n2[0] + n1[1] * n2[1]) > 1e-6 * l1 * l2:
+        return None
+    angle = math.degrees(math.atan2(n1[1], n1[0]))
+    det = n1[0] * n2[1] - n1[1] * n2[0]
+    sy = math.copysign(l2, det)
+    centre = t.map(QPointF(o.cx, o.cy))
+    angle = (angle + 180) % 360 - 180
+    if abs(angle - round(angle)) < 1e-6:
+        angle = float(round(angle))
+    return replace(o, sx=l1, sy=sy, angle=angle, cx=centre.x(), cy=centre.y())
+
+
+def transformation_depuis(o: Origine):
+    """La Transformation (cadre à poignées) qui pose la meilleure version comme le calque actuel."""
+    from .transformation import Transformation
+    t = Transformation(o.image, QRect(0, 0, o.image.width(), o.image.height()))
+    t.sx, t.sy, t.angle, t.centre = o.sx, o.sy, o.angle, QPointF(o.cx, o.cy)
+    t.origine = o.image
+    return t
+
+
+def rendre_origine(c: Calque, o: Origine, W: int, H: int) -> Calque:
+    """Le calque recalculé depuis sa meilleure version `o` (qualité Lanczos), sur une feuille W × H."""
+    img, x, y = transformation_depuis(o).rendu_entier(True)
+    return attacher_origine(avec_image_entiere(c, img, x, y, W, H, texte=None), o)
 
 
 def _transforme_entier(c: Calque, transfo: QTransform, W: int, H: int, lisse: bool) -> Calque:
-    """Calque entier redessiné par `transfo` sur une feuille W × H (ce qui dépasse est gardé)."""
+    """Calque entier redessiné par `transfo` sur une feuille W × H (ce qui dépasse est gardé). Repart de sa
+    meilleure version (s'il en a une), qui la suit."""
+    o = origine_valide(c)
+    o2 = composer_origine(o, transfo) if o is not None else None
+    if o2 is not None:
+        return rendre_origine(c, o2, W, H)
     img, x, y = image_entiere(c)
     t = QTransform().translate(x, y) * transfo
     r = t.mapRect(QRectF(0, 0, img.width(), img.height())).toAlignedRect()
@@ -183,7 +281,13 @@ def _transforme_entier(c: Calque, transfo: QTransform, W: int, H: int, lisse: bo
 
 
 def _mis_a_l_echelle(c: Calque, w: int, h: int, W: int, H: int, lanczos: bool) -> Calque:
-    """Calque entier agrandi ou réduit (feuille w × h -> W × H ; ce qui dépasse suit)."""
+    """Calque entier agrandi ou réduit (feuille w × h -> W × H ; ce qui dépasse suit). En qualité : repart de sa
+    meilleure version (gardée : réduire l'image puis la réagrandir ne perd rien)."""
+    if lanczos:
+        o = origine_ou_actuelle(c)
+        o2 = composer_origine(o, QTransform.fromScale(W / w, H / h)) if o is not None else None
+        if o2 is not None:
+            return rendre_origine(c, o2, W, H)
     img, x, y = image_entiere(c)
     kx, ky = W / w, H / h
     nw, nh = max(1, round(img.width() * kx)), max(1, round(img.height() * ky))
@@ -746,7 +850,10 @@ class Document(QObject):
                 t = c.texte.deplace(-r.x(), -r.y())
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
             else:
-                nouveaux.append(replace(c, image=c.image.copy(r), hors=None))
+                o = origine_valide(c)
+                n = replace(c, image=c.image.copy(r), hors=None)
+                nouveaux.append(attacher_origine(n, replace(o, cx=o.cx - r.x(), cy=o.cy - r.y()))
+                                if o is not None else n)
         nouveaux = [_avec_masque_transforme(c, lambda im: im.copy(r)) for c in nouveaux]
         return self.etat_avec(tuple(nouveaux), self.actif, self.selection.copy(r))
 
@@ -908,11 +1015,17 @@ class Document(QObject):
         calques[index] = avec_image_entiere(calques[index], img, x, y, w, h, **changements)
         return self.etat_avec(calques)
 
-    def apercu_calque_entier(self, index: int, img: QImage, x: int, y: int) -> None:
-        """Comme apercu_calque, en gardant ce qui dépasse de la feuille (fin d'un déplacement)."""
+    def apercu_calque_entier(self, index: int, img: QImage, x: int, y: int, avant: Calque | None = None,
+                             decalage: tuple[int, int] = (0, 0)) -> None:
+        """Comme apercu_calque, en gardant ce qui dépasse de la feuille (fin d'un déplacement). avant : le calque
+        avant le déplacement de `decalage` (sa meilleure version suit)."""
         w, h = self.taille()
         calques = list(self.calques)
         calques[index] = avec_image_entiere(calques[index], img, x, y, w, h, texte=None)
+        o = origine_valide(avant) if avant is not None else None
+        if o is not None:
+            calques[index] = attacher_origine(calques[index], replace(o, cx=o.cx + decalage[0],
+                                                                     cy=o.cy + decalage[1]))
         self.calques = tuple(calques)
         self._fusion = None
         self.change.emit()
@@ -1447,6 +1560,13 @@ def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False, reper
                         a["pixane-masque-inactif"] = "true"
                 if c.groupe and not c.ouvert:
                     a["pixane-ferme"] = "true"
+                o = origine_valide(c)
+                if o is not None:                             # meilleure version du calque (sans perte)
+                    compte[0] += 1
+                    src = f"data/origine{compte[0]}.png"
+                    z.writestr(src, _png(o.image), compress_type=zipfile.ZIP_STORED)
+                    a["pixane-origine"] = src
+                    a["pixane-origine-pose"] = json.dumps([o.sx, o.sy, o.angle, o.cx, o.cy])
             return a
 
         def ecrire(noeuds, parent):
@@ -1522,9 +1642,19 @@ def lire_ora(chemin: Path) -> list[Calque]:
                     if reglage is not None and not (isinstance(reglage, dict) and "type" in reglage
                                                     and "params" in reglage):
                         reglage = None
-                    res.append(Calque(e.get("name") or tr("Calque"), img, texte=texte, style=style, reglage=reglage,
-                                      dans=dans, hors=None if texte is not None else place.hors,
-                                      hors_x=place.hors_x, hors_y=place.hors_y, **commun(e)))
+                    c = Calque(e.get("name") or tr("Calque"), img, texte=texte, style=style, reglage=reglage,
+                               dans=dans, hors=None if texte is not None else place.hors,
+                               hors_x=place.hors_x, hors_y=place.hors_y, **commun(e))
+                    src, pose = _attr(e, "origine"), json_ou_rien(_attr(e, "origine-pose"), json.loads)
+                    if src and isinstance(pose, list) and len(pose) == 5:
+                        try:
+                            with Image.open(io.BytesIO(z.read(src))) as im:
+                                o_img = pil_vers_qimage(im).convertToFormat(FORMAT_CALQUE)
+                            sx, sy, angle, cx, cy = (float(v) for v in pose)
+                            c = attacher_origine(c, Origine(o_img, sx, sy, angle, cx, cy))
+                        except (KeyError, OSError, ValueError, TypeError):
+                            pass                               # meilleure version illisible : le calque suffit
+                    res.append(c)
             return res
         pile = racine.find("stack")
         calques = lire(pile if pile is not None else racine, None)

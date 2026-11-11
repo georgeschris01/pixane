@@ -311,10 +311,17 @@ outside the canvas is kept and can be brought back; refused on a locked layer).
   or grain. Without rotation, the layer is placed on whole pixels: a simple move never blurs it. During the gesture, the
   preview is fast; **as soon as the mouse is released**, the layer is at full quality, even if you move on without
   validating. Same quality for *Image > Image size* and for the Upscale (layer brought back to its size, other
-  layers enlarged). A simple move changes no pixel. Shrinking necessarily removes pixels (less detail, as
-  everywhere): until the gesture is validated, Pixane always starts again from the original image, so shrinking
-  then enlarging again before Enter loses nothing. Tip: each kept transformation recomputes the image; better to set the
-  size in one go than to shrink and then enlarge.
+  layers enlarged). A simple move changes no pixel.
+- **No loss when shrinking then enlarging again** (like a Photoshop *smart object*, with nothing to do): each layer
+  keeps its **best version** (for example the one after an Upscale). Shrink, validate, do something else, save,
+  reopen the project… then enlarge again: Pixane starts again from this best version, and the image comes back
+  **exactly as it was, pixel for pixel**, up to its original size. Works with Move (handles), Ctrl+T,
+  *Image > Image size*, rotate, flip, crop, align. It is saved in the **.pixane** project (which gets a little bigger).
+  - If you **change the pixels** of the layer (brush, eraser, AI, filter…), the changed version becomes the new
+    reference (the old one would erase the work).
+  - Enlarging **beyond** the best version makes the image softer: those pixels never existed (use the Upscale).
+  - Transforming only a **selected part** of the layer: the current version becomes the reference.
+  - In Ctrl+T, the percentages are counted from the best version (100 % = its original size).
 - The **Show transform controls** box (at the top) hides it if it gets in the way. No frame on an empty, locked,
   hidden or text layer (a text changes size with the Text tool).
 

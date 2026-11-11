@@ -323,9 +323,18 @@ sort de la feuille est gardé, on peut le faire revenir ; refusé sur un calque 
   floute jamais. Pendant le geste, l'aperçu est rapide ; **dès que la souris est lâchée**, le calque est en pleine
   qualité, même si l'on passe à autre chose sans valider. Même qualité pour *Image > Taille de l'image* et pour
   l'Upscale (calque ramené à sa taille, autres calques agrandis). Un simple déplacement ne change aucun pixel.
-  Rétrécir enlève forcément des pixels (moins de détails, comme partout) : tant que le geste n'est pas validé,
-  Pixane repart toujours de l'image d'origine, donc réduire puis réagrandir avant Entrée ne perd rien. Conseil : chaque
-  transformation gardée recalcule l'image ; mieux vaut régler la taille en une fois que réduire puis agrandir.
+- **Aucune perte en réduisant puis en réagrandissant** (comme un *objet dynamique* de Photoshop, sans rien à faire) :
+  chaque calque garde sa **meilleure version** (par exemple celle d'après un Upscale). Réduire, valider, faire autre
+  chose, enregistrer, rouvrir le projet… puis réagrandir : Pixane repart de cette meilleure version, l'image revient
+  **telle qu'elle était, pixel pour pixel**, jusqu'à sa taille d'origine. Valable avec Déplacer (poignées), Ctrl+T,
+  *Image > Taille de l'image*, pivoter, retourner, recadrer, aligner. Elle est enregistrée dans le projet **.pixane**
+  (qui grossit un peu).
+  - Si l'on **modifie les pixels** du calque (pinceau, gomme, IA, filtre…), la version modifiée devient la nouvelle
+    référence (l'ancienne effacerait le travail).
+  - Agrandir **au-delà** de la meilleure version rend l'image plus douce : ces pixels n'ont jamais existé (pour
+    cela, l'Upscale).
+  - Transformer seulement une **partie sélectionnée** du calque : la version actuelle devient la référence.
+  - Dans Ctrl+T, les pourcentages sont comptés par rapport à la meilleure version (100 % = sa taille d'origine).
 - La case **Afficher le cadre de transformation** (en haut) le cache s'il gêne. Pas de cadre sur un calque vide,
   verrouillé, caché ou de texte (un texte change de taille avec l'outil Texte).
 

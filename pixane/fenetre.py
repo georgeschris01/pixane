@@ -33,7 +33,8 @@ from .canevas import (BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GO
                       TAMPON, TEXTE, Canevas)
 from .dialogues import Attente, BarreAgrandir, ChoixResultat, ReglagesUpscale
 from .document import (EXTENSIONS_CALQUES, EXTENSIONS_LECTURE, FORMAT_IMAGE, Document, image_entiere,
-                       a_plat, masque, nouvelle_selection, qimage_rgb, tableau, vue_ia)
+                       Origine, a_plat, attacher_origine, masque, nouvelle_selection, origine_valide, qimage_rgb,
+                       tableau, transformation_depuis, vue_ia)
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
 from .panneau_texte import BoutonCouleur, PanneauTexte
 from .garde_fou import garder_aplats, part_aplats
@@ -1996,6 +1997,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         if not self._verifier_pixels(tr("Transformer le calque")):
             return
         c = self.doc.calque_actif
+        o = origine_valide(c)
+        if o is not None and self.doc.rect_selection() is None:   # meilleure version : on repart d'elle (sans perte)
+            self._commencer_transfo(transformation_depuis(o))
+            return
         entiere, ox, oy = image_entiere(c)                 # même ce qui dépasse de la feuille
         source, fond = entiere, None
         if self.doc.rect_selection() is not None:        # sélection : seulement l'élément sélectionné
@@ -2026,6 +2031,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self._commencer_transfo(Transformation(source, rect, fond, QPoint(ox, oy)))
 
     def _commencer_transfo(self, t: Transformation):
+        t.echelle_depart = abs(t.sx * t.sy) or 1.0         # pour mettre le style à l'échelle du geste seul
         self._transfo_avant = (self.doc.etat(), self.doc.modifie)
         self.canevas.commencer_transfo(t, self.doc.actif)
         self.opt_transfo.show()
@@ -2110,8 +2116,14 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
         self.doc.appliquer_etat(avant)
         self.doc.modifie = _modifie
         c = self.doc.calques[index]
-        style = c.style.mis_a_l_echelle(abs(t.sx * t.sy) ** 0.5) if c.style is not None else None
+        k = (abs(t.sx * t.sy) / getattr(t, "echelle_depart", 1.0)) ** 0.5
+        style = c.style.mis_a_l_echelle(k) if c.style is not None else None
         apres = self.doc.etat_calque_entier(index, img, x, y, texte=None, style=style)
+        if t.fond is None:                                # calque entier : il garde sa meilleure version
+            o = Origine(getattr(t, "origine", None) or t.source, t.sx, t.sy, t.angle, t.centre.x(), t.centre.y())
+            calques = list(apres[0])
+            calques[index] = attacher_origine(calques[index], o)
+            apres = (tuple(calques),) + tuple(apres[1:])
         if t.fond is not None:                            # élément sélectionné déplacé : l'ancienne sélection part
             apres = (apres[0], apres[1], nouvelle_selection(w, h))
         self.historique.push(CommandeEtat(self.doc, avant, apres, titre or tr("Transformer le calque")))
