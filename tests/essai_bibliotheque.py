@@ -173,6 +173,29 @@ verifier(len(b2.elements(PINCEAUX)) == len(pinceaux) + 3 and len(b2.elements(MOT
 gr = next(gr for gr in b2.groupes[PINCEAUX] if gr.nom == "Mes pinceaux")
 b2.retirer(gr)
 verifier(not any(gr.nom == "Mes pinceaux" for gr in b2.groupes[PINCEAUX]), "groupe retiré")
+# gros fichier (Smoke Brushes, 1,7 Go chez Christophe) : au démarrage, rien n'est lu ; lecture en arrière-plan
+r = b2.importer(dossier / "Mes pinceaux.abr")
+b3 = Bibliotheque(tmp)
+cle3 = next(gr for gr in b3.groupes[PINCEAUX] if gr.nom == "Mes pinceaux").nom + "/Mes pinceaux.abr#0"
+g3 = next(gr for gr in b3.groupes[PINCEAUX] if gr.nom == "Mes pinceaux")
+verifier(b3.connu(PINCEAUX, cle3) and g3._elements is None, "pinceau gardé reconnu sans lire son fichier")
+import pixane.bibliotheque as _bm
+verifier(b3.pret(PINCEAUX, cle3), "petit fichier : lu tout de suite, comme avant")
+_gros, _bm.GROS = _bm.GROS, 0                  # comme un fichier de plus de 50 Mo
+verifier(not b3.pret(PINCEAUX, cle3), "gros fichier pas encore lu : pas prêt")
+_app = QApplication.instance() or QApplication(sys.argv)
+fait = []
+b3.charger_en_fond(PINCEAUX, cle3, lambda: fait.append(1))
+b3.charger_en_fond(PINCEAUX, cle3, lambda: fait.append(2))
+import time
+fin = time.time() + 20
+while len(fait) < 2 and time.time() < fin:
+    _app.processEvents()
+    time.sleep(0.05)
+verifier(fait == [1, 2] and b3.pret(PINCEAUX, cle3) and b3.trouver(PINCEAUX, cle3) is not None,
+         "lecture en arrière-plan : les deux rappels, puis le pinceau est prêt")
+_bm.GROS = _gros
+b2.retirer(next(gr for gr in b2.groupes[PINCEAUX] if gr.nom == "Mes pinceaux"))
 # original en lecture seule (cas de Christophe, cruiza_2.abr : « Accès refusé » au retrait)
 import stat
 seul = dossier / "Protege.abr"
@@ -196,7 +219,7 @@ except ValueError:
     verifier(True, "un groupe de base ne se retire pas")
 
 # ---- fenêtre
-app = QApplication(sys.argv)
+app = QApplication.instance() or QApplication(sys.argv)
 d = ChoixBibliotheque(PINCEAUX, biblio=b2)
 noms = [d.liste_groupes.item(i).text() for i in range(d.liste_groupes.count())]
 verifier(d.grille.count() >= 15 and noms[:4] == ["Styles prêts", "Simples", "Crayon et fusain", "Peinture"]

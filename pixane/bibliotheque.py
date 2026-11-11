@@ -21,6 +21,7 @@ from .formats_pinceaux import (EXT_IMAGES, EXT_MOTIFS, EXT_PAQUETS, EXT_PINCEAUX
 BASE = Path(__file__).resolve().parent / "ressources" / "base"
 GROUPES_BASE = [("krita4", "Krita 4"), ("krita3", "Krita 3")]
 PINCEAUX, MOTIFS = "pinceaux", "motifs"
+GROS = 50 * 1024 * 1024    # au-delà (fichiers d'un groupe), lecture en arrière-plan : Pixane reste utilisable
 SIMPLES = "Simples"                     # premier groupe de pinceaux : les formes de base, dessinées par Pixane
 
 
@@ -89,13 +90,22 @@ class Groupe:
     ignores: list = field(default_factory=list)
     fabrique: object = field(default=None, repr=False)     # fonction qui donne les éléments (groupes calculés)
 
+    def a_lire_lentement(self) -> bool:
+        """Fichiers de l'utilisateur pas encore lus et gros (plus de GROS octets) : à lire en arrière-plan."""
+        if self._elements is not None or self.fabrique is not None or self.de_base:
+            return False
+        try:
+            return sum(f.stat().st_size for f in self.fichiers) > GROS
+        except OSError:
+            return False
+
     @property
     def elements(self) -> list:
         """Pinceaux ou motifs du groupe (lus à la première demande)."""
         if self._elements is None and self.fabrique is not None:
             self._elements = self.fabrique()
         if self._elements is None:
-            self._elements = []
+            liste = []                               # publiée seulement complète (lecture en arrière-plan possible)
             for f in self.fichiers:
                 try:
                     c = lire_fichier(f, "motif" if self.genre == MOTIFS else "forme")
@@ -103,7 +113,8 @@ class Groupe:
                     self.ignores.append((f.name, str(e)))
                     continue
                 self.ignores += c.ignores
-                self._elements += elements_de(c, self.genre, f, self.nom)
+                liste += elements_de(c, self.genre, f, self.nom)
+            self._elements = liste
         return self._elements
 
 
@@ -131,6 +142,8 @@ def _accepte(f: Path, genre: str) -> bool:
 
 class Bibliotheque:
     def __init__(self, dossier: Path | None = None):
+        self._en_cours: dict = {}         # lectures en arrière-plan : groupe -> fonctions à rappeler
+        self._fini: list = []
         self.dossier = Path(dossier) if dossier else dossier_utilisateur()
         self.groupes: dict[str, list[Groupe]] = {}
         self.recharger()
@@ -174,6 +187,53 @@ class Bibliotheque:
         if groupe in ANCIENS_GROUPES and genre == PINCEAUX:     # clé d'avant le classement par familles
             return self.par_fichier(reste)
         return None
+
+    def _groupe_de(self, genre: str, cle: str):
+        nom = cle.partition("/")[0]
+        return next((g for g in self.groupes[genre] if g.nom == nom), None)
+
+    def connu(self, genre: str, cle: str) -> bool:
+        """Le groupe de cette clé existe encore (sans lire ses fichiers : un .abr peut faire plus d'un Go)."""
+        g = self._groupe_de(genre, cle)
+        if g is not None and g._elements is None and g.fabrique is None:
+            return all(f.is_file() for f in g.fichiers)
+        return self.trouver(genre, cle) is not None
+
+    def pret(self, genre: str, cle: str) -> bool:
+        """Faux si trouver(cle) devrait d'abord lire un fichier de l'utilisateur (lent pour un gros fichier)."""
+        g = self._groupe_de(genre, cle)
+        return g is None or not g.a_lire_lentement()
+
+    def charger_en_fond(self, genre: str, cle: str, fini) -> None:
+        """Lit en arrière-plan le groupe de cette clé, puis appelle fini() dans la boucle de Qt (une seule
+        lecture à la fois par groupe)."""
+        import threading
+        from PySide6.QtCore import QTimer
+        g = self._groupe_de(genre, cle)
+        if g is None:
+            fini()
+            return
+        attente = self._en_cours.setdefault(id(g), [])
+        attente.append(fini)
+        if len(attente) > 1:
+            return
+
+        def lire():
+            try:
+                g.elements
+            finally:
+                self._fini.append(id(g))
+
+        threading.Thread(target=lire, daemon=True).start()
+
+        def surveiller():
+            if id(g) not in self._fini:
+                QTimer.singleShot(200, surveiller)
+                return
+            self._fini.remove(id(g))
+            for f in self._en_cours.pop(id(g), []):
+                f()
+        QTimer.singleShot(200, surveiller)
 
     def par_fichier(self, nom: str):
         """Pinceau de base d'après « fichier#n » (quelle que soit sa famille)."""

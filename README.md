@@ -495,7 +495,9 @@ lunettes »… (modèle **Flux Kontext**, à ajouter dans Installer le moteur IA
   **programme d'installation de Pixane** (page « Traducteur des consignes »), par le bouton « Installer le
   traducteur… », ou par sa case dans **IA > Installer le moteur IA** (fenêtre « Installer »
   ou « Compléter le moteur IA » si ComfyUI était déjà là) : cochée tant qu'il n'est pas installé, grisée ensuite.
-  **Dossier du traducteur… Changer…** : tu choisis où le ranger (par défaut, le dossier de Pixane).
+  **Dossier du traducteur… Changer…** : tu choisis où le ranger (par défaut,
+  `%LOCALAPPDATA%\Pixane\traducteur`). Pas dans le dossier où Pixane est
+  installé (D:\Programmes\Pixane…) : il est remplacé à chaque mise à jour, Pixane le refuse.
 - L'IA travaille sur un morceau autour de la sélection (plus de détail qu'avec toute l'image) ; le résultat n'est
   gardé que dans la sélection et là où il change vraiment : le reste garde ses pixels d'origine.
 - **Calque avec de la transparence** (texte, logo sans fond) : l'IA voit ce calque seul, et le résultat garde un
@@ -883,6 +885,9 @@ Le pinceau de couleur (et les masques), la **gomme de calque** et le **pinceau d
   devient un groupe ; **Retirer ce groupe** l'enlève. Les fichiers sont copiés dans Pixane : l'original peut être
   déplacé ou supprimé.
 - Un pinceau « animé » (.gih : herbe, feuilles…) a plusieurs formes qui alternent pendant le trait.
+- Un **très gros fichier** (plus de 50 Mo ; certains .abr dépassent 1 Go) est lu en arrière-plan : Pixane reste
+  utilisable, le bouton Pinceau affiche « Chargement… » (plus de 2 minutes pour un fichier de 1,7 Go) ; en
+  attendant, le trait se fait au pinceau rond.
 - **Réglages…** (un point « • » s'affiche quand un réglage est changé), avec un aperçu du trait :
   - **Forme** : espacement entre les touches, angle (ou « l'angle suit le trait », comme une plume), rondeur ;
   - **Dispersion** : les touches s'écartent du trait, plusieurs à la fois, taille, angle et rondeur au hasard ;

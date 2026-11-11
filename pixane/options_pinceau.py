@@ -54,7 +54,7 @@ class OptionsPinceau:
                 r = Reglages.depuis_dict(json.loads(self.reglages.value(f"pinceau_{g}_reglages", "{}") or "{}"))
             except (ValueError, TypeError):
                 r = Reglages()
-            if cle is not None and bibliotheque().trouver(PINCEAUX, cle) is None:
+            if cle is not None and not bibliotheque().connu(PINCEAUX, cle):
                 cle = None                             # pinceau retiré de la bibliothèque depuis
             self.canevas.pinceaux[g] = {"cle": cle, "reglages": r}
 
@@ -67,7 +67,14 @@ class OptionsPinceau:
         if g is None:
             return
         choix = self.canevas.pinceaux[g]
-        e = bibliotheque().trouver(PINCEAUX, choix["cle"]) if choix["cle"] else None
+        b = bibliotheque()
+        if choix["cle"] and not b.pret(PINCEAUX, choix["cle"]):
+            # gros fichier de pinceaux (plus d'un Go possible) : lu en arrière-plan, Pixane reste utilisable
+            self.bouton_pinceau.setText(tr("Chargement…"))
+            self.bouton_pinceau.setIcon(QIcon())
+            b.charger_en_fond(PINCEAUX, choix["cle"], self.maj_bouton_pinceau)
+            return
+        e = b.trouver(PINCEAUX, choix["cle"]) if choix["cle"] else None
         if e is None:
             self.bouton_pinceau.setText(tr("Rond"))
             self.bouton_pinceau.setIcon(QIcon())

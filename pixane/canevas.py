@@ -1523,6 +1523,11 @@ class Canevas(QWidget):
     def _pointe(self, cle: str) -> Pointe | None:
         from .bibliotheque import PINCEAUX, bibliotheque
         if cle not in self._pointes:
+            if not bibliotheque().pret(PINCEAUX, cle):
+                # pinceau d'un gros fichier pas encore lu (lecture en arrière-plan) : rond en attendant
+                self.message.emit(tr("Le pinceau choisi est encore en chargement : pinceau rond en attendant."))
+                bibliotheque().charger_en_fond(PINCEAUX, cle, lambda: None)
+                return None
             e = bibliotheque().trouver(PINCEAUX, cle)
             self._pointes[cle] = Pointe(e.formes, e.espacement) if e is not None else None
         p = self._pointes[cle]

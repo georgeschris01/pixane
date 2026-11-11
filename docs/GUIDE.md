@@ -817,6 +817,9 @@ Le pinceau de couleur (et les masques), la **gomme de calque** et le **pinceau d
   devient un groupe ; **Retirer ce groupe** l'enlève. Les fichiers sont copiés dans Pixane : l'original peut être
   déplacé ou supprimé.
 - Un pinceau « animé » (.gih : herbe, feuilles…) a plusieurs formes qui alternent pendant le trait.
+- Un **très gros fichier** (plus de 50 Mo ; certains .abr dépassent 1 Go) est lu en arrière-plan : Pixane reste
+  utilisable, le bouton Pinceau affiche « Chargement… » (plus de 2 minutes pour un fichier de 1,7 Go) ; en
+  attendant, le trait se fait au pinceau rond.
 - **Réglages…** (un point « • » s'affiche quand un réglage est changé), avec un aperçu du trait :
   - **Forme** : espacement entre les touches, angle (ou « l'angle suit le trait », comme une plume), rondeur ;
   - **Dispersion** : les touches s'écartent du trait, plusieurs à la fois, taille, angle et rondeur au hasard ;

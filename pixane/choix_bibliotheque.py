@@ -163,11 +163,25 @@ class ChoixBibliotheque(QDialog):
         groupes = self.biblio.groupes[self.genre]
         return groupes[i] if 0 <= i < len(groupes) else None
 
+    def _apres_lecture(self, g) -> None:
+        try:
+            if self.groupe() is g:
+                self._montrer_groupe(self.liste_groupes.currentRow())
+        except RuntimeError:                         # fenêtre fermée pendant la lecture
+            pass
+
     def _montrer_groupe(self, _i: int) -> None:
         g = self.groupe()
         self.grille.clear()
         self.bouton_retirer.setEnabled(bool(g) and not g.de_base)
         if g is None:
+            return
+        if g.a_lire_lentement():
+            # fichier de l'utilisateur pas encore lu (un .abr peut dépasser un Go) : lu en arrière-plan
+            it = QListWidgetItem(tr("Chargement…"))
+            it.setFlags(Qt.NoItemFlags)
+            self.grille.addItem(it)
+            self.biblio.charger_en_fond(self.genre, g.nom + "/", lambda g=g: self._apres_lecture(g))
             return
         for e in g.elements:
             it = QListWidgetItem(QIcon(QPixmap.fromImage(vignette(e, self.t))), e.nom)

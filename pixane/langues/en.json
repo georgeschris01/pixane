@@ -1219,5 +1219,7 @@
  "Tampon de motif": "Pattern Stamp",
  "Tampon de motif : peint avec un motif de la bibliothèque (choisi dans la barre du haut)": "Pattern Stamp: paints with a pattern from the library (chosen in the top bar)",
  "Échelle du motif : 100 % = taille réelle": "Pattern scale: 100 % = actual size",
- "« {dossier} » est dans le dossier où Pixane est installé ({programme}). Ce dossier est remplacé en entier à chaque mise à jour : ce qu'on y range serait effacé.\n\nChoisis un dossier ailleurs, par exemple D:\\Pixane-traducteur.": "“{dossier}” is inside the folder where Pixane is installed ({programme}). This folder is replaced entirely at each update: anything stored in it would be erased.\n\nChoose a folder elsewhere, for example D:\\Pixane-translator."
+ "« {dossier} » est dans le dossier où Pixane est installé ({programme}). Ce dossier est remplacé en entier à chaque mise à jour : ce qu'on y range serait effacé.\n\nChoisis un dossier ailleurs, par exemple D:\\Pixane-traducteur.": "“{dossier}” is inside the folder where Pixane is installed ({programme}). This folder is replaced entirely at each update: anything stored in it would be erased.\n\nChoose a folder elsewhere, for example D:\\Pixane-translator.",
+ "Chargement…": "Loading…",
+ "Le pinceau choisi est encore en chargement : pinceau rond en attendant.": "The chosen brush is still loading: round brush in the meantime."
 }

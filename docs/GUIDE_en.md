@@ -787,6 +787,8 @@ grass, leaves, watercolour, splatters… Each tool keeps its own choice.
   (**.bundle**), or a plain image (black paints; a colour image keeps its colours). Each file becomes a group;
   **Remove this group** takes it away. Files are copied into Pixane: the original can be moved or deleted.
 - An “animated” brush (.gih: grass, leaves…) has several shapes that alternate along the stroke.
+- A **very large file** (over 50 MB; some .abr files exceed 1 GB) is read in the background: Pixane stays usable,
+  the Brush button shows "Loading…" (over 2 minutes for a 1.7 GB file); meanwhile, strokes use the round brush.
 - **Settings…** (a dot “•” shows when a setting is changed), with a stroke preview:
   - **Shape**: spacing between dabs, angle (or “angle follows the stroke”, like a pen), roundness;
   - **Scatter**: dabs spread away from the stroke, several at once, random size, angle and roundness;
