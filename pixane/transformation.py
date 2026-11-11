@@ -82,9 +82,10 @@ class Transformation:
         return abs(l.x()) <= hw and abs(l.y()) <= hh
 
     def rendu(self, W: int, H: int, lisse: bool = True) -> QImage:
-        """La feuille W × H (aperçu) : ce qui dépasse n'est pas dessiné. Aperçu rapide (Qt), à la même place que le
-        résultat final ; la qualité (Lanczos) est calculée en gardant (rendu_entier)."""
-        return self._dessiner(QRect(0, 0, W, H), lisse, qualite=False)
+        """La feuille W × H (aperçu posé dans le calque) : ce qui dépasse n'est pas dessiné. lisse=False : rapide,
+        pendant le geste ; lisse=True (souris lâchée) : pleine qualité, comme le résultat validé, pour que le calque
+        ne soit jamais dégradé, même si l'on passe à autre chose sans valider."""
+        return self._dessiner(QRect(0, 0, W, H), lisse)
 
     def rendu_entier(self, lisse: bool = True) -> tuple[QImage, int, int]:
         """Le calque entier après transformation, même ce qui dépasse de la feuille -> (image, x, y)."""

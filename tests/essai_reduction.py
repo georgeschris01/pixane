@@ -91,6 +91,14 @@ zone = l[cy - 30:cy + 30, cx - 30:cx + 30]
 ref = lanczos(o, 120, 120)[..., :3] @ [0.299, 0.587, 0.114]
 verifier(zone.std() < 1.3 * ref.std(),
          f"tourné et réduit : pas de grain ajouté (écart type {zone.std():.1f} / bonne réduction {ref.std():.1f})")
+# aperçu posé dans le calque, souris lâchée (sans valider) : déjà en pleine qualité, identique au résultat validé
+t = Transformation(img, QRect(0, 0, W, H))
+t.sx = t.sy = 0.3
+t.centre = QPointF(200.3, 150.6)
+ap = tableau(t.rendu(W, H, True).convertToFormat(FORMAT_IMAGE)).astype(float)
+a, x, y = rendu(t)
+verifier(np.array_equal(ap[y:y + a.shape[0], x:x + a.shape[1]], a),
+         "souris lâchée, sans valider : le calque est déjà en pleine qualité (comme validé)")
 # déplacer seulement (taille 100 %) : image identique, posée sur des pixels entiers
 t = Transformation(img, QRect(0, 0, W, H))
 t.centre = QPointF(W / 2 + 10.4, H / 2 + 20.6)

@@ -317,10 +317,11 @@ sort de la feuille est gardé, on peut le faire revenir ; refusé sur un calque 
   **un milieu de côté**, seulement la largeur ou la hauteur ; **juste à l'extérieur d'un coin** (curseur en croix),
   on tourne. Dès qu'une poignée est touchée, c'est le mode *Transformer* (comme Ctrl+T) : **Entrée** pour garder,
   **Échap** pour annuler.
-- **Qualité** : en gardant (Entrée), le calque est redimensionné comme dans Photoshop, chaque pixel tenant compte
+- **Qualité** : le calque est redimensionné comme dans Photoshop, chaque pixel tenant compte
   de tous ceux qu'il remplace : une image réduite (même beaucoup, par exemple après un Upscale) reste propre, sans
   traits hachés ni grain. Sans rotation, le calque est posé sur des pixels entiers : un simple déplacement ne le
-  floute jamais. À l'écran, l'aperçu est calculé plus vite ; la qualité finale est faite en gardant. Conseil : chaque
+  floute jamais. Pendant le geste, l'aperçu est rapide ; **dès que la souris est lâchée**, le calque est en pleine
+  qualité, même si l'on passe à autre chose sans valider. Conseil : chaque
   transformation gardée recalcule l'image ; mieux vaut régler la taille en une fois que réduire puis agrandir.
 - La case **Afficher le cadre de transformation** (en haut) le cache s'il gêne. Pas de cadre sur un calque vide,
   verrouillé, caché ou de texte (un texte change de taille avec l'outil Texte).
