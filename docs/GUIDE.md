@@ -321,7 +321,10 @@ sort de la feuille est gardé, on peut le faire revenir ; refusé sur un calque 
   de tous ceux qu'il remplace : une image réduite (même beaucoup, par exemple après un Upscale) reste propre, sans
   traits hachés ni grain. Sans rotation, le calque est posé sur des pixels entiers : un simple déplacement ne le
   floute jamais. Pendant le geste, l'aperçu est rapide ; **dès que la souris est lâchée**, le calque est en pleine
-  qualité, même si l'on passe à autre chose sans valider. Conseil : chaque
+  qualité, même si l'on passe à autre chose sans valider. Même qualité pour *Image > Taille de l'image* et pour
+  l'Upscale (calque ramené à sa taille, autres calques agrandis). Un simple déplacement ne change aucun pixel.
+  Rétrécir enlève forcément des pixels (moins de détails, comme partout) : tant que le geste n'est pas validé,
+  Pixane repart toujours de l'image d'origine, donc réduire puis réagrandir avant Entrée ne perd rien. Conseil : chaque
   transformation gardée recalcule l'image ; mieux vaut régler la taille en une fois que réduire puis agrandir.
 - La case **Afficher le cadre de transformation** (en haut) le cache s'il gêne. Pas de cadre sur un calque vide,
   verrouillé, caché ou de texte (un texte change de taille avec l'outil Texte).

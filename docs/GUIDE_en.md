@@ -310,7 +310,10 @@ outside the canvas is kept and can be brought back; refused on a locked layer).
   the ones it replaces: a reduced image (even a lot, for example after an Upscale) stays clean, without broken lines
   or grain. Without rotation, the layer is placed on whole pixels: a simple move never blurs it. During the gesture, the
   preview is fast; **as soon as the mouse is released**, the layer is at full quality, even if you move on without
-  validating. Tip: each kept transformation recomputes the image; better to set the
+  validating. Same quality for *Image > Image size* and for the Upscale (layer brought back to its size, other
+  layers enlarged). A simple move changes no pixel. Shrinking necessarily removes pixels (less detail, as
+  everywhere): until the gesture is validated, Pixane always starts again from the original image, so shrinking
+  then enlarging again before Enter loses nothing. Tip: each kept transformation recomputes the image; better to set the
   size in one go than to shrink and then enlarge.
 - The **Show transform controls** box (at the top) hides it if it gets in the way. No frame on an empty, locked,
   hidden or text layer (a text changes size with the Text tool).

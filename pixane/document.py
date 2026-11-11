@@ -25,6 +25,7 @@ from .composition import (FORMAT_MASQUE, MODE_ORA, MODES, arbre, masque_depuis, 
 from .langue import tr
 from .styles import Style
 from .texte import Texte, nom_calque, rendre
+from .transformation import redimensionner
 
 COULEUR_SELECTION = QColor(255, 40, 40)
 FORMAT_IMAGE = QImage.Format_RGBA8888
@@ -187,7 +188,7 @@ def _mis_a_l_echelle(c: Calque, w: int, h: int, W: int, H: int, lanczos: bool) -
     kx, ky = W / w, H / h
     nw, nh = max(1, round(img.width() * kx)), max(1, round(img.height() * ky))
     if lanczos:
-        res = pil_vers_qimage(qimage_vers_pil(img).resize((nw, nh), Image.LANCZOS))
+        res = redimensionner(img, nw, nh).convertToFormat(img.format())     # qualité, transparence respectée
     else:
         res = img.scaled(nw, nh, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
     return avec_image_entiere(c, res, round(x * kx), round(y * ky), W, H)
@@ -727,7 +728,7 @@ class Document(QObject):
                 t = c.texte.mis_a_l_echelle(W / w, H / h)
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
             else:
-                nouveaux.append(_mis_a_l_echelle(c, w, h, W, H, lanczos=False))
+                nouveaux.append(_mis_a_l_echelle(c, w, h, W, H, lanczos=True))     # agrandis en qualité
         nouveaux = _styles_a_l_echelle(nouveaux, ((W / w) * (H / h)) ** 0.5)
         nouveaux = [_avec_masque_transforme(c, lambda im: im.scaled(W, H, Qt.IgnoreAspectRatio,
                                                                      Qt.SmoothTransformation)) for c in nouveaux]
@@ -1164,7 +1165,7 @@ class Document(QObject):
         w, h = self.taille()
         res = resultat.convertToFormat(FORMAT_CALQUE)
         if mode == "net":
-            res = res.scaled(r.width(), r.height(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+            res = redimensionner(res, r.width(), r.height()).convertToFormat(FORMAT_CALQUE)   # réduit en qualité
         x = round(r.x() + r.width() / 2 - res.width() / 2)
         y = round(r.y() + r.height() / 2 - res.height() / 2)
         calques = list(self.calques)

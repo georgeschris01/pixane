@@ -105,6 +105,31 @@ t.centre = QPointF(W / 2 + 10.4, H / 2 + 20.6)
 a, x, y = rendu(t)
 verifier((x, y) == (10, 21) and np.array_equal(a.astype(np.uint8), o), "déplacé seulement : image identique, pas floutée")
 
+# Upscale d'un calque « plus net » : le résultat ×2 est ramené à la taille du calque en qualité
+from pixane.document import Calque, Document, qimage_rgb
+from pixane.transformation import redimensionner
+doc = Document(calques=[Calque("Photo", img)])
+x2 = np.ascontiguousarray(lanczos(o, 2 * W, 2 * H)[..., :3].astype(np.uint8))
+doc.appliquer_etat(doc.etat_upscale_calque(0, qimage_rgb(x2), "net", False, "Upscale"))
+k = tableau(doc.calques[0].image.convertToFormat(FORMAT_IMAGE)).astype(float)
+ref = lanczos(x2, W, H)
+verifier(np.abs(k[..., :3] - ref).mean() < 1, f"Upscale « plus net » : ramené à la taille du calque en qualité "
+         f"(écart {np.abs(k[..., :3] - ref).mean():.2f})")
+# Upscale de toute l'image : les autres calques sont agrandis en qualité
+petit = np.ascontiguousarray(o[:150, :200])
+doc = Document(calques=[Calque("Fond", qimage_rgba(petit)), Calque("Dessus", qimage_rgba(petit))])
+doc.appliquer_etat(doc.etat_redimensionne("Upscale", qimage_rgb(np.ascontiguousarray(
+    lanczos(petit, 400, 300)[..., :3].astype(np.uint8))), True))
+k = tableau(doc.calques[0].image.convertToFormat(FORMAT_IMAGE)).astype(float)
+ref = lanczos(petit, 400, 300)
+verifier(k.shape[:2] == (300, 400) and np.abs(k[..., :3] - ref[..., :3]).mean() < 1,
+         f"Upscale de toute l'image : les autres calques agrandis en qualité (écart {np.abs(k[..., :3] - ref[..., :3]).mean():.2f})")
+# Taille de l'image : en qualité
+doc = Document(calques=[Calque("Photo", img)])
+doc.appliquer_etat(doc.etat_taille(180, 180))
+k = tableau(doc.calques[0].image.convertToFormat(FORMAT_IMAGE)).astype(float)
+verifier(np.abs(k[..., :3] - lanczos(o, 180, 180)[..., :3]).mean() < 1, "Image > Taille de l'image : en qualité")
+
 print("ERREURS :", erreurs if erreurs else "aucune")
 sys.stdout.flush()
 sys.exit(1 if erreurs else 0)
