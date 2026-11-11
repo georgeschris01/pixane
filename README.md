@@ -382,6 +382,11 @@ sort de la feuille est gardé, on peut le faire revenir ; refusé sur un calque 
   **un milieu de côté**, seulement la largeur ou la hauteur ; **juste à l'extérieur d'un coin** (curseur en croix),
   on tourne. Dès qu'une poignée est touchée, c'est le mode *Transformer* (comme Ctrl+T) : **Entrée** pour garder,
   **Échap** pour annuler.
+- **Qualité** : en gardant (Entrée), le calque est redimensionné comme dans Photoshop, chaque pixel tenant compte
+  de tous ceux qu'il remplace : une image réduite (même beaucoup, par exemple après un Upscale) reste propre, sans
+  traits hachés ni grain. Sans rotation, le calque est posé sur des pixels entiers : un simple déplacement ne le
+  floute jamais. Pendant le geste, l'aperçu est plus grossier (pour rester fluide). Conseil : chaque
+  transformation gardée recalcule l'image ; mieux vaut régler la taille en une fois que réduire puis agrandir.
 - La case **Afficher le cadre de transformation** (en haut) le cache s'il gêne. Pas de cadre sur un calque vide,
   verrouillé, caché ou de texte (un texte change de taille avec l'outil Texte).
 
@@ -415,6 +420,11 @@ de lancer.
 
 ### Fenêtre de choix du résultat
 - Cliquez sur une vignette pour la voir en grand.
+- **Zoomer pour voir les détails** : **molette** (le zoom se fait sous la souris), **glisser** pour se déplacer,
+  **double-clic** pour passer de l'image entière à la taille réelle (100 %) et revenir. Boutons **Ajuster** et
+  **100 %** en bas ; touches **+** / **-**, **0** (ajuster) et **1** (100 %). Le zoom est affiché en bas à gauche.
+- Le zoom et l'endroit regardé **restent les mêmes** quand on passe d'une vignette à l'autre ou qu'on maintient
+  « voir l'original » : on compare exactement le même détail (même après un Upscale, où l'original est plus petit).
 - **Maintenir pour voir l'original** : tant que le bouton est enfoncé, la photo d'avant s'affiche.
 - **Autres propositions** : relance l'IA pour de nouvelles versions (elles s'ajoutent aux précédentes).
 - **Garder ce résultat** : applique la version choisie (annulable par Ctrl+Z). La sélection (pinceau, lasso,

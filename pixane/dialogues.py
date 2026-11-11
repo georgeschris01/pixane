@@ -1,8 +1,8 @@
 """Fenêtres : choix du résultat, barre Agrandir, réglages Upscale."""
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent, QSize, Qt, Signal
-from PySide6.QtGui import QIcon, QImage, QPixmap
+from PySide6.QtCore import QEvent, QPointF, QRectF, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QFontMetrics, QIcon, QImage, QKeySequence, QPainter, QPixmap, QShortcut
 from PySide6.QtWidgets import (QButtonGroup, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QFrame, QGridLayout, QGroupBox, QHBoxLayout,
                                QLabel, QListWidget, QListWidgetItem, QProgressBar, QPushButton, QRadioButton, QSpinBox,
                                QVBoxLayout, QWidget, QCheckBox)
@@ -10,28 +10,145 @@ from PySide6.QtWidgets import (QButtonGroup, QDialog, QDialogButtonBox, QDoubleS
 from .langue import tr
 
 
-class Apercu(QLabel):
-    """Affiche une image en entier, à la taille de la zone."""
+class Apercu(QWidget):
+    """Montre une proposition, zoomable : molette = zoom sous la souris, glisser = se déplacer, double-clic = ajusté
+    / 100 %. Le zoom et l'endroit regardé sont gardés d'une image à l'autre (en proportion de l'image) : on compare
+    toujours le même détail, même entre l'original et une proposition plus grande (Upscale)."""
+    zoom_change = Signal()
+    ZOOM_MAX = 16.0                       # échelle maximale (1 px de l'image = 16 px à l'écran)
 
     def __init__(self):
         super().__init__()
-        self.setAlignment(Qt.AlignCenter)
         self.setMinimumSize(500, 350)
-        self.setStyleSheet("background:#282828;")
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.setToolTip(tr("Molette : zoomer · glisser : se déplacer · double-clic : ajuster / 100 %"))
         self._image: QImage | None = None
+        self.facteur = 1.0                # 1 = image entière ajustée à la zone ; plus = zoomé
+        self.centre = QPointF(0.5, 0.5)   # point de l'image au centre de la zone (0..1)
+        self._glisse = None
 
     def montrer(self, image: QImage):
         self._image = image
-        self._maj()
+        self._borner()
+        self.update()
+
+    def _ajuste(self) -> float:
+        im = self._image
+        if im is None or im.isNull():
+            return 1.0
+        return min(self.width() / im.width(), self.height() / im.height())
+
+    def echelle(self) -> float:
+        """Pixels d'écran par pixel de l'image."""
+        return self._ajuste() * self.facteur
+
+    def _borner(self):
+        """Pas de zoom plus petit que l'image entière ; on ne sort pas de l'image."""
+        im = self._image
+        if im is None or im.isNull():
+            return
+        a = self._ajuste()
+        self.facteur = max(1.0, min(self.facteur, max(1.0, self.ZOOM_MAX / a)))
+        s = self.echelle()
+        cx, cy = self.centre.x(), self.centre.y()
+        demi_x = self.width() / 2 / (im.width() * s)
+        demi_y = self.height() / 2 / (im.height() * s)
+        cx = 0.5 if demi_x >= 0.5 else min(max(cx, demi_x), 1 - demi_x)
+        cy = 0.5 if demi_y >= 0.5 else min(max(cy, demi_y), 1 - demi_y)
+        self.centre = QPointF(cx, cy)
+
+    def _vers_image(self, pos: QPointF) -> QPointF:
+        """Point de la zone -> point de l'image (0..1)."""
+        im, s = self._image, self.echelle()
+        return QPointF(self.centre.x() + (pos.x() - self.width() / 2) / (im.width() * s),
+                       self.centre.y() + (pos.y() - self.height() / 2) / (im.height() * s))
+
+    def zoomer(self, facteur: float, pos: QPointF | None = None):
+        """Nouveau facteur (1 = ajusté) ; pos : point de la zone qui reste sous la souris."""
+        if self._image is None or self._image.isNull():
+            return
+        if pos is None:
+            pos = QPointF(self.width() / 2, self.height() / 2)
+        n = self._vers_image(pos)
+        self.facteur = facteur
+        self._borner()
+        im, s = self._image, self.echelle()
+        self.centre = QPointF(n.x() - (pos.x() - self.width() / 2) / (im.width() * s),
+                              n.y() - (pos.y() - self.height() / 2) / (im.height() * s))
+        self._borner()
+        self._curseur()
+        self.update()
+        self.zoom_change.emit()
+
+    def ajuster(self):
+        self.zoomer(1.0)
+
+    def cent_pour_cent(self, pos: QPointF | None = None):
+        self.zoomer(1.0 / self._ajuste(), pos)
+
+    def wheelEvent(self, e):
+        crans = e.angleDelta().y() / 120
+        if crans:
+            self.zoomer(self.facteur * 1.25 ** crans, e.position())
+        e.accept()
+
+    def mousePressEvent(self, e):
+        if e.button() == Qt.LeftButton and self.facteur > 1.0:
+            self._glisse = e.position()
+            self.setCursor(Qt.ClosedHandCursor)
+        super().mousePressEvent(e)
+
+    def mouseMoveEvent(self, e):
+        if self._glisse is not None and self._image is not None:
+            d = e.position() - self._glisse
+            self._glisse = e.position()
+            im, s = self._image, self.echelle()
+            self.centre = QPointF(self.centre.x() - d.x() / (im.width() * s),
+                                  self.centre.y() - d.y() / (im.height() * s))
+            self._borner()
+            self.update()
+        super().mouseMoveEvent(e)
+
+    def mouseReleaseEvent(self, e):
+        self._glisse = None
+        self._curseur()
+        super().mouseReleaseEvent(e)
+
+    def mouseDoubleClickEvent(self, e):
+        if self.facteur > 1.0:
+            self.ajuster()
+        elif self._ajuste() < 1.0:
+            self.cent_pour_cent(e.position())
+        else:
+            self.zoomer(2.0, e.position())
+
+    def _curseur(self):
+        if self._glisse is None:
+            self.setCursor(Qt.OpenHandCursor if self.facteur > 1.0 else Qt.ArrowCursor)
 
     def resizeEvent(self, e):
-        self._maj()
+        self._borner()
         super().resizeEvent(e)
 
-    def _maj(self):
-        if self._image is not None:
-            self.setPixmap(QPixmap.fromImage(self._image.scaled(self.size(), Qt.KeepAspectRatio,
-                                                                Qt.SmoothTransformation)))
+    def paintEvent(self, e):
+        p = QPainter(self)
+        p.fillRect(self.rect(), QColor("#282828"))
+        im = self._image
+        if im is None or im.isNull():
+            return
+        s = self.echelle()
+        w, h = im.width() * s, im.height() * s
+        x = self.width() / 2 - self.centre.x() * w
+        y = self.height() / 2 - self.centre.y() * h
+        p.setRenderHint(QPainter.SmoothPixmapTransform, s < 2.0)    # zoom fort : pixels nets, comme Photoshop
+        p.drawImage(QRectF(x, y, w, h), im)
+        texte = f"{round(s * 100)} %"
+        m = p.fontMetrics()
+        cadre = QRectF(8, self.height() - m.height() - 12, m.horizontalAdvance(texte) + 12, m.height() + 4)
+        p.fillRect(cadre, QColor(0, 0, 0, 140))
+        p.setPen(QColor("#f0f0f0"))
+        p.drawText(cadre, Qt.AlignCenter, texte)
+        p.end()
 
 
 class BoutonComparer(QPushButton):
@@ -73,9 +190,23 @@ class ChoixResultat(QDialog):
         self.bouton_autres.clicked.connect(self._autres)
         garder = QPushButton(tr("Garder ce résultat"))
         garder.setDefault(True)
+        gras = garder.font()
+        gras.setBold(True)                     # le thème met ce bouton en gras : place pour tout le texte
+        garder.setMinimumWidth(QFontMetrics(gras).horizontalAdvance(garder.text()) + 36)
         garder.clicked.connect(self.accept)
         annuler = QPushButton(tr("Annuler"))
         annuler.clicked.connect(self.reject)
+        self.bouton_ajuster = QPushButton(tr("Ajuster"))
+        self.bouton_ajuster.setToolTip(tr("Voir l'image entière (touche 0 ou double-clic)"))
+        self.bouton_ajuster.clicked.connect(self.apercu.ajuster)
+        self.bouton_100 = QPushButton("100 %")
+        self.bouton_100.setToolTip(tr("Taille réelle : 1 pixel de l'image = 1 pixel de l'écran (touche 1)"))
+        self.bouton_100.clicked.connect(lambda: self.apercu.cent_pour_cent())
+        for touches, faire in ((("+", "="), lambda: self.apercu.zoomer(self.apercu.facteur * 1.25)),
+                               (("-",), lambda: self.apercu.zoomer(self.apercu.facteur / 1.25)),
+                               (("0",), self.apercu.ajuster), (("1",), lambda: self.apercu.cent_pour_cent())):
+            for t in touches:
+                QShortcut(QKeySequence(t), self, faire)
         self.etat = QLabel("")
         self.barre = QProgressBar()
         self.barre.setFixedWidth(220)
@@ -84,6 +215,8 @@ class ChoixResultat(QDialog):
         bas = QHBoxLayout()
         bas.addWidget(comparer)
         bas.addWidget(self.bouton_autres)
+        bas.addWidget(self.bouton_ajuster)
+        bas.addWidget(self.bouton_100)
         bas.addWidget(self.barre)
         bas.addWidget(self.etat, 1)
         bas.addWidget(annuler)

@@ -306,6 +306,11 @@ outside the canvas is kept and can be brought back; refused on a locked layer).
   **drag inside** to move; **a corner** changes the size keeping the proportions (Shift: free); **the middle of a
   side**, only the width or the height; **just outside a corner** (cross cursor), you rotate. As soon as a handle is
   touched, it is the *Transform* mode (like Ctrl+T): **Enter** to keep, **Esc** to cancel.
+- **Quality**: when you keep it (Enter), the layer is resized as in Photoshop, each pixel taking into account all
+  the ones it replaces: a reduced image (even a lot, for example after an Upscale) stays clean, without broken lines
+  or grain. Without rotation, the layer is placed on whole pixels: a simple move never blurs it. On screen, the preview
+  is computed faster; the final quality is made when you keep it. Tip: each kept transformation recomputes the image; better to set the
+  size in one go than to shrink and then enlarge.
 - The **Show transform controls** box (at the top) hides it if it gets in the way. No frame on an empty, locked,
   hidden or text layer (a text changes size with the Text tool).
 
@@ -338,6 +343,11 @@ see it** (all visible layers together): so choose the photo's layer before start
 
 ### Result chooser
 - Click a thumbnail to see it full size.
+- **Zoom in to see the details**: **mouse wheel** (zooms under the mouse), **drag** to move around,
+  **double-click** to switch between the whole image and actual size (100 %) and back. **Fit** and **100 %** buttons
+  at the bottom; keys **+** / **-**, **0** (fit) and **1** (100 %). The zoom level is shown at the bottom left.
+- The zoom and the spot you are looking at **stay the same** when you switch thumbnails or hold "see the original":
+  you compare exactly the same detail (even after an Upscale, where the original is smaller).
 - **Hold to see the original**: while the button is held down, the photo from before is shown.
 - **More options**: runs the AI again for new versions (they are added to the previous ones).
 - **Keep this result**: applies the chosen version (can be undone with Ctrl+Z). The selection (brush, lasso,

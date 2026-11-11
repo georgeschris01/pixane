@@ -10,11 +10,30 @@ from __future__ import annotations
 
 import math
 
-from PySide6.QtCore import QPoint, QPointF, QRect, QRectF
+import numpy as np
+from PIL import Image
+from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, Qt
 from PySide6.QtGui import QImage, QPainter, QTransform
 
 POIGNEES = {"hg": (-1, -1), "h": (0, -1), "hd": (1, -1), "d": (1, 0), "bd": (1, 1), "b": (0, 1), "bg": (-1, 1),
             "g": (-1, 0)}
+
+
+def redimensionner(image: QImage, w: int, h: int) -> QImage:
+    """Redimensionnement de qualité (Lanczos, comme le « bicubique » de Photoshop) : chaque pixel tient compte de
+    tous ceux qu'il remplace (Qt n'en lit que 4 : crénelage et grain quand on réduit beaucoup). Transparence
+    respectée (calcul en couleurs prémultipliées, pas de liseré sombre)."""
+    w, h = max(1, w), max(1, h)
+    if (w, h) == (image.width(), image.height()):
+        return image
+    src = image.convertToFormat(QImage.Format_RGBA8888_Premultiplied)
+    a = np.frombuffer(src.constBits(), np.uint8, src.bytesPerLine() * src.height())
+    a = a.reshape(src.height(), src.bytesPerLine())[:, : src.width() * 4].reshape(src.height(), src.width(), 4)
+    r = np.array(Image.frombuffer("RGBa", (src.width(), src.height()), np.ascontiguousarray(a), "raw", "RGBa", 0, 1)
+                 .resize((w, h), Image.LANCZOS))
+    r[..., :3] = np.minimum(r[..., :3], r[..., 3:4])         # prémultiplié : couleur jamais plus forte que l'opacité
+    r = np.ascontiguousarray(r)
+    return QImage(r.data, w, h, w * 4, QImage.Format_RGBA8888_Premultiplied).copy()
 
 
 def _rot(v: QPointF, degres: float) -> QPointF:
@@ -36,6 +55,7 @@ class Transformation:
         self.sx = self.sy = 1.0
         self.angle = 0.0
         self._depart = None
+        self._cache = None                  # (largeur, hauteur, image redimensionnée en qualité)
 
     # ---------------------------------------------------------- géométrie
     def transfo(self) -> QTransform:
@@ -62,26 +82,60 @@ class Transformation:
         return abs(l.x()) <= hw and abs(l.y()) <= hh
 
     def rendu(self, W: int, H: int, lisse: bool = True) -> QImage:
-        """La feuille W × H (aperçu) : ce qui dépasse n'est pas dessiné."""
-        return self._dessiner(QRect(0, 0, W, H), lisse)
+        """La feuille W × H (aperçu) : ce qui dépasse n'est pas dessiné. Aperçu rapide (Qt), à la même place que le
+        résultat final ; la qualité (Lanczos) est calculée en gardant (rendu_entier)."""
+        return self._dessiner(QRect(0, 0, W, H), lisse, qualite=False)
 
     def rendu_entier(self, lisse: bool = True) -> tuple[QImage, int, int]:
         """Le calque entier après transformation, même ce qui dépasse de la feuille -> (image, x, y)."""
         r = self.transfo().mapRect(QRectF(0, 0, self.bw, self.bh)).toAlignedRect()
+        place = self._place() if lisse else None
+        if place is not None:
+            r = place
         if self.fond is not None:
             r = r.united(QRect(self.origine, self.fond.size()))
         return self._dessiner(r, lisse), r.x(), r.y()
 
-    def _dessiner(self, r: QRect, lisse: bool) -> QImage:
+    def _droit(self) -> bool:
+        return abs((self.angle + 180) % 360 - 180) < 1e-6
+
+    def _place(self) -> QRect | None:
+        """Sans rotation : rectangle d'arrivée calé sur des pixels entiers (pas de flou dû à un demi-pixel)."""
+        if not self._droit():
+            return None
+        w, h = max(1, round(abs(self.sx) * self.bw)), max(1, round(abs(self.sy) * self.bh))
+        return QRect(round(self.centre.x() - w / 2), round(self.centre.y() - h / 2), w, h)
+
+    def _source_a(self, w: int, h: int) -> QImage:
+        if self._cache is None or self._cache[:2] != (w, h):
+            self._cache = (w, h, redimensionner(self.source, w, h))
+        return self._cache[2]
+
+    def _dessiner(self, r: QRect, lisse: bool, qualite: bool = True) -> QImage:
         img = QImage(max(1, r.width()), max(1, r.height()), QImage.Format_ARGB32_Premultiplied)
         img.fill(0)
         p = QPainter(img)
         if self.fond is not None:
             p.drawImage(self.origine - r.topLeft(), self.fond)
+        place = self._place() if lisse else None
+        if place is not None:                    # sans rotation : redimensionné en qualité, posé pixel pour pixel
+            if qualite:
+                src = self._source_a(place.width(), place.height())
+            else:
+                src = self.source.scaled(place.width(), place.height(), Qt.IgnoreAspectRatio,
+                                         Qt.SmoothTransformation)
+            if self.sx < 0 or self.sy < 0:
+                src = src.mirrored(self.sx < 0, self.sy < 0)
+            p.drawImage(place.topLeft() - r.topLeft(), src)
+            p.end()
+            return img
+        source = self.source
+        if lisse and qualite and (abs(self.sx) < 1 or abs(self.sy) < 1):     # tourné et réduit : réduit en qualité d'abord
+            source = self._source_a(max(1, round(abs(self.sx) * self.bw)), max(1, round(abs(self.sy) * self.bh)))
         p.setRenderHint(QPainter.SmoothPixmapTransform, lisse)
         p.setRenderHint(QPainter.Antialiasing, lisse)
         p.setTransform(self.transfo() * QTransform().translate(-r.x(), -r.y()))
-        p.drawImage(QRectF(0, 0, self.bw, self.bh), self.source)
+        p.drawImage(QRectF(0, 0, self.bw, self.bh), source)
         p.end()
         return img
 
