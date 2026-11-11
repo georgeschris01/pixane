@@ -755,7 +755,13 @@ changing the colour of a plain background or a banner, filling the inside of a l
 of a line drawing, or filling a selection.
 
 **How**: choose the colour (swatch in the top bar, or **Alt+click** on the photo to pick it), then click inside the
-area: it fills until the colour changes, following the visible image.
+area: it fills until the colour changes.
+- **All layers** (box in the top bar): where the bucket looks for the area to fill.
+  - **Unticked** (default, as in Photoshop): in the **selected layer** only. On an empty layer, one click fills **the
+    whole layer**, whatever is on the other layers.
+  - **Ticked**: in the **visible image** (all layers together). Useful to colour a drawing whose lines are on
+    another layer: the fill stops at the lines. Beware: it also stops at the edges of everything you see, even from
+    another layer; if you then delete or move that layer, a "hole" appears in the fill.
 - **Tolerance** (top bar): at 0, only the exact colour is filled; higher, the fill spreads to nearby shades (useful
   for a slightly graded background or a JPEG photo).
 - If there is a **selection**, it stays inside it. It paints on the selected layer (tip: an empty layer above makes

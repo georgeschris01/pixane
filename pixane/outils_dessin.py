@@ -63,7 +63,8 @@ def degrade(base: QImage, a: QPointF, b: QPointF, forme: str, c1: QColor, c2: QC
 # ------------------------------------------------------------------ pot de peinture
 def seau(base: QImage, visible_rgba: np.ndarray, x: int, y: int, tolerance: float, couleur: QColor, opacite: float,
          selection: QImage | None = None) -> QImage | None:
-    """Remplit la zone de couleur proche du point (d'après l'image visible). None si le point est hors image."""
+    """Remplit la zone de couleur proche du point, d'après `visible_rgba` (le calque choisi, ou l'image visible avec
+    « Tous les calques »). None si le point est hors image."""
     from .selection_auto import baguette
     h, w = visible_rgba.shape[:2]
     if not (0 <= x < w and 0 <= y < h):

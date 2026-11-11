@@ -265,6 +265,21 @@ class ActionsCalques:
         tol.valueChanged.connect(maj_seau)
         maj_seau(tol.value())
         lay.addWidget(tol)
+        tous = QCheckBox(tr("Tous les calques"))
+        tous.setToolTip(tr(
+            "Décochée (conseillé) : la zone à remplir est cherchée dans le calque choisi seulement ; sur un calque "
+            "vide, un clic remplit tout le calque, quoi qu'il y ait sur les autres calques.\n"
+            "Cochée : la zone suit l'image visible (tous les calques ensemble), par exemple pour colorier un dessin "
+            "dont les traits sont sur un autre calque. Le remplissage s'arrête alors aux bords de ce qu'on voit, "
+            "même si cela vient d'un autre calque (en supprimant ce calque, un trou apparaît)."))
+        tous.setChecked(self.reglages.value("seau_tous_calques", False, type=bool))
+
+        def maj_tous(oui):
+            c.seau_tous_calques = oui
+            self.reglages.setValue("seau_tous_calques", oui)
+        tous.toggled.connect(maj_tous)
+        maj_tous(tous.isChecked())
+        lay.addWidget(tous)
         tout.addWidget(self.opt_seau)
         # formes
         self.opt_formes = QWidget()

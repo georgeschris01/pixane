@@ -934,8 +934,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, QMainWindow):
                                 "lâcher, la copie prend la lumière et la couleur d'autour."),
                  DEGRADE: tr("Dégradé : glisse du début à la fin (Maj : horizontal, vertical ou à 45°). Dans la "
                              "sélection s'il y en a une ; sur un masque : fondu progressif."),
-                 SEAU: tr("Pot de peinture : clic sur une zone ; elle se remplit de la couleur choisie (d'après "
-                          "l'image visible). Alt+clic : prendre une couleur."),
+                 SEAU: tr("Pot de peinture : clic sur une zone ; elle se remplit de la couleur choisie (d'après le "
+                          "calque choisi, ou l'image visible avec « Tous les calques »). Alt+clic : prendre une "
+                          "couleur."),
                  FORMES: tr("Formes : glisse pour dessiner (Maj : carré, cercle, ligne droite). Chaque forme va dans "
                             "un nouveau calque ; la taille règle l'épaisseur du trait.")}
         if outil in aides:

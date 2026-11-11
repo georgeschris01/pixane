@@ -113,6 +113,7 @@ class Canevas(QWidget):
         self.couleur2: QColor | None = None   # dégradé : couleur d'arrivée (None = vers le transparent)
         self.forme_degrade = "lineaire"
         self.tolerance_seau = 32
+        self.seau_tous_calques = False   # pot de peinture : zone d'après l'image visible (sinon : le calque choisi)
         self.forme = "rectangle"
         self.forme_remplie = True
         self._glisse_dessin = None   # dégradé / forme en cours : [début, fin, Maj]
@@ -894,7 +895,9 @@ class Canevas(QWidget):
             from .outils_dessin import seau
             sel = None if self.doc.selection_vide() else self.doc.selection
             avant = self.doc.etat()
-            res = seau(img, tableau(self.doc.image.convertToFormat(FORMAT_IMAGE)), int(pt.x()), int(pt.y()),
+            # zone à remplir : d'après le calque choisi (comme Photoshop par défaut), ou l'image visible
+            reference = self.doc.image if self.seau_tous_calques else img
+            res = seau(img, tableau(reference.convertToFormat(FORMAT_IMAGE)), int(pt.x()), int(pt.y()),
                        self.tolerance_seau, self._couleur_cible(self.couleur_peinture, sur_masque), self.opacite, sel)
             if res is not None:
                 if self.doc.calque_actif.texte is not None and not sur_masque:

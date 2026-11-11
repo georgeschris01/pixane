@@ -15,6 +15,11 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.18.0 (non publ
   pivoter, retourner, recadrer, aligner ; enregistrée dans le .pixane. Pixels modifiés (pinceau, IA…) : la version
   modifiée devient la référence. *(commit 5f1aea2)*
 
+- **Pot de peinture : case « Tous les calques »** (décochée par défaut, comme Photoshop) : la zone à remplir est
+  cherchée dans le calque choisi ; sur un calque vide, un clic remplit tout le calque. Cochée : d'après l'image
+  visible (ancien comportement), avec une bulle d'aide qui explique la différence. *(signalé par Christophe : un
+  calque vide rempli laissait un trou à l'emplacement d'un autre calque supprimé ensuite)*
+
 ## Corrections
 
 - **Rétrécir sans valider** : dès la souris lâchée, le calque est en pleine qualité (avant : aperçu rapide, dégradé,

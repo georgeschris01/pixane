@@ -783,7 +783,14 @@ changer la couleur d'un fond uni ou d'un bandeau, remplir l'intérieur d'une let
 d'un dessin au trait, ou remplir une sélection.
 
 **Comment** : choisissez la couleur (pastille de la barre du haut, ou **Alt+clic** sur la photo pour la prendre),
-puis cliquez dans la zone : elle se remplit jusqu'à ce que la couleur change, en suivant l'image visible.
+puis cliquez dans la zone : elle se remplit jusqu'à ce que la couleur change.
+- **Tous les calques** (case de la barre du haut) : où le pot cherche la zone à remplir.
+  - **Décochée** (par défaut, comme dans Photoshop) : dans le **calque choisi** seulement. Sur un calque vide, un
+    clic remplit **tout le calque**, quoi qu'il y ait sur les autres calques.
+  - **Cochée** : dans l'**image visible** (tous les calques ensemble). Utile pour colorier un dessin dont les traits
+    sont sur un autre calque : le remplissage s'arrête aux traits. Attention : il s'arrête aussi aux bords de tout ce
+    qu'on voit, même venant d'un autre calque ; si l'on supprime ou déplace ensuite ce calque, un « trou » apparaît
+    dans le remplissage.
 - **Tolérance** (barre du haut) : à 0, seule la couleur exacte est remplie ; plus haut, le remplissage déborde sur
   des teintes voisines (utile pour un fond légèrement dégradé ou une photo JPEG).
 - S'il y a une **sélection**, il reste dedans. Il peint sur le calque choisi (astuce : un calque vide au-dessus
