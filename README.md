@@ -21,6 +21,7 @@
 - **Supprimer l'arrière-plan** et **Sélectionner le sujet** en un clic
 - **Réduire le bruit** (grain, défauts JPEG) et **Netteté** (flou léger)
 - **Restaurer une vieille photo** (rayures, taches, plis, grain), en gardant ses couleurs ou en la **colorisant**
+- **Modifier avec une consigne** : on sélectionne, on écrit « remplace le texte « X » par « Y » », « change la couleur de… » : l'IA le fait dans le style de l'image (fond transparent gardé pour un texte ou un logo) ; consignes en français avec le **traducteur** facultatif, qui tourne sur le PC
 
 **Sélection**
 - Rectangle, lasso, pinceau et gomme de sélection ; ajouter / retirer avec Maj / Alt
@@ -34,6 +35,7 @@
 
 **Outils**
 - Recadrer, pinceau de couleur, tampon, **pinceau correcteur**, gomme de calque, déplacer
+- **Pinceaux à forme** comme dans Photoshop et Krita : 235 pinceaux et 87 motifs livrés, import des pinceaux Photoshop (.abr), GIMP et Krita ; réglages complets (espacement, angle, dispersion, texture, double pinceau…) et **pression de la tablette**
 - **Dégradé**, **pot de peinture**, **formes** (rectangle, ellipse, ligne, flèche)
 - **Texte modifiable** : police, taille, couleur, contour, ombre, fond, rotation, texte en arc
 - Règles, repères, grille et magnétisme
@@ -42,7 +44,7 @@
 - Réglages de l'image avec bouton **Auto** (luminosité, contraste, saturation, teinte, température, netteté)
 - **Niveaux**, **Courbes**, **Balance des couleurs**, **Noir et blanc** (avec virage sépia), **Vibrance**
 - Filtres : flou gaussien, flou de mouvement, réduction du bruit, netteté, vignette
-- Taille de l'image, **taille de la zone de travail**, pivoter, retourner, redresser ; transformer un calque (taille, rotation)
+- Taille de l'image, **taille de la zone de travail**, pivoter, retourner, redresser ; transformer un calque (taille, rotation), **sans perte** en réduisant puis réagrandissant (comme un objet dynamique)
 - Mode **couleurs RVB** ou **niveaux de gris**
 
 **Fichiers**
@@ -82,12 +84,13 @@ Pixane a été testé sur une **RTX 3060 Ti (8 Go) avec 32 Go de mémoire vive**
 | Effacer | environ 2 minutes |
 | Upscale net | 20 à 30 secondes par morceau de 1024 px |
 | Restaurer une vieille photo | environ 2 minutes par proposition |
+| Modifier avec une consigne | 2 à 3 minutes par proposition |
 
 ## Télécharger
 
 **[Pixane pour Windows](../../releases/latest)** (installateur 64 bits, `Pixane-Setup-<version>-64bits.exe`).
 
-L'installateur vérifie la carte graphique et la place libre, puis propose de télécharger le moteur IA depuis les sites officiels (GitHub, Hugging Face) : **21,5 Go**, environ 31 Go sur le disque. Deux options facultatives : **Flux Schnell** pour « Upscale net » (11,8 Go) et **Flux Kontext** pour « Restaurer une vieille photo » (11,9 Go). Les modèles Flux Fill et Flux Kontext sont sous licence **FLUX.1 [dev] non commerciale** : il faut l'accepter pour les installer.
+L'installateur vérifie la carte graphique et la place libre, puis propose de télécharger le moteur IA depuis les sites officiels (GitHub, Hugging Face) : **21,5 Go**, environ 31 Go sur le disque. Deux options facultatives : **Flux Schnell** pour « Upscale net » (11,8 Go) et **Flux Kontext** pour « Restaurer une vieille photo » et « Modifier avec une consigne » (11,9 Go), avec le **traducteur** français → anglais (290 Mo, Apache-2.0). Les modèles Flux Fill et Flux Kontext sont sous licence **FLUX.1 [dev] non commerciale** : il faut l'accepter pour les installer.
 
 **ComfyUI déjà installé ?** Pixane l'utilise tel quel : pas de second ComfyUI, rien n'est retéléchargé en double. Au premier démarrage, Pixane regarde ce qui lui manque (extensions, modèles d'IA) et propose de télécharger **seulement ça**, avec la liste, la taille et la licence de chaque élément. Tout est rangé dans les dossiers de votre ComfyUI (même un dossier de modèles partagé), sans rien remplacer ni effacer. S'il a déjà tout, rien n'est téléchargé.
 
@@ -382,11 +385,24 @@ sort de la feuille est gardé, on peut le faire revenir ; refusé sur un calque 
   **un milieu de côté**, seulement la largeur ou la hauteur ; **juste à l'extérieur d'un coin** (curseur en croix),
   on tourne. Dès qu'une poignée est touchée, c'est le mode *Transformer* (comme Ctrl+T) : **Entrée** pour garder,
   **Échap** pour annuler.
-- **Qualité** : en gardant (Entrée), le calque est redimensionné comme dans Photoshop, chaque pixel tenant compte
+- **Qualité** : le calque est redimensionné comme dans Photoshop, chaque pixel tenant compte
   de tous ceux qu'il remplace : une image réduite (même beaucoup, par exemple après un Upscale) reste propre, sans
   traits hachés ni grain. Sans rotation, le calque est posé sur des pixels entiers : un simple déplacement ne le
-  floute jamais. Pendant le geste, l'aperçu est plus grossier (pour rester fluide). Conseil : chaque
-  transformation gardée recalcule l'image ; mieux vaut régler la taille en une fois que réduire puis agrandir.
+  floute jamais. Pendant le geste, l'aperçu est rapide ; **dès que la souris est lâchée**, le calque est en pleine
+  qualité, même si l'on passe à autre chose sans valider. Même qualité pour *Image > Taille de l'image* et pour
+  l'Upscale (calque ramené à sa taille, autres calques agrandis). Un simple déplacement ne change aucun pixel.
+- **Aucune perte en réduisant puis en réagrandissant** (comme un *objet dynamique* de Photoshop, sans rien à faire) :
+  chaque calque garde sa **meilleure version** (par exemple celle d'après un Upscale). Réduire, valider, faire autre
+  chose, enregistrer, rouvrir le projet… puis réagrandir : Pixane repart de cette meilleure version, l'image revient
+  **telle qu'elle était, pixel pour pixel**, jusqu'à sa taille d'origine. Valable avec Déplacer (poignées), Ctrl+T,
+  *Image > Taille de l'image*, pivoter, retourner, recadrer, aligner. Elle est enregistrée dans le projet **.pixane**
+  (qui grossit un peu).
+  - Si l'on **modifie les pixels** du calque (pinceau, gomme, IA, filtre…), la version modifiée devient la nouvelle
+    référence (l'ancienne effacerait le travail).
+  - Agrandir **au-delà** de la meilleure version rend l'image plus douce : ces pixels n'ont jamais existé (pour
+    cela, l'Upscale).
+  - Transformer seulement une **partie sélectionnée** du calque : la version actuelle devient la référence.
+  - Dans Ctrl+T, les pourcentages sont comptés par rapport à la meilleure version (100 % = sa taille d'origine).
 - La case **Afficher le cadre de transformation** (en haut) le cache s'il gêne. Pas de cadre sur un calque vide,
   verrouillé, caché ou de texte (un texte change de taille avec l'outil Texte).
 
@@ -417,6 +433,13 @@ de lancer.
   l'image a plusieurs calques (sinon les autres y seraient recopiés). Un message le dit en bas.
 - **IA > Mettre les résultats dans un nouveau calque** (à cocher) : chaque résultat va dans un nouveau calque,
   comme avant ; pratique pour comparer avec l'original en masquant le calque.
+- **Ce que l'IA regarde** : l'**image visible** (tous les calques ensemble, comme Photoshop), pour que le résultat
+  aille avec ce qu'on voit autour. Le résultat, lui, va **seulement** dans le calque choisi (ou un nouveau calque).
+  Un calque caché n'est pas vu par l'IA : pour qu'elle ne tienne pas compte d'un calque, cachez-le avant de lancer.
+- **Trous transparents** (par exemple les lettres d'un texte coupé dans une pochette) : avec **Effacer** et
+  **Remplir**, les trous qui sont dans la sélection et entourés par l'image sont **remplis**, opaques, avec ce qui
+  les entoure. Le transparent qui continue hors de la sélection (autour d'une photo détourée, au-delà du bord
+  d'une pochette) reste transparent.
 
 ### Fenêtre de choix du résultat
 - Cliquez sur une vignette pour la voir en grand.
@@ -448,6 +471,25 @@ Redessine la zone peinte en rouge.
   par LaMa : même près d'un titre, elle ne réinvente pas de lettres.
 - **Avec un texte** (champ « Texte facultatif », en anglais de préférence) : décrit ce qu'on veut voir à la place.
 - 3 propositions, environ 1 minute chacune.
+
+### Modifier avec une consigne (Maj+M)
+Change la zone sélectionnée d'après ce que tu écris, en gardant le style de l'image : « remplace le texte « brûler
+le feu » par « Flamme » », « change la couleur du pull en rouge », « remplace la tasse par un verre », « enlève les
+lunettes »… (modèle **Flux Kontext**, à ajouter dans Installer le moteur IA).
+- Sélectionne la zone (pinceau, lasso, sélection d'objet…), puis **Modifier** (carte du panneau IA ou menu IA).
+  Sans sélection : toute l'image.
+- Écris la consigne. **Exemples** : choisis-en un, il est inséré ; remplace les « … ».
+- **Entre guillemets** (« … » ou "…") : un texte à écrire tel quel (il n'est jamais traduit).
+- L'IA comprend mal le français : avec le **traducteur** (290 Mo, sur ton PC, rien n'est envoyé sur Internet),
+  **Traduire** montre la phrase anglaise, que tu peux corriger. Sans lui, écris en anglais. Il s'installe par le
+  bouton « Installer le traducteur… » ou la case du même nom dans Installer le moteur IA.
+- L'IA travaille sur un morceau autour de la sélection (plus de détail qu'avec toute l'image) ; le résultat n'est
+  gardé que dans la sélection et là où il change vraiment : le reste garde ses pixels d'origine.
+- **Calque avec de la transparence** (texte, logo sans fond) : l'IA voit ce calque seul, et le résultat garde un
+  fond transparent. Sinon, elle voit l'image visible et le résultat est opaque.
+- Propositions : 1 à 4, environ 2 à 3 minutes chacune. Les écritures très travaillées sont bien imitées, mais un
+  peu moins fines que l'original ; les accents et les longs textes sont parfois mal écrits : demande d'autres
+  propositions.
 
 ### Agrandir l'image (Maj+A)
 Étend la photo au-delà de ses bords : l'IA invente la suite du décor.
@@ -800,6 +842,27 @@ corriger sans toucher à la photo).
   net, 0 % bord très doux).
 - Repasser au même endroit pendant un même coup ne fonce pas la couleur ; un nouveau coup, si.
 
+### Pinceaux à forme : la bibliothèque (comme Photoshop, Krita)
+Le pinceau de couleur (et les masques), la **gomme de calque** et le **pinceau de sélection** peuvent prendre une
+**forme** : craie, crayon, herbe, feuilles, aquarelle, éclaboussures… Chaque outil garde son propre choix.
+- **Pinceau** (barre du haut) : ouvre la bibliothèque. À gauche les groupes, à droite les vignettes ; double-clic pour
+  choisir. **Rond simple** revient au pinceau rond habituel.
+- **Livrés avec Pixane** : 235 pinceaux et 87 motifs (ressources de Krita, licence CC-0).
+- **Ajouter des fichiers…** : pinceaux de Photoshop (**.abr**), de GIMP et Krita (**.gbr**, **.gih**), paquets
+  Krita (**.bundle**), ou une simple image (le noir peint ; une image en couleur garde ses couleurs). Chaque fichier
+  devient un groupe ; **Retirer ce groupe** l'enlève. Les fichiers sont copiés dans Pixane : l'original peut être
+  déplacé ou supprimé.
+- Un pinceau « animé » (.gih : herbe, feuilles…) a plusieurs formes qui alternent pendant le trait.
+- **Réglages…** (un point « • » s'affiche quand un réglage est changé), avec un aperçu du trait :
+  - **Forme** : espacement entre les touches, angle (ou « l'angle suit le trait », comme une plume), rondeur ;
+  - **Dispersion** : les touches s'écartent du trait, plusieurs à la fois, taille, angle et rondeur au hasard ;
+  - **Texture** : un motif creuse le trait (craie sur papier à grain) ; échelle, force, inverser ;
+  - **Double pinceau** : une deuxième forme découpe la première ;
+  - **Couleur** : teinte, saturation, luminosité qui varient à chaque touche, mélange avec le blanc ;
+  - **Transfert** : flux (à moins de 100 %, les touches s'ajoutent, comme un aérographe), variations ;
+  - **Tablette** : avec un stylet, la pression change la taille (et, au choix, l'opacité ou le flux).
+- Avec un stylet de tablette graphique, même le pinceau rond suit la pression.
+
 ### Tampon (S)
 Recopie une partie de la photo sur une autre : pour effacer un petit défaut à la main, dupliquer une texture…
 1. **Alt+clic** sur l'endroit à copier (une croix le marque).
@@ -835,7 +898,14 @@ changer la couleur d'un fond uni ou d'un bandeau, remplir l'intérieur d'une let
 d'un dessin au trait, ou remplir une sélection.
 
 **Comment** : choisissez la couleur (pastille de la barre du haut, ou **Alt+clic** sur la photo pour la prendre),
-puis cliquez dans la zone : elle se remplit jusqu'à ce que la couleur change, en suivant l'image visible.
+puis cliquez dans la zone : elle se remplit jusqu'à ce que la couleur change.
+- **Tous les calques** (case de la barre du haut) : où le pot cherche la zone à remplir.
+  - **Décochée** (par défaut, comme dans Photoshop) : dans le **calque choisi** seulement. Sur un calque vide, un
+    clic remplit **tout le calque**, quoi qu'il y ait sur les autres calques.
+  - **Cochée** : dans l'**image visible** (tous les calques ensemble). Utile pour colorier un dessin dont les traits
+    sont sur un autre calque : le remplissage s'arrête aux traits. Attention : il s'arrête aussi aux bords de tout ce
+    qu'on voit, même venant d'un autre calque ; si l'on supprime ou déplace ensuite ce calque, un « trou » apparaît
+    dans le remplissage.
 - **Tolérance** (barre du haut) : à 0, seule la couleur exacte est remplie ; plus haut, le remplissage déborde sur
   des teintes voisines (utile pour un fond légèrement dégradé ou une photo JPEG).
 - S'il y a une **sélection**, il reste dedans. Il peint sur le calque choisi (astuce : un calque vide au-dessus

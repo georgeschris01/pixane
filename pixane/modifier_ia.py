@@ -38,6 +38,7 @@ class Preparation:
     zone: np.ndarray | None        # sélection 0..255 (None : toute l'image)
     png: bytes                     # zone de travail, à plat, pour ComfyUI
     calque: np.ndarray | None      # (H, W, 4) RGBA du calque cible avant (None : nouveau calque)
+    reference: float = 0.5         # écart au fond (0..1) d'un pixel bien plein du calque (pour le détourage)
 
     @property
     def taille(self) -> tuple[int, int]:
@@ -92,7 +93,18 @@ def preparer(doc, zone: np.ndarray | None, nouveau_calque: bool = False) -> Prep
     Image.fromarray(np.ascontiguousarray(rgb), "RGB").save(o, "PNG", compress_level=1)
     if calque is None:
         cible = None
-    return Preparation(rect, source, fond, transparent, cible, zone, o.getvalue(), calque)
+    return Preparation(rect, source, fond, transparent, cible, zone, o.getvalue(), calque,
+                       reference_plein(morceau, fond) if transparent else 0.5)
+
+
+def reference_plein(rgba: np.ndarray, fond: int) -> float:
+    """Écart au fond uni d'un pixel « bien plein » du calque (les plus nets de ses pixels opaques) : au-delà, le
+    pixel rendu par l'IA est opaque ; en deçà, il est en partie transparent (bords adoucis, sans liseré)."""
+    plein = rgba[..., 3] > 250
+    if plein.sum() < 50:
+        return 0.5
+    ecart = np.abs(rgba[..., :3][plein].astype(np.float32) - fond).max(axis=1) / 255
+    return float(np.clip(np.percentile(ecart, 40), 0.15, 1.0))
 
 
 def image_complete(prep: Preparation, resultat: QImage) -> QImage:
@@ -116,13 +128,14 @@ def _changement(avant: np.ndarray, apres: np.ndarray) -> np.ndarray:
     return np.clip((np.asarray(e, np.float32) - 14) / 18, 0, 1)
 
 
-def _detourer(rgb: np.ndarray, fond: int) -> tuple[np.ndarray, np.ndarray]:
-    """Retire le fond uni : (couleur, alpha 0..1). Ce qui s'écarte nettement du fond est opaque ; les bords
-    adoucis gardent une transparence partielle."""
+def _detourer(rgb: np.ndarray, fond: int, reference: float = 0.5) -> tuple[np.ndarray, np.ndarray]:
+    """Retire le fond uni : (couleur, alpha 0..1). Un pixel aussi éloigné du fond qu'un pixel plein du calque
+    (reference) est opaque ; plus près du fond, il devient transparent en proportion, et sa couleur est
+    « dé-mélangée » du fond : les bords des lettres ne gardent pas de liseré sombre (ou clair)."""
     f = np.float32(fond)
     c = rgb.astype(np.float32)
-    ecart = (np.abs(c - f) / max(f, 255 - f)).max(axis=2)
-    a = np.clip((ecart - 0.04) / 0.30, 0, 1)
+    ecart = (np.abs(c - f) / 255).max(axis=2)
+    a = np.clip((ecart - 0.02) / max(0.05, reference - 0.02), 0, 1)
     vraie = np.clip((c - f * (1 - a[..., None])) / np.maximum(a[..., None], 0.05), 0, 255)
     return vraie, a
 
@@ -139,7 +152,7 @@ def pose(prep: Preparation, image: QImage) -> np.ndarray:
     hors[y:y + h, x:x + l] = False
     garder[hors] = 0
     if prep.transparent:
-        couleur, alpha = _detourer(r, prep.fond)
+        couleur, alpha = _detourer(r, prep.fond, prep.reference)
     else:
         couleur, alpha = r.astype(np.float32), np.ones((H, W), np.float32)
     base = prep.calque if prep.calque is not None else np.zeros((H, W, 4), np.uint8)

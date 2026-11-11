@@ -14,7 +14,7 @@ Pixane itself: Pixane Licence 1.1 (free of charge, source-available, non-commerc
 | numpy | BSD-3-Clause (et composants 0BSD, MIT, Zlib, CC0) |
 | Pillow | MIT-CMU |
 | websocket-client | Apache-2.0 |
-| Pinceaux et motifs de base / Built-in brushes and patterns (`pixaneessourcesase`) : paquets « Krita 3 Default Resources » et « Krita 4 Default Resources » de Krita (krita.org), par / by David Revoy (Deevad), Ramon Miranda, Timothée Giet, Razvanc, Radian, Wolthera van Hövell, Storm, Scottyp et d'autres / and others | CC0 1.0 (domaine public / public domain), déclaré dans chaque paquet / stated in each bundle |
+| Pinceaux et motifs de base / Built-in brushes and patterns (`pixane\ressources\base`) : paquets « Krita 3 Default Resources » et « Krita 4 Default Resources » de Krita (krita.org), par / by David Revoy (Deevad), Ramon Miranda, Timothée Giet, Razvanc, Radian, Wolthera van Hövell, Storm, Scottyp et d'autres / and others | CC0 1.0 (domaine public / public domain), déclaré dans chaque paquet / stated in each bundle |
 
 ## Téléchargé seulement si l'utilisateur le choisit / Downloaded only if the user chooses
 
@@ -27,6 +27,7 @@ Pixane itself: Pixane Licence 1.1 (free of charge, source-available, non-commerc
 | FLUX.1 Fill [dev] (GGUF Q8) | **FLUX.1 [dev] Non-Commercial License** — https://huggingface.co/black-forest-labs/FLUX.1-dev/blob/main/LICENSE.md |
 | FLUX.1 [schnell] (GGUF Q8, facultatif / optional) | Apache-2.0 |
 | FLUX.1 Kontext [dev] (fp8, facultatif / optional) | **FLUX.1 [dev] Non-Commercial License** |
+| Opus-MT fr-en (Helsinki-NLP, traducteur facultatif / optional translator) | Apache-2.0 |
 | Encodeurs T5 et CLIP / T5 and CLIP encoders, VAE | Apache-2.0 |
 | LaMa | Apache-2.0 |
 | RealESRGAN x4plus | BSD-3-Clause |

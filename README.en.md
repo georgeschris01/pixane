@@ -21,6 +21,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 - **Remove background** and **Select subject** in one click
 - **Reduce noise** (grain, JPEG artefacts) and **Sharpen** (slight blur)
 - **Restore an old photo** (scratches, stains, creases, grain), keeping its colours or **colourising** it
+- **Edit with an instruction**: select, write “replace the text "X" with "Y"”, “change the colour of…”: the AI does it in the style of the image (transparent background kept for a text or a logo); instructions in French with the optional **translator**, which runs on the PC
 
 **Selection**
 - Rectangle, lasso, selection brush and eraser; add / subtract with Shift / Alt
@@ -34,6 +35,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 
 **Tools**
 - Crop, colour brush, clone stamp, **healing brush**, layer eraser, move
+- **Shaped brushes** as in Photoshop and Krita: 235 brushes and 87 patterns included, import of Photoshop (.abr), GIMP and Krita brushes; full settings (spacing, angle, scattering, texture, dual brush…) and **tablet pressure**
 - **Gradient**, **paint bucket**, **shapes** (rectangle, ellipse, line, arrow)
 - **Editable text**: font, size, colour, outline, shadow, background, rotation, curved text
 - Rulers, guides, grid and snapping
@@ -42,7 +44,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 - Image adjustments with an **Auto** button (brightness, contrast, saturation, hue, temperature, sharpness)
 - **Levels**, **Curves**, **Colour balance**, **Black & white** (with sepia toning), **Vibrance**
 - Filters: Gaussian blur, motion blur, noise reduction, sharpen, vignette
-- Image size, **canvas size**, rotate, flip, straighten; transform a layer (size, rotation)
+- Image size, **canvas size**, rotate, flip, straighten; transform a layer (size, rotation), **lossless** when shrinking then enlarging again (like a smart object)
 - **RGB colour** or **greyscale** mode
 
 **Files**
@@ -82,12 +84,13 @@ Pixane has been tested on an **RTX 3060 Ti (8 GB) with 32 GB of RAM**; the minim
 | Erase | about 2 minutes |
 | Sharp upscale | 20 to 30 seconds per 1024 px tile |
 | Restore an old photo | about 2 minutes per proposal |
+| Edit with an instruction | 2 to 3 minutes per proposal |
 
 ## Download
 
 **[Pixane for Windows](../../releases/latest)** (64-bit installer, `Pixane-Setup-<version>-64bits.exe`).
 
-The installer checks the graphics card and free space, then offers to download the AI engine from the official sites (GitHub, Hugging Face): **21.5 GB**, about 31 GB on disk. Two optional extras: **Flux Schnell** for "Sharp upscale" (11.8 GB) and **Flux Kontext** for "Restore an old photo" (11.9 GB). The Flux Fill and Flux Kontext models are under the **non-commercial FLUX.1 [dev] licence**: you must accept it to install them.
+The installer checks the graphics card and free space, then offers to download the AI engine from the official sites (GitHub, Hugging Face): **21.5 GB**, about 31 GB on disk. Two optional extras: **Flux Schnell** for "Sharp upscale" (11.8 GB) and **Flux Kontext** for "Restore an old photo" and "Edit with an instruction" (11.9 GB), with the French → English **translator** (290 MB, Apache-2.0). The Flux Fill and Flux Kontext models are under the **non-commercial FLUX.1 [dev] licence**: you must accept it to install them.
 
 **ComfyUI already installed?** Pixane uses it as it is: no second ComfyUI, nothing downloaded twice. At the first start, Pixane checks what it is missing (extensions, AI models) and offers to download **only that**, with the list, size and licence of each item. Everything goes into your ComfyUI's own folders (even a shared models folder), without replacing or deleting anything. If it already has everything, nothing is downloaded.
 
@@ -373,11 +376,22 @@ outside the canvas is kept and can be brought back; refused on a locked layer).
   **drag inside** to move; **a corner** changes the size keeping the proportions (Shift: free); **the middle of a
   side**, only the width or the height; **just outside a corner** (cross cursor), you rotate. As soon as a handle is
   touched, it is the *Transform* mode (like Ctrl+T): **Enter** to keep, **Esc** to cancel.
-- **Quality**: when you keep it (Enter), the layer is resized as in Photoshop, each pixel taking into account all
+- **Quality**: the layer is resized as in Photoshop, each pixel taking into account all
   the ones it replaces: a reduced image (even a lot, for example after an Upscale) stays clean, without broken lines
-  or grain. Without rotation, the layer is placed on whole pixels: a simple move never blurs it. During the gesture,
-  the preview is rougher (to stay smooth). Tip: each kept transformation recomputes the image; better to set the
-  size in one go than to shrink and then enlarge.
+  or grain. Without rotation, the layer is placed on whole pixels: a simple move never blurs it. During the gesture, the
+  preview is fast; **as soon as the mouse is released**, the layer is at full quality, even if you move on without
+  validating. Same quality for *Image > Image size* and for the Upscale (layer brought back to its size, other
+  layers enlarged). A simple move changes no pixel.
+- **No loss when shrinking then enlarging again** (like a Photoshop *smart object*, with nothing to do): each layer
+  keeps its **best version** (for example the one after an Upscale). Shrink, validate, do something else, save,
+  reopen the project… then enlarge again: Pixane starts again from this best version, and the image comes back
+  **exactly as it was, pixel for pixel**, up to its original size. Works with Move (handles), Ctrl+T,
+  *Image > Image size*, rotate, flip, crop, align. It is saved in the **.pixane** project (which gets a little bigger).
+  - If you **change the pixels** of the layer (brush, eraser, AI, filter…), the changed version becomes the new
+    reference (the old one would erase the work).
+  - Enlarging **beyond** the best version makes the image softer: those pixels never existed (use the Upscale).
+  - Transforming only a **selected part** of the layer: the current version becomes the reference.
+  - In Ctrl+T, the percentages are counted from the best version (100 % = its original size).
 - The **Show transform controls** box (at the top) hides it if it gets in the way. No frame on an empty, locked,
   hidden or text layer (a text changes size with the Text tool).
 
@@ -407,6 +421,13 @@ see it** (all visible layers together): so choose the photo's layer before start
   (otherwise the others would be copied into it). A message at the bottom says so.
 - **AI > Put results in a new layer** (tick box): each result goes into a new layer, as before; handy to compare
   with the original by hiding the layer.
+- **What the AI looks at**: the **visible image** (all layers together, as in Photoshop), so that the result
+  matches what you see around it. The result itself goes **only** into the selected layer (or a new layer). A
+  hidden layer is not seen by the AI: to make it ignore a layer, hide it before starting.
+- **Transparent holes** (for example the letters of a text cut out of a cover): with **Erase** and **Fill**, the
+  holes that are in the selection and surrounded by the image are **filled**, opaque, with what surrounds them.
+  Transparency that continues outside the selection (around a cut-out photo, beyond the edge of a cover) stays
+  transparent.
 
 ### Result chooser
 - Click a thumbnail to see it full size.
@@ -438,6 +459,24 @@ Redraws the area painted in red.
   background cleaned by LaMa: even next to a title, it does not invent letters again.
 - **With text** ("Optional text" field, preferably in English): describes what you want to see instead.
 - 3 options, about 1 minute each.
+
+### Edit with an instruction (Shift+M)
+Changes the selected area from what you write, keeping the style of the image: “replace the text "burn the fire"
+with "Flame"”, “make the jumper red”, “replace the cup with a glass”, “remove the glasses”… (**Flux Kontext**
+model, to be added in Install the AI engine).
+- Select the area (brush, lasso, object selection…), then **Edit** (AI panel card or AI menu). Without a
+  selection: the whole image.
+- Write the instruction. **Examples**: choose one, it is inserted; replace the “…”.
+- **Between quotes** (« … » or "…"): text to be written as is (never translated).
+- The AI understands French poorly: with the **translator** (290 MB, on your PC, nothing is sent over the
+  Internet), **Translate** shows the English sentence, which you can correct. In English, no translator is needed.
+  It is installed with the “Install the translator…” button or the box of the same name in Install the AI engine.
+- The AI works on a piece around the selection (more detail than with the whole image); the result is only kept
+  inside the selection and where it really changes: the rest keeps its original pixels.
+- **Layer with transparency** (text, logo without background): the AI sees this layer alone, and the result keeps
+  a transparent background. Otherwise it sees the visible image and the result is opaque.
+- Proposals: 1 to 4, about 2 to 3 minutes each. Elaborate handwriting is well imitated but slightly less fine
+  than the original; accents and long texts are sometimes misspelled: ask for more proposals.
 
 ### Expand image (Shift+A)
 Extends the photo beyond its edges: the AI invents the rest of the scene.
@@ -778,6 +817,26 @@ touching the photo).
   (100% sharp edge, 0% very soft edge).
 - Going over the same spot during one stroke does not darken the colour; a new stroke does.
 
+### Shaped brushes: the library (like Photoshop, Krita)
+The colour brush (and masks), the **layer eraser** and the **selection brush** can take a **shape**: chalk, pencil,
+grass, leaves, watercolour, splatters… Each tool keeps its own choice.
+- **Brush** (top bar): opens the library. Groups on the left, thumbnails on the right; double-click to choose.
+  **Plain round** goes back to the usual round brush.
+- **Shipped with Pixane**: 235 brushes and 87 patterns (Krita resources, CC-0 licence).
+- **Add files…**: Photoshop brushes (**.abr**), GIMP and Krita brushes (**.gbr**, **.gih**), Krita bundles
+  (**.bundle**), or a plain image (black paints; a colour image keeps its colours). Each file becomes a group;
+  **Remove this group** takes it away. Files are copied into Pixane: the original can be moved or deleted.
+- An “animated” brush (.gih: grass, leaves…) has several shapes that alternate along the stroke.
+- **Settings…** (a dot “•” shows when a setting is changed), with a stroke preview:
+  - **Shape**: spacing between dabs, angle (or “angle follows the stroke”, like a pen), roundness;
+  - **Scatter**: dabs spread away from the stroke, several at once, random size, angle and roundness;
+  - **Texture**: a pattern carves the stroke (chalk on grainy paper); scale, strength, invert;
+  - **Dual brush**: a second shape cuts into the first;
+  - **Colour**: hue, saturation, brightness varying at each dab, mix with white;
+  - **Transfer**: flow (below 100%, dabs build up, like an airbrush), variations;
+  - **Tablet**: with a stylus, pressure changes the size (and, if you wish, opacity or flow).
+- With a graphics-tablet stylus, even the round brush follows pressure.
+
 ### Clone stamp (S)
 Copies one part of the photo onto another: to remove a small defect by hand, duplicate a texture…
 1. **Alt+click** on the area to copy (a cross marks it).
@@ -811,7 +870,13 @@ changing the colour of a plain background or a banner, filling the inside of a l
 of a line drawing, or filling a selection.
 
 **How**: choose the colour (swatch in the top bar, or **Alt+click** on the photo to pick it), then click inside the
-area: it fills until the colour changes, following the visible image.
+area: it fills until the colour changes.
+- **All layers** (box in the top bar): where the bucket looks for the area to fill.
+  - **Unticked** (default, as in Photoshop): in the **selected layer** only. On an empty layer, one click fills **the
+    whole layer**, whatever is on the other layers.
+  - **Ticked**: in the **visible image** (all layers together). Useful to colour a drawing whose lines are on
+    another layer: the fill stops at the lines. Beware: it also stops at the edges of everything you see, even from
+    another layer; if you then delete or move that layer, a "hole" appears in the fill.
 - **Tolerance** (top bar): at 0, only the exact colour is filled; higher, the fill spreads to nearby shades (useful
   for a slightly graded background or a JPEG photo).
 - If there is a **selection**, it stays inside it. It paints on the selected layer (tip: an empty layer above makes
