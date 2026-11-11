@@ -43,6 +43,11 @@ def textes_du_code() -> set[str]:
                         if isinstance(c, ast.Tuple) and len(c.elts) == 2 and all(
                                 isinstance(e, ast.Constant) for e in c.elts):
                             cles.add(c.elts[1].value)
+            # consignes de l'IA : exemples (nom, modèle)
+            if f.name == "consigne.py" and isinstance(n, ast.Assign) and any(
+                    getattr(t, "id", "") == "EXEMPLES" for t in n.targets):
+                for c in n.value.elts:
+                    cles.update(e.value for e in c.elts)
             # réglages du pinceau : libellés et aides (CHAMPS), onglets, explications (dictionnaire « explication »)
             if f.name == "reglages_pinceau.py" and isinstance(n, ast.Assign):
                 noms = [getattr(t, "id", "") for t in n.targets]

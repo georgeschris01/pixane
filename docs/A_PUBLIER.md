@@ -31,6 +31,15 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.18.0 (non publ
   *Le jour de la publication : README « Ce que Pixane sait faire », partie peinture : ajouter les pinceaux à forme
   et la tablette.*
 
+- **Modifier avec une consigne (Maj+M, IA)** : sur la sélection, « remplace le texte « X » par « Y » », « change
+  la couleur de… », « remplace… par… » ; style gardé (Flux Kontext). Travail sur un morceau autour de la
+  sélection ; résultat gardé seulement dans la sélection et là où il change ; calque transparent (texte, logo) vu
+  seul sur un fond uni puis détouré : fond transparent gardé. Exemples à cliquer ; textes entre guillemets jamais
+  traduits. **Traducteur français → anglais** (Opus-MT, Helsinki-NLP, Apache-2.0, 290 Mo, tourne sur le PC avec
+  le Python de ComfyUI) : proposé avec explication dans Installer le moteur IA (case cochée avec Kontext) et par
+  « Installer le traducteur… » dans la fenêtre de consigne. *Le jour de la publication : README (actions IA),
+  LICENCES_TIERS (Opus-MT, téléchargé au choix).*
+
 ## Corrections
 
 - **Agrandir en pleine définition : message d'erreur** « Unknown format code 'd' for object of type 'float' »

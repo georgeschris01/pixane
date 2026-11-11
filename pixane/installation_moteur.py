@@ -627,11 +627,28 @@ class FenetreInstallation(QDialog):
         self.c_schnell.setChecked(schnell)
         self.c_schnell.toggled.connect(self._actualiser)
         lay.addWidget(self.c_schnell)
-        self.c_kontext = QCheckBox(tr("Ajouter Flux Kontext ({taille}) pour « Restaurer une vieille photo » "
-                                      "(facultatif)", taille=go(TAILLE_KONTEXT)))
+        self.c_kontext = QCheckBox(tr("Ajouter Flux Kontext ({taille}) pour « Modifier avec une consigne » et "
+                                      "« Restaurer une vieille photo » (facultatif)", taille=go(TAILLE_KONTEXT)))
         self.c_kontext.setChecked(kontext)
         self.c_kontext.toggled.connect(self._actualiser)
         lay.addWidget(self.c_kontext)
+        from . import traduction
+        from .installation_traducteur import explication
+        self.c_traducteur = QCheckBox(tr("Ajouter le traducteur des consignes, français → anglais ({taille})",
+                                         taille=tr("{n} Mo", n=round(traduction.TAILLE / 1024 ** 2))))
+        self.c_traducteur.setToolTip(explication())
+        self.c_traducteur.setChecked(kontext and not traduction.installe())
+        self.c_traducteur.setEnabled(not traduction.installe())
+        if traduction.installe():
+            self.c_traducteur.setText(tr("Traducteur des consignes : déjà installé"))
+        self.c_traducteur.toggled.connect(self._actualiser)
+        self.c_kontext.toggled.connect(lambda v: self.c_traducteur.setChecked(v and not traduction.installe()))
+        lay.addWidget(self.c_traducteur)
+        aide_trad = QLabel(tr("Le traducteur sert avec Flux Kontext : l'IA ne comprend bien que l'anglais ; tu "
+                              "écris en français, Pixane traduit sur ton PC (rien n'est envoyé sur Internet)."))
+        aide_trad.setWordWrap(True)
+        aide_trad.setObjectName("discret")
+        lay.addWidget(aide_trad)
 
         licence = QLabel(tr("Le modèle Flux Fill est sous licence <b>FLUX.1 [dev] non commerciale</b> : usage "
                             "personnel permis, pas d'usage commercial. <a href=\"{url}\">Lire la licence</a>. "
@@ -675,7 +692,12 @@ class FenetreInstallation(QDialog):
     # ------------------------------------------------------------------
     def elements(self) -> list[Element]:
         recent = self.pilote is None or self.pilote >= PILOTE_CUDA13
-        return catalogue(recent, self.c_schnell.isChecked(), self.c_kontext.isChecked())
+        liste = catalogue(recent, self.c_schnell.isChecked(), self.c_kontext.isChecked())
+        if self.c_traducteur.isChecked():
+            from . import traduction
+            if not traduction.installe():
+                liste += traduction.elements()
+        return liste
 
     commence = Signal()                          # le travail commence (Pixane arrête alors son moteur)
 
@@ -746,7 +768,7 @@ class FenetreInstallation(QDialog):
         self.travail.etat.connect(self._etat)
         self.travail.progres.connect(self._progres)
         self.travail.fini.connect(self._fini)
-        for w in (self.b_lancer, self.dossier, self.c_schnell, self.c_kontext, self.c_licence):
+        for w in (self.b_lancer, self.dossier, self.c_schnell, self.c_kontext, self.c_traducteur, self.c_licence):
             w.setEnabled(False)
         self.b_arreter.setEnabled(True)
         self.statut.setText(tr("Démarrage…"))
@@ -786,7 +808,7 @@ class FenetreInstallation(QDialog):
             self.installe.emit(str(dossier))
             QMessageBox.information(self, tr("Installer le moteur IA"), message)
         else:
-            for w in (self.dossier, self.c_schnell, self.c_kontext, self.c_licence):
+            for w in (self.dossier, self.c_schnell, self.c_kontext, self.c_traducteur, self.c_licence):
                 w.setEnabled(True)
             self.b_lancer.setText(tr("Reprendre"))
             self._actualiser_bouton()

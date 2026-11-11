@@ -423,6 +423,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         m = self.menuBar().addMenu(tr("&IA"))
         self._action(m, tr("Effacer"), "Shift+E", self.ia_effacer, "a_effacer", "effacer")
         self._action(m, tr("Remplir"), "Shift+R", self.ia_remplir, "a_remplir", "remplir")
+        self._action(m, tr("Modifier avec une consigne…"), "Shift+M", self.ia_modifier, "a_modifier", "modifier")
         self._action(m, tr("Agrandir l'image…"), "Shift+A", self.ia_agrandir, "a_agrandir", "agrandir")
         self._action(m, tr("Upscale…"), "Shift+U", self.ia_upscale, "a_upscale", "upscale")
         self._action(m, tr("Supprimer l'arrière-plan"), "Shift+B", self.supprimer_arriere_plan, "a_arriere_plan",
@@ -971,11 +972,13 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.b_remplir = Carte(tr("Remplir"), tr("Redessine ce qui est peint"))
         self.texte_remplir = QLineEdit()
         self.texte_remplir.setPlaceholderText(tr("Texte facultatif (laisser vide)"))
+        self.b_modifier = Carte(tr("Modifier"), tr("Change ce qui est peint, d'après ta consigne"))
         self.b_agrandir = Carte(tr("Agrandir l'image"), tr("Étend la photo au-delà des bords"))
         self.b_upscale = Carte(tr("Upscale"), tr("Augmente la définition"))
         self.b_arriere_plan = Carte(tr("Arrière-plan"), tr("Supprime le fond, garde le sujet"))
         for carte, fonction, nom in ((self.b_effacer, self.ia_effacer, "effacer"),
                                      (self.b_remplir, self.ia_remplir, "remplir"),
+                                     (self.b_modifier, self.ia_modifier, "modifier"),
                                      (self.b_agrandir, self.ia_agrandir, "agrandir"),
                                      (self.b_upscale, self.ia_upscale, "upscale"),
                                      (self.b_arriere_plan, self.supprimer_arriere_plan, "arriere_plan")):
@@ -984,6 +987,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         lay.addWidget(self.b_effacer)
         lay.addWidget(self.b_remplir)
         lay.addWidget(self.texte_remplir)
+        lay.addWidget(self.b_modifier)
         lay.addSpacing(6)
         lay.addWidget(self.b_agrandir)
         lay.addWidget(self.b_upscale)
@@ -1205,11 +1209,11 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         for a in self._actions_mode.actions():
             a.setChecked(a_doc and (a.text() == tr("Niveaux de gris")) == (self.doc.mode == "gris"))
         self.a_epreuve.setChecked(a_doc and bool(self.doc.epreuve))
-        for a in (self.a_effacer, self.a_remplir, self.a_agrandir, self.a_upscale, self.a_arriere_plan,
+        for a in (self.a_effacer, self.a_remplir, self.a_modifier, self.a_agrandir, self.a_upscale, self.a_arriere_plan,
                   self.a_ia_bruit, self.a_ia_nettete, self.a_ia_restaurer,
                   self.a_sujet):
             a.setEnabled(pret)
-        for b in (self.b_effacer, self.b_remplir, self.b_agrandir, self.b_upscale, self.b_arriere_plan):
+        for b in (self.b_effacer, self.b_remplir, self.b_modifier, self.b_agrandir, self.b_upscale, self.b_arriere_plan):
             b.setEnabled(pret)
         titre = NOM
         if self.doc:
@@ -2543,6 +2547,33 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         if self.doc and self._verifier_verrou(titre):
             self._lancer(titre, False, lambda nom: recettes.nettete_ia(nom), apres=self._dans_selection(titre))
 
+    def ia_modifier(self):
+        """Modifier avec une consigne (Flux Kontext) : sur la sélection, le style gardé (voir modifier_ia)."""
+        titre = tr("Modifier avec une consigne")
+        if not self.doc or not self._verifier_verrou(titre):
+            return
+        if not recettes.restauration_disponible():
+            QMessageBox.information(self, titre, tr(
+                "Cette action a besoin du modèle Flux Kontext (11,9 Go), qui n'est pas installé. Menu IA > Installer "
+                "le moteur IA permet de l'ajouter (case « Flux Kontext »)."))
+            return
+        from . import modifier_ia
+        from .consigne import DialogueConsigne
+        doc = self.doc
+        zone = None if doc.selection_vide() else masque(doc.selection).copy()
+        prep = modifier_ia.preparer(doc, zone, self.a_ia_nouveau_calque.isChecked())
+        d = DialogueConsigne(self, transparent=prep.transparent, avec_selection=zone is not None,
+                             nb=recettes.NB_RESTAURER)
+        if not d.exec():
+            return
+        consigne, nb = d.consigne(), d.nombre()
+        visible = tableau(doc.image.convertToFormat(FORMAT_IMAGE))
+        self._lancer(titre, False, lambda nom: recettes.restaurer(nom, prep.taille, nb=nb, texte=consigne),
+                     png=prep.png, apres=lambda img: modifier_ia.image_complete(prep, img),
+                     placer=lambda image: modifier_ia.etat(doc, prep, image, tr("Modifié")),
+                     vue=lambda img: modifier_ia.vue(prep, img, visible), nom_calque=tr("Modifié"),
+                     suffixe=tr("_modifie"))
+
     def ia_restaurer(self):
         titre = tr("Restaurer une vieille photo")
         if not self.doc or not self._verifier_verrou(titre):
@@ -2585,7 +2616,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
 
     def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None,
                 placer=None, nom_calque: str | None = None, suffixe: str | None = None, affiner=None,
-                remplir_trous: bool = False):
+                remplir_trous: bool = False, vue=None):
         """Envoie l'image au moteur, attend, puis propose les résultats. remplir_trous (Effacer, Remplir) : les trous
         transparents de la sélection (lettres d'un texte coupé…) sont remplis, opaques. nom_calque : nom du calque du résultat
         (le titre sinon) ; suffixe : ajouté au nom proposé à l'enregistrement (ex. « _restauree »).
@@ -2598,7 +2629,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         trous = (trous_a_remplir(tableau(original.convertToFormat(FORMAT_IMAGE)), zone)
                  if remplir_trous and placer is None else None)
         choix = ChoixResultat(titre, original, self)
-        if placer is None:                       # fond transparent : montré tel qu'il sera posé (pas en noir)
+        if vue is not None:                      # montré tel qu'il sera posé (action qui pose elle-même)
+            choix.vue = vue
+        elif placer is None:                     # fond transparent : montré tel qu'il sera posé (pas en noir)
             choix.vue = lambda img, base=original: vue_ia(img, base, trous)
         annuler = threading.Event()
         nom_image = {}

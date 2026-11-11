@@ -22,6 +22,8 @@ DESSINS = {
     "remplir": '<path d="M5 13 11.5 6.5l6 6L11 19a1.5 1.5 0 0 1-2.1 0L5 15.1a1.5 1.5 0 0 1 0-2.1z"/>'
                '<path d="M9 4l3.5 3.5M5 13h12.5"/>'
                '<path stroke="A" d="M20 15.5c0 1.4-.9 2.5-2 2.5s-2-1.1-2-2.5 2-4 2-4 2 2.6 2 4z"/>',
+    "modifier": '<path d="M4 5.5h16v10.5h-9l-4.5 3.5V16H4z"/>'
+                '<path stroke="A" d="M14.5 7.5l.8 1.7 1.7.8-1.7.8-.8 1.7-.8-1.7-1.7-.8 1.7-.8z"/>',
     "agrandir": '<rect x="8" y="8" width="8" height="8" rx="1"/>'
                 '<path stroke="A" d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/>',
     "upscale": '<rect x="3" y="11" width="10" height="10" rx="1.5"/>'

@@ -404,6 +404,25 @@ Redessine la zone peinte en rouge.
 - **Avec un texte** (champ « Texte facultatif », en anglais de préférence) : décrit ce qu'on veut voir à la place.
 - 3 propositions, environ 1 minute chacune.
 
+### Modifier avec une consigne (Maj+M)
+Change la zone sélectionnée d'après ce que tu écris, en gardant le style de l'image : « remplace le texte « brûler
+le feu » par « Flamme » », « change la couleur du pull en rouge », « remplace la tasse par un verre », « enlève les
+lunettes »… (modèle **Flux Kontext**, à ajouter dans Installer le moteur IA).
+- Sélectionne la zone (pinceau, lasso, sélection d'objet…), puis **Modifier** (carte du panneau IA ou menu IA).
+  Sans sélection : toute l'image.
+- Écris la consigne. **Exemples** : choisis-en un, il est inséré ; remplace les « … ».
+- **Entre guillemets** (« … » ou "…") : un texte à écrire tel quel (il n'est jamais traduit).
+- L'IA comprend mal le français : avec le **traducteur** (290 Mo, sur ton PC, rien n'est envoyé sur Internet),
+  **Traduire** montre la phrase anglaise, que tu peux corriger. Sans lui, écris en anglais. Il s'installe par le
+  bouton « Installer le traducteur… » ou la case du même nom dans Installer le moteur IA.
+- L'IA travaille sur un morceau autour de la sélection (plus de détail qu'avec toute l'image) ; le résultat n'est
+  gardé que dans la sélection et là où il change vraiment : le reste garde ses pixels d'origine.
+- **Calque avec de la transparence** (texte, logo sans fond) : l'IA voit ce calque seul, et le résultat garde un
+  fond transparent. Sinon, elle voit l'image visible et le résultat est opaque.
+- Propositions : 1 à 4, environ 2 à 3 minutes chacune. Les écritures très travaillées sont bien imitées, mais un
+  peu moins fines que l'original ; les accents et les longs textes sont parfois mal écrits : demande d'autres
+  propositions.
+
 ### Agrandir l'image (Maj+A)
 Étend la photo au-delà de ses bords : l'IA invente la suite du décor.
 

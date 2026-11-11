@@ -390,6 +390,24 @@ Redraws the area painted in red.
 - **With text** ("Optional text" field, preferably in English): describes what you want to see instead.
 - 3 options, about 1 minute each.
 
+### Edit with an instruction (Shift+M)
+Changes the selected area from what you write, keeping the style of the image: “replace the text "burn the fire"
+with "Flame"”, “make the jumper red”, “replace the cup with a glass”, “remove the glasses”… (**Flux Kontext**
+model, to be added in Install the AI engine).
+- Select the area (brush, lasso, object selection…), then **Edit** (AI panel card or AI menu). Without a
+  selection: the whole image.
+- Write the instruction. **Examples**: choose one, it is inserted; replace the “…”.
+- **Between quotes** (« … » or "…"): text to be written as is (never translated).
+- The AI understands French poorly: with the **translator** (290 MB, on your PC, nothing is sent over the
+  Internet), **Translate** shows the English sentence, which you can correct. In English, no translator is needed.
+  It is installed with the “Install the translator…” button or the box of the same name in Install the AI engine.
+- The AI works on a piece around the selection (more detail than with the whole image); the result is only kept
+  inside the selection and where it really changes: the rest keeps its original pixels.
+- **Layer with transparency** (text, logo without background): the AI sees this layer alone, and the result keeps
+  a transparent background. Otherwise it sees the visible image and the result is opaque.
+- Proposals: 1 to 4, about 2 to 3 minutes each. Elaborate handwriting is well imitated but slightly less fine
+  than the original; accents and long texts are sometimes misspelled: ask for more proposals.
+
 ### Expand image (Shift+A)
 Extends the photo beyond its edges: the AI invents the rest of the scene.
 
