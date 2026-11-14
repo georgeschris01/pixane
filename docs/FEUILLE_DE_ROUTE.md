@@ -44,11 +44,11 @@ Liste des étapes décidées avec Christophe. Cocher quand c'est fait (et mettre
      pixane\installation_moteur.py (reprise après coupure, SHA-256, ComfyUI portable 0.44 selon le pilote,
      extensions, gguf, modèles GGUF Q8 sans compte Hugging Face), menu IA > Installer le moteur IA ;
      désinstalleur : propose de supprimer le moteur installé par Pixane et les réglages ;
-     vrai téléchargement complet (~19 Go) pas encore essayé ;
+     vrai téléchargement complet essayé par Christophe sur un Windows vierge le 14/11/2026 : fonctionne ;
    - [x] licence de Pixane : « Licence Pixane 1.1 » (gratuit, code ouvert, non commercial ; modifications et forks
      permis s'ils restent gratuits et sous la même licence ; nom de l'auteur obligatoire ; texte français qui fait
      foi, droit belge, présentation comme TwinPanel), page dans l'installateur ;
-   - [ ] essai sur un Windows vierge (Bac à sable Windows), avec le vrai téléchargement du moteur.
+   - [x] essai sur un Windows vierge, avec le vrai téléchargement du moteur : fait et vérifié par Christophe (14/11/2026).
 7. [ ] **Publication** : guide complet, licences (Flux Fill dev = non commercial), dépôt public ou installateur.
 
 ## Numérotation des versions (décidée le 08/11/2026)
