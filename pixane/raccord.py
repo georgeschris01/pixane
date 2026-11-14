@@ -29,6 +29,11 @@ LISSAGE = 40                   # lissage de l'écart de couleur le long du bord 
 BANDES_MIN = 0.012             # le grain plus fin que cette part de la taille de l'image est gardé
 DETAIL_FOND = 3.0              # au-delà de ce détail (niveaux), ce n'est plus un fond uni : on n'y touche pas
 BANDES_ECART = 8.0             # retrait des bandes : complet jusqu'à 8 niveaux d'écart, plus rien à 16
+TOURBILLONS_ECHELLE = 0.01     # lissage le long du bord (garde un dégradé) : 1 % du côté de l'image
+TOURBILLONS_LONG = 0.08        # lissage en s'éloignant de la photo (retire les tourbillons) : 8 % du côté
+TOURBILLONS_MAX = 3.0          # retirés jusqu'à 3 niveaux, gardés à partir de 6 (dessin voulu)
+UNI_ECART = 4.0                # « Fond prolongé » : écart au fond lissé en dessous duquel le bord est uni
+UNI_PART = 0.97                # part du bord qui doit être unie
 
 
 @dataclass
@@ -286,6 +291,113 @@ def retirer_bandes(R: np.ndarray, marges, original: tuple[int, int, int, int]) -
     return R - _grand(corr, W, H)
 
 
+def _poids_ajout(H: int, W: int, original: tuple[int, int, int, int], marges, fondu: float) -> np.ndarray:
+    """1 dans l'ajout, 0 dans l'original (côtés agrandis seulement), avec un fondu de `fondu` px vers l'ajout."""
+    x0, y0, w, h = original
+    mh, mb, mg, md = marges
+    ys = np.arange(H, dtype=np.float32)[:, None]
+    xs = np.arange(W, dtype=np.float32)[None, :]
+    f = max(1.0, fondu)
+    d = np.zeros((H, W), np.float32)                     # distance à l'original, vers l'extérieur
+    if mh > 0: d = np.maximum(d, (y0 - ys) / f)
+    if mb > 0: d = np.maximum(d, (ys - (y0 + h - 1)) / f)
+    if mg > 0: d = np.maximum(d, (x0 - xs) / f)
+    if md > 0: d = np.maximum(d, (xs - (x0 + w - 1)) / f)
+    t = np.clip(d, 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+def lisser_tourbillons(R: np.ndarray, marges, original: tuple[int, int, int, int], fondu: float) -> np.ndarray:
+    """Dans les fonds unis de l'ajout, Flux laisse de légers tourbillons (comme des courbes de niveau, 1 à 3
+    niveaux) : ils sont retirés. Le grain fin est gardé, et tout ce qui a du contraste (étoiles, objets, nuages
+    marqués) aussi. R : (H, W, 3) float32 ; original : (x0, y0, w, h) dans R."""
+    H, W = R.shape[:2]
+    mh, mb, mg, md = marges
+    k = 4
+    P = _petit(R, k)
+    cote = max(P.shape[:2])
+    fin = _flou(R, 1.5)                                  # tout sauf le grain fin
+    for axe, m_axe in ((1, (0, 0, mg, md)), (0, (mh, mb, 0, 0))):
+        if not any(m_axe):
+            continue
+        # le fond : très lissé en s'éloignant de la photo (les tourbillons), peu le long du bord (un dégradé de
+        # haut en bas, à gauche et à droite, est gardé)
+        lent = _grand(_flou_axe(_flou_axe(P, cote * TOURBILLONS_LONG, axe), cote * TOURBILLONS_ECHELLE, 1 - axe),
+                      W, H)
+        milieu = fin - lent                              # tourbillons (faibles) et dessins (marqués)
+        force = _grand(_flou(_petit(np.abs(milieu).max(axis=2)[:, :, None], k), 2.0), W, H)[:, :, 0]
+        garder = np.clip((force - TOURBILLONS_MAX) / TOURBILLONS_MAX, 0, 1)
+        poids = _poids_ajout(H, W, original, m_axe, fondu) * (1 - garder)
+        R = R - milieu * poids[:, :, None]
+        fin = fin - milieu * poids[:, :, None]
+    return R
+
+
+def _uni(O: np.ndarray, marges) -> bool:
+    """Les bords de la photo à prolonger sont-ils unis (fond lisse ou dégradé, sans objet qui touche le bord) ?"""
+    mh, mb, mg, md = marges
+    k = 4
+    P = _petit(O, k)
+    hp, wp = P.shape[:2]
+    lisse = _flou(P, max(2.0, max(hp, wp) * 0.01))
+    ecart = np.abs(P - lisse).max(axis=2)
+    bandes = []
+    by, bx = max(2, round(hp * 0.04)), max(2, round(wp * 0.04))
+    if mh > 0: bandes.append(ecart[:by])
+    if mb > 0: bandes.append(ecart[-by:])
+    if mg > 0: bandes.append(ecart[:, :bx])
+    if md > 0: bandes.append(ecart[:, -bx:])
+    return bool(bandes) and all((b < UNI_ECART).mean() >= UNI_PART for b in bandes)
+
+
+def fond_prolonge(orig: np.ndarray, geo: Geometrie, graine: int = 0) -> np.ndarray | None:
+    """Proposition « Fond prolongé », sans IA : le fond uni ou en dégradé de la photo est continué au-delà des
+    bords (ligne par ligne, colonne par colonne), avec le même grain que la photo. Ni tourbillon ni raccord
+    visible. None si les bords à prolonger ne sont pas unis (un objet y touche le bord : il serait étiré)."""
+    O = orig.astype(np.float32)
+    if not _uni(O, geo.marges):
+        return None
+    W, H = geo.taille
+    mh, mb, mg, md = geo.marges
+    h, w = O.shape[:2]
+    k = 4
+    P = _petit(O, k)
+    s = max(2.0, max(P.shape[:2]) * 0.01)
+    lisse = _grand(_flou(P, s), w, h)                     # le fond de la photo, sans grain ni petit détail
+    # le bord lui-même : la couleur de la photo ligne par ligne (colonne par colonne), juste lissée du grain ;
+    # plus fidèle que le flou en 2D, qui décale un dégradé près des coins
+    n = max(4, min(h, w) // 100)
+    if mg > 0: lisse[:, 0] = _lisser(O[:, :n].mean(axis=1), 3.0)
+    if md > 0: lisse[:, -1] = _lisser(O[:, -n:].mean(axis=1), 3.0)
+    if mh > 0: lisse[0, :] = _lisser(O[:n].mean(axis=0), 3.0)
+    if mb > 0: lisse[-1, :] = _lisser(O[-n:].mean(axis=0), 3.0)
+    base = np.pad(lisse, ((mh, mb), (mg, md), (0, 0)), mode="edge")
+    # coins et lignes prolongées adoucis en s'éloignant de la photo
+    doux = _grand(_flou(_petit(base, k), s * 0.75), W, H)
+    t = _poids_ajout(H, W, (mg, mh, w, h), geo.marges, s * k * 3)[:, :, None]
+    base = (1 - t) * base + t * doux
+    # grain : même force que celui de la photo (mesuré près des bords), un peu plus marqué en luminosité
+    grain = O - _flou(O, 1.2)
+    lum = grain.mean(axis=2)
+    bord = np.zeros((h, w), bool)
+    e = max(4, min(h, w) // 20)
+    if mh > 0: bord[:e] = True
+    if mb > 0: bord[-e:] = True
+    if mg > 0: bord[:, :e] = True
+    if md > 0: bord[:, -e:] = True
+    sl = float(lum[bord].std()) if bord.any() else 1.0
+    sc = (grain - lum[:, :, None])[bord].std(axis=0) if bord.any() else np.zeros(3)
+    r = np.random.default_rng(graine)
+    def bruit():                                           # grain un peu doux, écart type 1
+        b = _flou(r.standard_normal((H, W, 1)).astype(np.float32), 0.7)[:, :, 0]
+        return b / max(1e-3, float(b.std()))
+    n = bruit() * sl
+    G = np.dstack([n + bruit() * float(sc[c]) for c in range(3)])
+    R = base + G * t                                       # pas de grain ajouté sur la photo elle-même
+    R[mh:mh + h, mg:mg + w] = O
+    return np.clip(R + 0.5, 0, 255).astype(np.uint8)
+
+
 def finaliser(orig: np.ndarray, flux: np.ndarray, geo: Geometrie) -> np.ndarray:
     """orig : original sans liseré (h, w, 3) ; flux : résultat de Flux à la taille de travail. -> (H, W, 3) uint8."""
     W, H = geo.taille
@@ -313,6 +425,7 @@ def _assembler(orig: np.ndarray, R: np.ndarray, geo: Geometrie) -> np.ndarray:
     #    raccord devient un champ lisse, prolongé vers l'extérieur et qui s'éteint jusqu'au bord (pas de marche)
     R += _champ_correction(O - zone, (mx, my), geo.marges, (W, H))
     R = retirer_bandes(R, geo.marges, (x0, y0, w, h))
+    R = lisser_tourbillons(R, geo.marges, (x0, y0, w, h), max(bx, by))
 
     # 2. fondre l'original intact dans la bande de raccord (0 au bord -> 1 au fond de la bande)
     ys = np.arange(h, dtype=np.float32)[:, None]

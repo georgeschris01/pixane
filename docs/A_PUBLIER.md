@@ -9,8 +9,14 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
 
 ## Nouveautés
 
+- **Agrandir : proposition « Fond prolongé »**, faite sans IA, ajoutée aux propositions de Flux quand les bords à
+  agrandir sont unis (fond de pochette, ciel lisse, dégradé) : le fond de la photo est continué ligne par ligne,
+  avec le même grain ; ni raccord ni tourbillon visible, instantané. Absente si un objet touche le bord.
+
 ## Corrections
 
+- **Agrandir** : les légers tourbillons (comme des courbes de niveau) que Flux laisse dans les fonds unis ajoutés
+  sont lissés ; le grain fin et ce qui est vraiment dessiné sont gardés. Aussi après *Pleine définition*.
 - **À propos** : « Pixane n'a pas la prétention de remplacer des programmes comme Photoshop, GIMP ou Krita… »
   (aussi dans le README et le guide).
 - **Licence Pixane 1.2** : « code source disponible » au lieu de « code source ouvert » (Pixane n'est pas « open

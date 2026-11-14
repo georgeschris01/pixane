@@ -1,6 +1,7 @@
 """Agrandir, sans moteur : détection des bords abîmés (cadre, liseré, bord flou, bandes unies ; pas de fausse
 alerte sur un ciel en dégradé ou une photo saine) et raccord (bandes plus claires de Flux retirées dans les fonds
-unis, dessins de Flux gardés, original intact). Usage : essai_raccord.py"""
+unis, dessins de Flux gardés, original intact), tourbillons de Flux lissés, proposition « Fond prolongé »
+(sans IA). Usage : essai_raccord.py"""
 import io
 import sys
 from pathlib import Path
@@ -8,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 from PIL import Image, ImageFilter
 
-from pixane.raccord import finaliser, lisere_auto, preparer, retirer_bandes
+from pixane.raccord import finaliser, fond_prolonge, lisere_auto, lisser_tourbillons, preparer, retirer_bandes
 
 erreurs = []
 
@@ -79,6 +80,41 @@ verifier(np.ptp(gauche) < 3 and np.ptp(droite) < 3,
 k = geo.taille[0] / Wt
 objet = R[int(18 * k):int(42 * k), int(28 * k):int(52 * k)].mean(axis=(0, 1))
 verifier(objet[0] > 180 and objet[2] < 90, f"l'objet dessiné par Flux est gardé ({objet.round(0)})")
+
+# ------------------------------------------------------------ tourbillons de Flux (fond uni ajouté)
+rt = np.random.default_rng(3)
+Ht2, Wt2 = 300, 900
+yy2, xx2 = np.mgrid[0:Ht2, 0:Wt2].astype(np.float32)
+fond2 = 30 + yy2 * 0.15                                             # dégradé de haut en bas
+tourb = 2.0 * np.sin(xx2 / 23) * np.cos(yy2 / 17)                  # tourbillons de 2 niveaux
+grain = rt.normal(0, 1.0, (Ht2, Wt2))
+I = np.repeat((fond2 + grain)[:, :, None], 3, axis=2).astype(np.float32)
+I[:, :300] += tourb[:, :300, None]
+I[:, 600:] += tourb[:, 600:, None]
+I[100:130, 100:130] += 60                                           # une étoile nette dans l'ajout : gardée
+L = lisser_tourbillons(I.copy(), (0, 0, 300, 300), (300, 0, 300, Ht2), 20)
+mi = lambda a: float((a - fond2[150:290, 20:260, None]).std())
+avant, apres = mi(I[150:290, 20:260]), mi(L[150:290, 20:260])
+verifier(apres < avant * 0.75, f"tourbillons atténués ({avant:.2f} -> {apres:.2f}, grain gardé)")
+verifier(abs(L[150:290, 20:260, 0].mean() - I[150:290, 20:260, 0].mean()) < 0.5, "dégradé gardé")
+verifier(L[105:125, 105:125].mean() > fond2[105:125, 105:125].mean() + 50, "l'étoile nette est gardée")
+verifier(np.abs(L[:, 300:600] - I[:, 300:600]).max() < 1e-3, "la photo n'est pas touchée")
+
+# ------------------------------------------------------------ « Fond prolongé » (sans IA)
+_png, geo2, o3 = preparer(orig, 0, 0, 50, 50, enlever_lisere=False)
+F = fond_prolonge(o3, geo2)
+verifier(F is not None and F.shape == (geo2.taille[1], geo2.taille[0], 3), "fond uni : Fond prolongé proposé")
+if F is not None:
+    mh2, mb2, mg2, md2 = geo2.marges
+    verifier(np.array_equal(F[:, mg2:mg2 + w], o3), "l'original reste intact")
+    g2 = F[:, 5:mg2 - 5].astype(np.float32)
+    ligne = o3[:, :10].astype(np.float32).mean(axis=1)            # niveau de chaque ligne au bord
+    verifier(np.abs(g2.mean(axis=1) - ligne).max() < 2.5, "le dégradé continue, ligne par ligne")
+    verifier(0.5 < float(g2[:, :, 2].std(axis=1).mean()) < 3.0, "grain présent, du même ordre que la photo")
+objet = orig.copy()
+objet[150:250, :60] = [230, 200, 30]                                # un objet touche le bord gauche
+_png, geo3, o4 = preparer(objet, 0, 0, 50, 50, enlever_lisere=False)
+verifier(fond_prolonge(o4, geo3) is None, "objet au bord : pas de Fond prolongé (il serait étiré)")
 
 print()
 print("ÉCHECS :" if erreurs else "Tout est bon.", *erreurs, sep="\n  ")

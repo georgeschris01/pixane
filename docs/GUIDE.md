@@ -501,8 +501,14 @@ Deux cadres apparaissent sur la photo :
 - Le raccord entre la photo et l'ajout est fait par Pixane : la photo d'origine est gardée **au pixel près**, avec un
   fondu progressif et un accord des couleurs, pour qu'aucune ligne ne soit visible. Dans les **fonds unis** (ciel,
   mur, fond sombre), l'ajout est remis au niveau de la photo jusqu'au bord : pas de partie plus claire ni de bandes
-  (« effet fantôme »). Ce raccord est refait après *Pleine définition*.
+  (« effet fantôme »), et les légers **tourbillons** que l'IA laisse parfois dans ces fonds sont lissés (le grain
+  fin et ce qui est vraiment dessiné, comme une étoile, sont gardés). Ce raccord est refait après *Pleine définition*.
 - 3 propositions, environ 1 minute chacune.
+- **Fond prolongé** : quand les bords à agrandir sont **unis** (fond de pochette, ciel lisse, dégradé), une
+  proposition de plus, faite **sans IA**, s'ajoute aux autres : Pixane continue lui-même le fond de la photo,
+  ligne par ligne, avec le même grain. Aucun raccord ni tourbillon visible, et c'est instantané. Elle n'apparaît pas
+  si un objet touche le bord (il serait étiré). *Partir de celle-ci* et *Pleine définition* ne la concernent pas
+  (elle est déjà à la vraie taille).
 - **Pleine définition** (case dans la barre, cochée par défaut) : l'IA invente l'ajout sur une image réduite à
   environ 1 million de pixels, puis l'ajout est agrandi à la taille de la photo ; sur une grande photo, il serait
   donc plus flou que le reste. Avec la case cochée, une fois la proposition choisie, l'ajout est **redessiné à la

@@ -39,7 +39,7 @@ from .document import (EXTENSIONS_CALQUES, EXTENSIONS_LECTURE, FORMAT_IMAGE, Doc
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
 from .panneau_texte import BoutonCouleur, PanneauTexte
 from .garde_fou import garder_aplats, part_aplats
-from .raccord import finaliser, lisere_auto, preparer, reaccorder
+from .raccord import finaliser, fond_prolonge, lisere_auto, preparer, reaccorder
 from .reglages_image import FenetreReglages, ajuster, auto, neutre
 from .dialogues_document import ExportImpression, NouvelleImage, ZoneTravail
 from .dialogues_image import APropos, Redresser, TailleImage
@@ -2590,12 +2590,15 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                                     nouveau_calque=self.a_ia_nouveau_calque.isChecked(),
                                     contenu=sain if contenu is not None else None,
                                     place=(rx0 - ux0, ry0 - uy0), toile=toile)
+        def prolonge():   # « Fond prolongé », sans IA : seulement si les bords à prolonger sont unis
+            r = fond_prolonge(orig, geo)
+            return [] if r is None else [(tr("Fond prolongé"), qimage_rgb(r))]
         affiner = None
         if self.barre_agrandir.pleine.isChecked() and affinage.utile(geo.taille, geo.travail):
             m = affinage.masque_ajout(geo.taille, geo.marges, orig.shape[:2], max(geo.bande) * 1.5)
             affiner = lambda img, fin: self._affiner_agrandir(img, m, fin, lambda a: reaccorder(orig, a, geo))
         self._lancer(tr("Agrandir"), False, lambda nom: recettes.agrandir(nom), apres=raccord, png=png,
-                     placer=placer, affiner=affiner,
+                     placer=placer, affiner=affiner, sans_ia=prolonge,
                      variante=lambda nom, force: recettes.variante(nom, force, nb=recettes.NB_AGRANDIR,
                                                                    decoupe=False))
 
@@ -2827,13 +2830,15 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
 
     def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None,
                 placer=None, nom_calque: str | None = None, suffixe: str | None = None, affiner=None,
-                remplir_trous: bool = False, vue=None, variante=None):
+                remplir_trous: bool = False, vue=None, variante=None, sans_ia=None):
         """Envoie l'image au moteur, attend, puis propose les résultats. remplir_trous (Effacer, Remplir) : les trous
         transparents de la sélection (lettres d'un texte coupé…) sont remplis, opaques. nom_calque : nom du calque du résultat
         (le titre sinon) ; suffixe : ajouté au nom proposé à l'enregistrement (ex. « _restauree »).
         affiner(image, fin) : travail de plus sur la proposition choisie (pleine définition), fin(image) l'applique.
         variante(nom, force) : recette des variantes d'une proposition (bouton « Partir de celle-ci ») ; l'image
-        envoyée est alors la proposition brute choisie, avec la même zone à refaire que la première fois."""
+        envoyée est alors la proposition brute choisie, avec la même zone à refaire que la première fois.
+        sans_ia() : propositions de plus, faites par Pixane sans IA ([(libellé, image finale)], calculées avec les
+        premières) : ni variantes, ni pleine définition (déjà à la vraie taille)."""
         doc = self.doc
         if png is None:
             png = doc.png_pour_ia(avec_selection)
@@ -2866,7 +2871,14 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                     res.append((libelle, apres(img) if apres else img, img))
                 return res
             return calcul
-        calcul = calcul_avec(fabriquer, "original", png)
+        calcul_ia = calcul_avec(fabriquer, "original", png)
+
+        def calcul(progres):
+            res = calcul_ia(progres)
+            if sans_ia is not None and not premiere_faite:
+                res += [(libelle, img, None) for libelle, img in sans_ia()]
+            return res
+        premiere_faite = False
 
         def recevoir(res):
             bruts.extend(r[2] for r in res)
@@ -2876,6 +2888,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         attente.annuler.connect(annuler.set)
 
         def premier_ok(res):
+            nonlocal premiere_faite
+            premiere_faite = True
             attente.hide()
             attente.deleteLater()
             recevoir(res)
@@ -2887,7 +2901,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                     if suffixe:
                         doc.suffixe_nom = suffixe
                 annuler.set()
-                if affiner is not None:
+                ligne = choix.vignettes.currentRow()
+                if affiner is not None and 0 <= ligne < len(bruts) and bruts[ligne] is not None:
                     affiner(choix.choix(), fin)
                 else:
                     fin(choix.choix())
@@ -2909,6 +2924,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         def variantes(ligne, curseur):
             if variante is None or not 0 <= ligne < len(bruts):
                 choix.occupe(False)
+                return
+            if bruts[ligne] is None:
+                choix.occupe(False, tr("Cette proposition est faite sans IA : pas de variantes."))
                 return
             self.reglages.setValue("variante_curseur", curseur)
             force = recettes.force_variante(curseur)

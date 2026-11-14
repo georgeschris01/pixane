@@ -56,7 +56,7 @@ A.B.C : A = 0 tant que Pixane n'est pas fini (1.0.0 = première version finie) ;
 
 ## Idées notées en passant
 
-- **Agrandir : défauts restants** (14/11/2026, Christophe : « agrandir a encore des défauts, on essaiera de le corriger plus tard ») : légers tourbillons dessinés par l'IA dans les fonds unis, trace faible au raccord. Piste proposée : proposition « Fond prolongé » sans IA pour les fonds unis ou dégradés.
+- **Agrandir : défauts restants** (14/11/2026) : légers tourbillons dans les fonds unis, trace faible au raccord. **Fait le 14/11** (à essayer par Christophe) : proposition « Fond prolongé » sans IA pour les fonds unis ou dégradés, et tourbillons de Flux lissés.
 - Nettoyer les images d'essai dans les dossiers de sortie de ComfyUI (proposé, pas encore fait).
 - **Nom du programme** (09/11/2026) : fait. « Chrypix » devient **Pixane** (projets **.pixane**, logo « P en pixels »), version 0.4.0. Les réglages, le dossier %LOCALAPPDATA% et le moteur de Chrypix sont repris au premier démarrage (pixane\ancien_nom.py) ; l'installateur remplace une installation de Chrypix.
 - **16 et 32 bits par couche** (09/11/2026, demandé par Christophe : « il faudra à un moment pouvoir travailler en 16 et 32 bits si on veut que des connaisseurs utilisent le programme ») : aujourd'hui tout le moteur (calques, filtres, styles, IA) travaille en 8 bits. À faire : images internes en 16 bits (numpy uint16 / float32), lecture et écriture 16 bits (PSD, TIFF, PNG), puis 32 bits flottants (HDR, EXR). Gros chantier, à prévoir avant ou juste après la 1.0.0.
