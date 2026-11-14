@@ -18,6 +18,14 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
   après déplacer, Ctrl+T, pivoter / retourner, taille de l'image, recadrer, Agrandir, Upscale ; gardé dans les
   .pixane ; marqué « pinceau modifiable » dans Calques. La gomme, un filtre, l'IA… en font une image (message).
 - **Barre du haut** plus compacte (cases à chiffres à la largeur de leur texte).
+- **Texte : réglages comme Photoshop** (nouveau moteur de mise en page, les textes existants restent identiques) :
+  largeur / hauteur des lettres, casse (majuscules, minuscules, petites capitales, Première Lettre En Majuscule),
+  exposant / indice, ligne de base, crénage de la police ou aucun, crénage à la main (case « Ici » ou Alt+flèches),
+  ligatures / fractions / chiffres anciens, bords lissés ou nets, alignement justifié, texte vertical, texte en
+  cadre (retour à la ligne automatique, hauteur, retrait, espace entre paragraphes), déformation comme « Déformer
+  le texte » (Arc, Drapeau, Vague, Poisson, Gonflement, Torsion… avec force et distorsions).
+- **Style par lettre** : sélectionner des lettres dans la case du panneau Texte pour ne changer qu'elles (police,
+  taille, couleur, gras, exposant…) ; le style suit les lettres quand on tape.
 
 ## Corrections
 

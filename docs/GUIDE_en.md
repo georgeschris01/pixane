@@ -751,11 +751,23 @@ All layer actions can be undone with Ctrl+Z (changing the selected layer does no
 | **Size** | Letter height, in pixels of the photo |
 | **Colour** (swatch) | Letter colour, with transparency (alpha channel) |
 | **B / I / U / S** | Bold, italic, underline, strikethrough |
-| **Alignment** | Left, centred, right (for several lines) |
+| **Alignment** | Left, centred, right (for several lines), **justified** (text in a box: lines stretched to both edges) |
 | **Letters** | Space added between letters, as a % of the size (negative = tighter letters) |
 | **Lines** | Space between lines, × the letter size |
 | **Rotation** | Angle in degrees |
 | **Curve** | Text on an arc: positive = arch, negative = dip, 360° = full circle |
+| **Width / Height** | Stretch or squash the letters (100% = normal) |
+| **Case** | As typed, ALL CAPS, all lowercase, Small caps, First Letter Capitalized (the typed text does not change: you can go back) |
+| **Position** | Normal, **superscript** (m², 1st) or **subscript** (H₂O): smaller letters, raised or lowered |
+| **Baseline** | Raise (positive) or lower (negative) letters, in % of the size |
+| **Kerning** | *From the font*: spacing corrected between some pairs (AV, To…); *None*: raw spacing |
+| **Here** | Manual kerning between the two letters around the cursor, in thousandths of the size (also **Alt+arrows** in the box, **Ctrl+Alt+arrows**: 5 times more) |
+| **Ligatures, Fractions, Oldstyle figures** | Font options (OpenType): joined fi/fl, 1/2 → ½, figures of varying heights. No effect if the font lacks them |
+| **Smooth edges** | Unchecked: sharp, pixel-by-pixel edges (for pixel art or small text) |
+| **Vertical text** | Letters one below the other; each line becomes a column (right to left) |
+| **Text in a box** | Lines wrap by themselves at the **box width**; **box height**: what overflows is hidden (0 = auto: fit the text) |
+| **Indent / Between paragraphs** | Indent of the first line of each paragraph; space added between paragraphs (% of the size) |
+| **Warp** | Like Photoshop's "Warp Text": Arc, Arc Lower / Upper, Arch, Bulge, Flag, Wave, Fish, Rise, Fisheye, Inflate, Squeeze, Twist. **Bend**: -100 to 100%; **Horiz. / Vert. distortion**: perspective effect |
 | **Outline** | Line around the letters: colour and thickness |
 | **Drop shadow** | Colour, distance, direction (0° = to the right, 90° = down) and blur |
 | **Background** | Coloured rectangle behind the text: colour, margin and corner rounding |
@@ -763,6 +775,13 @@ All layer actions can be undone with Ctrl+Z (changing the selected layer does no
 Effect sizes (thickness, distance, blur, margin, rounding) are a **% of the letter size**:
 they stay in proportion when you change the text size.
 **Transparency** of the whole text: **Opacity** slider in the Layers panel.
+
+### Change only some letters
+**Select letters in the panel's text box** (with the mouse or Shift+arrows): font, size, colour, bold, italic,
+underline, strikethrough, letters, width, height, case, position and baseline change **only for them** (a line under
+the box reminds you). Example: one word in red, a "2" as subscript.
+Without a selection, a setting changes **the whole text**, letters with their own style included. Letters typed
+afterwards take the style of the one before them.
 
 ### Good to know
 - Every change can be undone with Ctrl+Z; typing several letters is undone in one go.

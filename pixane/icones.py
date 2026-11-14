@@ -117,6 +117,7 @@ DESSINS = {
     "aligner_gauche": '<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>',
     "aligner_centre": '<path d="M4 6h16M7 10h10M4 14h16M7 18h10"/>',
     "aligner_droite": '<path d="M4 6h16M10 10h10M4 14h16M10 18h10"/>',
+    "aligner_justifie": '<path d="M4 6h16M4 10h16M4 14h16M4 18h10"/>',
     # aligner / répartir les calques : la ligne d'alignement en couleur d'accent
     "al_gauche": '<path stroke="A" d="M4 3v18"/><rect x="7" y="6" width="12" height="4" rx="1"/>'
                  '<rect x="7" y="14" width="7" height="4" rx="1"/>',

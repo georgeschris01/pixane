@@ -7,15 +7,15 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from PySide6.QtCore import QRect, QSize, Qt, Signal
+from PySide6.QtCore import QEvent, QRect, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPixmap
-from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QColorDialog, QDoubleSpinBox, QFontComboBox, QFormLayout,
+from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDoubleSpinBox, QFontComboBox, QFormLayout,
                                QFrame, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QScrollArea, QSpinBox,
                                QStyle, QStyledItemDelegate, QToolButton, QVBoxLayout, QWidget)
 
 from .calques import damier
 from .langue import tr
-from .texte import CENTRE, DROITE, GAUCHE, Texte
+from .texte import CENTRE, CHAMPS_LETTRE, DROITE, GAUCHE, JUSTIFIE, Texte, forme
 
 
 class BoutonCouleur(QToolButton):
@@ -127,7 +127,20 @@ class PanneauTexte(QScrollArea):
         self.saisie.setFixedHeight(76)
         self.saisie.setPlaceholderText(tr("Écris ton texte ici"))
         self.saisie.textChanged.connect(lambda: self._changer("texte", self.saisie.toPlainText()))
+        self.saisie.cursorPositionChanged.connect(self._montrer_lettres)
+        self.saisie.selectionChanged.connect(self._montrer_lettres)
+        self.saisie.installEventFilter(self)
+        pal = self.saisie.palette()              # la sélection reste visible quand on règle à côté
+        for role in (pal.ColorRole.Highlight, pal.ColorRole.HighlightedText):
+            pal.setColor(pal.ColorGroup.Inactive, role, pal.color(pal.ColorGroup.Active, role))
+        self.saisie.setPalette(pal)
+        self.saisie.setToolTip(tr("Sélectionne des lettres pour ne changer qu'elles (police, taille, couleur…). "
+                                  "Alt+flèches : resserrer ou écarter les deux lettres autour du curseur."))
         lay.addWidget(self.saisie)
+        self.portee = QLabel()
+        self.portee.setObjectName("discret")
+        self.portee.setWordWrap(True)
+        lay.addWidget(self.portee)
 
         # ---- caractères
         lay.addWidget(_titre(tr("Caractères")))
@@ -180,7 +193,8 @@ class PanneauTexte(QScrollArea):
         groupe = QButtonGroup(self)
         for valeur, nom, aide in ((GAUCHE, "aligner_gauche", tr("Aligner à gauche")),
                                   (CENTRE, "aligner_centre", tr("Centrer")),
-                                  (DROITE, "aligner_droite", tr("Aligner à droite"))):
+                                  (DROITE, "aligner_droite", tr("Aligner à droite")),
+                                  (JUSTIFIE, "aligner_justifie", tr("Justifier (texte en cadre)"))):
             b = QToolButton()
             b.setCheckable(True)
             b.setToolTip(aide)
@@ -204,6 +218,80 @@ class PanneauTexte(QScrollArea):
         self.interligne.setToolTip(tr("Écart entre les lignes, × la taille des lettres"))
         self.interligne.valueChanged.connect(lambda v: self._changer("interligne", v))
         form.addRow(tr("Lignes"), self.interligne)
+        self.echelle_h = self._entier(10, 1000, " %", "echelle_h")
+        self.echelle_h.setToolTip(tr("Largeur des lettres (étirer ou serrer)"))
+        form.addRow(tr("Largeur"), self.echelle_h)
+        self.echelle_v = self._entier(10, 1000, " %", "echelle_v")
+        self.echelle_v.setToolTip(tr("Hauteur des lettres (étirer ou tasser)"))
+        form.addRow(tr("Hauteur"), self.echelle_v)
+        self.casse = self._liste("casse", (("normale", tr("Comme tapé")), ("majuscules", tr("TOUT EN MAJUSCULES")),
+                                           ("minuscules", tr("tout en minuscules")),
+                                           ("petites_capitales", tr("Petites capitales")),
+                                           ("titre", tr("Première Lettre En Majuscule"))))
+        form.addRow(tr("Casse"), self.casse)
+        self.position = self._liste("position", (("normale", tr("Normale")), ("exposant", tr("Exposant")),
+                                                 ("indice", tr("Indice"))))
+        form.addRow(tr("Position"), self.position)
+        self.ligne_base = self._entier(-300, 300, " %", "ligne_base")
+        self.ligne_base.setToolTip(tr("Monter (positif) ou descendre (négatif) les lettres, en % de la taille"))
+        form.addRow(tr("Ligne de base"), self.ligne_base)
+        self.crenage = self._liste("crenage", ((True, tr("De la police")), (False, tr("Aucun"))))
+        self.crenage.setToolTip(tr("Crénage : espaces corrigés par la police entre certaines paires (AV, To…)"))
+        form.addRow(tr("Crénage"), self.crenage)
+        self.crenage_ici = QSpinBox()
+        self.crenage_ici.setRange(-1000, 1000)
+        self.crenage_ici.setSingleStep(20)
+        self.crenage_ici.setSuffix(" ‰")
+        self.crenage_ici.setKeyboardTracking(False)
+        self.crenage_ici.setToolTip(tr("Espace entre les deux lettres autour du curseur, en millièmes de la "
+                                       "taille (aussi Alt+flèches dans le texte)"))
+        self.crenage_ici.valueChanged.connect(self._crenage_ici)
+        form.addRow(tr("Ici"), self.crenage_ici)
+        self.opentype = {}
+        ligne = QHBoxLayout()
+        for champ, nom, aide in (("ligatures", tr("Ligatures"), tr("fi, fl, ff… liés (si la police en a)")),
+                                 ("fractions", tr("Fractions"), tr("1/2 devient ½ (si la police le permet)")),
+                                 ("chiffres_anciens", tr("Chiffres anciens"),
+                                  tr("Chiffres de hauteurs variées, comme dans les livres (si la police en a)"))):
+            c = QCheckBox(nom)
+            c.setToolTip(aide)
+            c.toggled.connect(lambda oui, ch=champ: self._changer(ch, oui))
+            self.opentype[champ] = c
+            if champ == "chiffres_anciens":           # deux par ligne : le panneau reste étroit
+                ligne.addStretch(1)
+                lay.addLayout(ligne)
+                ligne = QHBoxLayout()
+            ligne.addWidget(c)
+        self.lissage = QCheckBox(tr("Bords lissés"))
+        self.lissage.setToolTip(tr("Décoché : lettres aux bords nets, pixel par pixel (sans lissage)"))
+        self.lissage.toggled.connect(lambda oui: self._changer("lissage", oui))
+        ligne.addWidget(self.lissage)
+        ligne.addStretch(1)
+        lay.addLayout(ligne)
+
+        # ---- paragraphe
+        lay.addWidget(_titre(tr("Paragraphe")))
+        self.vertical = QCheckBox(tr("Texte vertical"))
+        self.vertical.setToolTip(tr("Lettres les unes sous les autres ; chaque ligne devient une colonne"))
+        self.vertical.toggled.connect(lambda oui: self._changer("vertical", oui))
+        lay.addWidget(self.vertical)
+        self.cadre = QCheckBox(tr("Texte en cadre"))
+        self.cadre.setToolTip(tr("Les lignes se coupent toutes seules à la largeur du cadre"))
+        self.cadre.toggled.connect(self._cadre_coche)
+        lay.addWidget(self.cadre)
+        form = self._formulaire(lay)
+        self.cadre_l = self._entier(1, 20000, " px", "cadre_l")
+        form.addRow(tr("Largeur du cadre"), self.cadre_l)
+        self.cadre_h = self._entier(0, 20000, " px", "cadre_h")
+        self.cadre_h.setSpecialValueText(tr("auto"))
+        self.cadre_h.setToolTip(tr("Ce qui dépasse du cadre est caché ; 0 = selon le texte"))
+        form.addRow(tr("Hauteur du cadre"), self.cadre_h)
+        self.retrait = self._entier(-500, 2000, " %", "retrait")
+        self.retrait.setToolTip(tr("Alinéa de la première ligne de chaque paragraphe, en % de la taille"))
+        form.addRow(tr("Retrait"), self.retrait)
+        self.espace_paragraphe = self._entier(0, 1000, " %", "espace_paragraphe")
+        self.espace_paragraphe.setToolTip(tr("Espace ajouté entre les paragraphes, en % de la taille"))
+        form.addRow(tr("Entre paragraphes"), self.espace_paragraphe)
 
         # ---- disposition
         lay.addWidget(_titre(tr("Disposition")))
@@ -214,6 +302,22 @@ class PanneauTexte(QScrollArea):
         self.courbe = self._entier(-360, 360, "°", "courbe")
         self.courbe.setToolTip(tr("Texte en arc : positif = en voûte, négatif = en creux, 360 = cercle complet"))
         form.addRow(tr("Courbe"), self.courbe)
+        self.deformation = self._liste("deformation", (
+            ("aucune", tr("Aucune")), ("arc", tr("Arc")), ("arc_inferieur", tr("Arc inférieur")),
+            ("arc_superieur", tr("Arc supérieur")), ("arche", tr("Arche")), ("renflement", tr("Renflement")),
+            ("drapeau", tr("Drapeau")), ("vague", tr("Vague")), ("poisson", tr("Poisson")),
+            ("montee", tr("Montée")), ("oeil_de_poisson", tr("Œil de poisson")), ("gonflement", tr("Gonflement")),
+            ("compression", tr("Compression")), ("torsion", tr("Torsion"))))
+        self.deformation.setToolTip(tr("Déformer le texte (comme dans Photoshop)"))
+        form.addRow(tr("Déformation"), self.deformation)
+        self.flexion = self._entier(-100, 100, " %", "flexion")
+        form.addRow(tr("Force"), self.flexion)
+        self.distorsion_h = self._entier(-100, 100, " %", "distorsion_h")
+        self.distorsion_h.setToolTip(tr("Perspective : un côté plus grand que l'autre"))
+        form.addRow(tr("Distorsion horiz."), self.distorsion_h)
+        self.distorsion_v = self._entier(-100, 100, " %", "distorsion_v")
+        self.distorsion_v.setToolTip(tr("Perspective : le haut plus large que le bas, ou l'inverse"))
+        form.addRow(tr("Distorsion vert."), self.distorsion_v)
 
         # ---- effets
         self.effets = {}
@@ -272,6 +376,20 @@ class PanneauTexte(QScrollArea):
         s.valueChanged.connect(lambda v: self._changer(champ, float(v)))
         return s
 
+    def _liste(self, champ: str, choix) -> QComboBox:
+        c = QComboBox()
+        c.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)    # étroite (liste ouverte : tout)
+        c.setMinimumContentsLength(10)
+        for valeur, nom in choix:
+            c.addItem(nom, valeur)
+        c.currentIndexChanged.connect(lambda _i: self._changer(champ, c.currentData()))
+        return c
+
+    @staticmethod
+    def _choisir_liste(c: QComboBox, valeur):
+        i = c.findData(valeur)
+        c.setCurrentIndex(max(0, i))
+
     def appliquer_icones(self):
         for b, nom in self.alignements.values():
             b.setIcon(self.icones(nom))
@@ -302,10 +420,23 @@ class PanneauTexte(QScrollArea):
                 b.setChecked(getattr(t, champ))
             for valeur, (b, _) in self.alignements.items():
                 b.setChecked(valeur == t.alignement)
-            self.lettres.setValue(round(t.lettres))
             self.interligne.setValue(t.interligne)
             self.angle.setValue(round(t.angle))
             self.courbe.setValue(round(t.courbe))
+            self._choisir_liste(self.crenage, t.crenage)
+            for champ, c in self.opentype.items():
+                c.setChecked(getattr(t, champ))
+            self.lissage.setChecked(t.lissage)
+            self.vertical.setChecked(t.vertical)
+            self.cadre.setChecked(t.cadre_l > 0)
+            self.cadre_l.setValue(round(t.cadre_l) if t.cadre_l > 0 else 1)
+            self.cadre_h.setValue(round(t.cadre_h))
+            self.retrait.setValue(round(t.retrait))
+            self.espace_paragraphe.setValue(round(t.espace_paragraphe))
+            self._choisir_liste(self.deformation, t.deformation)
+            self.flexion.setValue(round(t.flexion))
+            self.distorsion_h.setValue(round(t.distorsion_h))
+            self.distorsion_v.setValue(round(t.distorsion_v))
             for cle, (case, couleur, cases) in self.effets.items():
                 case.setChecked(getattr(t, cle))
                 couleur.definir(getattr(t, cle + "_couleur"))
@@ -313,6 +444,10 @@ class PanneauTexte(QScrollArea):
                     s.setValue(round(getattr(t, champ)))
         finally:
             self._remplissage = False
+        self._montrer_lettres()
+        for w in (self.cadre_l, self.cadre_h):
+            w.setEnabled(self.t.cadre_l > 0 and not self.t.vertical)
+        self.flexion.setEnabled(self.t.deformation != "aucune")
         self.taille.setEnabled(self.lie)       # sans texte choisi, la taille est calculée d'après la photo
         self.angle.setEnabled(self.lie)
         if verrou:
@@ -330,11 +465,110 @@ class PanneauTexte(QScrollArea):
         self.saisie.selectAll()
 
     # ---------------------------------------------------------- changements
+    PAS_DEFAUT = ("texte", "x", "y", "angle", "taille", "courbe", "cadre_l", "cadre_h", "deformation", "flexion",
+                  "distorsion_h", "distorsion_v", "trace", "trace_debut", "styles", "crenages")
+
+    def _selection(self) -> tuple[int, int]:
+        """Lettres sélectionnées dans la saisie (début, fin) ; (0, 0) sans sélection."""
+        if not self.lie:
+            return 0, 0
+        c = self.saisie.textCursor()
+        a, b = sorted((c.anchor(), c.position()))
+        return (a, b) if b > a else (0, 0)
+
+    def _montrer_lettres(self):
+        """Réglages de caractère montrés : ceux des lettres sélectionnées, sinon ceux du texte entier."""
+        t = self.t
+        a, b = self._selection()
+        st = t.style_de(a) if b > a else t.style_de(-1)
+        pos = self.saisie.textCursor().position()
+        avant = self._remplissage
+        self._remplissage = True
+        try:
+            self.police.setCurrentFont(QFont(st["police"]))
+            self.taille.setValue(round(st["taille"]))
+            self.couleur.definir(st["couleur"])
+            for champ, bt in self.styles.items():
+                bt.setChecked(bool(st[champ]))
+            self.lettres.setValue(round(st["lettres"]))
+            self.echelle_h.setValue(round(st["echelle_h"]))
+            self.echelle_v.setValue(round(st["echelle_v"]))
+            self._choisir_liste(self.casse, st["casse"])
+            self._choisir_liste(self.position, st["position"])
+            self.ligne_base.setValue(round(st["ligne_base"]))
+            self.crenage_ici.setValue(round(t.crenage_a(pos)))
+        finally:
+            self._remplissage = avant
+        self.crenage_ici.setEnabled(self.lie and b <= a and 0 < pos < len(t.texte))
+        if b > a:
+            self.portee.setText(tr("Réglages de caractère : seulement les {n} lettres sélectionnées.", n=b - a))
+        elif t.styles and self.lie:
+            self.portee.setText(tr("Certaines lettres ont leur propre style : un réglage ici les change toutes."))
+        else:
+            self.portee.setText("")
+        self.portee.setVisible(bool(self.portee.text()))
+
     def _changer(self, champ: str, valeur):
-        if self._remplissage or getattr(self.t, champ) == valeur:
+        if self._remplissage:
             return
-        self.t = replace(self.t, **{champ: valeur})
-        if champ not in ("texte", "x", "y", "angle", "taille", "courbe"):
+        t = self.t
+        a, b = self._selection()
+        if champ in CHAMPS_LETTRE and b > a:              # style par lettre : seulement la sélection
+            nouveau = t.avec_style(a, b, **{champ: valeur})
+            if nouveau == t:
+                return
+            self.t = nouveau
+            self._montrer_lettres()
+            self.modifie.emit(self.t, champ + "@lettres")
+            return
+        if champ == "texte":
+            nouveau = t.avec_texte(valeur)
+        elif champ in CHAMPS_LETTRE:                      # tout le texte, lettres à style propre comprises
+            nouveau = replace(t, **{champ: valeur}).avec_style(0, len(t.texte), **{champ: valeur})
+        else:
+            nouveau = replace(t, **{champ: valeur})
+        if nouveau == t:
+            return
+        self.t = nouveau
+        if champ not in self.PAS_DEFAUT:
             self.defaut = replace(self.defaut, **{champ: valeur})      # le prochain texte reprend ce style
+        if champ in ("cadre_l", "vertical", "deformation"):
+            self.afficher(self.t if self.lie else None)
+        else:
+            self._montrer_lettres()
         if self.lie:
             self.modifie.emit(self.t, champ)
+
+    def _cadre_coche(self, oui: bool):
+        """Texte en cadre : le cadre prend la largeur actuelle du texte (on la change ensuite)."""
+        if self._remplissage:
+            return
+        if oui:
+            largeur = forme(replace(self.t, cadre_l=0.0, courbe=0.0, deformation="aucune"))[1].width()
+            self._changer("cadre_l", float(max(round(largeur) + 2, round(self.t.taille * 2))))
+        else:
+            self._changer("cadre_l", 0.0)
+
+    def _crenage_ici(self, valeur: int):
+        if self._remplissage or not self.lie:
+            return
+        self._regler_crenage(self.saisie.textCursor().position(), float(valeur))
+
+    def _regler_crenage(self, pos: int, valeur: float):
+        if not (0 < pos < len(self.t.texte)):
+            return
+        nouveau = self.t.avec_crenage(pos, valeur)
+        if nouveau != self.t:
+            self.t = nouveau
+            self._montrer_lettres()
+            self.modifie.emit(self.t, "crenages")
+
+    def eventFilter(self, objet, ev):
+        """Alt+flèches dans la saisie : crénage à la main entre les deux lettres autour du curseur."""
+        if objet is self.saisie and ev.type() == QEvent.KeyPress and ev.modifiers() & Qt.AltModifier \
+                and ev.key() in (Qt.Key_Left, Qt.Key_Right) and self.lie and self.saisie.isEnabled():
+            pas = 20.0 * (5 if ev.modifiers() & Qt.ControlModifier else 1)
+            pos = self.saisie.textCursor().position()
+            self._regler_crenage(pos, self.t.crenage_a(pos) + (pas if ev.key() == Qt.Key_Right else -pas))
+            return True
+        return super().eventFilter(objet, ev)

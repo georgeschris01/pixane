@@ -780,11 +780,23 @@ Outil **Texte** (touche **T**, icône « T » dans la barre d'outils). Le pannea
 | **Taille** | Hauteur des lettres, en pixels de la photo |
 | **Couleur** (pastille) | Couleur des lettres, avec la transparence (canal alpha) |
 | **G / I / S / B** | Gras, italique, souligné, barré |
-| **Alignement** | À gauche, centré, à droite (pour plusieurs lignes) |
+| **Alignement** | À gauche, centré, à droite (pour plusieurs lignes), **justifié** (texte en cadre : lignes étirées jusqu'aux deux bords) |
 | **Lettres** | Espace ajouté entre les lettres, en % de la taille (négatif = lettres serrées) |
 | **Lignes** | Écart entre les lignes, × la taille des lettres |
 | **Rotation** | Angle en degrés |
 | **Courbe** | Texte en arc : positif = en voûte, négatif = en creux, 360° = cercle complet |
+| **Largeur / Hauteur** | Étirer ou tasser les lettres (100 % = normal) |
+| **Casse** | Comme tapé, TOUT EN MAJUSCULES, tout en minuscules, Petites capitales, Première Lettre En Majuscule (le texte tapé ne change pas : on peut revenir) |
+| **Position** | Normale, **exposant** (m², 1er) ou **indice** (H₂O) : lettres plus petites, montées ou descendues |
+| **Ligne de base** | Monter (positif) ou descendre (négatif) des lettres, en % de la taille |
+| **Crénage** | *De la police* : espaces corrigés entre certaines paires (AV, To…) ; *Aucun* : espaces bruts |
+| **Ici** | Crénage à la main entre les deux lettres autour du curseur, en millièmes de la taille (aussi **Alt+flèches** dans la case, **Ctrl+Alt+flèches** : 5 fois plus) |
+| **Ligatures, Fractions, Chiffres anciens** | Options de la police (OpenType) : fi/fl liés, 1/2 → ½, chiffres de hauteurs variées. Sans effet si la police ne les a pas |
+| **Bords lissés** | Décoché : bords nets pixel par pixel (pour le pixel art ou les petits textes) |
+| **Texte vertical** | Lettres les unes sous les autres ; chaque ligne devient une colonne (de droite à gauche) |
+| **Texte en cadre** | Les lignes se coupent toutes seules à la **largeur du cadre** ; **hauteur du cadre** : ce qui dépasse est caché (0 = auto : selon le texte) |
+| **Retrait / Entre paragraphes** | Alinéa de la première ligne de chaque paragraphe ; espace ajouté entre les paragraphes (% de la taille) |
+| **Déformation** | Comme « Déformer le texte » de Photoshop : Arc, Arc inférieur / supérieur, Arche, Renflement, Drapeau, Vague, Poisson, Montée, Œil de poisson, Gonflement, Compression, Torsion. **Force** : -100 à 100 % ; **Distorsion horiz. / vert.** : effet de perspective |
 | **Contour** | Trait autour des lettres : couleur et épaisseur |
 | **Ombre portée** | Couleur, distance, direction (0° = vers la droite, 90° = vers le bas) et flou |
 | **Fond** | Rectangle coloré derrière le texte : couleur, marge et arrondi des coins |
@@ -792,6 +804,13 @@ Outil **Texte** (touche **T**, icône « T » dans la barre d'outils). Le pannea
 Les tailles des effets (épaisseur, distance, flou, marge, arrondi) sont en **% de la taille des lettres** :
 ils restent proportionnés quand on change la taille du texte.
 **Transparence** du texte entier : curseur **Opacité** du panneau Calques.
+
+### Changer seulement certaines lettres
+**Sélectionnez des lettres dans la case du panneau** (à la souris ou Maj+flèches) : police, taille, couleur, gras,
+italique, souligné, barré, lettres, largeur, hauteur, casse, position et ligne de base ne changent **que pour elles**
+(une phrase sous la case le rappelle). Exemple : un mot en rouge, un « 2 » en indice.
+Sans sélection, un réglage change **tout le texte**, lettres à style propre comprises. Les lettres tapées ensuite
+prennent le style de celle qui les précède.
 
 ### Bon à savoir
 - Toutes les modifications s'annulent avec Ctrl+Z ; une saisie de plusieurs lettres s'annule d'un seul coup.
