@@ -15,7 +15,8 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
   (aussi dans le README et le guide).
 - **Licence Pixane 1.2** : « code source disponible » au lieu de « code source ouvert » (Pixane n'est pas « open
   source » au sens strict, puisqu'il est non commercial) ; même contenu, seuls les mots changent. Image de licence
-  ajoutée au README (sans rond derrière le logo).
+  ajoutée au README (sans rond derrière le logo). Déjà dans l'installateur 0.21.0 remplacé sur GitHub le 14/11 à
+  17:51 (avec la phrase « À propos » ci-dessus).
 
 ## À mettre à jour le jour de la publication
 
