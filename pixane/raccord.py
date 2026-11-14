@@ -289,9 +289,20 @@ def retirer_bandes(R: np.ndarray, marges, original: tuple[int, int, int, int]) -
 def finaliser(orig: np.ndarray, flux: np.ndarray, geo: Geometrie) -> np.ndarray:
     """orig : original sans liseré (h, w, 3) ; flux : résultat de Flux à la taille de travail. -> (H, W, 3) uint8."""
     W, H = geo.taille
+    R = np.asarray(Image.fromarray(flux).resize((W, H), Image.LANCZOS)).astype(np.float32)
+    return _assembler(orig, R, geo)
+
+
+def reaccorder(orig: np.ndarray, image: np.ndarray, geo: Geometrie) -> np.ndarray:
+    """Après « Pleine définition » (l'ajout redessiné par morceaux à la vraie taille) : Flux a pu de nouveau éclaircir
+    l'ajout ou y laisser des bandes près de la photo ; même accord que finaliser, sur l'image (H, W, 3) finale."""
+    return _assembler(orig, image[:, :, :3].astype(np.float32), geo)
+
+
+def _assembler(orig: np.ndarray, R: np.ndarray, geo: Geometrie) -> np.ndarray:
+    W, H = geo.taille
     mh, mb, mg, md = geo.marges
     h, w = orig.shape[:2]
-    R = np.asarray(Image.fromarray(flux).resize((W, H), Image.LANCZOS)).astype(np.float32)
     O = orig.astype(np.float32)
     y0, x0 = mh, mg
     zone = R[y0:y0 + h, x0:x0 + w]                       # la version de Flux de la bande de raccord

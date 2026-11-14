@@ -39,7 +39,7 @@ from .document import (EXTENSIONS_CALQUES, EXTENSIONS_LECTURE, FORMAT_IMAGE, Doc
 from .moteur import Annule, ErreurMoteur, Moteur, trouver_comfyui
 from .panneau_texte import BoutonCouleur, PanneauTexte
 from .garde_fou import garder_aplats, part_aplats
-from .raccord import finaliser, lisere_auto, preparer
+from .raccord import finaliser, lisere_auto, preparer, reaccorder
 from .reglages_image import FenetreReglages, ajuster, auto, neutre
 from .dialogues_document import ExportImpression, NouvelleImage, ZoneTravail
 from .dialogues_image import APropos, Redresser, TailleImage
@@ -2593,13 +2593,13 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         affiner = None
         if self.barre_agrandir.pleine.isChecked() and affinage.utile(geo.taille, geo.travail):
             m = affinage.masque_ajout(geo.taille, geo.marges, orig.shape[:2], max(geo.bande) * 1.5)
-            affiner = lambda img, fin: self._affiner_agrandir(img, m, fin)
+            affiner = lambda img, fin: self._affiner_agrandir(img, m, fin, lambda a: reaccorder(orig, a, geo))
         self._lancer(tr("Agrandir"), False, lambda nom: recettes.agrandir(nom), apres=raccord, png=png,
                      placer=placer, affiner=affiner,
                      variante=lambda nom, force: recettes.variante(nom, force, nb=recettes.NB_AGRANDIR,
                                                                    decoupe=False))
 
-    def _affiner_agrandir(self, image: QImage, m, fin):
+    def _affiner_agrandir(self, image: QImage, m, fin, accorder=None):
         """Pleine définition : la proposition choisie est retravaillée par morceaux à la vraie taille, puis
         fin(image) l'applique. Annuler pendant le calcul : la proposition est gardée telle quelle."""
         img = tableau(image)[:, :, :3].copy()
@@ -2626,7 +2626,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                     if morceau.isNull():
                         raise ErreurMoteur(tr("Résultat illisible."))
                     res = affinage.coller(res, tableau(morceau.convertToFormat(FORMAT_IMAGE))[:, :, :3], m_t, r)
-            fini = affinage.accorder_grain(affinage.terminer(img, res, m, s), m)
+            fini = affinage.terminer(img, res, m, s)
+            if accorder is not None:          # Flux a pu de nouveau éclaircir l'ajout : raccord refait
+                fini = accorder(fini)
+            fini = affinage.accorder_grain(fini, m)
             return qimage_rgb(fini)
 
         attente = Attente(titre, self)

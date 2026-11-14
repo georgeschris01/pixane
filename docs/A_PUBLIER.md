@@ -29,7 +29,8 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.20.0 (non publ
 - **Vignettes du panneau Calques** : à la forme de l'image (une image large n'a plus de bandes vides en haut et
   en bas).
 - **Agrandir** : plus de partie plus claire ni de bandes dans les fonds unis ajoutés (« effet fantôme ») ; l'accord
-  des couleurs va jusqu'au bord de l'image.
+  des couleurs va jusqu'au bord de l'image, et il est refait après « Pleine définition » (qui, en redessinant
+  l'ajout, le rendait de nouveau plus clair par endroits).
 - **Texte** : en passant d'un calque de texte à un autre, le nouveau texte pouvait prendre la police du
   précédent (aperçu de police du panneau Texte).
 

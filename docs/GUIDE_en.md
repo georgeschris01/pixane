@@ -484,7 +484,7 @@ Two frames appear on the photo:
 - The join between the photo and the addition is made by Pixane: the original photo is kept **pixel for pixel**,
   with a gradual blend and colour matching, so that no line is visible. In **plain backgrounds** (sky, wall, dark
   background), the addition is brought back to the photo's level right up to the edge: no lighter part and no bands
-  ("ghosting").
+  ("ghosting"). This join is redone after *Full resolution*.
 - 3 options, about 1 minute each.
 - **Full resolution** (box in the bar, ticked by default): the AI invents the addition on an image reduced to about
   1 million pixels, then the addition is enlarged to the size of the photo; on a large photo it would therefore be

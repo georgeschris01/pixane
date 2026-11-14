@@ -501,7 +501,7 @@ Deux cadres apparaissent sur la photo :
 - Le raccord entre la photo et l'ajout est fait par Pixane : la photo d'origine est gardée **au pixel près**, avec un
   fondu progressif et un accord des couleurs, pour qu'aucune ligne ne soit visible. Dans les **fonds unis** (ciel,
   mur, fond sombre), l'ajout est remis au niveau de la photo jusqu'au bord : pas de partie plus claire ni de bandes
-  (« effet fantôme »).
+  (« effet fantôme »). Ce raccord est refait après *Pleine définition*.
 - 3 propositions, environ 1 minute chacune.
 - **Pleine définition** (case dans la barre, cochée par défaut) : l'IA invente l'ajout sur une image réduite à
   environ 1 million de pixels, puis l'ajout est agrandi à la taille de la photo ; sur une grande photo, il serait
