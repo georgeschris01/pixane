@@ -17,6 +17,9 @@ publication/
 !installateur/images/*.png
 # pinceaux et motifs de base (Krita, CC-0) : à garder
 !pixane/ressources/base/**
+# captures et image d'aperçu de GitHub : fabriquées sur un paysage dessiné (aucune photo personnelle)
+!docs/screenshots/*.png
+!docs/social-preview*.png
 comparaison/
 image de test/
 installateur.log
