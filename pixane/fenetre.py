@@ -527,7 +527,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         a.setCheckable(True)
         a.setChecked(self.reglages.value("polices_semblables", True, type=bool))
         a.setToolTip(tr("Coché : Sélection > Trouver une police semblable, et Pixane prépare une fois la liste de tes "
-                        "polices en arrière-plan (environ 1 min 20, 15 Mo). Décoché : rien de tout cela."))
+                        "polices en arrière-plan. La durée dépend du nombre de polices installées (environ 1 min 20 et "
+                        "15 Mo pour 1 200 polices). Décoché : rien de tout cela."))
         a.toggled.connect(lambda v: self.option_polices(v))
         m.setToolTipsVisible(True)
         m.addSeparator()

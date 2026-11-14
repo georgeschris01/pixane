@@ -1270,7 +1270,6 @@
  "Appliquer au texte choisi": "Apply to the chosen text",
  "Cherche parmi tes polices celles qui ressemblent le plus aux lettres sélectionnées": "Searches your fonts for the ones that look most like the selected letters",
  "Chercher": "Search",
- "Coché : Sélection > Trouver une police semblable, et Pixane prépare une fois la liste de tes polices en arrière-plan (environ 1 min 20, 15 Mo). Décoché : rien de tout cela.": "Checked: Selection > Find a similar font, and Pixane prepares the list of your fonts once, in the background (about 1 min 20, 15 MB). Unchecked: none of this.",
  "Copier le nom": "Copy the name",
  "Créer un texte avec cette police": "Create a text with this font",
  "La sélection est un bloc plein : il faut les lettres seules. Utilise l'outil Sélection de texte (Y) : il ne garde que les lettres.": "The selection is a solid block: only the letters are needed. Use the Text selection tool (Y): it keeps only the letters.",
@@ -1281,7 +1280,6 @@
  "Police : {nom}": "Font: {nom}",
  "Police semblable": "Similar font",
  "Police semblable…": "Similar font…",
- "Première fois : Pixane prépare ses {n} polices (environ une minute, une seule fois)…": "First time: Pixane is preparing its {n} fonts (about a minute, once only)…",
  "Recherche arrêtée.": "Search stopped.",
  "Recherche de police semblable": "Similar font search",
  "Recherche…": "Searching…",
@@ -1295,5 +1293,7 @@
  "ex. DISCO": "e.g. DISCO",
  "gras": "bold",
  "italique": "italic",
- "ressemblance : {n} %": "likeness: {n}%"
+ "ressemblance : {n} %": "likeness: {n}%",
+ "Coché : Sélection > Trouver une police semblable, et Pixane prépare une fois la liste de tes polices en arrière-plan. La durée dépend du nombre de polices installées (environ 1 min 20 et 15 Mo pour 1 200 polices). Décoché : rien de tout cela.": "Checked: Selection > Find a similar font, and Pixane prepares the list of your fonts once, in the background. The time depends on the number of installed fonts (about 1 min 20 and 15 MB for 1,200 fonts). Unchecked: none of this.",
+ "Première fois : Pixane prépare tes {n} polices, une seule fois. La durée dépend de leur nombre (environ 1 min 20 pour 1 200 polices)…": "First time: Pixane is preparing your {n} fonts, once only. The time depends on how many there are (about 1 min 20 for 1,200 fonts)…"
 }

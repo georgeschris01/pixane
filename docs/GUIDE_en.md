@@ -267,14 +267,15 @@ alike (no Internet, nothing is downloaded).
 1. Select the letters with **Text selection (Y)** (a solid block does not work: only the letters are needed).
 2. **Selection > Find a similar font…**, or the **Similar font…** button in the tool bar.
 3. **Type the same letters** as in the image, keeping capitals (separate lines with "/"), then **Search**. A few
-   seconds.
+   seconds (the more fonts are installed, the longer it takes).
 4. The closest fonts are shown first, written with your letters, with their likeness in %.
    - **Apply to the chosen text**: if the chosen layer is a Pixane text, it takes this font;
    - **Create a text with this font**: new text layer in place of the letters, with their colour (the letters in
      the image stay: erase them afterwards if needed);
    - **Copy the name** of the font.
 - **Option** (box in the installer, or **View > Similar font search**): to be fast, Pixane prepares the list of
-  your fonts **once only**, in the background, about 1 min 20 after starting (15 MB). Unchecked: the feature is
+  your fonts **once only**, in the background, one minute after starting. The time depends on the **number of
+  installed fonts**: about 1 min 20 (and 15 MB) for 1,200 fonts. Unchecked: the feature is
   hidden, nothing runs in the background, and this list is deleted.
 
 ### Magic wand (W)

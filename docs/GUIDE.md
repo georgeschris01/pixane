@@ -278,14 +278,15 @@ ressemblent le plus (sans Internet, rien n'est téléchargé).
    seules).
 2. **Sélection > Trouver une police semblable…**, ou le bouton **Police semblable…** dans la barre de l'outil.
 3. **Tapez les mêmes lettres** que dans l'image, en respectant les majuscules (séparez les lignes par « / »), puis
-   **Chercher**. Quelques secondes.
+   **Chercher**. Quelques secondes (plus il y a de polices installées, plus c'est long).
 4. Les polices les plus proches s'affichent d'abord, écrites avec vos lettres, avec leur ressemblance en %.
    - **Appliquer au texte choisi** : si le calque choisi est un texte de Pixane, il prend cette police ;
    - **Créer un texte avec cette police** : nouveau calque de texte à la place des lettres, avec leur couleur (les
      lettres de l'image restent : effacez-les ensuite si besoin) ;
    - **Copier le nom** de la police.
 - **Option** (case à l'installation, ou **Affichage > Recherche de police semblable**) : pour aller vite, Pixane
-  prépare **une seule fois** la liste de vos polices, en arrière-plan, environ 1 min 20 après le démarrage (15 Mo).
+  prépare **une seule fois** la liste de vos polices, en arrière-plan, une minute après le démarrage. La durée dépend
+  du **nombre de polices installées** : environ 1 min 20 (et 15 Mo) pour 1 200 polices.
   Décochée : la fonction est cachée, rien ne tourne en fond, et cette liste est effacée.
 
 ### Baguette magique (W)
