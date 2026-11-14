@@ -38,6 +38,8 @@ class ActionsCalques:
         self._action(m_calque, tr("Nouveau groupe"), None, lambda: self.calques.nouveau_groupe(), "a_nouveau_groupe")
         self._action(m_calque, tr("Grouper les calques"), "Ctrl+G", lambda: self.calques.grouper(), "a_grouper")
         self._action(m_calque, tr("Dégrouper"), "Ctrl+Shift+G", lambda: self.calques.degrouper(), "a_degrouper")
+        self._action(m_calque, tr("Masque d'écrêtage (calque du dessous)"), "Ctrl+Alt+G",
+                     lambda: self.calques.ecreter(), "a_ecretage")
         m_calque.addSeparator()
         sous = m_calque.addMenu(tr("Aligner"))
         for mode, texte in alignements():
@@ -81,7 +83,7 @@ class ActionsCalques:
         noms = [f"a_regl_{t}" for t in ("niveaux", "courbes", "balance", "noir_blanc", "vibrance")]
         noms += [f"a_cr_{t}" for t in ajustements.TYPES] + [f"a_filtre_{t}" for t in filtres.FILTRES]
         noms += ["a_taille_grille", "a_nouveau_repere", "a_effacer_reperes", "a_exporter_web"]
-        noms += ["a_modifier_reglage", "a_nouveau_groupe", "a_grouper", "a_degrouper", "a_masque_blanc",
+        noms += ["a_modifier_reglage", "a_nouveau_groupe", "a_grouper", "a_degrouper", "a_ecretage", "a_masque_blanc",
                  "a_masque_sel", "a_masque_cacher", "a_masque_cible", "a_masque_actif", "a_masque_inverser",
                  "a_masque_selection", "a_masque_appliquer", "a_masque_supprimer"]
         return [getattr(self, n) for n in noms]

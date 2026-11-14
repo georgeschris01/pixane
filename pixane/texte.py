@@ -192,6 +192,23 @@ class Texte:
         return replace(self, styles=(), crenages=())
 
 
+# réglages qui ne font pas partie d'un « style de texte » (copier / coller le style, styles enregistrés)
+HORS_STYLE = ("texte", "x", "y", "angle", "styles", "crenages", "trace", "trace_debut", "cadre_l", "cadre_h")
+
+
+def style_texte(t: Texte) -> dict:
+    """Style du texte (police, couleur, effets, réglages de caractère et de paragraphe), sans le texte ni sa place."""
+    return {k: v for k, v in t.vers_dict().items() if k not in HORS_STYLE}
+
+
+def avec_style_texte(t: Texte, style: dict) -> Texte:
+    """Le style donné appliqué au texte entier (les styles propres à certaines lettres sont retirés)."""
+    d = t.vers_dict()
+    d.update({k: v for k, v in style.items() if k not in HORS_STYLE})
+    d["styles"] = []
+    return Texte.depuis_dict(d)
+
+
 def _fige(v):
     return tuple(v) if isinstance(v, list) else v
 
@@ -717,6 +734,37 @@ def forme(t: Texte) -> tuple[QPainterPath, QRectF]:
     """(tracé des lettres, rectangle du bloc), centrés sur (0, 0), avant rotation."""
     m = mise(t)
     return m.chemin, m.bloc
+
+
+def trace_depuis(t: Texte, points: list[QPointF]) -> tuple:
+    """Ligne dessinée à la souris (points de l'image) -> tracé du texte : points réguliers et lissés (la main tremble),
+    relatifs au texte (avant sa rotation)."""
+    inv, _ok = transformation(t).inverted()
+    pts = [inv.map(QPointF(p)) for p in points]
+    pas = max(2.0, t.taille / 12)
+    regulier = [pts[0]]
+    reste = 0.0
+    for a, b in zip(pts, pts[1:]):                      # un point tous les `pas` px le long de la ligne
+        d = math.hypot(b.x() - a.x(), b.y() - a.y())
+        s = pas - reste
+        while s <= d:
+            regulier.append(a + (b - a) * (s / d))
+            s += pas
+        reste = d - (s - pas)
+    if regulier[-1] != pts[-1]:
+        regulier.append(pts[-1])
+    n = 4                                               # moyenne glissante (bouts gardés)
+    lisse = []
+    for i in range(len(regulier)):
+        a, b = max(0, i - n), min(len(regulier), i + n + 1)
+        if i == 0 or i == len(regulier) - 1:
+            q = regulier[i]
+        else:
+            k = min(i - a, b - 1 - i)
+            voisins = regulier[i - k:i + k + 1]
+            q = QPointF(sum(v.x() for v in voisins) / len(voisins), sum(v.y() for v in voisins) / len(voisins))
+        lisse.append((round(q.x(), 2), round(q.y(), 2)))
+    return tuple(lisse)
 
 
 def transformation(t: Texte) -> QTransform:

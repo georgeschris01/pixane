@@ -209,16 +209,41 @@ def fusionner(calques, largeur: int, hauteur: int, seulement_visibles: bool = Tr
     return _composer(arbre(calques), largeur, hauteur, seulement_visibles)
 
 
+def ecreter(img: QImage, base: QImage) -> QImage:
+    """Masque d'écrêtage : img gardée seulement là où la base a des pixels (son alpha)."""
+    r = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
+    if r is img:
+        r = img.copy()
+    p = QPainter(r)
+    p.setCompositionMode(QPainter.CompositionMode_DestinationIn)
+    p.drawImage(0, 0, base)
+    p.end()
+    return r
+
+
 def _composer(noeuds, w: int, h: int, seulement_visibles: bool) -> QImage:
     res = QImage(w, h, QImage.Format_ARGB32_Premultiplied)
     res.fill(Qt.transparent)
+    # base des masques d'écrêtage : (image, opacité) du dernier calque non écrêté ; False : base cachée (les calques
+    # écrêtés le sont aussi) ; None : pas de base (un calque écrêté tout en bas se voit normalement)
+    base = None
     for n in noeuds:
         c = n.calque
+        reglage = getattr(c, "reglage", None)
+        ecrete = getattr(c, "ecretage", False) and n.enfants is None and reglage is None and base is not None
+        if not ecrete and reglage is None:
+            base = False                              # (remplacée plus bas si le calque se voit)
         if seulement_visibles and not c.visible:
             continue
-        reglage = getattr(c, "reglage", None)
         if reglage is not None:
+            base = None
             res = appliquer_reglage(res, c)
+            continue
+        if ecrete:
+            if base is False:
+                continue
+            img = ecreter(rendre_calque(c), base[0])
+            poser(res, img, c.opacite * base[1], getattr(c, "mode", "normal"))
             continue
         if n.enfants is not None:
             img = _composer(n.enfants, w, h, seulement_visibles)
@@ -226,6 +251,7 @@ def _composer(noeuds, w: int, h: int, seulement_visibles: bool) -> QImage:
                 img = avec_masque(img, c.masque)
         else:
             img = rendre_calque(c)
+        base = (img, c.opacite)
         poser(res, img, c.opacite, getattr(c, "mode", "normal"))
     return res
 

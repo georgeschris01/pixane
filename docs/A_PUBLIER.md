@@ -26,6 +26,14 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
   le texte » (Arc, Drapeau, Vague, Poisson, Gonflement, Torsion… avec force et distorsions).
 - **Style par lettre** : sélectionner des lettres dans la case du panneau Texte pour ne changer qu'elles (police,
   taille, couleur, gras, exposant…) ; le style suit les lettres quand on tape.
+- **Texte sur un tracé** : « Dessiner un tracé » puis glisser sur la photo, le texte suit la ligne (lissée) ;
+  départ réglable, Retirer.
+- **Glyphes** (bouton Ω du panneau Texte) : tous les caractères de la police, recherche par nom ou code, derniers
+  utilisés ; un clic insère le caractère.
+- **Styles de texte** : copier / coller le style d'un texte ; styles enregistrés sous un nom.
+- **Masque d'écrêtage** (Ctrl+Alt+G, menu Calque, clic droit) : le calque ne se voit que dans celui du dessous,
+  par exemple une photo dans les lettres d'un texte qui reste modifiable. Gardé en .pixane et .psd (les PSD qui en
+  ont s'ouvrent maintenant correctement), mis dans les pixels en .ora.
 
 ## Corrections
 

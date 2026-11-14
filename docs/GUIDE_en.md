@@ -783,6 +783,24 @@ the box reminds you). Example: one word in red, a "2" as subscript.
 Without a selection, a setting changes **the whole text**, letters with their own style included. Letters typed
 afterwards take the style of the one before them.
 
+### Text on a path, glyphs, styles
+- **Text on a path**: **Draw a path** button (Layout part), then drag on the photo: the text follows the line you
+  draw (it is smoothed). **Start**: where the text begins along the path; **Remove**: the text becomes straight
+  again. The path follows the text when you move or rotate it; it is shown dotted.
+- **Glyphs** (**Ω** button next to the size): all the characters of the font (symbols, arrows, accented letters, ½,
+  ©, emojis…). One click inserts the character at the cursor; the recently used ones stay at the top. Search by
+  name (*arrow*, *heart*, *euro*) or by code (*U+2192*).
+- **Text styles** (bottom of the panel): **Copy** remembers the font, colour, effects and settings of the text;
+  **Paste** gives them to another text (its text and position do not change). **+** saves the style under a name;
+  it stays in the list for next time (choosing one applies it); **−** deletes one.
+
+### A photo inside the letters (clipping mask)
+As in Photoshop: put the photo (or a texture, a gradient…) **on a layer just above the text**, then **Ctrl+Alt+G**
+(Layer menu > *Clipping mask*, or right-click on the layer). The photo is now only visible **inside the letters**;
+the text stays editable (text, font, size…) and the photo can be moved. In the Layers panel, the clipped layer is
+indented with an arrow ↳. Ctrl+Alt+G again: removed. Works with any layer (not only a text). Kept in .pixane and
+.psd; in .ora it is merged into the pixels.
+
 ### Good to know
 - Every change can be undone with Ctrl+Z; typing several letters is undone in one go.
 - **Expand** and **Upscale** keep texts editable: they are shifted or redrawn sharp at the new size.
@@ -1075,6 +1093,7 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+U | Image adjustments |
 | Ctrl+L, Ctrl+M, Ctrl+B, Ctrl+Alt+Shift+B | Levels, Curves, Colour balance, Black & white |
 | Ctrl+G, Ctrl+Shift+G | Group, Ungroup |
+| Ctrl+Alt+G | Clipping mask (the layer only shows inside the one below) |
 | Ctrl+\ | Paint the layer's mask / pixels |
 | Ctrl+Alt+R | Refine edge |
 | Ctrl+R, Ctrl+', Ctrl+;, Ctrl+Shift+; | Rulers, Grid, Guides, Snap |

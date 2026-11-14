@@ -116,6 +116,9 @@ class Calque:
     origine: "Origine | None" = None
     # calque de pinceau modifiable (calque_pinceau.Pinceau) : valable tant que `image` est son dessin
     pinceau: object = None
+    # masque d'écrêtage (comme Photoshop, Ctrl+Alt+G) : le calque ne se voit que là où le calque juste en dessous
+    # (sa base) a des pixels, par exemple une photo dans les lettres d'un texte
+    ecretage: bool = False
 
     @staticmethod
     def depuis(nom: str, image: QImage, **kw) -> "Calque":
@@ -328,8 +331,23 @@ def calques_figes(calques, garder_groupes: bool = False, garder_masques: bool = 
 
     def figer(liste, dans):
         res = []
+        base = None                       # base des masques d'écrêtage (voir composition._composer)
         for n in liste:
             c = n.calque
+            if getattr(c, "ecretage", False) and not c.groupe and c.reglage is None and base is not None:
+                if garder_masques:            # PSD : Photoshop garde le masque d'écrêtage
+                    res.append(replace(c, image=rendre_calque(c) if (c.style is not None or
+                                                                      composition.masque_utile(c)) else c.image,
+                                       style=None, masque=None, dans=dans))
+                else:                         # mis dans les pixels
+                    img = composition.ecreter(rendre_calque(c), base) if base is not False else image_vide(w, h)
+                    res.append(replace(c, image=img, style=None, masque=None, dans=dans, ecretage=False))
+                if not garder_modes:
+                    res[-1] = replace(res[-1], mode="normal")
+                continue
+            if c.reglage is None:
+                base = (rendre_calque(c) if not c.groupe else
+                        composition._composer(n.enfants or [], w, h, True)) if c.visible else False
             if c.reglage is not None:
                 dessous = composition._composer([x for x in liste[:liste.index(n)]], w, h, True)
                 img = composition.appliquer_reglage(dessous, replace(c, opacite=1.0, masque=None))
@@ -1615,6 +1633,8 @@ def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False, reper
             if c.verrou:
                 a["edit-locked"] = "true"
             if natif:
+                if getattr(c, "ecretage", False):
+                    a["pixane-ecretage"] = "true"
                 if c.texte is not None:
                     a["pixane-texte"] = json.dumps(c.texte.vers_dict(), ensure_ascii=False)
                 if calque_pinceau.valide(c) is not None:
@@ -1680,7 +1700,8 @@ def lire_ora(chemin: Path) -> list[Calque]:
         def commun(e) -> dict:
             kw = dict(visible=e.get("visibility", "visible") != "hidden", opacite=float(e.get("opacity", 1)),
                       verrou=e.get("edit-locked", "false") == "true",
-                      mode=MODE_ORA.get(e.get("composite-op", "svg:src-over"), "normal"))
+                      mode=MODE_ORA.get(e.get("composite-op", "svg:src-over"), "normal"),
+                      ecretage=_attr(e, "ecretage") == "true")
             src = _attr(e, "masque")
             if src:
                 try:

@@ -216,8 +216,6 @@ def lire_psd(chemin: str | Path):
             continue
         if f["fusion"] not in MODE_PSD:
             remarques.add(tr("modes de fusion"))
-        if f["ecretage"]:
-            remarques.add(tr("masques d'écrêtage"))
         c = _vers_calque(f, W, H, mode)
         style, manque = None, False
         if b"lfx2" in f["infos"]:
@@ -227,7 +225,8 @@ def lire_psd(chemin: str | Path):
         if manque:
             remarques.add(tr("certains effets de style"))
         from dataclasses import replace
-        resultat.append(replace(c, style=style, dans=dans, mode=MODE_PSD.get(f["fusion"], "normal")))
+        resultat.append(replace(c, style=style, dans=dans, mode=MODE_PSD.get(f["fusion"], "normal"),
+                                ecretage=bool(f["ecretage"])))
     if not resultat or all(c.groupe for c in resultat):
         return _aplati(chemin, "")
     notes = []
@@ -436,7 +435,8 @@ def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = 
             extra += _bloc(b"lsct", struct.pack(">I", 1 if c.ouvert else 2) + b"8BIM" + cle)
         fiche = struct.pack(">iiiiH", haut, gauche, bas, droite, len(canaux))
         fiche += b"".join(struct.pack(">hI", ident, len(bloc)) for ident, bloc in canaux)
-        fiche += b"8BIM" + cle + struct.pack(">BBBB", round(c.opacite * 255), 0, 0 if c.visible else 2, 0)
+        fiche += b"8BIM" + cle + struct.pack(">BBBB", round(c.opacite * 255), 1 if getattr(c, "ecretage", False)
+                                             else 0, 0 if c.visible else 2, 0)
         fiche += struct.pack(">I", len(extra)) + extra
         fiches.append(fiche)
         donnees.append(b"".join(bloc for _i, bloc in canaux))

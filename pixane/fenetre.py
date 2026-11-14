@@ -249,6 +249,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.canevas.cadre_annule.connect(self._fin_agrandir)
         self.canevas.texte_nouveau.connect(self._nouveau_texte)
         self.canevas.texte_choisi.connect(self._texte_choisi)
+        self.canevas.trace_dessine.connect(self._trace_dessine)
         self.canevas.message.connect(lambda m: self.statusBar().showMessage(m, 6000))
         self.canevas.recadre_change.connect(self._recadre_change)
         self.canevas.recadre_valide.connect(self._recadrer)
@@ -1050,6 +1051,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             self._valider_transfo()
         if self.canevas.outil != outil and hasattr(self, "selection_auto"):
             self.selection_auto.fin_session()
+        if outil != TEXTE and hasattr(self, "panneau_texte"):
+            self.panneau_texte.bouton_trace.setChecked(False)      # « Dessiner un tracé » n'a lieu qu'avec l'outil T
         self.canevas.definir_outil(outil)
         self._actions_outils[outil].setChecked(True)
         self._maj_cible_degrade()
@@ -1206,6 +1209,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             pass
         self.panneau_texte.modifie.connect(self._texte_modifie)
         self.panneau_texte.apercu_police.connect(self._apercu_police)
+        self.panneau_texte.tracer.connect(self._mode_trace)
         self.dock_texte.setWidget(self.panneau_texte)
         self.dock_texte.setFixedWidth(290)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_texte)
@@ -1256,6 +1260,25 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         cle = ("texte", self._session_texte, doc.actif, champ)
         self.historique.push(CommandeEtat(doc, doc.etat(), doc.etat_texte_modifie(doc.actif, t),
                                           tr("Modifier le texte"), cle))
+
+    def _mode_trace(self, oui: bool):
+        """« Dessiner un tracé » : glisser sur la photo dessine la ligne que le texte suivra."""
+        self.canevas.trace_texte = oui
+        if oui:
+            self.statusBar().showMessage(tr("Glisse sur la photo pour dessiner la ligne que le texte va suivre."),
+                                         8000)
+
+    def _trace_dessine(self, points: list):
+        from .texte import trace_depuis
+        self.panneau_texte.bouton_trace.setChecked(False)
+        doc = self.doc
+        if not doc or doc.calque_actif.texte is None or doc.calque_actif.verrou:
+            return
+        t = doc.calque_actif.texte
+        t = replace(t, trace=trace_depuis(t, points), courbe=0.0, vertical=False)
+        self._session_texte += 1
+        self.historique.push(CommandeEtat(doc, doc.etat(), doc.etat_texte_modifie(doc.actif, t),
+                                          tr("Texte sur un tracé")))
 
     def _apercu_police(self, famille: str):
         """Police survolée dans la liste du panneau Texte : le texte de la photo la prend tout de suite (aperçu, pas

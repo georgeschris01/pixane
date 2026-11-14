@@ -116,7 +116,8 @@ class LigneCalque(QWidget):
 
     def remplir(self, c, vignette: QPixmap, vignette_masque: QPixmap | None, niveau: int, cible_masque: bool,
                 choisi: bool, visible_en_vrai: bool):
-        self.retrait.setFixedWidth(niveau * RETRAIT)
+        ecrete = getattr(c, "ecretage", False)
+        self.retrait.setFixedWidth(niveau * RETRAIT + (RETRAIT if ecrete else 0))   # écrêté : décalé, comme Photoshop
         self.fleche.setVisible(c.groupe)
         if c.groupe:
             self.fleche.setText("▾" if c.ouvert else "▸")
@@ -130,7 +131,7 @@ class LigneCalque(QWidget):
             effet = QGraphicsOpacityEffect(self.cadenas)
             self.cadenas.setGraphicsEffect(effet)
         effet.setOpacity(1.0 if c.verrou else 0.35)        # cadenas ouvert discret
-        self.nom.setText(c.nom)
+        self.nom.setText(("↳ " if ecrete else "") + c.nom)
         self.nom.setEnabled(visible_en_vrai)
         details = []
         if c.groupe:
@@ -141,6 +142,8 @@ class LigneCalque(QWidget):
             details.append(tr("texte"))
         elif calque_pinceau.valide(c) is not None:
             details.append(tr("pinceau modifiable"))
+        if ecrete:
+            details.append(tr("écrêté"))
         if c.style is not None and not c.style.vide():
             details.append(tr("fx · style"))
         if c.mode != "normal":
@@ -548,6 +551,9 @@ class PanneauCalques(QWidget):
                     menu.addAction(tr("Dégrouper"), self.degrouper).setShortcut("Ctrl+Shift+G")
                 if not c.special:
                     menu.addAction(tr("Style du calque…"), self.style_demande.emit).setShortcut("Ctrl+Alt+F")
+                if self.peut_ecreter():
+                    menu.addAction(tr("Retirer le masque d'écrêtage") if c.ecretage else
+                                   tr("Créer un masque d'écrêtage"), self.ecreter).setShortcut("Ctrl+Alt+G")
                 if c.masque is None and not c.verrou:
                     menu.addAction(tr("Ajouter un masque (d'après la sélection s'il y en a une)"),
                                    lambda: self.ajouter_masque())
@@ -656,6 +662,28 @@ class PanneauCalques(QWidget):
     def grouper(self):
         """Ctrl+G : les calques choisis (Ctrl+clic, Maj+clic) dans un même nouveau groupe."""
         self.demande.emit(self.doc.etat_grouper(set(self.choisis) | {self.doc.actif}), tr("Grouper"))
+
+    def peut_ecreter(self) -> bool:
+        """Masque d'écrêtage possible : calque de pixels (ou texte) avec un calque juste en dessous, dans le même
+        groupe."""
+        doc = self.doc
+        if doc is None or not doc.calques:
+            return False
+        i = doc.actif
+        c = doc.calques[i]
+        if c.special or c.verrou or i == 0:
+            return False
+        return doc.calques[i - 1].dans == c.dans
+
+    def ecreter(self):
+        """Ctrl+Alt+G : le calque ne se voit que dans les pixels du calque juste en dessous (ex. une photo dans les
+        lettres d'un texte) ; encore une fois : retiré."""
+        doc = self.doc
+        if not self.peut_ecreter():
+            return
+        c = doc.calques[doc.actif]
+        self.demande.emit(doc.etat_calque_modifie(doc.actif, ecretage=not c.ecretage),
+                          tr("Retirer le masque d'écrêtage") if c.ecretage else tr("Créer un masque d'écrêtage"))
 
     def degrouper(self):
         etat = self.doc.etat_degrouper()

@@ -812,6 +812,24 @@ italique, souligné, barré, lettres, largeur, hauteur, casse, position et ligne
 Sans sélection, un réglage change **tout le texte**, lettres à style propre comprises. Les lettres tapées ensuite
 prennent le style de celle qui les précède.
 
+### Texte sur un tracé, glyphes, styles
+- **Texte sur un tracé** : bouton **Dessiner un tracé** (partie Disposition), puis glissez sur la photo : le texte
+  suit la ligne dessinée (elle est lissée). **Départ** : où le texte commence le long du tracé ; **Retirer** : le
+  texte redevient droit. Le tracé suit le texte quand on le déplace ou le tourne ; il se voit en pointillés.
+- **Glyphes** (bouton **Ω** à côté de la taille) : tous les caractères de la police (symboles, flèches, lettres
+  accentuées, ½, ©, émojis…). Un clic insère le caractère à la place du curseur ; les derniers utilisés restent en
+  haut. Recherche par nom anglais (*arrow*, *heart*, *euro*) ou par code (*U+2192*).
+- **Styles de texte** (en bas du panneau) : **Copier** retient la police, la couleur, les effets et les réglages du
+  texte ; **Coller** les donne à un autre texte (son texte et sa place ne changent pas). **+** enregistre le style
+  sous un nom ; il reste dans la liste pour les prochaines fois (en choisir un l'applique) ; **−** en supprime un.
+
+### Une photo dans les lettres (masque d'écrêtage)
+Comme dans Photoshop : posez la photo (ou une texture, un dégradé…) **sur un calque juste au-dessus du texte**, puis
+**Ctrl+Alt+G** (menu Calque > *Masque d'écrêtage*, ou clic droit sur le calque). La photo ne se voit plus que
+**dans les lettres** ; le texte reste modifiable (texte, police, taille…) et la photo peut être déplacée. Dans le
+panneau Calques, le calque écrêté est décalé avec une flèche ↳. Ctrl+Alt+G encore une fois : retiré. Marche aussi
+avec n'importe quel calque (pas seulement un texte). Gardé en .pixane et .psd ; en .ora, il est mis dans les pixels.
+
 ### Bon à savoir
 - Toutes les modifications s'annulent avec Ctrl+Z ; une saisie de plusieurs lettres s'annule d'un seul coup.
 - **Agrandir** et **Upscale** gardent les textes modifiables : ils sont décalés ou redessinés nets à la nouvelle taille.
@@ -1112,6 +1130,7 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+U | Réglages de l'image |
 | Ctrl+L, Ctrl+M, Ctrl+B, Ctrl+Alt+Maj+B | Niveaux, Courbes, Balance des couleurs, Noir et blanc |
 | Ctrl+G, Ctrl+Maj+G | Grouper, Dégrouper |
+| Ctrl+Alt+G | Masque d'écrêtage (le calque ne se voit que dans celui du dessous) |
 | Ctrl+\ | Peindre le masque / les pixels du calque |
 | Ctrl+Alt+R | Améliorer le contour |
 | Ctrl+R, Ctrl+', Ctrl+;, Ctrl+Maj+; | Règles, Grille, Repères, Magnétisme |

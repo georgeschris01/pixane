@@ -200,6 +200,127 @@ verifier(t3.style_de(1)["taille"] == 180 and t3.cadre_l == 600 and t3.trace[1] =
 ancien = Texte.depuis_dict({"texte": "Ancien", "taille": 50})
 verifier(ancien.casse == "normale" and ancien.styles == (), "ancien texte (sans les nouveaux réglages) relu")
 
+
+# 8. tracé dessiné à la souris
+from pixane.document import Document
+f._choisir_outil(TEXTE)
+pt_.saisie.selectAll()
+pt_.saisie.insertPlainText("Le long du tracé")
+pt_.bouton_trace.setChecked(True)
+verifier(c.trace_texte, "Dessiner un tracé : le canevas attend la ligne")
+n = f.historique.count()
+ligne = [(200 + x, 300 + 60 * np.sin(x / 90)) for x in range(0, 600, 12)]
+ecran = [c.vers_ecran(QPointF(*q)) for q in ligne]
+c.event(QMouseEvent(QEvent.MouseButtonPress, ecran[0], ecran[0], Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
+for e in ecran[1:]:
+    c.event(QMouseEvent(QEvent.MouseMove, e, e, Qt.NoButton, Qt.LeftButton, Qt.NoModifier))
+c.event(QMouseEvent(QEvent.MouseButtonRelease, ecran[-1], ecran[-1], Qt.LeftButton, Qt.NoButton, Qt.NoModifier))
+t = T()
+verifier(len(t.trace) > 10 and not pt_.bouton_trace.isChecked() and not c.trace_texte, "tracé dessiné, bouton relâché")
+verifier(f.historique.count() == n + 1 and f.historique.undoText() == "Texte sur un tracé", "tracé annulable")
+r = forme(t)[0].boundingRect().translated(t.x, t.y)
+verifier(r.height() > t.taille * 1.5 and abs(r.left() - 200) < t.taille, f"le texte suit la ligne ({r.left():.0f}, {r.height():.0f})")
+verifier(not pt_.courbe.isEnabled() and pt_.retirer_trace.isEnabled(), "panneau : courbe grisée, Retirer actif")
+pt_.trace_debut.setValue(30)
+verifier(T().trace_debut == 30 and forme(T())[0].boundingRect().left() > forme(t)[0].boundingRect().left() + 50,
+         "départ 30 % : texte avancé sur le tracé")
+pt_.retirer_trace.click()
+verifier(T().trace == (), "tracé retiré")
+f.historique.undo()
+verifier(T().trace != (), "Annuler : tracé revenu")
+
+# 9. masque d'écrêtage : une photo dans les lettres
+texte_index = doc.actif
+yy, xx = np.mgrid[0:600, 0:1000]
+photo = np.dstack([xx * 255 // 1000, yy * 255 // 600, np.full_like(xx, 30), np.full_like(xx, 255)]).astype(np.uint8)
+from pixane.document import Calque, qimage_rgb
+from PySide6.QtGui import QImage
+qi = QImage(photo.data, 1000, 600, 4000, QImage.Format_RGBA8888).copy()
+f.historique.push(__import__("pixane.fenetre", fromlist=["CommandeEtat"]).CommandeEtat(
+    doc, doc.etat(), doc.inserer(Calque.depuis("Photo", qi)), "Photo"))
+verifier(doc.actif == texte_index + 1, "photo au-dessus du texte")
+avant = tableau(doc.image).copy()
+f.calques.ecreter()
+verifier(doc.calque_actif.ecretage, "Ctrl+Alt+G : masque d'écrêtage")
+apres = tableau(doc.image)
+alpha_texte = tableau(doc.calques[texte_index].image)[:, :, 3]
+hors = alpha_texte == 0
+dans = alpha_texte == 255
+verifier(np.abs(apres[hors][:, :3].astype(int) - 60).max() <= 1, "hors des lettres : le fond (photo cachée)")
+verifier(np.abs(apres[dans][:, :3].astype(int) - avant[dans][:, :3].astype(int)).max() <= 1, "dans les lettres : la photo")
+verifier(not np.array_equal(apres, avant), "l'image a changé")
+f.calques.rafraichir()
+doc.enregistrer(sortie / "ecretage.pixane")
+d2 = Document.ouvrir(sortie / "ecretage.pixane")
+verifier(d2.calques[texte_index + 1].ecretage and np.abs(tableau(d2.image).astype(int) - apres.astype(int)).max() <= 1,
+         ".pixane : écrêtage gardé, même image")
+doc.enregistrer(sortie / "ecretage.psd")
+d3 = Document.ouvrir(sortie / "ecretage.psd")
+verifier(d3.calques[-1].ecretage and not any("écrêtage" in r for r in d3.remarques), "PSD : écrêtage gardé, sans remarque")
+verifier(np.abs(tableau(d3.image)[:, :, :3].astype(int) - apres[:, :, :3].astype(int)).mean() < 1, "PSD relu : même image")
+doc.enregistrer(sortie / "ecretage.ora")
+d4 = Document.ouvrir(sortie / "ecretage.ora")
+verifier(not any(x.ecretage for x in d4.calques) and np.abs(tableau(d4.image).astype(int) - apres.astype(int)).max() <= 2,
+         ".ora (Krita, GIMP) : écrêtage mis dans les pixels, même image")
+doc.actif = texte_index
+f._sync_texte()
+pt_.styles["gras"].setChecked(True)
+dans2 = tableau(doc.calques[texte_index].image)[:, :, 3] == 255
+verifier(T().gras and dans2.sum() > dans.sum() and
+         np.abs(tableau(doc.image)[dans2][:, :3].astype(int) - avant[dans2][:, :3].astype(int)).max() <= 1,
+         "le texte reste modifiable sous la photo")
+doc.actif = texte_index + 1
+f.calques.ecreter()
+verifier(not doc.calque_actif.ecretage, "Ctrl+Alt+G encore : retiré")
+f.historique.undo()
+verifier(doc.calque_actif.ecretage, "Annuler")
+doc.actif = texte_index
+doc.calques_changes.emit()
+app.processEvents()
+
+# 10. glyphes
+from pixane.glyphes import caracteres
+cs = caracteres("Segoe UI")
+verifier("€" in cs and "é" in cs and "→" in cs and len(cs) > 500, f"glyphes de Segoe UI ({len(cs)})")
+pt_.ouvrir_glyphes()
+g = pt_._glyphes
+verifier(g.isVisible() and g.liste.count() == len(caracteres(T().police, T().gras, T().italique)), "fenêtre Glyphes : tous les caractères")
+g.cherche.setText("euro")
+verifier(any(g.liste.item(i).data(Qt.UserRole) == "€" for i in range(g.liste.count())), "recherche « euro »")
+curseur(len(T().texte))
+g._choisir("€")
+verifier(T().texte.endswith("€") and g.recents[0] == "€", "clic : € inséré, gardé dans les derniers")
+g.close()
+
+# 11. styles de texte
+reglages().remove("styles_texte")
+pt_._remplir_styles()
+pt_.saisie.selectAll()
+pt_.saisie.insertPlainText("Modèle")
+pt_.couleur.definir("#ff00aaff"); pt_.couleur.change.emit("#ff00aaff")
+pt_.effets["contour"][0].setChecked(True)
+modele = T()
+pt_._copier_style()
+f._nouveau_texte(QPointF(500, 500))
+pt_.saisie.selectAll()
+pt_.saisie.insertPlainText("Autre")
+pt_.couleur.definir("#ff112233"); pt_.couleur.change.emit("#ff112233")
+pt_.effets["contour"][0].setChecked(False)
+pt_.coller_style.click()
+t = T()
+verifier(t.texte == "Autre" and t.couleur == "#ff00aaff" and t.contour and abs(t.x - 500) < 1, "coller le style : couleur et contour, texte et place gardés")
+QInputDialog_ = __import__("PySide6.QtWidgets", fromlist=["QInputDialog"]).QInputDialog
+QInputDialog_.getText = staticmethod(lambda *a, **k: ("Titre bleu", True))
+pt_._enregistrer_style()
+verifier(pt_.styles_enr.findData("Titre bleu") > 0, "style enregistré dans la liste")
+pt_.couleur.definir("#ff112233"); pt_.couleur.change.emit("#ff112233")
+pt_._style_choisi(pt_.styles_enr.findData("Titre bleu"))
+verifier(T().couleur == "#ff00aaff", "style enregistré appliqué")
+pt_.styles_enr.setCurrentIndex(pt_.styles_enr.findData("Titre bleu"))
+QInputDialog_.getItem = staticmethod(lambda *a, **k: ("Titre bleu", True))
+pt_._supprimer_style()
+verifier(pt_.styles_enr.findData("Titre bleu") < 0, "style supprimé")
+
 Image.fromarray(tableau(doc.image)).save(sortie / "resultat.png")
 print("ERREURS :", erreurs if erreurs else "aucune")
 doc.modifie = False

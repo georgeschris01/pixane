@@ -19,7 +19,7 @@ from .langue import tr
 from .pointe import Pointe, Reglages
 from .retouche import GOMME as EFFACER
 from .retouche import Trait
-from .texte import contient, contour_bloc, rendre
+from .texte import contient, contour_bloc, rendre, transformation
 from .transformation import POIGNEES, Transformation
 
 MAIN, RECTANGLE, LASSO, PINCEAU, GOMME = "main", "rectangle", "lasso", "pinceau", "gomme"
@@ -63,6 +63,7 @@ class Canevas(QWidget):
     cadre_annule = Signal()                     # Échap pendant Agrandir
     texte_nouveau = Signal(object)              # outil Texte : clic hors des textes -> point (image)
     texte_choisi = Signal(int)                  # outil Texte : clic sur un calque de texte -> son index
+    trace_dessine = Signal(list)                # outil Texte, « Dessiner un tracé » : points (image) du tracé
     degrade_masque = Signal()                   # dégradé commencé sur un masque (il rend transparent, ne colore pas)
     couleur_prise = Signal(str)                 # pinceau de couleur : Alt+clic (pipette) -> couleur « #rrggbb »
     recadre_change = Signal(object)             # outil Recadrer : QRect (image) ou None
@@ -114,6 +115,8 @@ class Canevas(QWidget):
         self._poignee = None         # (cible « ext » / « int » / « ? », côtés parmi "h", "b", "g", "d")
         self._depart = None          # point (image) où le glisser du cadre a commencé
         self._texte_glisse = None    # (index, « deplacer » / « tourner », départ, Texte d'origine, état d'avant)
+        self.trace_texte = False     # « Dessiner un tracé » du panneau Texte : glisser dessine la ligne du texte
+        self._trace_points = None    # tracé en cours (points image)
         self._fleches = None         # outil Déplacer aux flèches : (genre, index, origine, état d'avant, [dx, dy])
         self._calque_glisse = None   # outil Déplacer : (index, départ, image d'origine, état d'avant)
         # pinceau de couleur et tampon
@@ -653,12 +656,26 @@ class Canevas(QWidget):
     def _dessiner_cadre_texte(self, p: QPainter):
         if self.outil != TEXTE or self.cadre is not None:
             return
+        if self._trace_points:                      # tracé en train d'être dessiné
+            p.save()
+            p.setRenderHint(QPainter.Antialiasing)
+            ligne = QPolygonF([self.vers_ecran(q) for q in self._trace_points])
+            p.setPen(QPen(QColor(0, 0, 0, 150), 3))
+            p.drawPolyline(ligne)
+            p.setPen(QPen(self.couleur_accent, 1.5))
+            p.drawPolyline(ligne)
+            p.restore()
         t = self._texte_actif()
         if t is None:
             return
         ecran, haut, poignee = self._cadre_texte_ecran(t)
         p.save()
         p.setRenderHint(QPainter.Antialiasing)
+        if t.trace and not self._trace_points:      # le tracé du texte, en pointillés
+            tr_ = transformation(t)
+            ligne = QPolygonF([self.vers_ecran(tr_.map(QPointF(x, y))) for x, y in t.trace])
+            p.setPen(QPen(self.couleur_accent, 1, Qt.DotLine))
+            p.drawPolyline(ligne)
         p.setBrush(Qt.NoBrush)
         p.setPen(QPen(QColor(0, 0, 0, 150), 1))
         p.drawPolygon(ecran)
@@ -680,6 +697,9 @@ class Canevas(QWidget):
 
     def _presser_texte(self, pos: QPointF):
         pt = self.vers_image(pos)
+        if self.trace_texte and self._texte_actif() is not None and not self.doc.calque_actif.verrou:
+            self._trace_points = [pt]               # dessiner le tracé du texte
+            return
         if self._sur_poignee_texte(pos):
             index, mode = self.doc.actif, "tourner"
         else:
@@ -1834,6 +1854,12 @@ class Canevas(QWidget):
                 self._curseur_transfo(self._sous_transfo(pos))
             self.update()
             return
+        if self._trace_points is not None:
+            pt = self.vers_image(pos)
+            if QLineF(pt, self._trace_points[-1]).length() * self.zoom >= 2:
+                self._trace_points.append(pt)
+                self.update()
+            return
         if self._texte_glisse is not None:
             self._glisser_texte(pos, bool(e.modifiers() & Qt.ShiftModifier))
             return
@@ -1917,6 +1943,12 @@ class Canevas(QWidget):
                 self.transfo.finir()
                 self._apercu_transfo(lisse=True)
                 self.transfo_change.emit()
+            return
+        if self._trace_points is not None:
+            points, self._trace_points = self._trace_points, None
+            self.update()
+            if len(points) >= 2:
+                self.trace_dessine.emit(points)
             return
         if self._texte_glisse is not None:
             self._lacher_texte()
