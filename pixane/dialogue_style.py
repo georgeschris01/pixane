@@ -408,7 +408,7 @@ class DialogueStyle(QDialog):
             elif genre == "degrade":
                 from .degrades import BoutonDegrade
                 from .styles import points_degrade
-                champ = BoutonDegrade(points_degrade(e), largeur=150, avec_peinture=False)
+                champ = BoutonDegrade(points_degrade(e), largeur=150, avec_peinture=False, en_direct=True)
             elif genre == "choix":
                 champ = QComboBox()
                 for code, nom in reglage[4].items():

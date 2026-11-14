@@ -63,6 +63,7 @@ class Canevas(QWidget):
     cadre_annule = Signal()                     # Échap pendant Agrandir
     texte_nouveau = Signal(object)              # outil Texte : clic hors des textes -> point (image)
     texte_choisi = Signal(int)                  # outil Texte : clic sur un calque de texte -> son index
+    degrade_masque = Signal()                   # dégradé commencé sur un masque (il rend transparent, ne colore pas)
     couleur_prise = Signal(str)                 # pinceau de couleur : Alt+clic (pipette) -> couleur « #rrggbb »
     recadre_change = Signal(object)             # outil Recadrer : QRect (image) ou None
     recadre_valide = Signal()                   # Entrée ou double-clic dans le cadre
@@ -120,6 +121,11 @@ class Canevas(QWidget):
         self.durete = 0.8            # 0 = bord très doux, 1 = bord net
         from .degrades import defaut as degrade_defaut
         self.degrade = degrade_defaut()       # dégradé à plusieurs points (pixane.degrades)
+        self.garder_transparence = False      # dégradé seulement sur les pixels déjà peints
+        self._degrade_depart = None           # dégradé en cours : (état d'avant, calque, image, sur le masque ?)
+        self._minuteur_degrade = QTimer(self, singleShot=True, interval=30)   # aperçu en direct pendant le glissé
+        self._minuteur_degrade.timeout.connect(self._apercu_degrade)
+        self.masque_explique = False          # message « le dégradé va dans le masque » déjà montré (fenêtre)
         self.forme_degrade = "lineaire"
         self.tolerance_seau = 32
         self.seau_tous_calques = False   # pot de peinture : zone d'après l'image visible (sinon : le calque choisi)
@@ -942,8 +948,14 @@ class Canevas(QWidget):
                                        "texte (Ctrl+Z pour revenir).", nom=self.doc.calque_actif.nom))
                 self._poser_dessin(res, sur_masque, tr("Pot de peinture"), avant)
             return
-        if self.outil == DEGRADE and self._cible_image() is None:
-            return
+        if self.outil == DEGRADE:
+            cible = self._cible_image()
+            if cible is None:
+                return
+            img, sur_masque = cible
+            self._degrade_depart = (self.doc.etat(), self.doc.actif, img, sur_masque)
+            if sur_masque:
+                self.degrade_masque.emit()
         pt = regles.aimanter(self, pt)
         self._glisse_dessin = [pt, pt, bool(mods & Qt.ShiftModifier)]
 
@@ -954,23 +966,66 @@ class Canevas(QWidget):
             b = contraindre(a, b, "ligne" if self.outil == DEGRADE else self.forme)
         return a, b
 
+    def _calcul_degrade(self, a, b):
+        """Résultat du dégradé de a à b, d'après le calque tel qu'il était au début du glissé :
+        ("style", style) sur un texte (Incrustation dégradé : les lettres seules, le texte reste modifiable),
+        sinon ("pixels", image, sur le masque ?)."""
+        _etat, index, img, sur_masque = self._degrade_depart
+        calque = _etat[0][index]
+        if calque.texte is not None and not sur_masque:
+            from .styles import avec_effet, effet_degrade_glisse
+            e = effet_degrade_glisse(calque.image, a, b, self.forme_degrade, self.degrade,
+                                     QColor(self.couleur_peinture), self.opacite)
+            return "style", avec_effet(calque.style, e)
+        from .outils_dessin import degrade
+        sel = None if self.doc.selection_vide() else self.doc.selection
+        res = degrade(img, a, b, self.forme_degrade, self.degrade, QColor(self.couleur_peinture), self.opacite,
+                      sel, gris=sur_masque, garder_alpha=self.garder_transparence and not sur_masque)
+        return "pixels", res, sur_masque
+
+    def _montrer_degrade(self, r):
+        index = self._degrade_depart[1]
+        if r[0] == "style":
+            self.doc.apercu_style(index, r[1])
+        elif r[2]:
+            self.doc.apercu_masque(index, argb_vers_masque(r[1]))
+        else:
+            self.doc.apercu_calque(index, r[1])
+
+    def _apercu_degrade(self):
+        """Pendant le glissé : le dégradé montré en direct sur le calque (ou les lettres du texte)."""
+        if self._glisse_dessin is None or self._degrade_depart is None or self.outil != DEGRADE:
+            return
+        a, b = self._fin_glisse()
+        if (b - a).manhattanLength() < 2:
+            return
+        self._montrer_degrade(self._calcul_degrade(a, b))
+
     def _lacher_dessin(self):
         a, b = self._fin_glisse()
         self._glisse_dessin = None
+        if self.outil == DEGRADE and self._degrade_depart is not None:
+            self._minuteur_degrade.stop()
+            avant = self._degrade_depart[0]
+            if (b - a).manhattanLength() < 2:            # simple clic : rien (l'aperçu éventuel est retiré)
+                modifie = self.doc.modifie
+                self.doc.appliquer_etat(avant)
+                self.doc.modifie = modifie
+                self._degrade_depart = None
+                return
+            r = self._calcul_degrade(a, b)
+            self._montrer_degrade(r)
+            self._degrade_depart = None
+            if r[0] == "style":
+                self.refus.emit(tr("Dégradé posé sur les lettres (style « Incrustation dégradé ») : le texte reste "
+                                   "modifiable. Calque > Style du calque pour le régler."))
+                self.selection_modifiee.emit(avant, tr("Dégradé sur le texte"))
+            else:
+                self.selection_modifiee.emit(avant, tr("Dégradé"))
+            return
         if (b - a).manhattanLength() < 2:
             return
         avant = self.doc.etat()
-        if self.outil == DEGRADE:
-            cible = self._cible_image()
-            if cible is None:
-                return
-            img, sur_masque = cible
-            from .outils_dessin import degrade
-            sel = None if self.doc.selection_vide() else self.doc.selection
-            res = degrade(img, a, b, self.forme_degrade, self.degrade, QColor(self.couleur_peinture), self.opacite,
-                          sel, gris=sur_masque)
-            self._poser_dessin(res, sur_masque, tr("Dégradé"), avant)
-            return
         from .outils_dessin import forme, noms_formes
         w, h = self.doc.taille()
         img = forme(w, h, self.forme, a, b, QColor(self.couleur_peinture), self.forme_remplie,
@@ -1721,6 +1776,8 @@ class Canevas(QWidget):
         if self._glisse_dessin is not None:
             self._glisse_dessin[1] = regles.aimanter(self, self.vers_image(pos))
             self._glisse_dessin[2] = bool(e.modifiers() & Qt.ShiftModifier)
+            if self.outil == DEGRADE and not self._minuteur_degrade.isActive():
+                self._minuteur_degrade.start()
         if self._trace is not None:
             pt = self.vers_image(pos)
             if self.outil == GOMME_CALQUE:

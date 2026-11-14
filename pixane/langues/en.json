@@ -1255,5 +1255,12 @@
  "Proche": "Close",
  "Proche : petites retouches, presque la même image. Libre : la même idée, retravaillée davantage.": "Close: small touch-ups, almost the same image. Free: the same idea, reworked more.",
  "Variante": "Variation",
- "Variante de {n}": "Variation of {n}"
+ "Variante de {n}": "Variation of {n}",
+ "Dégradé posé sur les lettres (style « Incrustation dégradé ») : le texte reste modifiable. Calque > Style du calque pour le régler.": "Gradient applied to the letters (“Gradient overlay” style): the text stays editable. Layer > Layer style to adjust it.",
+ "Dégradé sur le texte": "Gradient on text",
+ "Garder la transparence": "Keep transparency",
+ "Le dégradé ne se pose que sur ce qui est déjà peint dans le calque (un objet détouré, des lettres) : le vide autour reste vide.": "The gradient only goes on what is already painted in the layer (a cut-out object, letters): the empty space around stays empty.",
+ "Le dégradé va dans le masque du calque : il rend le calque plus ou moins transparent, il ne le colore pas. Pour colorer, clique sur la vignette du calque (panneau Calques) ; pour un texte, le dégradé se pose alors sur les lettres.": "The gradient goes into the layer mask: it makes the layer more or less transparent, it does not colour it. To colour, click the layer thumbnail (Layers panel); for a text, the gradient then goes on the letters.",
+ "Le masque du calque est choisi (panneau Calques) : le dégradé y rend le calque plus ou moins transparent, il ne le colore pas. Pour colorer : clique sur la vignette du calque.": "The layer mask is selected (Layers panel): there the gradient makes the layer more or less transparent, it does not colour it. To colour: click the layer thumbnail.",
+ "→ dans le masque": "→ in the mask"
 }

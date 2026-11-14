@@ -422,6 +422,49 @@ def _degrade(A, e, boite):
     return tab[i, :3], tab[i, 3]
 
 
+def effet_degrade_glisse(image: QImage, a, b, forme: str, points: dict, peinture: QColor,
+                        opacite: float) -> "Effet":
+    """Outil Dégradé sur un texte : l'effet « Incrustation dégradé » qui suit le glissé de a à b (sens, longueur par
+    rapport aux lettres, forme). Les points « couleur de peinture » prennent la couleur du moment (un style garde
+    ses couleurs)."""
+    from .degrades import PEINTURE, normaliser
+    from .document import FORMAT_IMAGE, tableau
+    d = normaliser(points)
+    for p in d["couleurs"]:
+        if p["couleur"] == PEINTURE:
+            p["couleur"] = QColor(peinture).name()
+    dx, dy = b.x() - a.x(), b.y() - a.y()
+    angle = round(math.degrees(math.atan2(-dy, dx))) % 360
+    if angle > 180:
+        angle -= 360
+    alpha = tableau(image.convertToFormat(FORMAT_IMAGE))[:, :, 3]
+    ys, xs = np.nonzero(alpha)
+    echelle = 100
+    if len(ys):
+        w, h = xs.max() + 1 - xs.min(), ys.max() + 1 - ys.min()
+        longueur = math.hypot(dx, dy)
+        if forme == "radial":
+            etendue = math.hypot(w, h) / 2
+        else:
+            u = math.radians(angle)
+            etendue = abs(math.cos(u)) * w + abs(math.sin(u)) * h
+        echelle = round(max(10, min(150, longueur / max(1.0, etendue) * 100)))
+    return Effet.nouveau("degrade", degrade=d, angle=angle, forme="radial" if forme == "radial" else "lineaire",
+                         echelle=echelle, opacite=round(opacite * 100))
+
+
+def avec_effet(style: "Style | None", effet: "Effet") -> "Style":
+    """Le style avec cet effet : remplace le premier effet du même type, sinon l'ajoute."""
+    effets = list(style.effets) if style is not None else []
+    for i, e in enumerate(effets):
+        if e.type == effet.type:
+            effets[i] = effet
+            break
+    else:
+        effets.append(effet)
+    return Style(tuple(effets), style.remplissage if style is not None else 1.0)
+
+
 def _points(*couleurs) -> dict:
     """Dégradé (pixane.degrades) d'après des (couleur, position), sans transparence."""
     return {"couleurs": [{"pos": p, "couleur": c, "milieu": 0.5} for c, p in couleurs],

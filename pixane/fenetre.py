@@ -228,6 +228,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.canevas = Canevas()
         self.canevas.selection_modifiee.connect(self._selection_modifiee)
         self.canevas.refus.connect(lambda m: self.statusBar().showMessage(m, 6000))
+        self.canevas.degrade_masque.connect(self._degrade_dans_masque)
         from .regles import entourer
         cadre, self.regle_h, self.regle_v, self.coin_regles = entourer(self.canevas)
         self.setCentralWidget(self._centre_avec_onglets(cadre))
@@ -927,6 +928,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             self.selection_auto.fin_session()
         self.canevas.definir_outil(outil)
         self._actions_outils[outil].setChecked(True)
+        self._maj_cible_degrade()
         if outil in self._bouton_groupe:
             bouton = self._bouton_groupe[outil]
             menu = bouton.menu()
@@ -1234,8 +1236,21 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             self.panneau_texte.appliquer_icones()
         self._peindre_pastille_moteur()
 
+    def _maj_cible_degrade(self):
+        """Étiquette « → dans le masque » de l'outil Dégradé."""
+        lab = getattr(self, "opt_degrade_masque", None)
+        if lab is not None:
+            lab.setVisible(self.doc is not None and self.canevas.outil == DEGRADE and self.canevas.sur_masque())
+
+    def _degrade_dans_masque(self):
+        self.statusBar().showMessage(tr("Le dégradé va dans le masque du calque : il rend le calque plus ou moins "
+                                        "transparent, il ne le colore pas. Pour colorer, clique sur la vignette du "
+                                        "calque (panneau Calques) ; pour un texte, le dégradé se pose alors sur "
+                                        "les lettres."), 12000)
+
     def _actualiser(self):
         a_doc = self.doc is not None
+        self._maj_cible_degrade()
         pret = a_doc and self.moteur.etat == "prêt"
         for a in (self.a_enregistrer, self.a_enregistrer_sous, self.a_fermer, self.a_tout, self.a_rien, self.a_inverser,
                   self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster, self.a_recadrer_selection, self.a_taille,
@@ -1441,7 +1456,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             self.canevas.annuler_recadre()
         ancien = self.doc
         if ancien is not None:
-            for signal, fonction in ((ancien.change, self._actualiser), (ancien.calques_changes, self._sync_texte)):
+            for signal, fonction in ((ancien.change, self._actualiser), (ancien.calques_changes, self._sync_texte),
+                                     (ancien.calques_changes, self._maj_cible_degrade)):
                 try:
                     signal.disconnect(fonction)
                 except (RuntimeError, TypeError):
@@ -1450,6 +1466,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         if doc is not None:
             doc.change.connect(self._actualiser)
             doc.calques_changes.connect(self._sync_texte)
+            doc.calques_changes.connect(self._maj_cible_degrade)
         self.barre_agrandir.hide()
         self.canevas.cadre = None
         if hasattr(self, "selection_auto"):

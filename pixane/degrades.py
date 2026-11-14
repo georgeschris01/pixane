@@ -471,7 +471,9 @@ class BarreDegrade(QWidget):
 
 # ------------------------------------------------------------------ fenêtre
 class EditeurDegrade(QDialog):
-    """Éditeur de dégradé. Après exec() : self.degrade (dict normalisé)."""
+    """Éditeur de dégradé. Après exec() : self.degrade (dict normalisé). Signal en_direct(dict) à chaque
+    changement (aperçu sur le calque pendant qu'on règle)."""
+    en_direct = Signal(object)
 
     def __init__(self, d: dict, peinture=None, parent=None, avec_peinture: bool = True):
         super().__init__(parent)
@@ -572,6 +574,7 @@ class EditeurDegrade(QDialog):
         lay.addLayout(bas)
 
         self.barre.choix_change.connect(self._maj_choix)
+        self.barre.change.connect(lambda: self.en_direct.emit(self.degrade))
         self._remplir_liste()
         self._maj_choix()
         self.resize(560, 470)
@@ -681,8 +684,9 @@ class BoutonDegrade(QToolButton):
     change = Signal(object)
 
     def __init__(self, d: dict | None = None, peinture=None, parent=None, largeur: int = 64,
-                 avec_peinture: bool = True):
+                 avec_peinture: bool = True, en_direct: bool = False):
         super().__init__(parent)
+        self.en_direct = en_direct        # change émis à chaque réglage dans l'éditeur (et l'ancien remis si Annuler)
         self.peinture = peinture          # fonction qui donne la couleur de peinture du moment (ou None)
         self.avec_peinture = avec_peinture
         self.largeur = largeur
@@ -705,7 +709,18 @@ class BoutonDegrade(QToolButton):
                                                           self._couleur_peinture(), 4))))
 
     def choisir(self):
+        depart = copy.deepcopy(self.degrade)
         dlg = EditeurDegrade(copy.deepcopy(self.degrade), self._couleur_peinture(), self.window(), self.avec_peinture)
-        if dlg.exec():
-            self.definir(dlg.degrade)
+        if self.en_direct:
+            dlg.en_direct.connect(self.change.emit)
+        ok = dlg.exec()
+        choisi = dlg.degrade
+        if self.en_direct:
+            dlg.en_direct.disconnect()
+        dlg.deleteLater()                    # fenêtre détruite (sinon elle reste attachée à sa fenêtre parente)
+        if ok:
+            self.definir(choisi)
             self.change.emit(self.degrade)
+        elif self.en_direct:                 # Annuler : le dégradé d'avant revient sur le calque
+            self.definir(depart)
+            self.change.emit(depart)

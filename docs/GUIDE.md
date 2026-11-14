@@ -878,9 +878,20 @@ peau, une rayure sur un ciel dégradé.
 ### Dégradé (D)
 Glissez du début à la fin du dégradé (**Maj** : horizontal, vertical ou à 45°). Barre du haut : **Linéaire** ou
 **Radial**, puis l'**aperçu du dégradé** : un clic dessus ouvre l'**éditeur de dégradé** (comme dans Photoshop).
-Dans la sélection s'il y en a une. Sur un **masque**, il fait un fondu progressif (par exemple pour mélanger deux
-photos) : les couleurs y deviennent des gris, et la partie transparente du dégradé devient le gris opposé à la
-couleur de peinture (blanc pour une couleur foncée).
+Dans la sélection s'il y en a une. Pendant que vous tirez, le résultat se voit **en direct** sur le calque ;
+il est posé quand vous lâchez la souris (Ctrl+Z pour revenir).
+- Sur un **calque de texte**, le dégradé se pose **sur les lettres seules**, comme style « Incrustation dégradé » :
+  le texte reste modifiable, et un nouveau dégradé remplace le précédent. Le sens et la longueur du glissé
+  donnent l'angle et l'échelle ; pour les retoucher : **Calque > Style du calque**.
+- **Garder la transparence** (case de la barre du haut) : sur un calque image, le dégradé ne se pose que sur ce
+  qui est déjà peint (un objet détouré, un dessin) ; le vide autour reste vide.
+- Sur un **masque** (vignette du masque choisie dans le panneau Calques ; la barre du haut affiche alors
+  **« → dans le masque »**), le dégradé ne colore pas : il rend le calque plus ou moins transparent, pour un fondu
+  progressif (par exemple pour mélanger deux photos). Les couleurs y deviennent des gris, et la partie
+  transparente du dégradé devient le gris opposé à la couleur de peinture (blanc pour une couleur foncée). Pour
+  colorer, cliquez d'abord sur la vignette du calque.
+- L'éditeur règle le **prochain** dégradé : ouvrez-le avant de tirer. Dans la fenêtre Style du calque, au
+  contraire, chaque réglage de l'éditeur se voit tout de suite sur le calque (Annuler remet l'ancien).
 
 **Éditeur de dégradé** :
 - En haut, les **dégradés tout prêts** (couleur de peinture vers transparent, noir vers blanc, arc-en-ciel, or,

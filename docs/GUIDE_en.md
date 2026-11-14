@@ -845,9 +845,19 @@ blemish, a scratch on a graded sky.
 ### Gradient (D)
 Drag from the start to the end of the gradient (**Shift**: horizontal, vertical or 45°). Top bar: **Linear** or
 **Radial**, then the **gradient preview**: click it to open the **gradient editor** (as in Photoshop). Inside the
-selection if there is one. On a **mask**, it makes a gradual fade (for example to blend two photos): colours become
-greys there, and the transparent part of the gradient becomes the grey opposite to the paint colour (white for a dark
-colour).
+selection if there is one. While you drag, the result shows **live** on the layer; it is applied when you release
+the mouse (Ctrl+Z to go back).
+- On a **text layer**, the gradient goes **on the letters only**, as a "Gradient overlay" style: the text stays
+  editable, and a new gradient replaces the previous one. The direction and length of the drag give the angle and
+  scale; to adjust them: **Layer > Layer style**.
+- **Keep transparency** (box in the top bar): on an image layer, the gradient only goes on what is already painted
+  (a cut-out object, a drawing); the empty space around stays empty.
+- On a **mask** (mask thumbnail selected in the Layers panel; the top bar then shows **"→ in the mask"**), the
+  gradient does not colour: it makes the layer more or less transparent, for a gradual fade (for example to blend
+  two photos). Colours become greys there, and the transparent part of the gradient becomes the grey opposite to
+  the paint colour (white for a dark colour). To colour, click the layer thumbnail first.
+- The editor sets the **next** gradient: open it before dragging. In the Layer style window, on the other hand,
+  each change in the editor shows on the layer straight away (Cancel brings back the previous one).
 
 **Gradient editor**:
 - At the top, the **ready-made gradients** (paint colour to transparent, black to white, rainbow, gold, chrome,

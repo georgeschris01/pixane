@@ -239,15 +239,30 @@ class ActionsCalques:
                                    QColor(self.reglages.value("degrade_couleur2", "#ffffffff")).name())
         self.opt_degrade_bouton = BoutonDegrade(depart, lambda: QColor(c.couleur_peinture))
         lay.addWidget(self.opt_degrade_bouton)
+        garder = QCheckBox(tr("Garder la transparence"))
+        garder.setToolTip(tr("Le dégradé ne se pose que sur ce qui est déjà peint dans le calque (un objet détouré, "
+                             "des lettres) : le vide autour reste vide."))
+        garder.setChecked(self.reglages.value("degrade_garder_transparence", "false") == "true")
+        lay.addWidget(garder)
+        self.opt_degrade_masque = QLabel(tr("→ dans le masque"))
+        self.opt_degrade_masque.setStyleSheet("color: #d97706; font-weight: bold;")
+        self.opt_degrade_masque.setToolTip(tr("Le masque du calque est choisi (panneau Calques) : le dégradé y rend "
+                                              "le calque plus ou moins transparent, il ne le colore pas. Pour "
+                                              "colorer : clique sur la vignette du calque."))
+        self.opt_degrade_masque.hide()
+        lay.addWidget(self.opt_degrade_masque)
 
         def maj_degrade(*_):
             import json
             c.forme_degrade = forme.currentData()
             c.degrade = self.opt_degrade_bouton.degrade
+            c.garder_transparence = garder.isChecked()
+            self.reglages.setValue("degrade_garder_transparence", "true" if garder.isChecked() else "false")
             self.reglages.setValue("degrade_forme", forme.currentData())
             self.reglages.setValue("degrade_points", json.dumps(c.degrade))
         forme.currentIndexChanged.connect(maj_degrade)
         self.opt_degrade_bouton.change.connect(maj_degrade)
+        garder.toggled.connect(maj_degrade)
         maj_degrade()
         tout.addWidget(self.opt_degrade)
         # pot de peinture

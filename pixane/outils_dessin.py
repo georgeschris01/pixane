@@ -24,8 +24,10 @@ def _alpha_selection(selection: QImage | None) -> QImage | None:
     return selection
 
 
-def _poser(base: QImage, calque: QImage, opacite: float, selection: QImage | None) -> QImage:
-    """calque (taille de base) posé sur base, seulement dans la sélection s'il y en a une."""
+def _poser(base: QImage, calque: QImage, opacite: float, selection: QImage | None,
+           garder_alpha: bool = False) -> QImage:
+    """calque (taille de base) posé sur base, seulement dans la sélection s'il y en a une.
+    garder_alpha : seulement sur les pixels déjà peints, sans changer leur transparence (« Garder la transparence »)."""
     if selection is not None:
         p = QPainter(calque)
         p.setCompositionMode(QPainter.CompositionMode_DestinationIn)
@@ -33,6 +35,8 @@ def _poser(base: QImage, calque: QImage, opacite: float, selection: QImage | Non
         p.end()
     res = base.copy()
     p = QPainter(res)
+    if garder_alpha:
+        p.setCompositionMode(QPainter.CompositionMode_SourceAtop)
     p.setOpacity(opacite)
     p.drawImage(0, 0, calque)
     p.end()
@@ -41,9 +45,10 @@ def _poser(base: QImage, calque: QImage, opacite: float, selection: QImage | Non
 
 # ------------------------------------------------------------------ dégradé
 def degrade(base: QImage, a: QPointF, b: QPointF, forme: str, points: dict, peinture: QColor, opacite: float,
-            selection: QImage | None = None, gris: bool = False) -> QImage:
+            selection: QImage | None = None, gris: bool = False, garder_alpha: bool = False) -> QImage:
     """Dégradé à plusieurs points (pixane.degrades) du point a au point b ; peinture : couleur des points
-    « couleur de peinture » ; gris : couleurs changées en gris (sur un masque)."""
+    « couleur de peinture » ; gris : couleurs changées en gris (sur un masque) ; garder_alpha : seulement sur les
+    pixels déjà peints (lettres d'un texte, objet détouré), leur transparence ne change pas."""
     from .degrades import remplir_qgradient
     if forme == "radial":
         g = QRadialGradient(a, max(1.0, QLineF(a, b).length()))
@@ -55,7 +60,7 @@ def degrade(base: QImage, a: QPointF, b: QPointF, forme: str, points: dict, pein
     p = QPainter(tmp)
     p.fillRect(tmp.rect(), QBrush(g))
     p.end()
-    return _poser(base, tmp, opacite, selection)
+    return _poser(base, tmp, opacite, selection, garder_alpha)
 
 
 # ------------------------------------------------------------------ pot de peinture

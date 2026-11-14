@@ -17,6 +17,7 @@
 - **Remplir** une zone : l'IA invente ce qui va le mieux à cet endroit (avec ou sans texte)
 - **Agrandir l'image** au-delà de ses bords (outpaint) : l'IA prolonge le décor ; elle refait aussi les bords abîmés
 - **Upscale** : augmenter la définition (×1,5 à ×4), en version rapide ou plus nette (détails redessinés)
+- **Partir de celle-ci** : une proposition presque bonne ? L'IA en fait des variantes (réglage Proche ↔ Libre), au lieu de tout recommencer
 - **Supprimer** (J) : un coup de pinceau sur un petit défaut (fil, tache, poussière), il disparaît au lâcher
 - **Supprimer l'arrière-plan** et **Sélectionner le sujet** en un clic
 - **Réduire le bruit** (grain, défauts JPEG) et **Netteté** (flou léger)
@@ -31,12 +32,14 @@
 **Calques, comme dans Photoshop**
 - Visibilité, opacité, verrou, ordre (boutons ou **glisser à la souris**), fusion, aplatir
 - **17 modes de fusion**, **masques de calque**, **groupes**, **calques de réglage** modifiables à tout moment
-- **Styles de calque** non destructifs : ombre portée (dont ombre réaliste), ombre au sol en perspective, ombre interne, lueurs, contours multiples, biseau, incrustations couleur et dégradé ; 14 styles tout prêts, styles enregistrés
+- **Styles de calque** non destructifs : ombre portée (dont ombre réaliste), ombre au sol en perspective, ombre interne, lueurs, contours multiples, biseau, incrustations couleur, dégradé (plusieurs couleurs) et motif ; 14 styles tout prêts, styles enregistrés
 
 **Outils**
 - Recadrer, pinceau de couleur, tampon, **pinceau correcteur**, gomme de calque, déplacer
-- **Pinceaux à forme** comme dans Photoshop et Krita : 235 pinceaux et 87 motifs livrés, import des pinceaux Photoshop (.abr), GIMP et Krita ; réglages complets (espacement, angle, dispersion, texture, double pinceau…) et **pression de la tablette**
-- **Dégradé**, **pot de peinture**, **formes** (rectangle, ellipse, ligne, flèche)
+- **Pinceaux à forme** comme dans Photoshop et Krita : 235 pinceaux et 87 motifs livrés, **17 styles prêts** (crayon, fusain, aquarelle, huile, bombe…), import des pinceaux Photoshop (.abr), GIMP et Krita ; taille jusqu'à 5000 px, rotation, réglages complets (espacement, angle, dispersion, texture, double pinceau…) et **pression de la tablette**
+- **Dégradé à plusieurs couleurs** avec un **éditeur comme Photoshop** (points de couleur et d'opacité, dégradés tout prêts et enregistrés), vu **en direct** pendant qu'on le tire ; sur un texte, il se pose sur les lettres (le texte reste modifiable)
+- **Motifs** : pot de peinture, Remplir avec un motif, **tampon de motif**, style Incrustation de motif (motifs Photoshop .pat, GIMP, Krita, images)
+- **Pot de peinture**, **formes** (rectangle, ellipse, ligne, flèche)
 - **Texte modifiable** : police, taille, couleur, contour, ombre, fond, rotation, texte en arc
 - Règles, repères, grille et magnétisme
 
@@ -449,7 +452,15 @@ de lancer.
 - Le zoom et l'endroit regardé **restent les mêmes** quand on passe d'une vignette à l'autre ou qu'on maintient
   « voir l'original » : on compare exactement le même détail (même après un Upscale, où l'original est plus petit).
 - **Maintenir pour voir l'original** : tant que le bouton est enfoncé, la photo d'avant s'affiche.
-- **Autres propositions** : relance l'IA pour de nouvelles versions (elles s'ajoutent aux précédentes).
+- **Autres propositions** : relance l'IA pour de nouvelles versions (elles s'ajoutent aux précédentes). Elles
+  repartent toujours de **l'image d'origine** : la vignette choisie ne sert pas de point de départ.
+- **Partir de celle-ci** (Effacer, Remplir, Agrandir) : quand une proposition est **presque bonne**, choisissez-la
+  puis cliquez ici. L'IA repart de cette proposition, sur la même zone, et ne la refait qu'en partie : elle garde
+  la forme générale et change les détails. La glissière **Proche ↔ Libre** règle combien elle peut changer
+  (Proche : petites retouches, presque la même image ; Libre : la même idée, retravaillée davantage ; au milieu par
+  défaut, puis votre dernier réglage). Les variantes s'ajoutent aux vignettes (« Variante de 2 »…) : on peut
+  toujours revenir à une proposition d'avant, ou repartir d'une variante. Même durée qu'une proposition (environ
+  1 min chacune). Un gros défaut de forme (objet mal placé) ne se corrige qu'en poussant vers **Libre**.
 - **Garder ce résultat** : applique la version choisie (annulable par Ctrl+Z). La sélection (pinceau, lasso,
   rectangle) disparaît alors ; Ctrl+Z la fait revenir avec la photo d'avant.
 
@@ -753,7 +764,7 @@ calque…**. La photo montre le résultat en direct ; **OK** garde le style (une
 | **Contour** | Trait autour du calque : à l'extérieur, au centre ou à l'intérieur, épaisseur au choix |
 | **Biseau et relief** | Donne du volume : biseau interne, externe ou estampage ; vers le haut ou le bas ; hauteur de la lumière |
 | **Incrustation couleur** | Recouvre le calque d'une couleur (modes Normal, Produit, Écran, Incrustation) |
-| **Incrustation dégradé** | Recouvre le calque d'un dégradé linéaire ou radial, angle et échelle au choix |
+| **Incrustation dégradé** | Recouvre le calque d'un dégradé linéaire ou radial, angle et échelle au choix ; un clic sur le dégradé ouvre l'éditeur de dégradé (plusieurs couleurs, opacité) |
 | **Incrustation de motif** | Recouvre le calque d'un motif de la bibliothèque, répété (mode, opacité, échelle de 10 à 1000 %) |
 | **Ombre au sol** | Pour un objet détouré : ombre couchée sur le sol, en perspective, nette au pied et floue au bout. **Tirez le point rond sur la photo** pour choisir sa direction et sa longueur |
 
@@ -937,9 +948,38 @@ peau, une rayure sur un ciel dégradé.
 
 ### Dégradé (D)
 Glissez du début à la fin du dégradé (**Maj** : horizontal, vertical ou à 45°). Barre du haut : **Linéaire** ou
-**Radial**, couleur de départ (la couleur du pinceau) **vers** couleur d'arrivée, ou **transparent** (fondu vers
-rien). Dans la sélection s'il y en a une. Sur un **masque**, il fait un fondu progressif (par exemple pour mélanger
-deux photos).
+**Radial**, puis l'**aperçu du dégradé** : un clic dessus ouvre l'**éditeur de dégradé** (comme dans Photoshop).
+Dans la sélection s'il y en a une. Pendant que vous tirez, le résultat se voit **en direct** sur le calque ;
+il est posé quand vous lâchez la souris (Ctrl+Z pour revenir).
+- Sur un **calque de texte**, le dégradé se pose **sur les lettres seules**, comme style « Incrustation dégradé » :
+  le texte reste modifiable, et un nouveau dégradé remplace le précédent. Le sens et la longueur du glissé
+  donnent l'angle et l'échelle ; pour les retoucher : **Calque > Style du calque**.
+- **Garder la transparence** (case de la barre du haut) : sur un calque image, le dégradé ne se pose que sur ce
+  qui est déjà peint (un objet détouré, un dessin) ; le vide autour reste vide.
+- Sur un **masque** (vignette du masque choisie dans le panneau Calques ; la barre du haut affiche alors
+  **« → dans le masque »**), le dégradé ne colore pas : il rend le calque plus ou moins transparent, pour un fondu
+  progressif (par exemple pour mélanger deux photos). Les couleurs y deviennent des gris, et la partie
+  transparente du dégradé devient le gris opposé à la couleur de peinture (blanc pour une couleur foncée). Pour
+  colorer, cliquez d'abord sur la vignette du calque.
+- L'éditeur règle le **prochain** dégradé : ouvrez-le avant de tirer. Dans la fenêtre Style du calque, au
+  contraire, chaque réglage de l'éditeur se voit tout de suite sur le calque (Annuler remet l'ancien).
+
+**Éditeur de dégradé** :
+- En haut, les **dégradés tout prêts** (couleur de peinture vers transparent, noir vers blanc, arc-en-ciel, or,
+  chrome, cuivre, feu, ciel…) et ceux que vous avez enregistrés : un clic en charge un.
+- La **barre** montre le dégradé (le damier = transparent). **Sous la barre**, les points de **couleur** ; **au-dessus**,
+  les points d'**opacité** (noir = opaque, blanc = transparent).
+- **Ajouter une couleur** : clic sous la barre, à l'endroit voulu ; le nouveau point prend la couleur qui s'y trouve.
+  **Double-clic** sur le point (ou clic sur la case « Couleur ») pour choisir sa couleur. La case **Couleur de
+  peinture** fait suivre au point la couleur de peinture du moment (petit « P » dans le point).
+- **Ajouter un point d'opacité** : clic au-dessus de la barre, puis réglez son **Opacité** en bas.
+- **Déplacer** un point : glissez-le, ou tapez sa **Position** en %. **Retirer** : tirez-le loin de la barre, touche
+  **Suppr** ou bouton **Supprimer** (il reste toujours au moins deux points de chaque sorte).
+- Les petits **losanges** à côté du point choisi règlent le **milieu** du passage entre deux points : plus près d'un
+  point, le passage se fait plus vite de son côté.
+- **Inverser** met le dégradé à l'envers. **Enregistrer dans la liste…** garde votre dégradé (avec un nom) ;
+  **Retirer de la liste** l'enlève.
+- Le dégradé choisi est gardé d'une séance à l'autre.
 
 ### Pot de peinture (K)
 **À quoi il sert** : remplir d'un seul clic une zone de couleur unie, sans la peindre à la main. Par exemple :
