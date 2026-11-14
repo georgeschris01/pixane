@@ -70,7 +70,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 - **Update check** (on request or at startup)
 - Installer that checks the PC and downloads the AI engine itself (ComfyUI and the models), resuming after an interruption; with a ComfyUI already installed, only what it is missing
 
-![Pixane: curved text on a landscape, Artificial intelligence panel on the right](docs/screenshots/pixane-en.png)
+![Pixane: curved text on a landscape, Artificial intelligence panel on the right](docs/screenshots/pixane-2k-en.png)
 
 ## System requirements
 

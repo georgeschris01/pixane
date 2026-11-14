@@ -70,7 +70,7 @@
 - **Recherche des mises à jour** (sur demande ou au démarrage)
 - Installateur qui vérifie le PC et télécharge lui-même le moteur IA (ComfyUI et les modèles), avec reprise après coupure ; avec un ComfyUI déjà installé, seulement ce qui lui manque
 
-![Pixane : texte en arc sur un paysage, panneau Intelligence artificielle à droite](docs/screenshots/pixane-fr.png)
+![Pixane : texte en arc sur un paysage, panneau Intelligence artificielle à droite](docs/screenshots/pixane-2k-fr.png)
 
 ## Configuration
 
