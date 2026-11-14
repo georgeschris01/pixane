@@ -829,6 +829,23 @@ corriger sans toucher à la photo).
   net, 0 % bord très doux).
 - Repasser au même endroit pendant un même coup ne fonce pas la couleur ; un nouveau coup, si.
 
+#### Calque de pinceau modifiable
+Case **Calque modifiable** dans la barre du haut (décochée au départ). Cochée, le premier coup de pinceau crée un
+**calque de pinceau** au-dessus du calque choisi (la photo n'est pas touchée), et les coups suivants y vont aussi.
+Ce calque garde le **tracé** de chaque coup, pas seulement ses pixels :
+- **même plus tard**, choisissez-le dans le panneau Calques avec le pinceau de couleur : la barre du haut montre ses
+  réglages ; changer la **couleur**, la **taille**, l'**opacité**, la **dureté**, la **rotation** (↻) ou la
+  **forme du pinceau** (et ses Réglages…) **redessine tous ses traits**. Chaque changement s'annule avec Ctrl+Z ;
+- le **déplacer**, le transformer (Ctrl+T, sans sélection), pivoter ou retourner l'image, changer sa taille,
+  recadrer, Agrandir, Upscale : il **reste modifiable** (les traits sont redessinés nets) ;
+- un calque de pinceau a **un seul réglage pour tous ses traits** : pour une autre couleur à garder à part, choisissez
+  un autre calque (ou la photo) avant de peindre, un nouveau calque de pinceau sera créé ;
+- la **gomme**, un filtre, l'IA, le pot de peinture… en font un calque d'image ordinaire (un message le dit ; Ctrl+Z
+  pour revenir). Clic droit sur le calque > **Convertir en image** le fait aussi ;
+- il est gardé dans les fichiers **.pixane** ; dans un PSD, PNG, JPG… il est enregistré comme une image. Dans le
+  panneau Calques, il est marqué « pinceau modifiable ».
+Case décochée : on peint directement sur le calque choisi, comme avant.
+
 ### Pinceaux à forme : la bibliothèque (comme Photoshop, Krita)
 Le pinceau de couleur (et les masques), la **gomme de calque** et le **pinceau de sélection** peuvent prendre une
 **forme** : craie, crayon, herbe, feuilles, aquarelle, éclaboussures… Chaque outil garde son propre choix.

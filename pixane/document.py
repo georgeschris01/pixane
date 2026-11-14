@@ -26,6 +26,7 @@ from .composition import (FORMAT_MASQUE, MODE_ORA, MODES, arbre, masque_depuis, 
 from .langue import tr
 from .styles import Style
 from .texte import Texte, nom_calque, rendre
+from . import calque_pinceau
 from .transformation import redimensionner
 
 COULEUR_SELECTION = QColor(255, 40, 40)
@@ -113,6 +114,8 @@ class Calque:
     # meilleure version du calque (comme un objet dynamique de Photoshop) : réduire puis réagrandir repart d'elle,
     # sans perte. Valable tant que les pixels n'ont pas été modifiés autrement (voir origine_valide).
     origine: "Origine | None" = None
+    # calque de pinceau modifiable (calque_pinceau.Pinceau) : valable tant que `image` est son dessin
+    pinceau: object = None
 
     @staticmethod
     def depuis(nom: str, image: QImage, **kw) -> "Calque":
@@ -122,6 +125,13 @@ class Calque:
     def special(self) -> bool:
         """Groupe ou calque de réglage : pas de pixels à peindre."""
         return self.groupe or self.reglage is not None
+
+
+def _pinceau_par(c: Calque, t: QTransform, W: int, H: int) -> Calque | None:
+    """Calque de pinceau passé par t (déplacé, redimensionné, tourné…) : ses traits sont redessinés, il reste
+    modifiable. None si ce n'est pas un calque de pinceau."""
+    p = calque_pinceau.valide(c)
+    return None if p is None else calque_pinceau.calque(c, p.transforme(t), W, H)
 
 
 def rect_entier(c: Calque) -> QRect:
@@ -195,7 +205,7 @@ def _cles(c: Calque) -> tuple:
 def origine_valide(c: Calque) -> Origine | None:
     """La meilleure version du calque, si ses pixels n'ont pas été modifiés depuis (pinceau, IA, filtre…)."""
     o = c.origine
-    if o is None or c.texte is not None or c.special or o.cles != _cles(c):
+    if o is None or c.texte is not None or c.special or o.cles != _cles(c) or calque_pinceau.valide(c):
         return None
     return o
 
@@ -210,7 +220,7 @@ def origine_ou_actuelle(c: Calque) -> Origine | None:
     o = origine_valide(c)
     if o is not None:
         return o
-    if c.texte is not None or c.special:
+    if c.texte is not None or c.special or calque_pinceau.valide(c):
         return None
     img, x, y = image_entiere(c)
     a = tableau(img.convertToFormat(FORMAT_CALQUE))[:, :, 3]
@@ -471,7 +481,7 @@ def _image_ia(resultat: QImage, base: QImage, poids: np.ndarray, opacite: np.nda
 
 def peut_recevoir_ia(c) -> bool:
     """Calque où l'on peut poser directement le résultat de l'IA (calque d'image visible, modifiable)."""
-    return c.visible and not c.verrou and not c.special and c.texte is None
+    return c.visible and not c.verrou and not c.special and c.texte is None and calque_pinceau.valide(c) is None
 
 
 def calque_des_changements(nom: str, resultat: QImage, base: QImage) -> Calque:
@@ -816,7 +826,8 @@ class Document(QObject):
                 t = c.texte.deplace(dx, dy)
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
                 continue
-            nouveaux.append(_decale(c, dx, dy, W, H))
+            n = _pinceau_par(c, QTransform.fromTranslate(dx, dy), W, H)
+            nouveaux.append(n if n is not None else _decale(c, dx, dy, W, H))
         def poser(img):
             res = image_vide(W, H)
             p = QPainter(res)
@@ -855,9 +866,12 @@ class Document(QObject):
         w, h = self.taille()
         nouveaux = []
         for c in self.calques:
+            n = _pinceau_par(c, QTransform.fromScale(W / w, H / h), W, H)
             if c.texte is not None:                    # texte : redessiné net à la nouvelle taille
                 t = c.texte.mis_a_l_echelle(W / w, H / h)
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
+            elif n is not None:                        # calque de pinceau : traits redessinés nets
+                nouveaux.append(n)
             else:
                 nouveaux.append(_mis_a_l_echelle(c, w, h, W, H, lanczos=True))     # agrandis en qualité
         nouveaux = _styles_a_l_echelle(nouveaux, ((W / w) * (H / h)) ** 0.5)
@@ -873,9 +887,12 @@ class Document(QObject):
         W, H = r.width(), r.height()
         nouveaux = []
         for c in self.calques:
+            n = _pinceau_par(c, QTransform.fromTranslate(-r.x(), -r.y()), W, H)
             if c.texte is not None:
                 t = c.texte.deplace(-r.x(), -r.y())
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
+            elif n is not None:
+                nouveaux.append(n)
             else:
                 o = origine_valide(c)
                 n = replace(c, image=c.image.copy(r), hors=None)
@@ -894,6 +911,10 @@ class Document(QObject):
             if c.texte is not None:
                 t = c.texte.deplace(dx, dy)
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
+                continue
+            n = _pinceau_par(c, QTransform.fromTranslate(dx, dy), W, H)
+            if n is not None and i != 0:
+                nouveaux.append(n)
                 continue
             n = _decale(c, dx, dy, W, H)
             if i == 0 and couleur is not None and couleur.alpha() and not c.groupe and c.reglage is None:
@@ -930,7 +951,8 @@ class Document(QObject):
                 t = replace(c.texte, x=pt.x(), y=pt.y(), angle=(c.texte.angle + tourne + 180) % 360 - 180)
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
             else:
-                nouveaux.append(_transforme_entier(c, transfo, W, H, lisse))
+                n = _pinceau_par(c, transfo, W, H)
+                nouveaux.append(n if n is not None else _transforme_entier(c, transfo, W, H, lisse))
         nouveaux = [_avec_masque_transforme(c, lambda im: _transformee(im, transfo, W, H, lisse)) for c in nouveaux]
         sel = _transformee(self.selection, transfo, W, H, lisse)
         return self.etat_avec(tuple(nouveaux), self.actif, sel)
@@ -965,9 +987,12 @@ class Document(QObject):
         w, h = self.taille()
         nouveaux = []
         for c in self.calques:
+            n = _pinceau_par(c, QTransform.fromScale(W / w, H / h), W, H)
             if c.texte is not None:
                 t = c.texte.mis_a_l_echelle(W / w, H / h)
                 nouveaux.append(replace(c, image=rendre(t, W, H), texte=t))
+            elif n is not None:
+                nouveaux.append(n)
             else:
                 nouveaux.append(_mis_a_l_echelle(c, w, h, W, H, lanczos=True))
         nouveaux = _styles_a_l_echelle(nouveaux, ((W / w) * (H / h)) ** 0.5)
@@ -1082,6 +1107,17 @@ class Document(QObject):
         w, h = self.taille()
         return self.inserer(Calque(nom_calque(t, tr("Texte")), rendre(t, w, h), texte=t))
 
+    def etat_pinceau(self, index: int, p) -> tuple:
+        """Le calque `index` devient (ou reste) le calque de pinceau p, redessiné."""
+        calques = list(self.calques)
+        calques[index] = calque_pinceau.calque(calques[index], p, *self.taille())
+        return self.etat_avec(calques, index)
+
+    def etat_nouveau_pinceau(self, p, nom: str):
+        """Nouveau calque de pinceau (vide ou avec ses premiers traits) au-dessus du calque choisi."""
+        w, h = self.taille()
+        return self.inserer(calque_pinceau.calque(Calque(self.nom_libre(nom), image_vide(w, h)), p, w, h))
+
     def etat_texte_modifie(self, index: int, t: Texte):
         """Texte modifié : redessiné ; le nom suit le texte tant qu'il n'a pas été renommé à la main."""
         c = self.calques[index]
@@ -1094,8 +1130,8 @@ class Document(QObject):
         return self.etat_avec(calques)
 
     def etat_en_pixels(self, index: int):
-        """Le calque de texte devient un calque d'image ordinaire (le texte n'est plus modifiable)."""
-        return self.etat_calque_modifie(index, texte=None)
+        """Le calque de texte (ou de pinceau) devient un calque d'image ordinaire (plus modifiable)."""
+        return self.etat_calque_modifie(index, texte=None, pinceau=None)
 
     def place_nouveau(self) -> tuple[int, str | None]:
         """Où poser un nouveau calque : au-dessus du calque choisi, dans son groupe (ou en haut du groupe choisi
@@ -1224,9 +1260,12 @@ class Document(QObject):
                 c = calques[i]
                 if c.special:
                     continue
+                n = _pinceau_par(c, QTransform.fromTranslate(dx, dy), w, h)
                 if c.texte is not None:                # texte : redessiné à sa nouvelle place (reste modifiable)
                     t = c.texte.deplace(dx, dy)
                     calques[i] = replace(c, image=rendre(t, w, h), texte=t)
+                elif n is not None:                    # calque de pinceau : aussi (reste modifiable)
+                    calques[i] = n
                 else:
                     calques[i] = _decale(c, dx, dy, w, h)
                 bouge = True
@@ -1332,6 +1371,12 @@ class Document(QObject):
             for i in b:
                 c = calques[i]
                 if c.special:
+                    continue
+                miroir = (QTransform(-1, 0, 0, 1, 2 * ref.left() + ref.width(), 0) if horizontal
+                          else QTransform(1, 0, 0, -1, 0, 2 * ref.top() + ref.height()))
+                n = _pinceau_par(c, miroir, w, h)
+                if n is not None:                      # calque de pinceau : reste modifiable
+                    calques[i] = n
                     continue
                 img, x, y = image_entiere(c)
                 if horizontal:
@@ -1572,6 +1617,8 @@ def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False, reper
             if natif:
                 if c.texte is not None:
                     a["pixane-texte"] = json.dumps(c.texte.vers_dict(), ensure_ascii=False)
+                if calque_pinceau.valide(c) is not None:
+                    a["pixane-pinceau"] = json.dumps(c.pinceau.vers_dict(), ensure_ascii=False)
                 if c.style is not None and (c.style.effets or c.style.remplissage < 1):
                     a["pixane-style"] = c.style.vers_json()
                 if c.reglage is not None:
@@ -1672,6 +1719,10 @@ def lire_ora(chemin: Path) -> list[Calque]:
                     c = Calque(e.get("name") or tr("Calque"), img, texte=texte, style=style, reglage=reglage,
                                dans=dans, hors=None if texte is not None else place.hors,
                                hors_x=place.hors_x, hors_y=place.hors_y, **commun(e))
+                    pinceau = json_ou_rien(_attr(e, "pinceau"),
+                                           lambda t: calque_pinceau.Pinceau.depuis_dict(json.loads(t)))
+                    if pinceau is not None and texte is None:  # calque de pinceau : reste modifiable
+                        c = replace(c, pinceau=replace(pinceau, rendu=c.image))
                     src, pose = _attr(e, "origine"), json_ou_rien(_attr(e, "origine-pose"), json.loads)
                     if src and isinstance(pose, list) and len(pose) == 5:
                         try:

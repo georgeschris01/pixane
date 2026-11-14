@@ -5,12 +5,13 @@ from __future__ import annotations
 
 import json
 
-from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QIcon, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QSpinBox, QToolButton, QWidget
+from PySide6.QtCore import QSize, Qt, QTimer
+from PySide6.QtGui import QColor, QIcon, QPixmap
+from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QPushButton, QSpinBox, QToolButton, QWidget
 
+from . import calque_pinceau
 from .bibliotheque import PINCEAUX, STYLES, bibliotheque
-from .canevas import GOMME_CALQUE, GROUPE_OUTIL, GROUPES_PINCEAU
+from .canevas import GOMME_CALQUE, GROUPE_OUTIL, GROUPES_PINCEAU, PEINTURE
 from .langue import tr
 from .pointe import Reglages
 
@@ -23,7 +24,8 @@ class OptionsPinceau:
         lay = QHBoxLayout(self.opt_pinceau)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(6)
-        lay.addWidget(QLabel(tr("Pinceau")))
+        self.libelle_pinceau = QLabel(tr("Pinceau"))
+        lay.addWidget(self.libelle_pinceau)
         self.bouton_pinceau = QToolButton()
         self.bouton_pinceau.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.bouton_pinceau.setIconSize(QSize(22, 22))
@@ -40,6 +42,8 @@ class OptionsPinceau:
         self.angle_pinceau.setKeyboardTracking(False)
         self.angle_pinceau.setToolTip(tr("Rotation du pinceau, en degrés (flèches : 15° par cran ; tu peux taper "
                                          "la valeur). Aussi dans Réglages…, onglet Forme."))
+        from .fenetre import ajuster_case
+        ajuster_case(self.angle_pinceau, "↻ -180°")
         self.angle_pinceau.valueChanged.connect(self._angle_pinceau)
         lay.addWidget(self.angle_pinceau)
         self.bouton_reglages_pinceau = QPushButton(tr("Réglages…"))
@@ -47,6 +51,23 @@ class OptionsPinceau:
                                                    "couleur, tablette"))
         self.bouton_reglages_pinceau.clicked.connect(self.regler_pinceau)
         lay.addWidget(self.bouton_reglages_pinceau)
+        # calque de pinceau modifiable (pinceau de couleur seulement)
+        self.case_calque_pinceau = QCheckBox(tr("Calque modifiable"))
+        self.case_calque_pinceau.setToolTip(tr(
+            "Coché : les coups de pinceau vont dans un calque de pinceau, qui garde leur tracé. Même plus tard, "
+            "en choisissant ce calque avec le pinceau de couleur, changer la couleur, la taille, l'opacité, la "
+            "dureté, la rotation ou la forme du pinceau redessine tous ses traits. Décoché : on peint directement "
+            "sur le calque choisi, comme avant."))
+        self.case_calque_pinceau.setChecked(self.reglages.value("pinceau_calque", False, type=bool))
+        self.canevas.calque_pinceau = self.case_calque_pinceau.isChecked()
+        self.case_calque_pinceau.toggled.connect(self._calque_pinceau_coche)
+        lay.addWidget(self.case_calque_pinceau)
+        self._minuteur_pinceau = QTimer(self)          # glissière tirée : un seul dessin quand elle s'arrête un peu
+        self._minuteur_pinceau.setSingleShot(True)
+        self._minuteur_pinceau.setInterval(40)
+        self._minuteur_pinceau.timeout.connect(self._barre_vers_calque_pinceau)
+        self._sync_pinceau = False
+        self._pinceau_montre = None
         tout.addWidget(self.opt_pinceau)
         for g in GROUPES_PINCEAU:                      # choix gardés
             cle = self.reglages.value(f"pinceau_{g}_cle", "") or None
@@ -64,6 +85,7 @@ class OptionsPinceau:
     def maj_bouton_pinceau(self):
         g = self._groupe_pinceau()
         self.opt_pinceau.setVisible(g is not None)
+        self.case_calque_pinceau.setVisible(self.canevas.outil == PEINTURE)
         if g is None:
             return
         choix = self.canevas.pinceaux[g]
@@ -102,6 +124,87 @@ class OptionsPinceau:
         self.reglages.setValue(f"pinceau_{g}_cle", choix["cle"] or "")
         self.reglages.setValue(f"pinceau_{g}_reglages", json.dumps(choix["reglages"].vers_dict()))
         self.maj_bouton_pinceau()
+        if g == "peinture":
+            self.pinceau_barre_change()
+
+    # ---------------------------------------------------------- calque de pinceau modifiable
+    def _calque_pinceau_coche(self, oui: bool):
+        self.canevas.calque_pinceau = oui
+        self.reglages.setValue("pinceau_calque", oui)
+        if oui:
+            self.statusBar().showMessage(tr(
+                "Calque modifiable : le prochain coup de pinceau crée un calque de pinceau. Pour le changer plus "
+                "tard, choisis-le dans Calques avec le pinceau de couleur, puis change couleur, taille, rotation…"),
+                10000)
+
+    def sync_calque_pinceau(self):
+        """Calque de pinceau choisi, avec le pinceau de couleur : la barre du haut montre ses réglages."""
+        if not getattr(self, "doc", None) or self.canevas.outil != PEINTURE or self._sync_pinceau:
+            return
+        p = calque_pinceau.valide(self.doc.calque_actif)
+        if p is None:
+            self._pinceau_montre = None              # un autre calque : au retour, la barre reprendra ses réglages
+            return
+        if p is self._pinceau_montre:
+            return
+        self._pinceau_montre = p
+        self._sync_pinceau = True
+        try:
+            self.opt_couleur.definir(p.couleur)
+            self._couleur_peinture(p.couleur)
+            if round(p.taille) != self.canevas.taille_pinceau:
+                self.canevas.definir_taille(p.taille)
+            self.opt_opacite.setValue(round(p.opacite * 100))
+            self.opt_durete.setValue(round(p.durete * 100))
+            self.canevas.pinceaux["peinture"] = {"cle": p.cle, "reglages": p.r()}
+            self._enregistrer_pinceau("peinture")
+        finally:
+            self._sync_pinceau = False
+
+    def pinceau_barre_change(self, *_):
+        """Un réglage de la barre a changé : le calque de pinceau choisi le prend (redessiné un peu après)."""
+        if self._sync_pinceau or not getattr(self, "doc", None) or self.canevas.outil != PEINTURE:
+            return
+        if calque_pinceau.valide(self.doc.calque_actif) is not None:
+            self._minuteur_pinceau.start()
+
+    def _barre_vers_calque_pinceau(self):
+        from .fenetre import CommandeEtat
+        doc = self.doc
+        if not doc or self.canevas.outil != PEINTURE:
+            return
+        c = doc.calque_actif
+        p = calque_pinceau.valide(c)
+        if p is None:
+            return
+        if c.verrou:
+            self.statusBar().showMessage(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour "
+                                            "pouvoir le modifier.", nom=c.nom), 6000)
+            self._pinceau_montre = None
+            self.sync_calque_pinceau()
+            return
+        cv = self.canevas
+        choix = cv.pinceaux["peinture"]
+        ch = {}
+        couleur = QColor(cv.couleur_peinture).name(QColor.HexArgb)
+        if couleur.lower() != p.couleur.lower():
+            ch["couleur"] = couleur
+        if round(p.taille) != cv.taille_pinceau:
+            ch["taille"] = float(cv.taille_pinceau)
+        if round(p.opacite * 100) != round(cv.opacite * 100):
+            ch["opacite"] = cv.opacite
+        if round(p.durete * 100) != round(cv.durete * 100):
+            ch["durete"] = cv.durete
+        if choix["cle"] != p.cle:
+            ch["cle"] = choix["cle"]
+        if choix["reglages"] != p.r():
+            ch["reglages"] = choix["reglages"]
+        if not ch:
+            return
+        apres = doc.etat_pinceau(doc.actif, p.avec(**ch))
+        self._pinceau_montre = apres[0][doc.actif].pinceau
+        self.historique.push(CommandeEtat(doc, doc.etat(), apres, tr("Modifier le calque de pinceau"),
+                                          ("pinceau", id(doc), doc.actif, tuple(sorted(ch)))))
 
     def choisir_pinceau(self):
         from .choix_bibliotheque import ChoixBibliotheque

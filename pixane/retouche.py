@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 
 import numpy as np
-from PySide6.QtCore import QPointF, QRect, QRectF, Qt
+from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, Qt
 from PySide6.QtGui import QColor, QImage, QPainter, QRadialGradient
 
 from .pointe import Placement, Pointe, Reglages, dessiner, texture_grise, texture_zone
@@ -38,9 +38,13 @@ class Trait:
     def __init__(self, mode: str, base: QImage, taille: float, durete: float, opacite: float,
                  couleur: QColor | None = None, source: QImage | None = None, decalage: QPointF | None = None,
                  pointe: Pointe | None = None, reglages: Reglages | None = None, fond: QColor | None = None,
-                 texture: np.ndarray | None = None, double: Pointe | None = None, graine: int | None = None):
+                 texture: np.ndarray | None = None, double: Pointe | None = None, graine: int | None = None,
+                 origine: QPoint | None = None):
         """pointe : forme du pinceau (None : rond, réglé par durete). reglages : espacement, dispersion, texture…
-        (voir pointe.Reglages). texture : motif (h, w, 4) ; double : deuxième forme. mode GOMME : efface."""
+        (voir pointe.Reglages). texture : motif (h, w, 4) ; double : deuxième forme. mode GOMME : efface.
+        origine : place de `base` dans l'image (trait dessiné seul dans son rectangle : la texture reste alignée)."""
+        self.origine = QPoint(origine) if origine is not None else QPoint(0, 0)
+        self._differer = False                  # tracer() : composer une seule fois, à la fin
         self.mode = mode
         self.base = base                        # image du calque avant le coup (jamais modifiée)
         self.image = base.copy()                # résultat en cours
@@ -111,8 +115,24 @@ class Trait:
         r = self.taille / 2 + 2
         zone = zone.adjusted(-r, -r, r, r).toAlignedRect().intersected(self.image.rect())
         if not zone.isEmpty():
-            self._composer(zone)
+            if not self._differer:
+                self._composer(zone)
         return zone
+
+    def tracer(self, points) -> None:
+        """Tout un trait d'un coup (points : [(QPointF, pression)]) : même résultat que des ajouter() successifs,
+        mais l'image n'est composée qu'une fois (calque de pinceau redessiné)."""
+        self._differer = True
+        try:
+            for pt, pression in points:
+                self.ajouter(pt, pression)
+        finally:
+            self._differer = False
+        tout = self.image.rect()
+        if self.formes:
+            self._composer_formes(tout)
+        else:
+            self._composer(tout)
 
     # ------------------------------------------------------------------ moteur à formes
     def _ajouter_formes(self, pt: QPointF, pression: float) -> QRect:
@@ -137,7 +157,8 @@ class Trait:
             p.end()
         zone = zone.toAlignedRect().intersected(self.image.rect())
         if not zone.isEmpty():
-            self._composer_formes(zone)
+            if not self._differer:
+                self._composer_formes(zone)
         return zone
 
     def _composer_formes(self, zone: QRect):
@@ -145,7 +166,8 @@ class Trait:
         a = couche[..., 3]
         facteur = np.ones_like(a)
         if self.texture is not None:
-            tex = texture_zone(self.texture, zone.x(), zone.y(), zone.width(), zone.height())
+            tex = texture_zone(self.texture, zone.x() + self.origine.x(), zone.y() + self.origine.y(),
+                               zone.width(), zone.height())
             if self.reglages.texture_inverser:
                 tex = 1 - tex
             facteur *= 1 - self.reglages.texture_force * (1 - tex)

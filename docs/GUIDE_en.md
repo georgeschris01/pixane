@@ -800,6 +800,23 @@ touching the photo).
   (100% sharp edge, 0% very soft edge).
 - Going over the same spot during one stroke does not darken the colour; a new stroke does.
 
+#### Editable brush layer
+**Editable layer** box in the top bar (unchecked at first). When checked, the first brush stroke creates a **brush
+layer** above the chosen layer (the photo is not touched), and the following strokes go into it too. This layer
+keeps the **path** of each stroke, not just its pixels:
+- **even later**, select it in the Layers panel with the colour brush: the top bar shows its settings; changing the
+  **colour**, **size**, **opacity**, **hardness**, **rotation** (↻) or **brush shape** (and its Settings…)
+  **redraws all its strokes**. Each change can be undone with Ctrl+Z;
+- **moving** it, transforming it (Ctrl+T, without a selection), rotating or flipping the image, changing its size,
+  cropping, Expand, Upscale: it **stays editable** (the strokes are redrawn sharp);
+- a brush layer has **one setting for all its strokes**: for another colour kept separate, choose another layer (or
+  the photo) before painting, and a new brush layer will be created;
+- the **eraser**, a filter, the AI, the paint bucket… turn it into an ordinary image layer (a message says so; Ctrl+Z
+  to go back). Right-click on the layer > **Convert to image** does it too;
+- it is kept in **.pixane** files; in a PSD, PNG, JPG… it is saved as an image. In the Layers panel, it is marked
+  "editable brush".
+Box unchecked: you paint directly on the chosen layer, as before.
+
 ### Shaped brushes: the library (like Photoshop, Krita)
 The colour brush (and masks), the **layer eraser** and the **selection brush** can take a **shape**: chalk, pencil,
 grass, leaves, watercolour, splatters… Each tool keeps its own choice.

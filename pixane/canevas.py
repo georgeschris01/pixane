@@ -12,7 +12,7 @@ from PySide6.QtGui import (QBrush, QColor, QImage, QInputDevice, QPainter, QPain
                            QTransform)
 from PySide6.QtWidgets import QWidget
 
-from . import regles
+from . import calque_pinceau, regles
 from .composition import argb_vers_masque, masque_vers_argb
 from .document import COULEUR_SELECTION, Document, image_entiere, tableau
 from .langue import tr
@@ -149,6 +149,9 @@ class Canevas(QWidget):
         self.magnetisme = True
         self.repere_tire = None      # repère qu'on tire : [« h » ou « v », position dans l'image ou None]
         self._trait: Trait | None = None
+        # calque de pinceau modifiable (case de la barre du pinceau de couleur) : les traits gardent leur tracé
+        self.calque_pinceau = False
+        self._pinceau_en_cours = None    # (index du calque, pinceau, graine, points) pendant un coup
         self.source_tampon: QPointF | None = None    # point (image) choisi par Alt+clic
         self._decalage_tampon: QPointF | None = None # source - point peint, fixé au premier coup (aligné)
         # recadrage
@@ -812,6 +815,10 @@ class Canevas(QWidget):
             self.update()
             return
         c = self.doc.calque_actif
+        if (self.outil == PEINTURE and self.calque_pinceau and not self.sur_masque()
+                and calque_pinceau.valide(c) is None):
+            self._commencer_calque_pinceau(pt)        # nouveau calque de pinceau : le calque choisi n'est pas touché
+            return
         if c.verrou:
             self.refus.emit(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour pouvoir le "
                                "modifier.", nom=c.nom))
@@ -837,6 +844,13 @@ class Canevas(QWidget):
         if c.texte is not None:
             self.refus.emit(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme texte "
                                "(Ctrl+Z pour revenir).", nom=c.nom))
+        p = calque_pinceau.valide(c)
+        if p is not None and self.outil == PEINTURE and self.calque_pinceau:
+            self._avant = self.doc.etat()
+            self._trait_pinceau(p, pt)                 # un trait de plus dans le calque de pinceau
+            return
+        if p is not None:
+            self.refus.emit(self.texte_devient_image(c))
         self._avant = self.doc.etat()
         if self.outil in (TAMPON, CORRECTEUR):
             if self._decalage_tampon is None:
@@ -859,7 +873,39 @@ class Canevas(QWidget):
         self._trait.ajouter(pt, self._pression_evt)
         self.doc.apercu_calque(self.doc.actif, self._trait.image)
 
+    def _commencer_calque_pinceau(self, pt: QPointF):
+        """Premier coup avec la case « Calque modifiable » : un calque de pinceau est créé au-dessus du calque
+        choisi, avec les réglages de la barre."""
+        self._avant = self.doc.etat()
+        p = self.pinceau_de_la_barre()
+        self.doc.appliquer_etat(self.doc.etat_nouveau_pinceau(p, tr("Pinceau")))
+        self._trait_pinceau(self.doc.calque_actif.pinceau, pt)
+
+    def _trait_pinceau(self, p, pt: QPointF):
+        graine = calque_pinceau.nouvelle_graine()
+        self._pinceau_en_cours = (self.doc.actif, p, graine, [(pt.x(), pt.y(), self._pression_evt)])
+        self._trait = Trait("peinture", self.doc.calque_actif.image, p.taille, p.durete, p.opacite,
+                            couleur=QColor(p.couleur), graine=graine,
+                            **calque_pinceau.parametres(p, self._tablette))
+        self._trait.ajouter(pt, self._pression_evt)
+        self.doc.apercu_calque(self.doc.actif, self._trait.image)
+
+    def pinceau_de_la_barre(self):
+        """Réglages actuels du pinceau de couleur (barre du haut), pour un nouveau calque de pinceau."""
+        choix = self.pinceaux["peinture"]
+        return calque_pinceau.Pinceau(couleur=QColor(self.couleur_peinture).name(QColor.HexArgb),
+                                      taille=float(self.taille_pinceau), durete=self.durete, opacite=self.opacite,
+                                      cle=choix["cle"], reglages=choix["reglages"].vers_dict())
+
+    @staticmethod
+    def texte_devient_image(c) -> str:
+        return tr("Le calque de pinceau « {nom} » devient une image : ses traits ne sont plus modifiables "
+                  "(Ctrl+Z pour revenir).", nom=c.nom)
+
     def _glisser_retouche(self, pos: QPointF):
+        if self._pinceau_en_cours is not None:
+            pt = self.vers_image(pos)
+            self._pinceau_en_cours[3].append((pt.x(), pt.y(), self._pression_evt))
         self._trait.ajouter(self.vers_image(pos), self._pression_evt)
         if self._sur_masque:
             self.doc.apercu_masque(self.doc.actif, argb_vers_masque(self._trait.image))
@@ -881,6 +927,14 @@ class Canevas(QWidget):
         return False
 
     def _lacher_retouche(self):
+        if self._pinceau_en_cours is not None:         # calque de pinceau : le trait est gardé, tout est redessiné
+            index, p, graine, points = self._pinceau_en_cours
+            self._pinceau_en_cours = None
+            self._trait = None
+            self.doc.appliquer_etat(self.doc.etat_pinceau(index, p.avec_trait(points, graine)))
+            self.selection_modifiee.emit(self._avant, tr("Calque de pinceau"))
+            self._avant = None
+            return
         nom = tr("Tampon") if self._trait.mode == "tampon" else tr("Pinceau de couleur")
         if self.outil == TAMPON_MOTIF:
             nom = tr("Tampon de motif")
@@ -994,6 +1048,8 @@ class Canevas(QWidget):
                 if self.doc.calque_actif.texte is not None and not sur_masque:
                     self.refus.emit(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme "
                                        "texte (Ctrl+Z pour revenir).", nom=self.doc.calque_actif.nom))
+                if calque_pinceau.valide(self.doc.calque_actif) is not None and not sur_masque:
+                    self.refus.emit(self.texte_devient_image(self.doc.calque_actif))
                 self._poser_dessin(res, sur_masque, tr("Pot de peinture"), avant)
             return
         if self.outil == DEGRADE:
@@ -1729,6 +1785,8 @@ class Canevas(QWidget):
                 if self.doc.calque_actif.texte is not None:
                     self.refus.emit(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme "
                                        "texte (Ctrl+Z pour revenir).", nom=self.doc.calque_actif.nom))
+                if calque_pinceau.valide(self.doc.calque_actif) is not None:
+                    self.refus.emit(self.texte_devient_image(self.doc.calque_actif))
                 self._img_calque = self.doc.calque_actif.image.copy()   # copie : l'état d'avant reste intact
             kw = self.parametres_pinceau(GOMME_CALQUE)
             self._trait_forme = (Trait(EFFACER, self._img_calque, self.taille_pinceau, 1.0, 1.0, **kw)

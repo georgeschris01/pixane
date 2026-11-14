@@ -15,12 +15,12 @@ from PIL import Image
 from PySide6.QtCore import QBuffer, QMimeData, QObject, QPoint, QProcess, QSettings, QSize, Qt, QTimer, Signal
 from PySide6.QtCore import QEvent, QPointF, QUrl
 from PySide6.QtGui import (QAction, QActionGroup, QColor, QDesktopServices, QIcon, QImage, QKeySequence, QPainter, QUndoCommand,
-                           QUndoStack)
+                           QTransform, QUndoStack)
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QComboBox, QDialog, QDockWidget, QFileDialog, QHBoxLayout, QLabel,
                                QLineEdit, QMainWindow, QMenu, QMessageBox, QPushButton, QSizePolicy, QSlider,
                                QSpinBox, QToolBar, QToolButton, QUndoView, QVBoxLayout, QWidget, QInputDialog, QDoubleSpinBox)
 
-from . import affinage, langue, recettes, theme
+from . import affinage, calque_pinceau, langue, recettes, theme
 from .icones import icone
 from .langue import tr
 from .actions_calques import ActionsCalques
@@ -134,6 +134,12 @@ class FenetreNouveautes(QDialog):
         boutons.accepted.connect(self.accept)
         boutons.rejected.connect(self.reject)
         lay.addWidget(boutons)
+
+
+def ajuster_case(case, plus_long: str) -> None:
+    """Case à chiffres à la largeur de son plus long texte (sinon Qt la fait bien plus large, et la barre du haut
+    déborde : Qt cache alors toute une partie des options)."""
+    case.setMaximumWidth(case.fontMetrics().horizontalAdvance(plus_long) + 44)
 
 
 class CommandeEtat(QUndoCommand):
@@ -664,11 +670,14 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.valeur_taille.setSuffix(" px")
         self.valeur_taille.setKeyboardTracking(False)
         self.valeur_taille.setValue(self.canevas.taille_pinceau)
+        ajuster_case(self.valeur_taille, "5000 px")
         self.valeur_taille.setToolTip(tr("Taille du pinceau (2 à {max} px) ; [ et ] pour la changer",
                                          max=TAILLE_MAX))
         self.curseur_taille.valueChanged.connect(lambda v: self.canevas.definir_taille(taille_position(v)))
         self.valeur_taille.valueChanged.connect(self.canevas.definir_taille)
         self.canevas.taille_changee.connect(self._taille_changee)
+        self.canevas.taille_changee.connect(lambda _v: self.pinceau_barre_change()
+                                            if hasattr(self, "case_calque_pinceau") else None)
         lay.addWidget(self.curseur_taille)
         lay.addWidget(self.valeur_taille)
         tout.addWidget(self.opt_taille)
@@ -765,6 +774,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             case.setSuffix(" %")
             case.setToolTip(aide)
             case.setValue(int(self.reglages.value(cle, defaut)))
+            ajuster_case(case, "100 %")
             case.valueChanged.connect(self._reglages_retouche)
             lay.addWidget(case)
             lay.addSpacing(6)
@@ -893,6 +903,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             self.opt_degrade_bouton.rafraichir()
         if enregistrer:
             self.reglages.setValue("peinture_couleur", couleur)
+        if hasattr(self, "case_calque_pinceau"):
+            self.pinceau_barre_change()
 
     def _couleur_prise(self, couleur: str):
         self.opt_couleur.definir(QColor(couleur).name(QColor.HexArgb))
@@ -904,6 +916,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.canevas.durete = self.opt_durete.value() / 100
         self.reglages.setValue("outil_opacite", self.opt_opacite.value())
         self.reglages.setValue("outil_durete", self.opt_durete.value())
+        if hasattr(self, "case_calque_pinceau"):
+            self.pinceau_barre_change()
 
     def _proportion(self, *_):
         v = self.opt_proportion.currentData()
@@ -1104,6 +1118,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.dock_texte.setVisible(outil == TEXTE)
         if outil == TEXTE:
             self._sync_texte()
+        if outil == PEINTURE:
+            self._pinceau_montre = None
+            self.sync_calque_pinceau()
 
     def _taille_changee(self, v: int):
         for w, val in ((self.curseur_taille, position_taille(v)), (self.valeur_taille, v)):
@@ -1196,7 +1213,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
 
     # ---------------------------------------------------------- texte
     def _sync_texte(self):
-        """Le panneau Texte montre le calque choisi s'il est un texte."""
+        """Le panneau Texte montre le calque choisi s'il est un texte (et la barre du pinceau, le calque de pinceau
+        choisi)."""
+        if hasattr(self, "case_calque_pinceau"):
+            self.sync_calque_pinceau()
         if not hasattr(self, "panneau_texte"):
             return
         c = self.doc.calque_actif if self.doc else None
@@ -1794,6 +1814,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         if self.doc.calque_actif.texte is not None:
             self.statusBar().showMessage(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme "
                                             "texte (Ctrl+Z pour revenir).", nom=self.doc.calque_actif.nom), 6000)
+        if calque_pinceau.valide(self.doc.calque_actif) is not None:
+            self.statusBar().showMessage(self.canevas.texte_devient_image(self.doc.calque_actif), 6000)
         avant = self.doc.etat()
         apres = self.doc.etat_effacer_selection()
         if apres is not None:
@@ -1855,6 +1877,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             if calque.texte is not None:
                 self.statusBar().showMessage(tr("Le texte « {nom} » devient une image : il n'est plus modifiable "
                                                 "comme texte (Ctrl+Z pour revenir).", nom=calque.nom), 6000)
+            if calque_pinceau.valide(calque) is not None:
+                self.statusBar().showMessage(self.canevas.texte_devient_image(calque), 6000)
             QApplication.setOverrideCursor(Qt.WaitCursor)
             try:
                 img = ajuster(calque.image, r, selection)
@@ -2240,7 +2264,13 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         if c.texte is not None:
             self.statusBar().showMessage(tr("Le texte « {nom} » devient une image (pour garder un texte modifiable, "
                                             "change sa taille et tourne-le avec l'outil Texte).", nom=c.nom), 8000)
-        self._commencer_transfo(Transformation(source, rect, fond, QPoint(ox, oy)))
+        t = Transformation(source, rect, fond, QPoint(ox, oy))
+        if calque_pinceau.valide(c) is not None:
+            if fond is None:                          # calque de pinceau entier : ses traits suivront (modifiable)
+                t.depart_pinceau = QPointF(ox + rect.x(), oy + rect.y())
+            else:
+                self.statusBar().showMessage(self.canevas.texte_devient_image(c), 8000)
+        self._commencer_transfo(t)
 
     def _commencer_transfo(self, t: Transformation):
         t.echelle_depart = abs(t.sx * t.sy) or 1.0         # pour mettre le style à l'échelle du geste seul
@@ -2335,6 +2365,13 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.doc.appliquer_etat(avant)
         self.doc.modifie = _modifie
         c = self.doc.calques[index]
+        p = calque_pinceau.valide(c)
+        if p is not None and t.fond is None and getattr(t, "depart_pinceau", None) is not None:
+            # calque de pinceau : ses traits passent par la même transformation et sont redessinés (modifiable)
+            d = t.depart_pinceau
+            apres = self.doc.etat_pinceau(index, p.transforme(QTransform.fromTranslate(-d.x(), -d.y()) * t.transfo()))
+            self.historique.push(CommandeEtat(self.doc, avant, apres, titre or tr("Transformer le calque")))
+            return
         k = (abs(t.sx * t.sy) / getattr(t, "echelle_depart", 1.0)) ** 0.5
         style = c.style.mis_a_l_echelle(k) if c.style is not None else None
         apres = self.doc.etat_calque_entier(index, img, x, y, texte=None, style=style)

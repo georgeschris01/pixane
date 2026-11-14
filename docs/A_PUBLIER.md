@@ -12,6 +12,12 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
 - **Agrandir : proposition « Fond prolongé »**, faite sans IA, ajoutée aux propositions de Flux quand les bords à
   agrandir sont unis (fond de pochette, ciel lisse, dégradé) : le fond de la photo est continué ligne par ligne,
   avec le même grain ; ni raccord ni tourbillon visible, instantané. Absente si un objet touche le bord.
+- **Calque de pinceau modifiable** : case « Calque modifiable » dans la barre du pinceau de couleur (décochée au
+  départ). Les coups vont dans un calque de pinceau qui garde leur tracé : même plus tard, changer la couleur, la
+  taille, l'opacité, la dureté, la rotation ou la forme du pinceau redessine tous ses traits. Il reste modifiable
+  après déplacer, Ctrl+T, pivoter / retourner, taille de l'image, recadrer, Agrandir, Upscale ; gardé dans les
+  .pixane ; marqué « pinceau modifiable » dans Calques. La gomme, un filtre, l'IA… en font une image (message).
+- **Barre du haut** plus compacte (cases à chiffres à la largeur de leur texte).
 
 ## Corrections
 
