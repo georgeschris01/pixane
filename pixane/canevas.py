@@ -118,7 +118,8 @@ class Canevas(QWidget):
         self.couleur_peinture = QColor(0, 0, 0)
         self.opacite = 1.0           # 0..1
         self.durete = 0.8            # 0 = bord très doux, 1 = bord net
-        self.couleur2: QColor | None = None   # dégradé : couleur d'arrivée (None = vers le transparent)
+        from .degrades import defaut as degrade_defaut
+        self.degrade = degrade_defaut()       # dégradé à plusieurs points (pixane.degrades)
         self.forme_degrade = "lineaire"
         self.tolerance_seau = 32
         self.seau_tous_calques = False   # pot de peinture : zone d'après l'image visible (sinon : le calque choisi)
@@ -965,12 +966,9 @@ class Canevas(QWidget):
                 return
             img, sur_masque = cible
             from .outils_dessin import degrade
-            c2 = None if self.couleur2 is None else self._couleur_cible(self.couleur2, sur_masque)
-            if sur_masque and c2 is None:
-                c2 = QColor(255, 255, 255) if QColor(self.couleur_peinture).lightnessF() < 0.5 else QColor(0, 0, 0)
             sel = None if self.doc.selection_vide() else self.doc.selection
-            res = degrade(img, a, b, self.forme_degrade, self._couleur_cible(self.couleur_peinture, sur_masque), c2,
-                          self.opacite, sel)
+            res = degrade(img, a, b, self.forme_degrade, self.degrade, QColor(self.couleur_peinture), self.opacite,
+                          sel, gris=sur_masque)
             self._poser_dessin(res, sur_masque, tr("Dégradé"), avant)
             return
         from .outils_dessin import forme, noms_formes

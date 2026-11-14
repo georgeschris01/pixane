@@ -229,24 +229,25 @@ class ActionsCalques:
         forme.addItem(tr("Radial"), "radial")
         forme.setCurrentIndex(max(0, forme.findData(self.reglages.value("degrade_forme", "lineaire"))))
         lay.addWidget(forme)
-        lay.addWidget(QLabel(tr("vers")))
-        self.opt_couleur2 = BoutonCouleur(tr("Couleur d'arrivée"))
-        self.opt_couleur2.definir(self.reglages.value("degrade_couleur2", "#ffffffff"))
-        transparent = QCheckBox(tr("transparent"))
-        transparent.setChecked(self.reglages.value("degrade_transparent", "true") == "true")
-        lay.addWidget(self.opt_couleur2)
-        lay.addWidget(transparent)
+        from .degrades import BoutonDegrade, deux_couleurs, normaliser
+        enregistre = self.reglages.value("degrade_points", "")
+        if enregistre:
+            depart = normaliser(enregistre)
+        else:                                   # réglages d'avant l'éditeur de dégradé
+            transp = self.reglages.value("degrade_transparent", "true") == "true"
+            depart = deux_couleurs("peinture", None if transp else
+                                   QColor(self.reglages.value("degrade_couleur2", "#ffffffff")).name())
+        self.opt_degrade_bouton = BoutonDegrade(depart, lambda: QColor(c.couleur_peinture))
+        lay.addWidget(self.opt_degrade_bouton)
 
         def maj_degrade(*_):
+            import json
             c.forme_degrade = forme.currentData()
-            c.couleur2 = None if transparent.isChecked() else QColor(self.opt_couleur2.couleur)
-            self.opt_couleur2.setEnabled(not transparent.isChecked())
+            c.degrade = self.opt_degrade_bouton.degrade
             self.reglages.setValue("degrade_forme", forme.currentData())
-            self.reglages.setValue("degrade_couleur2", self.opt_couleur2.couleur)
-            self.reglages.setValue("degrade_transparent", "true" if transparent.isChecked() else "false")
+            self.reglages.setValue("degrade_points", json.dumps(c.degrade))
         forme.currentIndexChanged.connect(maj_degrade)
-        transparent.toggled.connect(maj_degrade)
-        self.opt_couleur2.change.connect(maj_degrade)
+        self.opt_degrade_bouton.change.connect(maj_degrade)
         maj_degrade()
         tout.addWidget(self.opt_degrade)
         # pot de peinture

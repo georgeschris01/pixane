@@ -22,8 +22,9 @@ from dataclasses import dataclass, field, replace
 import numpy as np
 from PIL import Image
 from PySide6.QtCore import QPoint
-from PySide6.QtGui import QImage, QPainter
+from PySide6.QtGui import QColor, QImage, QPainter
 
+from .degrades import table
 from .langue import tr
 
 # ------------------------------------------------------------------ description des effets
@@ -109,8 +110,7 @@ REGLAGES = {
         ("opacite", "Opacité", "pourcent", 100),
     ],
     "degrade": [
-        ("couleur1", "Couleur de départ", "couleur", "#000000"),
-        ("couleur2", "Couleur d'arrivée", "couleur", "#ffffff"),
+        ("degrade", "Dégradé", "degrade", None),        # points (pixane.degrades) ; None : couleur1 -> couleur2
         ("mode", "Mode", "choix", "normal", MODES),
         ("opacite", "Opacité", "pourcent", 100),
         ("forme", "Forme", "choix", "lineaire", {"lineaire": "Linéaire", "radial": "Radial"}),
@@ -417,8 +417,25 @@ def _degrade(A, e, boite):
     t = np.clip(t, 0, 1)
     if e.r("inverser"):
         t = 1 - t
-    c1, c2 = _rgb(e.r("couleur1")), _rgb(e.r("couleur2"))
-    return c1 + (c2 - c1) * t[..., None]
+    tab = table(points_degrade(e), None, 1024)
+    i = np.clip(np.rint(t * 1023), 0, 1023).astype(np.int32)
+    return tab[i, :3], tab[i, 3]
+
+
+def _points(*couleurs) -> dict:
+    """Dégradé (pixane.degrades) d'après des (couleur, position), sans transparence."""
+    return {"couleurs": [{"pos": p, "couleur": c, "milieu": 0.5} for c, p in couleurs],
+            "opacites": [{"pos": 0, "opacite": 1, "milieu": 0.5}, {"pos": 1, "opacite": 1, "milieu": 0.5}]}
+
+
+def points_degrade(e) -> dict:
+    """Les points du dégradé d'un effet « Incrustation dégradé » (anciens styles : couleur1 -> couleur2)."""
+    from .degrades import deux_couleurs, normaliser
+    d = e.reglages.get("degrade")
+    if d:
+        return normaliser(d)
+    return deux_couleurs(QColor(e.reglages.get("couleur1") or "#000000").name(),
+                         QColor(e.reglages.get("couleur2") or "#ffffff").name())
 
 
 def _pied(A) -> tuple[float, float, float] | None:
@@ -524,7 +541,8 @@ def rendre_style(image: QImage, style: Style) -> QImage:
         elif e.type == "couleur":
             poser(acc, _rgb(e.r("couleur")), A * op, e.r("mode"))
         elif e.type == "degrade":
-            poser(acc, _degrade(A, e, boite), A * op, e.r("mode"))
+            rgb, alpha = _degrade(A, e, boite)
+            poser(acc, rgb, A * op * alpha, e.r("mode"))
         elif e.type == "motif":
             from .motifs import pavage, tuile
             tu = tuile(e.r("motif"), max(0.1, e.r("echelle") / 100))
@@ -590,18 +608,22 @@ def styles_prets() -> list[tuple[str, Style]]:
                     ("lueur_interne", dict(couleur="#00e5ff", taille=6, mode="normal", opacite=90)),
                     ("lueur", dict(couleur="#00e5ff", taille=28, opacite=95)),
                     ("lueur", dict(couleur="#00a2ff", taille=60, opacite=60)))),
-        ("Or", _s(("degrade", dict(couleur1="#a8741a", couleur2="#ffe9a0", angle=90)),
+        ("Or", _s(("degrade", dict(couleur1="#a8741a", couleur2="#ffe9a0", angle=90,
+                                          degrade=_points(("#7a5512", 0), ("#c99a2e", .35), ("#fff3c0", .7), ("#e8c25a", 1)))),
                   ("biseau", dict(taille=8, profondeur=180, altitude=35, opacite_sombre=55)),
                   ("contour", dict(couleur="#6b4a10", taille=1.5, position="exterieur")),
                   ("ombre", dict(distance=5, taille=10, opacite=50)))),
-        ("Chrome", _s(("degrade", dict(couleur1="#3a3f45", couleur2="#f4f7fa", angle=90)),
+        ("Chrome", _s(("degrade", dict(couleur1="#3a3f45", couleur2="#f4f7fa", angle=90,
+                                              degrade=_points(("#3a3f45", 0), ("#9aa3ac", .48), ("#2b3036", .5),
+                                                              ("#ffffff", .52), ("#f4f7fa", 1)))),
                       ("biseau", dict(taille=6, profondeur=250, altitude=45)),
                       ("contour", dict(couleur="#d9dee3", taille=1.5)))),
         ("Relief", _s(("biseau", dict(forme="estampage", taille=6, profondeur=150)))),
         ("Gravé", _s(("ombre_interne", dict(distance=3, taille=4, opacite=75)),
                      ("biseau", dict(direction="bas", taille=3, profondeur=100, opacite_clair=40)),
                      ("ombre", dict(couleur="#ffffff", mode="ecran", distance=1, taille=1, opacite=50)))),
-        ("Feu", _s(("degrade", dict(couleur1="#c00000", couleur2="#ffe14d", angle=90)),
+        ("Feu", _s(("degrade", dict(couleur1="#c00000", couleur2="#ffe14d", angle=90,
+                                           degrade=_points(("#8a0000", 0), ("#c00000", .3), ("#ff7a00", .65), ("#ffe14d", 1)))),
                    ("lueur", dict(couleur="#ff6a00", taille=24, opacite=85)))),
         ("Bonbon", _s(("couleur", dict(couleur="#ff4f9a")),
                       ("biseau", dict(taille=12, profondeur=120, adoucir=4, altitude=50, opacite_sombre=35)),

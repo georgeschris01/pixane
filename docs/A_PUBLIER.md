@@ -41,6 +41,16 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.19.0 (non publ
   motif…** (calque entier ou sélection), nouvel outil **Tampon de motif** (groupe du Tampon), et style de calque
   **Incrustation de motif**. Échelle de 10 à 1000 % ; le motif se raccorde d'un remplissage à l'autre.
 
+- **Éditeur de dégradé** (comme Photoshop, demande de Christophe) : un clic sur l'aperçu du dégradé (barre du haut de
+  l'outil Dégradé, ou effet Incrustation dégradé des styles) ouvre l'éditeur : points de couleur (sous la barre) et
+  d'opacité (au-dessus) à ajouter, déplacer, retirer ; losanges pour le milieu du passage ; point « couleur de
+  peinture » ; Inverser ; 18 dégradés tout prêts et les siens à enregistrer. Les styles PSD gardent maintenant tous
+  les points de leurs dégradés ; styles tout prêts Or, Chrome et Feu plus riches.
+- **Partir de celle-ci** (Effacer, Remplir, Agrandir ; demande de Christophe) : dans la fenêtre des propositions,
+  l'IA repart de la proposition choisie (même zone) et n'en refait qu'une partie ; glissière Proche ↔ Libre (force
+  0,25 à 0,85) ; variantes ajoutées aux vignettes (« Variante de 2 »). « Autres propositions » repart, comme avant,
+  de l'image d'origine.
+
 ## Corrections
 
 - **Traducteur effacé par la mise à jour** : rangé dans le dossier du programme (D:\Programmes\Pixane\pixane), il

@@ -15,6 +15,7 @@ from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 from pixane.canevas import CORRECTEUR, DEGRADE, FORMES, GOMME_CALQUE, PEINTURE, SEAU
 from pixane.composition import masque_tableau
+from pixane.degrades import deux_couleurs
 from pixane.document import FORMAT_IMAGE, tableau
 from pixane.fenetre import Fenetre
 from pixane.moteur import Moteur
@@ -111,7 +112,7 @@ if len(sys.argv) <= 2:
     # dégradé sur le masque
     f._choisir_outil(DEGRADE)
     c.couleur_peinture = QColor(0, 0, 0)
-    c.couleur2 = None
+    c.degrade = deux_couleurs("peinture", None)
     glisser([(0, 200), (600, 200)])
     m = masque_tableau(doc.calques[1].masque)
     verifier(m[200, 5] < 20 and m[200, 590] > 235 and 80 < m[200, 300] < 180,
@@ -122,7 +123,7 @@ if len(sys.argv) <= 2:
     f.supprimer_masque()
     verifier(doc.calques[1].masque is None, "supprimer le masque")
     c.couleur_peinture = QColor(255, 255, 0)
-    c.couleur2 = QColor(0, 0, 255)
+    c.degrade = deux_couleurs("peinture", "#0000ff")
     c.forme_degrade = "lineaire"
     glisser([(0, 100), (0, 300)], Qt.NoModifier)
     t = rgba(doc.calques[1].image)

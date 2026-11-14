@@ -367,7 +367,15 @@ see it** (all visible layers together): so choose the photo's layer before start
 - The zoom and the spot you are looking at **stay the same** when you switch thumbnails or hold "see the original":
   you compare exactly the same detail (even after an Upscale, where the original is smaller).
 - **Hold to see the original**: while the button is held down, the photo from before is shown.
-- **More options**: runs the AI again for new versions (they are added to the previous ones).
+- **More options**: runs the AI again for new versions (they are added to the previous ones). They always start
+  again from **the original image**: the selected thumbnail is not used as a starting point.
+- **Start from this one** (Erase, Fill, Expand): when an option is **almost right**, select it and click here. The AI
+  starts again from that option, on the same area, and only redoes part of it: it keeps the overall shape and
+  changes the details. The **Close ↔ Free** slider sets how much it may change (Close: small touch-ups, almost the
+  same image; Free: the same idea, reworked more; in the middle by default, then your last setting). The variations
+  are added to the thumbnails ("Variation of 2"…): you can always go back to an earlier option, or start again from
+  a variation. Same time as an option (about 1 min each). A big shape flaw (misplaced object) is only fixed by
+  moving towards **Free**.
 - **Keep this result**: applies the chosen version (can be undone with Ctrl+Z). The selection (brush, lasso,
   rectangle) then disappears; Ctrl+Z brings it back with the previous photo.
 
@@ -657,7 +665,7 @@ result live; **OK** keeps the style (a single step in Undo), **Cancel** puts eve
 | **Outline** | Line around the layer: outside, centre or inside, any thickness |
 | **Bevel and emboss** | Adds volume: inner bevel, outer bevel or emboss; up or down; light altitude |
 | **Colour overlay** | Covers the layer with a colour (Normal, Multiply, Screen, Overlay modes) |
-| **Gradient overlay** | Covers the layer with a linear or radial gradient, any angle and scale |
+| **Gradient overlay** | Covers the layer with a linear or radial gradient, any angle and scale; click the gradient to open the gradient editor (several colours, opacity) |
 | **Pattern overlay** | Covers the layer with a repeated pattern from the library (mode, opacity, scale 10 to 1000 %) |
 | **Ground shadow** | For a cut-out object: shadow lying on the ground, in perspective, sharp at the base and blurred at the end. **Drag the round dot on the photo** to choose its direction and length |
 
@@ -836,8 +844,27 @@ blemish, a scratch on a graded sky.
 
 ### Gradient (D)
 Drag from the start to the end of the gradient (**Shift**: horizontal, vertical or 45°). Top bar: **Linear** or
-**Radial**, start colour (the brush colour) **to** end colour, or **transparent** (fade to nothing). Inside the
-selection if there is one. On a **mask**, it makes a gradual fade (for example to blend two photos).
+**Radial**, then the **gradient preview**: click it to open the **gradient editor** (as in Photoshop). Inside the
+selection if there is one. On a **mask**, it makes a gradual fade (for example to blend two photos): colours become
+greys there, and the transparent part of the gradient becomes the grey opposite to the paint colour (white for a dark
+colour).
+
+**Gradient editor**:
+- At the top, the **ready-made gradients** (paint colour to transparent, black to white, rainbow, gold, chrome,
+  copper, fire, sky…) and the ones you saved: one click loads one.
+- The **bar** shows the gradient (the checkerboard = transparent). **Below the bar**, the **colour** stops; **above**,
+  the **opacity** stops (black = opaque, white = transparent).
+- **Add a colour**: click below the bar where you want it; the new stop takes the colour found there.
+  **Double-click** the stop (or click the "Colour" box) to choose its colour. The **Paint colour** box makes the stop
+  follow the current paint colour (small "P" in the stop).
+- **Add an opacity stop**: click above the bar, then set its **Opacity** below.
+- **Move** a stop: drag it, or type its **Location** in %. **Remove**: pull it away from the bar, press **Delete** or
+  click **Delete** (there are always at least two stops of each kind).
+- The small **diamonds** next to the selected stop set the **midpoint** of the transition between two stops: closer to
+  a stop, the transition happens faster on its side.
+- **Reverse** turns the gradient around. **Save to list…** keeps your gradient (with a name); **Remove from list**
+  takes it away.
+- The chosen gradient is kept from one session to the next.
 
 ### Paint bucket (K)
 **What it is for**: filling a plain-coloured area in a single click, without painting it by hand. For example:

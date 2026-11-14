@@ -51,6 +51,22 @@ NOM = "Pixane"
 MIME_PLACE = "application/x-pixane-place"   # presse-papiers : place d'origine de ce qui a été copié dans Pixane
 
 
+def png_variante(brut: QImage, png: bytes) -> bytes:
+    """« Partir de celle-ci » : la proposition brute (telle que sortie du moteur), avec la même zone à refaire
+    (transparence) que l'image envoyée la première fois."""
+    import io
+    from PIL import Image
+    depart = Image.open(io.BytesIO(png))
+    rgb = Image.fromarray(np.ascontiguousarray(tableau(brut.convertToFormat(FORMAT_IMAGE))[:, :, :3]), "RGB")
+    if rgb.size != depart.size:
+        rgb = rgb.resize(depart.size, Image.LANCZOS)
+    if depart.mode in ("RGBA", "LA", "PA") or "transparency" in depart.info:
+        rgb.putalpha(depart.convert("RGBA").getchannel("A"))
+    tampon = io.BytesIO()
+    rgb.save(tampon, "PNG", compress_level=1)
+    return tampon.getvalue()
+
+
 def reglages() -> QSettings:
     """Réglages de l'utilisateur ; les essais automatiques ont les leurs (variable PIXANE_REGLAGES)."""
     return QSettings("Pixane", os.environ.get("PIXANE_REGLAGES", "Pixane"))
@@ -762,6 +778,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
 
     def _couleur_peinture(self, couleur: str, enregistrer: bool = True):
         self.canevas.couleur_peinture = QColor(couleur)
+        if getattr(self, "opt_degrade_bouton", None) is not None:      # aperçu des points « couleur de peinture »
+            self.opt_degrade_bouton.rafraichir()
         if enregistrer:
             self.reglages.setValue("peinture_couleur", couleur)
 
@@ -2374,12 +2392,14 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
 
     def ia_effacer(self):
         if self.doc and self._verifier_verrou(tr("Effacer")) and self._verifier_selection():
-            self._lancer(tr("Effacer"), True, lambda nom: recettes.effacer(nom), remplir_trous=True)
+            self._lancer(tr("Effacer"), True, lambda nom: recettes.effacer(nom), remplir_trous=True,
+                         variante=lambda nom, force: recettes.variante(nom, force, nb=recettes.NB_EFFACER))
 
     def ia_remplir(self):
         if self.doc and self._verifier_verrou(tr("Remplir")) and self._verifier_selection():
             texte = self.texte_remplir.text().strip()
-            self._lancer(tr("Remplir"), True, lambda nom: recettes.remplir(nom, texte), remplir_trous=True)
+            self._lancer(tr("Remplir"), True, lambda nom: recettes.remplir(nom, texte), remplir_trous=True,
+                         variante=lambda nom, force: recettes.variante(nom, force, texte))
 
     def ia_agrandir(self):
         if not self.doc:
@@ -2448,7 +2468,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             m = affinage.masque_ajout(geo.taille, geo.marges, orig.shape[:2], max(geo.bande) * 1.5)
             affiner = lambda img, fin: self._affiner_agrandir(img, m, fin)
         self._lancer(tr("Agrandir"), False, lambda nom: recettes.agrandir(nom), apres=raccord, png=png,
-                     placer=placer, affiner=affiner)
+                     placer=placer, affiner=affiner,
+                     variante=lambda nom, force: recettes.variante(nom, force, nb=recettes.NB_AGRANDIR,
+                                                                   decoupe=False))
 
     def _affiner_agrandir(self, image: QImage, m, fin):
         """Pleine définition : la proposition choisie est retravaillée par morceaux à la vraie taille, puis
@@ -2675,11 +2697,13 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
 
     def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None,
                 placer=None, nom_calque: str | None = None, suffixe: str | None = None, affiner=None,
-                remplir_trous: bool = False, vue=None):
+                remplir_trous: bool = False, vue=None, variante=None):
         """Envoie l'image au moteur, attend, puis propose les résultats. remplir_trous (Effacer, Remplir) : les trous
         transparents de la sélection (lettres d'un texte coupé…) sont remplis, opaques. nom_calque : nom du calque du résultat
         (le titre sinon) ; suffixe : ajouté au nom proposé à l'enregistrement (ex. « _restauree »).
-        affiner(image, fin) : travail de plus sur la proposition choisie (pleine définition), fin(image) l'applique."""
+        affiner(image, fin) : travail de plus sur la proposition choisie (pleine définition), fin(image) l'applique.
+        variante(nom, force) : recette des variantes d'une proposition (bouton « Partir de celle-ci ») ; l'image
+        envoyée est alors la proposition brute choisie, avec la même zone à refaire que la première fois."""
         doc = self.doc
         if png is None:
             png = doc.png_pour_ia(avec_selection)
@@ -2694,21 +2718,29 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             choix.vue = lambda img, base=original: vue_ia(img, base, trous)
         annuler = threading.Event()
         nom_image = {}
+        bruts: list[QImage] = []          # résultats tels que sortis du moteur (avant apres), dans l'ordre des vignettes
 
-        def calcul(progres):
-            if "nom" not in nom_image:
-                nom_image["nom"] = self.moteur.envoyer_image(png)
-            recette = fabriquer(nom_image["nom"])
-            prompt, sorties = recette[0], recette[1]
-            morceaux = recette[2] if len(recette) > 2 else 1
-            res = []
-            for libelle, donnees in self.moteur.executer(prompt, sorties, annuler, progres, morceaux):
-                img = QImage.fromData(donnees)
-                if img.isNull():
-                    raise ErreurMoteur(tr("Résultat illisible."))
-                img = img.convertToFormat(FORMAT_IMAGE)
-                res.append((libelle, apres(img) if apres else img))
-            return res
+        def calcul_avec(fab, cle, donnees):
+            def calcul(progres):
+                if cle not in nom_image:
+                    nom_image[cle] = self.moteur.envoyer_image(donnees)
+                recette = fab(nom_image[cle])
+                prompt, sorties = recette[0], recette[1]
+                morceaux = recette[2] if len(recette) > 2 else 1
+                res = []
+                for libelle, donnees_res in self.moteur.executer(prompt, sorties, annuler, progres, morceaux):
+                    img = QImage.fromData(donnees_res)
+                    if img.isNull():
+                        raise ErreurMoteur(tr("Résultat illisible."))
+                    img = img.convertToFormat(FORMAT_IMAGE)
+                    res.append((libelle, apres(img) if apres else img, img))
+                return res
+            return calcul
+        calcul = calcul_avec(fabriquer, "original", png)
+
+        def recevoir(res):
+            bruts.extend(r[2] for r in res)
+            choix.ajouter([(libelle, img) for libelle, img, _brut in res])
 
         attente = Attente(titre, self)
         attente.annuler.connect(annuler.set)
@@ -2716,7 +2748,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         def premier_ok(res):
             attente.hide()
             attente.deleteLater()
-            choix.ajouter(res)
+            recevoir(res)
+            if variante is not None:
+                choix.permettre_variantes(int(self.reglages.value("variante_curseur", 50)))
             if choix.exec() and choix.choix() is not None:
                 def fin(image):
                     self._appliquer_resultat(doc, image, titre, placer, nom_calque, zone, trous)
@@ -2737,12 +2771,28 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
 
         def autres():
             annuler.clear()
-            t2 = self._tache(calcul, choix.ajouter,
+            t2 = self._tache(calcul, recevoir,
+                             lambda m: choix.occupe(False, m or tr("Annulé.")))
+            t2.progres.connect(choix.progression)
+            t2.lancer()
+
+        def variantes(ligne, curseur):
+            if variante is None or not 0 <= ligne < len(bruts):
+                choix.occupe(False)
+                return
+            self.reglages.setValue("variante_curseur", curseur)
+            force = recettes.force_variante(curseur)
+            annuler.clear()
+            donnees = png_variante(bruts[ligne], png)
+            nom_v = tr("Variante de {n}", n=ligne + 1)
+            t2 = self._tache(calcul_avec(lambda nom: variante(nom, force), ("variante", ligne, curseur), donnees),
+                             lambda res: recevoir([(nom_v, img, brut) for _l, img, brut in res]),
                              lambda m: choix.occupe(False, m or tr("Annulé.")))
             t2.progres.connect(choix.progression)
             t2.lancer()
 
         choix.autres_demandees.connect(autres)
+        choix.variante_demandee.connect(variantes)
         t = self._tache(calcul, premier_ok, premier_echec)
         t.progres.connect(attente.maj)
         t.lancer()

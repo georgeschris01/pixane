@@ -163,12 +163,19 @@ def _effet(cle: str, d: dict, angle_global: float):
         couleurs = [x for x in g.get("Clrs", []) if isinstance(x, dict)]
         c1 = _couleur(couleurs[0].get("Clr ")) if couleurs else "#000000"
         c2 = _couleur(couleurs[-1].get("Clr ")) if couleurs else "#ffffff"
-        reg = dict(c, couleur1=c1, couleur2=c2, angle=round(_n(d.get("Angl"), 90)),
+        transp = [x for x in g.get("Trns", []) if isinstance(x, dict)]
+        points = None
+        if couleurs:                    # tous les points de couleur et d'opacité (Lctn : 0..4096, Mdpn : 0..100)
+            points = {"couleurs": [{"pos": _n(x.get("Lctn"), 0) / 4096, "couleur": _couleur(x.get("Clr ")),
+                                    "milieu": _n(x.get("Mdpn"), 50) / 100} for x in couleurs],
+                      "opacites": [{"pos": _n(x.get("Lctn"), 0) / 4096, "opacite": _n(x.get("Opct"), 100) / 100,
+                                    "milieu": _n(x.get("Mdpn"), 50) / 100} for x in transp]}
+        reg = dict(c, couleur1=c1, couleur2=c2, degrade=points, angle=round(_n(d.get("Angl"), 90)),
                    forme="radial" if d.get("Type") == "Rdl " else "lineaire",
                    echelle=max(10, min(150, round(_n(d.get("Scl "), 100)))), inverser=bool(d.get("Rvrs", False)))
         reg.pop("couleur", None)
         reg.pop("global", None)
-        return Effet("degrade", {**Effet.nouveau("degrade").reglages, **reg}, actif), len(couleurs) > 2
+        return Effet("degrade", {**Effet.nouveau("degrade").reglages, **reg}, actif), False
     if cle == "ebbl":
         forme = {"InrB": "interne", "OtrB": "externe", "Embs": "estampage", "PlEb": "estampage"}.get(
             d.get("bvlS"), "interne")

@@ -252,6 +252,29 @@ def agrandir(image: str, nb: int = NB_AGRANDIR, graine: int | None = None, charg
     return p, {"32": tr("Proposition")}
 
 
+FORCE_PROCHE, FORCE_LIBRE = 0.25, 0.85     # « Partir de celle-ci » : glissière Proche ↔ Libre
+
+
+def force_variante(curseur: int) -> float:
+    """Glissière 0 (Proche) .. 100 (Libre) -> force de Flux (part de la proposition refaite)."""
+    return round(FORCE_PROCHE + (FORCE_LIBRE - FORCE_PROCHE) * max(0, min(100, curseur)) / 100, 3)
+
+
+def variante(image: str, force: float, texte: str = "", nb: int = NB_REMPLIR, decoupe: bool = True,
+             graine: int | None = None, chargeur: dict | None = None):
+    """« Partir de celle-ci » : image = la proposition choisie, avec la même zone à refaire (transparente) que la
+    première fois. Flux Fill ne la refait qu'en partie (force < 1) : la forme générale reste, les détails changent.
+    decoupe : Effacer / Remplir (découpe autour de la zone, puis recollage) ; Agrandir : toile entière."""
+    p = {"10": _n("LoadImage", image=image)}
+    if decoupe:
+        p["11"] = _n("InpaintCropImproved", image=["10", 0], mask=["10", 1], **_decoupe())
+        _flux_fill(p, ["11", 1], ["11", 2], ["11", 0], nb, texte=texte, denoise=force, graine=graine,
+                   chargeur=chargeur)
+    else:
+        _flux_fill(p, ["10", 0], ["10", 1], None, nb, texte=texte, denoise=force, graine=graine, chargeur=chargeur)
+    return p, {"32": tr("Variante")}
+
+
 def affiner(image: str, force: float = 0.4, steps: int = 20, graine: int | None = None,
             chargeur: dict | None = None):
     """Agrandir en pleine définition : un morceau de 1024 px à la vraie taille ; la partie transparente (ajout de

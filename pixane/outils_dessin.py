@@ -40,18 +40,16 @@ def _poser(base: QImage, calque: QImage, opacite: float, selection: QImage | Non
 
 
 # ------------------------------------------------------------------ dégradé
-def degrade(base: QImage, a: QPointF, b: QPointF, forme: str, c1: QColor, c2: QColor | None, opacite: float,
-            selection: QImage | None = None) -> QImage:
-    """Dégradé de c1 (au point a) vers c2 (au point b) ; c2 None = vers le transparent."""
-    fin = QColor(c1) if c2 is None else QColor(c2)
-    if c2 is None:
-        fin.setAlpha(0)
+def degrade(base: QImage, a: QPointF, b: QPointF, forme: str, points: dict, peinture: QColor, opacite: float,
+            selection: QImage | None = None, gris: bool = False) -> QImage:
+    """Dégradé à plusieurs points (pixane.degrades) du point a au point b ; peinture : couleur des points
+    « couleur de peinture » ; gris : couleurs changées en gris (sur un masque)."""
+    from .degrades import remplir_qgradient
     if forme == "radial":
         g = QRadialGradient(a, max(1.0, QLineF(a, b).length()))
     else:
         g = QLinearGradient(a, b)
-    g.setColorAt(0, QColor(c1))
-    g.setColorAt(1, fin)
+    remplir_qgradient(g, points, peinture, gris)
     tmp = QImage(base.size(), QImage.Format_ARGB32_Premultiplied)
     tmp.fill(Qt.transparent)
     p = QPainter(tmp)

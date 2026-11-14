@@ -5,7 +5,7 @@ from PySide6.QtCore import QEvent, QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFontMetrics, QIcon, QImage, QKeySequence, QPainter, QPixmap, QShortcut
 from PySide6.QtWidgets import (QButtonGroup, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QFrame, QGridLayout, QGroupBox, QHBoxLayout,
                                QLabel, QListWidget, QListWidgetItem, QProgressBar, QPushButton, QRadioButton, QSpinBox,
-                               QVBoxLayout, QWidget, QCheckBox)
+                               QSlider, QVBoxLayout, QWidget, QCheckBox)
 
 from .langue import tr
 
@@ -169,6 +169,7 @@ class BoutonComparer(QPushButton):
 class ChoixResultat(QDialog):
     """Montre les propositions en vignettes ; on en garde une (comme Photoshop)."""
     autres_demandees = Signal()
+    variante_demandee = Signal(int, int)       # (proposition choisie, glissière Proche 0 .. Libre 100)
 
     def __init__(self, titre: str, original: QImage, parent=None):
         super().__init__(parent)
@@ -188,6 +189,29 @@ class ChoixResultat(QDialog):
         comparer.appuye.connect(self._comparer)
         self.bouton_autres = QPushButton(tr("Autres propositions"))
         self.bouton_autres.clicked.connect(self._autres)
+        self.bouton_autres.setToolTip(tr("Nouvelles propositions, calculées à partir de l'image d'origine"))
+        # « Partir de celle-ci » : variantes de la proposition choisie (montré par permettre_variantes)
+        self.bouton_variante = QPushButton(tr("Partir de celle-ci"))
+        self.bouton_variante.setToolTip(tr("Nouvelles propositions à partir de celle qui est choisie : l'IA garde sa "
+                                           "forme générale et change les détails (réglage Proche ↔ Libre)"))
+        self.bouton_variante.clicked.connect(self._variante)
+        self.proche_libre = QSlider(Qt.Horizontal)
+        self.proche_libre.setRange(0, 100)
+        self.proche_libre.setFixedWidth(110)
+        self.proche_libre.setToolTip(tr("Proche : petites retouches, presque la même image. Libre : la même idée, "
+                                        "retravaillée davantage."))
+        self.zone_variante = QWidget()
+        lv = QHBoxLayout(self.zone_variante)
+        lv.setContentsMargins(0, 0, 0, 0)
+        lv.setSpacing(4)
+        lv.addWidget(self.bouton_variante)
+        proche, libre = QLabel(tr("Proche")), QLabel(tr("Libre"))
+        proche.setObjectName("discret")
+        libre.setObjectName("discret")
+        lv.addWidget(proche)
+        lv.addWidget(self.proche_libre)
+        lv.addWidget(libre)
+        self.zone_variante.hide()
         garder = QPushButton(tr("Garder ce résultat"))
         garder.setDefault(True)
         gras = garder.font()
@@ -215,6 +239,7 @@ class ChoixResultat(QDialog):
         bas = QHBoxLayout()
         bas.addWidget(comparer)
         bas.addWidget(self.bouton_autres)
+        bas.addWidget(self.zone_variante)
         bas.addWidget(self.bouton_ajuster)
         bas.addWidget(self.bouton_100)
         bas.addWidget(self.barre)
@@ -241,8 +266,14 @@ class ChoixResultat(QDialog):
             self.vignettes.setCurrentRow(premier if premier < len(self.images) else 0)
         self.occupe(False)
 
+    def permettre_variantes(self, curseur: int = 50):
+        """Montre « Partir de celle-ci » et la glissière Proche ↔ Libre (Effacer, Remplir, Agrandir)."""
+        self.proche_libre.setValue(curseur)
+        self.zone_variante.show()
+
     def occupe(self, oui: bool, texte: str = ""):
         self.bouton_autres.setEnabled(not oui)
+        self.bouton_variante.setEnabled(not oui)
         self.etat.setText(texte)
         if not oui:
             self.barre.hide()
@@ -255,6 +286,13 @@ class ChoixResultat(QDialog):
     def _autres(self):
         self.occupe(True, tr("Calcul de nouvelles propositions…"))
         self.autres_demandees.emit()
+
+    def _variante(self):
+        ligne = self.vignettes.currentRow()
+        if not 0 <= ligne < len(self.images):
+            return
+        self.occupe(True, tr("Calcul de variantes de la proposition {n}…", n=ligne + 1))
+        self.variante_demandee.emit(ligne, self.proche_libre.value())
 
     def _choisi(self, ligne: int):
         if 0 <= ligne < len(self.images):
