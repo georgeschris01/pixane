@@ -1235,6 +1235,8 @@ You need Python 3.11 and [uv](https://github.com/astral-sh/uv).
 
 ## Licence
 
+![Pixane licence: free, non-commercial, open source](logo/licence/licence-pixane-en.png)
+
 Pixane is published under the **Pixane Licence 1.1** — © 2026 Georges Christophe (chrypox). The French text in the [`LICENSE`](LICENSE) file is the only one that is legally binding; [`LICENSE.en.txt`](LICENSE.en.txt) is a courtesy translation. In short:
 
 - **Free**: free use, in companies and internally too; forbidden to sell it, rent it or include it in a paid offer.

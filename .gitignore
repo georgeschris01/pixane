@@ -20,6 +20,7 @@ publication/
 # captures et image d'aperçu de GitHub : fabriquées sur un paysage dessiné (aucune photo personnelle)
 !docs/screenshots/*.png
 !docs/social-preview*.png
+!logo/licence/*.png
 comparaison/
 image de test/
 installateur.log
