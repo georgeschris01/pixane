@@ -1262,5 +1262,7 @@
  "Le dégradé ne se pose que sur ce qui est déjà peint dans le calque (un objet détouré, des lettres) : le vide autour reste vide.": "The gradient only goes on what is already painted in the layer (a cut-out object, letters): the empty space around stays empty.",
  "Le dégradé va dans le masque du calque : il rend le calque plus ou moins transparent, il ne le colore pas. Pour colorer, clique sur la vignette du calque (panneau Calques) ; pour un texte, le dégradé se pose alors sur les lettres.": "The gradient goes into the layer mask: it makes the layer more or less transparent, it does not colour it. To colour, click the layer thumbnail (Layers panel); for a text, the gradient then goes on the letters.",
  "Le masque du calque est choisi (panneau Calques) : le dégradé y rend le calque plus ou moins transparent, il ne le colore pas. Pour colorer : clique sur la vignette du calque.": "The layer mask is selected (Layers panel): there the gradient makes the layer more or less transparent, it does not colour it. To colour: click the layer thumbnail.",
- "→ dans le masque": "→ in the mask"
+ "→ dans le masque": "→ in the mask",
+ "Rangement des pinceaux ajoutés (une seule fois, en arrière-plan)…": "Storing added brushes (once only, in the background)…",
+ "Pinceaux rangés : ils s'ouvrent maintenant sans attente.": "Brushes stored: they now open without waiting."
 }

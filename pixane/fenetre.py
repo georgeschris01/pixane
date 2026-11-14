@@ -281,11 +281,28 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self._demarrer_moteur()
         if self.reglages.value("maj_auto", False, type=bool):
             QTimer.singleShot(8000, lambda: self.verifier_maj(silencieux=True))
+        QTimer.singleShot(3000, self._convertir_pinceaux)
         # suivre les changements de couleur ou de thème faits dans Windows
         self._signature_windows = theme.signature_windows()
         self._veille_windows = QTimer(self)
         self._veille_windows.timeout.connect(self._verifier_windows)
         self._veille_windows.start(2000)
+
+    def _convertir_pinceaux(self) -> None:
+        """Une seule fois : les pinceaux et motifs ajoutés avant le 14/11/2026 (copies telles quelles, parfois plus
+        d'un Go) deviennent des paquets lus à la demande. En arrière-plan ; Pixane reste utilisable."""
+        from .bibliotheque import bibliotheque
+        b = bibliotheque()
+        if not b.anciens():
+            return
+        self.statusBar().showMessage(tr("Rangement des pinceaux ajoutés (une seule fois, en arrière-plan)…"), 15000)
+
+        def fini(n):
+            try:
+                self.statusBar().showMessage(tr("Pinceaux rangés : ils s'ouvrent maintenant sans attente."), 8000)
+            except RuntimeError:                         # fenêtre fermée entre-temps
+                pass
+        b.convertir_anciens(fini)
 
     # ================================================================ interface
     def _icone(self, objet, nom: str):

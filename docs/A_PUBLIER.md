@@ -9,6 +9,12 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.20.0 (non publ
 
 ## Nouveautés
 
+- **Pinceaux et motifs ajoutés rangés à part** (paquets `.pixpaquet`) : chaque pinceau à sa taille d'origine, sans
+  perte (PNG), avec sa vignette ; seul le pinceau utilisé est lu. Plus d'attente à l'ouverture des réglages ou de la
+  bibliothèque, même pour un .abr de 1,7 Go (devenu 855 Mo). Les anciens ajouts sont convertis une fois, en
+  arrière-plan ; chaque ancienne copie n'est effacée qu'après vérification de son paquet.
+- **Installateur** : la case « Lancer Pixane » est aussi proposée à la fin d'une installation neuve (avec le
+  téléchargement du traducteur ou du moteur, Pixane démarre une fois ceux-ci terminés).
 
 ## Corrections
 

@@ -793,10 +793,14 @@ grass, leaves, watercolour, splatters… Each tool keeps its own choice.
   the ready-made styles.
 - **Add files…**: Photoshop brushes (**.abr**), GIMP and Krita brushes (**.gbr**, **.gih**), Krita bundles
   (**.bundle**), or a plain image (black paints; a colour image keeps its colours). Each file becomes a group;
-  **Remove this group** takes it away. Files are copied into Pixane: the original can be moved or deleted.
+  **Remove this group** takes it away. Brushes are stored inside Pixane: the original can be moved or deleted.
+- **Storage**: each added brush and pattern is stored separately, **at its original size with no loss of quality**
+  (PNG), along with its thumbnail. Pixane only opens the brush you use: even an .abr over 1 GB opens **without
+  waiting** (library, brush settings, start-up), and takes less space (1.7 GB → 0.86 GB for a large .abr). Adding a
+  very large file takes the time to store it (about 3 minutes for 1.7 GB).
+- Brushes added **with an earlier version** are stored this way **once**, in the background, at the first start
+  (message in the status bar); Pixane stays usable meanwhile.
 - An “animated” brush (.gih: grass, leaves…) has several shapes that alternate along the stroke.
-- A **very large file** (over 50 MB; some .abr files exceed 1 GB) is read in the background: Pixane stays usable,
-  the Brush button shows "Loading…" (over 2 minutes for a 1.7 GB file); meanwhile, strokes use the round brush.
 - **Settings…** (a dot “•” shows when a setting is changed), with a stroke preview:
   - **Shape**: spacing between dabs, angle (or “angle follows the stroke”, like a pen), roundness;
   - **Scatter**: dabs spread away from the stroke, several at once, random size, angle and roundness;

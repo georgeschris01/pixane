@@ -15,6 +15,8 @@ import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import threading
+
 import numpy as np
 from PIL import Image
 
@@ -89,9 +91,12 @@ class Lecteur:
         return self.p >= len(self.d)
 
 
+_lecture = threading.local()       # lecture en pleine taille (rangement en paquet : rien n'est réduit)
+
+
 def _reduire(a: np.ndarray) -> np.ndarray:
     h, w = a.shape[:2]
-    if max(h, w) <= TAILLE_MAX:
+    if getattr(_lecture, "pleine", False) or max(h, w) <= TAILLE_MAX:
         return a
     k = TAILLE_MAX / max(h, w)
     mode = "L" if a.ndim == 2 else "RGBA"
@@ -437,6 +442,11 @@ def lire_octets(data: bytes, nom_fichier: str, comme: str = "forme") -> Contenu:
     return c
 
 
-def lire_fichier(chemin: str | Path, comme: str = "forme") -> Contenu:
+def lire_fichier(chemin: str | Path, comme: str = "forme", pleine_taille: bool = False) -> Contenu:
+    """pleine_taille : les formes et motifs gardent leur taille d'origine (sinon : réduits à TAILLE_MAX)."""
     chemin = Path(chemin)
-    return lire_octets(chemin.read_bytes(), chemin.name, comme)
+    _lecture.pleine = pleine_taille
+    try:
+        return lire_octets(chemin.read_bytes(), chemin.name, comme)
+    finally:
+        _lecture.pleine = False

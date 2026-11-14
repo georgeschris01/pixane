@@ -227,11 +227,14 @@ Name: "{autoprograms}\{#NomRaccourci}"; Filename: "{app}\python\Pixane.exe"; Par
 Name: "{autodesktop}\{#NomRaccourci}"; Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; IconFilename: "{app}\pixane.ico"; AppUserModelID: "{#IdBarre}"; Tasks: desktopicon
 
 [Run]
-; Moteur IA absent et licence acceptée : le téléchargeur démarre (Pixane sera lancé ensuite par l'utilisateur).
-Filename: "{app}\python\Pixane.exe"; Parameters: "{code:ParamsMoteur}"; WorkingDir: "{app}"; Description: "{cm:MoteurLancer}"; Check: InstallerMoteur; Flags: nowait postinstall skipifsilent runasoriginaluser
-; ComfyUI déjà là, traducteur choisi : sa fenêtre de téléchargement, puis Pixane.
-Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane.installation_traducteur --demarrer --puis-pixane"; WorkingDir: "{app}"; Description: "{cm:TradLancer}"; Check: InstallerTraducteurSeul; Flags: nowait postinstall skipifsilent runasoriginaluser
-Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,Pixane}"; Check: not InstallerMoteur and not InstallerTraducteurSeul; Flags: nowait postinstall skipifsilent runasoriginaluser
+; Dernière page : une case par action, lancées dans l'ordre. Un téléchargement (moteur IA ou traducteur) attend que
+; sa fenêtre soit fermée ; ensuite Pixane s'ouvre si sa case « Lancer Pixane » est cochée (demandé par Christophe le
+; 14/11/2026 : en installation neuve avec le traducteur, Pixane s'ouvrait d'office, sans case).
+; Moteur IA absent et licence acceptée : le téléchargeur (il télécharge aussi le traducteur s'il est choisi).
+Filename: "{app}\python\Pixane.exe"; Parameters: "{code:ParamsMoteur}"; WorkingDir: "{app}"; Description: "{cm:MoteurLancer}"; Check: InstallerMoteur; Flags: waituntilterminated postinstall skipifsilent runasoriginaluser
+; ComfyUI déjà là, traducteur choisi : sa fenêtre de téléchargement.
+Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane.installation_traducteur --demarrer"; WorkingDir: "{app}"; Description: "{cm:TradLancer}"; Check: InstallerTraducteurSeul; Flags: waituntilterminated postinstall skipifsilent runasoriginaluser
+Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,Pixane}"; Flags: nowait postinstall skipifsilent runasoriginaluser
 
 [UninstallDelete]
 ; Fichiers créés par Python en fonctionnant (__pycache__) dans le dossier du programme.

@@ -25,8 +25,9 @@ def _reglages() -> QSettings:
 def vignette(element, t: int = VIGNETTE, detail: bool = False) -> QImage:
     """Petite image d'un pinceau (forme sombre sur fond clair) ou d'un motif (répété). detail : motif à sa taille
     réelle (pas réduit), pour en voir le grain."""
+    petite = None if detail else getattr(element, "apercu", None)     # vignette rangée dans le paquet (rapide)
     if isinstance(element, Motif):
-        a = element.image
+        a = element.image if petite is None else petite
         k = 1.0 if detail else min(1.0, max(48, t * 2 // 3) / max(a.shape[:2]))
         src = _qimage(a)
         if k < 1:
@@ -39,7 +40,7 @@ def vignette(element, t: int = VIGNETTE, detail: bool = False) -> QImage:
         p.drawTiledPixmap(0, 0, t, t, QPixmap.fromImage(src))
         p.end()
         return img
-    a = element.formes[0]
+    a = element.formes[0] if petite is None else petite
     if a.ndim == 2:
         g = (255 - a.astype(np.float32) * 0.9).astype(np.uint8)
         rgba = np.dstack([g, g, g, np.full_like(g, 255)])

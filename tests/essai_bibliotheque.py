@@ -166,35 +166,24 @@ verifier(r[PINCEAUX] == 2 and any(gr.nom == "Mes pinceaux" for gr in b.groupes[P
          ".abr ajouté : un groupe « Mes pinceaux » de 2 pinceaux")
 r = b.importer(dossier / "Paquet.bundle")
 verifier(r[PINCEAUX] == 1 and r[MOTIFS] == 1, ".bundle ajouté : son pinceau et son motif")
-verifier((tmp / PINCEAUX / "Mes pinceaux.abr").exists(), "fichier copié dans la bibliothèque")
+verifier((tmp / PINCEAUX / "Mes pinceaux.abr.pixpaquet").exists()
+         and not (tmp / PINCEAUX / "Mes pinceaux.abr").exists(), "rangé en paquet dans la bibliothèque (pas de copie)")
 b2 = Bibliotheque(tmp)
 verifier(len(b2.elements(PINCEAUX)) == len(pinceaux) + 3 and len(b2.elements(MOTIFS)) == len(motifs) + 1,
          "au redémarrage, les ajouts sont toujours là")
 gr = next(gr for gr in b2.groupes[PINCEAUX] if gr.nom == "Mes pinceaux")
 b2.retirer(gr)
 verifier(not any(gr.nom == "Mes pinceaux" for gr in b2.groupes[PINCEAUX]), "groupe retiré")
-# gros fichier (Smoke Brushes, 1,7 Go chez Christophe) : au démarrage, rien n'est lu ; lecture en arrière-plan
+# gros fichier (Smoke Brushes, 1,7 Go chez Christophe) : au démarrage, seule la liste du paquet est lue
 r = b2.importer(dossier / "Mes pinceaux.abr")
 b3 = Bibliotheque(tmp)
-cle3 = next(gr for gr in b3.groupes[PINCEAUX] if gr.nom == "Mes pinceaux").nom + "/Mes pinceaux.abr#0"
+cle3 = "Mes pinceaux/Mes pinceaux.abr#0"
 g3 = next(gr for gr in b3.groupes[PINCEAUX] if gr.nom == "Mes pinceaux")
-verifier(b3.connu(PINCEAUX, cle3) and g3._elements is None, "pinceau gardé reconnu sans lire son fichier")
-import pixane.bibliotheque as _bm
-verifier(b3.pret(PINCEAUX, cle3), "petit fichier : lu tout de suite, comme avant")
-_gros, _bm.GROS = _bm.GROS, 0                  # comme un fichier de plus de 50 Mo
-verifier(not b3.pret(PINCEAUX, cle3), "gros fichier pas encore lu : pas prêt")
-_app = QApplication.instance() or QApplication(sys.argv)
-fait = []
-b3.charger_en_fond(PINCEAUX, cle3, lambda: fait.append(1))
-b3.charger_en_fond(PINCEAUX, cle3, lambda: fait.append(2))
-import time
-fin = time.time() + 20
-while len(fait) < 2 and time.time() < fin:
-    _app.processEvents()
-    time.sleep(0.05)
-verifier(fait == [1, 2] and b3.pret(PINCEAUX, cle3) and b3.trouver(PINCEAUX, cle3) is not None,
-         "lecture en arrière-plan : les deux rappels, puis le pinceau est prêt")
-_bm.GROS = _gros
+verifier(b3.connu(PINCEAUX, cle3) and b3.pret(PINCEAUX, cle3) and all(e._formes is None for e in g3._elements),
+         "paquet : pinceau reconnu et prêt sans lire aucune forme")
+e3 = b3.trouver(PINCEAUX, cle3)
+verifier(e3 is not None and e3._formes is None and e3.formes[0].ndim == 2 and e3._formes is not None
+         and all(e._formes is None for e in g3._elements[1:]), "une forme n'est lue que pour le pinceau utilisé")
 b2.retirer(next(gr for gr in b2.groupes[PINCEAUX] if gr.nom == "Mes pinceaux"))
 # original en lecture seule (cas de Christophe, cruiza_2.abr : « Accès refusé » au retrait)
 import stat
@@ -202,9 +191,13 @@ seul = dossier / "Protege.abr"
 seul.write_bytes((dossier / "Mes pinceaux.abr").read_bytes())
 seul.chmod(stat.S_IREAD)
 b2.importer(seul)
-copie = tmp / PINCEAUX / "Protege.abr"
-verifier(copie.exists() and os.access(copie, os.W_OK), "original en lecture seule : la copie reste modifiable")
-copie.chmod(stat.S_IREAD)                      # copie faite par une ancienne version (attribut recopié)
+copie = tmp / PINCEAUX / "Protege.abr.pixpaquet"
+verifier(copie.exists() and os.access(copie, os.W_OK), "original en lecture seule : le paquet reste modifiable")
+b2.retirer(next(gr for gr in b2.groupes[PINCEAUX] if gr.nom == "Protege"))
+copie = tmp / PINCEAUX / "Protege.abr"         # copie faite par une ancienne version (attribut recopié)
+copie.write_bytes(seul.read_bytes())
+copie.chmod(stat.S_IREAD)
+b2.recharger()
 gr = next(gr for gr in b2.groupes[PINCEAUX] if gr.nom == "Protege")
 try:
     b2.retirer(gr)

@@ -822,12 +822,15 @@ Le pinceau de couleur (et les masques), la **gomme de calque** et le **pinceau d
   et les styles prêts.
 - **Ajouter des fichiers…** : pinceaux de Photoshop (**.abr**), de GIMP et Krita (**.gbr**, **.gih**), paquets
   Krita (**.bundle**), ou une simple image (le noir peint ; une image en couleur garde ses couleurs). Chaque fichier
-  devient un groupe ; **Retirer ce groupe** l'enlève. Les fichiers sont copiés dans Pixane : l'original peut être
+  devient un groupe ; **Retirer ce groupe** l'enlève. Les pinceaux sont rangés dans Pixane : l'original peut être
   déplacé ou supprimé.
+- **Rangement** : chaque pinceau et chaque motif ajouté est rangé à part, **à sa taille d'origine et sans perte de
+  qualité** (PNG), avec sa vignette. Pixane n'ouvre que le pinceau dont on se sert : même un .abr de plus d'un Go
+  s'ouvre **sans attente** (bibliothèque, réglages du pinceau, démarrage), et prend moins de place (1,7 Go → 0,86
+  Go pour un gros .abr). L'ajout d'un très gros fichier prend le temps de le ranger (environ 3 minutes pour 1,7 Go).
+- Les pinceaux ajoutés **avec une version précédente** sont rangés ainsi **une seule fois**, en arrière-plan, au
+  premier démarrage (message dans la barre d'état) ; Pixane reste utilisable pendant ce temps.
 - Un pinceau « animé » (.gih : herbe, feuilles…) a plusieurs formes qui alternent pendant le trait.
-- Un **très gros fichier** (plus de 50 Mo ; certains .abr dépassent 1 Go) est lu en arrière-plan : Pixane reste
-  utilisable, le bouton Pinceau affiche « Chargement… » (plus de 2 minutes pour un fichier de 1,7 Go) ; en
-  attendant, le trait se fait au pinceau rond.
 - **Réglages…** (un point « • » s'affiche quand un réglage est changé), avec un aperçu du trait :
   - **Forme** : espacement entre les touches, angle (ou « l'angle suit le trait », comme une plume), rondeur ;
   - **Dispersion** : les touches s'écartent du trait, plusieurs à la fois, taille, angle et rondeur au hasard ;

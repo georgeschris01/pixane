@@ -1,16 +1,23 @@
 """Bibliothèque de pinceaux et de motifs : ceux livrés avec Pixane (paquets de Krita, licence CC-0) et ceux que
 l'utilisateur ajoute (.abr, .gbr, .gih, .pat, .bundle, images).
 
-Les fichiers ajoutés sont copiés tels quels dans %LOCALAPPDATA%\\Pixane\\bibliotheque\\{pinceaux,motifs} : chaque
-fichier devient un « groupe » (un .abr de 50 pinceaux = un groupe de 50). Rien n'est converti : on relit le fichier
-d'origine (rapide), ce qui garde tout ce qu'il contient.
+Les fichiers ajoutés sont rangés dans %LOCALAPPDATA%\\Pixane\\bibliotheque\\{pinceaux,motifs} sous forme de
+« paquets » (.pixpaquet) : chaque fichier devient un groupe (un .abr de 50 pinceaux = un groupe de 50). Le paquet
+contient chaque pinceau ou motif en PNG (sans perte, à sa taille d'origine), sa vignette, et la liste des noms. Au
+démarrage, seule la liste est lue ; un pinceau n'est ouvert que quand on s'en sert : pas d'attente, même pour un
+.abr de plus d'un Go. Les anciennes copies telles quelles (avant le 14/11/2026) sont converties une fois, en
+arrière-plan (convertir_anciens).
 
 Un pinceau d'un .gih (pinceau animé de GIMP / Krita) garde toutes ses formes : elles alternent pendant le trait.
 """
 from __future__ import annotations
 
+import io
+import json
 import os
-import shutil
+import tempfile
+import threading
+import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -127,6 +134,180 @@ def elements_de(c: Contenu, genre: str, fichier: Path, groupe: str) -> list:
     return [Pinceau(f.nom, [f.image], f.espacement, f"{groupe}/{fichier.name}#{i}") for i, f in enumerate(c.formes)]
 
 
+# ------------------------------------------------------------------ paquets (.pixpaquet)
+PAQUET = ".pixpaquet"
+APERCU = 256                    # côté maximal de la vignette rangée dans le paquet
+_verrou_zip = threading.Lock()
+_MODES = {2: "L", 3: "RGB", 4: "RGBA"}
+
+
+def _encoder(a: np.ndarray) -> tuple[str, bytes]:
+    """Image sans perte : PNG (8 bits) ; sinon le tableau tel quel (.npy). Renvoie (extension, octets)."""
+    b = io.BytesIO()
+    mode = "L" if a.ndim == 2 else _MODES.get(a.shape[2]) if a.ndim == 3 and a.shape[2] > 2 else None
+    if a.dtype == np.uint8 and mode:
+        from PIL import Image
+        Image.fromarray(np.ascontiguousarray(a), mode).save(b, "PNG", compress_level=6)
+        return ".png", b.getvalue()
+    np.save(b, a, allow_pickle=False)
+    return ".npy", b.getvalue()
+
+
+def _decoder(nom: str, donnees: bytes) -> np.ndarray:
+    if nom.endswith(".npy"):
+        return np.load(io.BytesIO(donnees), allow_pickle=False)
+    from PIL import Image
+    return np.asarray(Image.open(io.BytesIO(donnees))).copy()
+
+
+def _petite(a: np.ndarray) -> np.ndarray:
+    """Vignette (APERCU px au plus) : seulement pour l'affichage dans la liste."""
+    h, w = a.shape[:2]
+    if max(h, w) <= APERCU:
+        return a
+    from PIL import Image
+    a8 = a if a.dtype == np.uint8 else (a.astype(np.float32) / max(1.0, float(a.max())) * 255).astype(np.uint8)
+    if a8.ndim == 3 and a8.shape[2] not in (3, 4):
+        a8 = a8[..., 0]
+    k = APERCU / max(h, w)
+    return np.asarray(Image.fromarray(np.ascontiguousarray(a8)).resize((max(1, round(w * k)), max(1, round(h * k))),
+                                                                       Image.LANCZOS))
+
+
+class _Paquet:
+    """Un fichier .pixpaquet : ouvert le temps d'une lecture (le fichier reste libre, on peut le retirer)."""
+
+    def __init__(self, chemin: Path):
+        self.chemin = chemin
+        self._apercus = None
+
+    def lire(self, nom: str) -> np.ndarray:
+        with _verrou_zip, zipfile.ZipFile(self.chemin) as z:
+            return _decoder(nom, z.read(nom))
+
+    def apercu(self, nom: str):
+        if self._apercus is None:                   # toutes les vignettes d'un coup (petites)
+            with _verrou_zip, zipfile.ZipFile(self.chemin) as z:
+                self._apercus = {n: _decoder(n, z.read(n)) for n in z.namelist() if n.startswith("v/")}
+        return self._apercus.get(nom)
+
+
+class PinceauPaquet(Pinceau):
+    """Pinceau rangé dans un paquet : ses formes ne sont lues qu'à la première utilisation."""
+
+    def __init__(self, nom, espacement, cle, paquet: _Paquet, fichiers: list, couleur: bool, apercu: str):
+        self._formes = None
+        super().__init__(nom, None, espacement, cle)
+        self._paquet, self._fichiers, self._couleur, self._apercu = paquet, fichiers, couleur, apercu
+
+    @property
+    def formes(self):
+        if self._formes is None:
+            self._formes = [self._paquet.lire(n) for n in self._fichiers]
+        return self._formes
+
+    @formes.setter
+    def formes(self, valeur):
+        if valeur is not None:
+            self._formes = valeur
+
+    @property
+    def en_couleur(self) -> bool:
+        return self._couleur
+
+    @property
+    def apercu(self):
+        return self._paquet.apercu(self._apercu)
+
+
+class MotifPaquet(Motif):
+    """Motif rangé dans un paquet : son image n'est lue qu'à la première utilisation."""
+
+    def __init__(self, nom, cle, paquet: _Paquet, fichier: str, apercu: str):
+        self._image = None
+        super().__init__(nom, None, cle)
+        self._paquet, self._fichier, self._apercu = paquet, fichier, apercu
+
+    @property
+    def image(self):
+        if self._image is None:
+            self._image = self._paquet.lire(self._fichier)
+        return self._image
+
+    @image.setter
+    def image(self, valeur):
+        if valeur is not None:
+            self._image = valeur
+
+    @property
+    def apercu(self):
+        return self._paquet.apercu(self._apercu)
+
+
+def ecrire_paquet(cible: Path, groupe: str, genre: str, elements: list, ignores: list, source: str) -> None:
+    """Range les éléments (lus en pleine taille) dans un paquet. Écrit à côté puis renomme : un paquet à moitié
+    écrit n'existe jamais sous son vrai nom."""
+    index = {"version": 1, "groupe": groupe, "genre": genre, "source": source,
+             "ignores": [list(i) for i in ignores], "elements": []}
+    tmp = cible.with_name(cible.name + ".part")
+    try:
+        with zipfile.ZipFile(tmp, "w", zipfile.ZIP_STORED) as z:     # PNG : déjà compressé
+            def ranger(nom, a):
+                ext, octets = _encoder(a)
+                z.writestr(nom + ext, octets)
+                return nom + ext
+            for i, e in enumerate(elements):
+                premiere = e.image if genre == MOTIFS else e.formes[0]
+                d = {"nom": e.nom, "cle": e.cle, "apercu": ranger(f"v/{i}", _petite(premiere))}
+                if genre == MOTIFS:
+                    d["fichier"] = ranger(f"m/{i}", e.image)
+                else:
+                    d["formes"] = [ranger(f"f/{i}_{k}", f) for k, f in enumerate(e.formes)]
+                    d["espacement"] = e.espacement
+                    d["couleur"] = bool(premiere.ndim == 3)
+                index["elements"].append(d)
+            z.writestr("index.json", json.dumps(index, ensure_ascii=False))
+        os.replace(tmp, cible)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def lire_paquet(chemin: Path) -> "Groupe":
+    """Groupe d'après la liste du paquet (rapide) : pinceaux, motifs et vignettes sont lus à la demande."""
+    with _verrou_zip, zipfile.ZipFile(chemin) as z:
+        index = json.loads(z.read("index.json"))
+    pq = _Paquet(chemin)
+    genre = index["genre"]
+    if genre == MOTIFS:
+        elements = [MotifPaquet(e["nom"], e["cle"], pq, e["fichier"], e["apercu"]) for e in index["elements"]]
+    else:
+        elements = [PinceauPaquet(e["nom"], e.get("espacement", 0.25), e["cle"], pq, e["formes"],
+                                  e.get("couleur", False), e["apercu"]) for e in index["elements"]]
+    return Groupe(index["groupe"], genre, False, [chemin], _elements=elements,
+                  ignores=[tuple(i) for i in index.get("ignores", [])])
+
+
+def paquet_depuis_fichier(fichier: Path, cible: Path, groupe: str, genre: str) -> int:
+    """Lit un fichier de pinceaux / motifs à sa taille d'origine et le range dans un paquet. Renvoie le nombre
+    d'éléments ; ValueError s'il n'y a rien de lisible."""
+    c = lire_fichier(fichier, "motif" if genre == MOTIFS else "forme", pleine_taille=True)
+    elements = elements_de(c, genre, fichier, groupe)
+    if not elements:
+        raise ValueError("aucun pinceau ni motif lisible dans ce fichier")
+    ecrire_paquet(cible, groupe, genre, elements, c.ignores, fichier.name)
+    return len(elements)
+
+
+def verifier_paquet(cible: Path, nombre: int) -> None:
+    """Le paquet se relit et contient bien `nombre` éléments (sinon ValueError)."""
+    g = lire_paquet(cible)
+    if len(g.elements) != nombre:
+        raise ValueError(f"paquet incomplet ({len(g.elements)} sur {nombre})")
+    for e in (g.elements[0], g.elements[-1]):
+        if (e.image if g.genre == MOTIFS else e.formes[0]) is None:
+            raise ValueError("paquet illisible")
+
+
 def dossier_utilisateur() -> Path:
     base = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "Pixane"
     nom = "bibliotheque"
@@ -167,12 +348,75 @@ class Bibliotheque:
                     d = BASE / court / genre
                     if d.is_dir():
                         liste.append(Groupe(nom, genre, True, sorted(f for f in d.iterdir() if _accepte(f, genre))))
-            d = self.dossier / genre
-            if d.is_dir():
-                for f in sorted(d.iterdir(), key=lambda p: p.name.lower()):
-                    if f.is_file():
-                        liste.append(Groupe(f.stem, genre, False, [f]))
+            for f in self._fichiers_utilisateur(genre):
+                if f.name.endswith(PAQUET):
+                    try:
+                        liste.append(lire_paquet(f))
+                    except Exception:             # paquet abîmé : on le saute (la liste reste utilisable)
+                        continue
+                elif not f.with_name(f.name + PAQUET).is_file():     # ancienne copie pas encore convertie
+                    liste.append(Groupe(f.stem, genre, False, [f]))
             self.groupes[genre] = liste
+
+    def _fichiers_utilisateur(self, genre: str) -> list:
+        d = self.dossier / genre
+        if not d.is_dir():
+            return []
+        return [f for f in sorted(d.iterdir(), key=lambda p: p.name.lower()) if f.is_file()
+                and not f.name.endswith(".part")]
+
+    def anciens(self) -> list:
+        """Copies telles quelles (d'avant les paquets) encore à convertir : [(genre, chemin)]."""
+        return [(genre, f) for genre in (PINCEAUX, MOTIFS) for f in self._fichiers_utilisateur(genre)
+                if not f.name.endswith(PAQUET)]
+
+    def convertir_anciens(self, fini=None) -> None:
+        """Convertit en arrière-plan les anciennes copies en paquets (taille d'origine, sans perte). Chaque copie
+        n'est effacée qu'une fois son paquet écrit et relu. À la fin (dans la boucle de Qt) : recharger, puis
+        fini(nombre_converti). Une copie illisible reste telle quelle."""
+        from PySide6.QtCore import QTimer
+        travail = self.anciens()
+        if not travail or getattr(self, "_conversion", False):
+            return
+        self._conversion = True
+        faits: list = []
+        termine: list = []
+
+        def convertir():
+            try:
+                for genre, f in travail:
+                    cible = f.with_name(f.name + PAQUET)
+                    try:
+                        if not cible.is_file():
+                            n = paquet_depuis_fichier(f, cible, f.stem, genre)
+                            verifier_paquet(cible, n)
+                        else:
+                            lire_paquet(cible)            # déjà converti (copie pas encore effacée)
+                        faits.append(f)
+                    except Exception:             # paquet raté ou abîmé : retiré, la copie reste
+                        try:
+                            cible.unlink(missing_ok=True)
+                        except OSError:
+                            pass
+            finally:
+                termine.append(1)
+
+        threading.Thread(target=convertir, daemon=True).start()
+
+        def surveiller():
+            if not termine:
+                QTimer.singleShot(500, surveiller)
+                return
+            self._conversion = False
+            self.recharger()                          # les groupes lisent maintenant les paquets
+            for f in faits:
+                try:
+                    _effacer(f)
+                except OSError:                       # encore ouvert : effacé au prochain démarrage
+                    pass
+            if fini is not None:
+                fini(len(faits))
+        QTimer.singleShot(500, surveiller)
 
     def elements(self, genre: str) -> list:
         return [e for g in self.groupes[genre] for e in g.elements]
@@ -250,47 +494,75 @@ class Bibliotheque:
         if ext not in EXT_PINCEAUX + EXT_MOTIFS + EXT_IMAGES + EXT_PAQUETS:
             raise ValueError("format de fichier inconnu")
         comme = "motif" if ext in EXT_MOTIFS or (ext in EXT_IMAGES and image_comme == MOTIFS) else "forme"
-        c = lire_fichier(chemin, comme)
-        if not c.formes and not c.motifs:
-            raise ValueError("aucun pinceau ni motif lisible dans ce fichier")
-        bilan = {PINCEAUX: 0, MOTIFS: 0, "ignores": list(c.ignores)}
-        if ext in EXT_PAQUETS:                   # paquet : on en tire ses fichiers de pinceaux et de motifs
-            import zipfile
-            with zipfile.ZipFile(chemin) as z:
+        bilan = {PINCEAUX: 0, MOTIFS: 0, "ignores": []}
+        if ext in EXT_PAQUETS:                   # paquet : chacun de ses fichiers de pinceaux / motifs, à part
+            with zipfile.ZipFile(chemin) as z, tempfile.TemporaryDirectory(prefix="pixane-") as tmp:
                 for n in z.namelist():
                     d, _, f = n.partition("/")
                     genre = {"brushes": PINCEAUX, "patterns": MOTIFS}.get(d)
-                    if genre and f and "/" not in f and _accepte(Path(f), genre):
-                        cible = self._cible(genre, f"{chemin.stem} - {f}")
-                        cible.write_bytes(z.read(n))
-            bilan[PINCEAUX], bilan[MOTIFS] = len(c.formes), len(c.motifs)
+                    if not (genre and f and "/" not in f and _accepte(Path(f), genre)):
+                        continue
+                    nom = self._nom_libre(genre, f"{chemin.stem} - {f}")
+                    source = Path(tmp) / nom
+                    source.write_bytes(z.read(n))
+                    try:
+                        bilan[genre] += self._ranger(source, genre, nom, bilan)
+                    except ValueError as e:
+                        bilan["ignores"].append((f, str(e)))
+                    finally:
+                        source.unlink(missing_ok=True)
         else:
+            c = lire_fichier(chemin, comme, pleine_taille=True)     # une seule lecture, à la taille d'origine
+            if not c.formes and not c.motifs:
+                raise ValueError("aucun pinceau ni motif lisible dans ce fichier")
             genre = MOTIFS if c.motifs else PINCEAUX
-            # copie sans les attributs : un original en lecture seule donnait une copie impossible à retirer
-            shutil.copyfile(chemin, self._cible(genre, chemin.name))
-            bilan[genre] = len(c.motifs) if c.motifs else len(c.formes)
+            nom = self._nom_libre(genre, chemin.name)
+            elements = elements_de(c, genre, Path(nom), Path(nom).stem)
+            cible = self.dossier / genre / (nom + PAQUET)
+            ecrire_paquet(cible, Path(nom).stem, genre, elements, c.ignores, chemin.name)
+            verifier_paquet(cible, len(elements))
+            bilan[genre] = len(elements)
+            bilan["ignores"] += list(c.ignores)
+        if not bilan[PINCEAUX] and not bilan[MOTIFS]:
+            raise ValueError("aucun pinceau ni motif lisible dans ce fichier")
         self.recharger()
         return bilan
 
-    def _cible(self, genre: str, nom: str) -> Path:
+    def _ranger(self, source: Path, genre: str, nom: str, bilan: dict) -> int:
+        """Un fichier (tiré d'un paquet de Krita) devient un paquet de la bibliothèque. Renvoie le nombre."""
+        cible = self.dossier / genre / (nom + PAQUET)
+        n = paquet_depuis_fichier(source, cible, Path(nom).stem, genre)
+        verifier_paquet(cible, n)
+        bilan["ignores"] += lire_paquet(cible).ignores
+        return n
+
+    def _nom_libre(self, genre: str, nom: str) -> str:
+        """Nom de fichier pas encore pris (ni copie ancienne ni paquet) : « nom (2).abr »…"""
         d = self.dossier / genre
         d.mkdir(parents=True, exist_ok=True)
-        cible, k = d / nom, 2
-        while cible.exists():
-            cible = d / f"{Path(nom).stem} ({k}){Path(nom).suffix}"
+        essai, k = nom, 2
+        while (d / essai).exists() or (d / (essai + PAQUET)).exists():
+            essai = f"{Path(nom).stem} ({k}){Path(nom).suffix}"
             k += 1
-        return cible
+        return essai
 
     def retirer(self, groupe: Groupe) -> None:
         """Retire un groupe ajouté par l'utilisateur (les groupes de base restent)."""
         if groupe.de_base:
             raise ValueError("groupe de base")
-        import stat
         for f in groupe.fichiers:
-            if f.exists():
-                f.chmod(stat.S_IWRITE | stat.S_IREAD)    # lecture seule (copié d'un original protégé)
-            f.unlink(missing_ok=True)
+            _effacer(f)
+            ancien = f.with_name(f.name[:-len(PAQUET)]) if f.name.endswith(PAQUET) else None
+            if ancien is not None and ancien.exists():   # copie d'origine pas encore effacée
+                _effacer(ancien)
         self.recharger()
+
+
+def _effacer(f: Path) -> None:
+    import stat
+    if f.exists():
+        f.chmod(stat.S_IWRITE | stat.S_IREAD)            # lecture seule (copié d'un original protégé)
+    f.unlink(missing_ok=True)
 
 
 # ---- familles (comme les dossiers de pinceaux de Photoshop) : d'après le nom du fichier
