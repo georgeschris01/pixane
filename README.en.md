@@ -1181,7 +1181,7 @@ asks two questions (default answer "No"):
 - also delete the **settings** (language, theme, last folder, text style, engine folder) and the logs?
 
 **Licences and test hardware**:
-- Pixane: Pixane Licence 1.1, © 2026 Georges Christophe (chrypox): free of charge, may be modified and shared,
+- Pixane: Pixane Licence 1.2, © 2026 Georges Christophe (chrypox): free of charge, may be modified and shared,
   author's name required, no sale (of Pixane or a modified version); file `LICENSE` (French text prevails;
   translation `LICENSE.en.txt`).
   Third-party items: `docs\LICENCES_TIERS.md`.
@@ -1235,9 +1235,9 @@ You need Python 3.11 and [uv](https://github.com/astral-sh/uv).
 
 ## Licence
 
-![Pixane licence: free, non-commercial, open source](logo/licence/licence-pixane-en.png)
+![Pixane licence: free, non-commercial, modifiable](logo/licence/licence-pixane-en.png)
 
-Pixane is published under the **Pixane Licence 1.1** — © 2026 Georges Christophe (chrypox). The French text in the [`LICENSE`](LICENSE) file is the only one that is legally binding; [`LICENSE.en.txt`](LICENSE.en.txt) is a courtesy translation. In short:
+Pixane is published under the **Pixane Licence 1.2** — © 2026 Georges Christophe (chrypox). The French text in the [`LICENSE`](LICENSE) file is the only one that is legally binding; [`LICENSE.en.txt`](LICENSE.en.txt) is a courtesy translation. In short:
 
 - **Free**: free use, in companies and internally too; forbidden to sell it, rent it or include it in a paid offer.
 - **Sharing**: free copying and sharing, with the licence and the author's name.

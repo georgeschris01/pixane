@@ -5,7 +5,7 @@ that prevails.
 ======================================================================
 
 ======================================================================
-SOFTWARE LICENCE AGREEMENT: Pixane ("Pixane Licence 1.1")
+SOFTWARE LICENCE AGREEMENT: Pixane ("Pixane Licence 1.2")
 Free-of-charge, source-available, non-commercial software
 AUTHOR AND OWNER: Georges Christophe (chrypox)
 Copyright (c) 2026 Georges Christophe.

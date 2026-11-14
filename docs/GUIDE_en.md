@@ -1100,7 +1100,7 @@ asks two questions (default answer "No"):
 - also delete the **settings** (language, theme, last folder, text style, engine folder) and the logs?
 
 **Licences and test hardware**:
-- Pixane: Pixane Licence 1.1, © 2026 Georges Christophe (chrypox): free of charge, may be modified and shared,
+- Pixane: Pixane Licence 1.2, © 2026 Georges Christophe (chrypox): free of charge, may be modified and shared,
   author's name required, no sale (of Pixane or a modified version); file `LICENSE` (French text prevails;
   translation `LICENSE.en.txt`).
   Third-party items: `docs\LICENCES_TIERS.md`.

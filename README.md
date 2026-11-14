@@ -1218,7 +1218,7 @@ Applications. Le désinstalleur pose deux questions (réponse « Non » par déf
   journaux ?
 
 **Licences et matériel d'essai** :
-- Pixane : Licence Pixane 1.1, © 2026 Georges Christophe (chrypox) : gratuit, modifiable et partageable,
+- Pixane : Licence Pixane 1.2, © 2026 Georges Christophe (chrypox) : gratuit, modifiable et partageable,
   nom de l'auteur obligatoire, aucune vente (ni de Pixane ni d'une version modifiée) ; fichier `LICENSE`.
   Éléments tiers : `docs\LICENCES_TIERS.md`.
 - Testé sur une carte graphique NVIDIA de 8 Go (RTX 3060 Ti). Les durées indiquées viennent de ce PC.
@@ -1271,9 +1271,9 @@ Il faut Python 3.11 et [uv](https://github.com/astral-sh/uv).
 
 ## Licence
 
-![Licence Pixane : gratuit, non commercial, code ouvert](logo/licence/licence-pixane.png)
+![Licence Pixane : gratuit, non commercial, modifiable](logo/licence/licence-pixane.png)
 
-Pixane est publié sous la **Licence Pixane 1.1** — © 2026 Georges Christophe (chrypox). Le texte complet, seul à faire foi, est dans le fichier [`LICENSE`](LICENSE) (traduction anglaise : [`LICENSE.en.txt`](LICENSE.en.txt)). En résumé :
+Pixane est publié sous la **Licence Pixane 1.2** — © 2026 Georges Christophe (chrypox). Le texte complet, seul à faire foi, est dans le fichier [`LICENSE`](LICENSE) (traduction anglaise : [`LICENSE.en.txt`](LICENSE.en.txt)). En résumé :
 
 - **Gratuit** : utilisation libre et gratuite, aussi en entreprise et en interne ; interdit de le vendre, le louer ou l'intégrer dans une offre payante.
 - **Partage** : copie et partage gratuits, avec la licence et le nom de l'auteur.

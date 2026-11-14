@@ -1,5 +1,5 @@
 """Image de la licence de Pixane pour le README (comme celle de TwinPanel) : logo, trois pastilles (gratuit, non
-commercial, code ouvert), « LICENCE PIXANE ». Écrit logo\\licence\\licence-pixane(-en).svg et .png (2 ×).
+commercial, modifiable), « LICENCE PIXANE ». Écrit logo\\licence\\licence-pixane(-en).svg et .png (2 ×).
 Usage (depuis la racine du projet) : .venv\\Scripts\\python.exe outils\\licence_pixane.py"""
 import re
 import sys
@@ -42,7 +42,7 @@ def euro_barre(cx, cy):      # non commercial
             f'stroke-linecap="round"/>')
 
 
-def code_ouvert(cx, cy):     # code ouvert : on peut le modifier et le partager (même licence)
+def modifiable(cx, cy):      # code source disponible : on peut le modifier et le partager (même licence)
     c = "#4AA3F0"
     return (f'<circle cx="{cx}" cy="{cy}" r="34" fill="none" stroke="{c}" stroke-width="5"/>'
             f'<path d="M{cx - 9} {cy - 13} L{cx - 20} {cy} L{cx - 9} {cy + 13}" fill="none" stroke="{c}" '
@@ -60,9 +60,8 @@ def image(sous_titre: str) -> str:
             '<stop offset="0" stop-color="#FF8A3D"/><stop offset="1" stop-color="#E8366F"/></linearGradient></defs>'
             f'<rect x="3" y="3" width="{W - 6}" height="{H - 6}" rx="24" fill="#1E222B" stroke="url(#bord)" '
             'stroke-width="5"/>'
-            '<circle cx="80" cy="80" r="60" fill="#2A2E38"/>'
             + logo(28, 28, 104)
-            + cadeau(206, 66) + euro_barre(298, 66) + code_ouvert(390, 66)
+            + cadeau(206, 66) + euro_barre(298, 66) + modifiable(390, 66)
             + f'<text x="458" y="72" {police} font-size="27" font-weight="700" fill="#FFFFFF">LICENCE</text>'
             f'<text x="458" y="102" {police} font-size="27" font-weight="700" fill="url(#bord)">PIXANE</text>'
             f'<text x="375" y="138" text-anchor="middle" {police} font-size="15" font-weight="600" '
@@ -72,7 +71,7 @@ def image(sous_titre: str) -> str:
 
 app = QGuiApplication(sys.argv)
 DOSSIER.mkdir(parents=True, exist_ok=True)
-for suffixe, sous_titre in (("", "GRATUIT · NON COMMERCIAL · CODE OUVERT"), ("-en", "FREE · NON-COMMERCIAL · OPEN SOURCE")):
+for suffixe, sous_titre in (("", "GRATUIT · NON COMMERCIAL · MODIFIABLE"), ("-en", "FREE · NON-COMMERCIAL · MODIFIABLE")):
     code = image(sous_titre)
     (DOSSIER / f"licence-pixane{suffixe}.svg").write_text(code, encoding="utf-8")
     img = QImage(W * 2, H * 2, QImage.Format_ARGB32_Premultiplied)

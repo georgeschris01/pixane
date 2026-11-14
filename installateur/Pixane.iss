@@ -92,7 +92,7 @@ RestartApplications=no
 ChangesAssociations=yes
 
 [Languages]
-; Page de licence (Licence Pixane 1.1) : le texte français fait foi, l'anglais est une traduction de courtoisie.
+; Page de licence (Licence Pixane 1.2) : le texte français fait foi, l'anglais est une traduction de courtoisie.
 Name: "french"; MessagesFile: "compiler:Languages\French.isl"; LicenseFile: "..\LICENSE"
 Name: "english"; MessagesFile: "compiler:Default.isl"; LicenseFile: "..\LICENSE.en.txt"
 
