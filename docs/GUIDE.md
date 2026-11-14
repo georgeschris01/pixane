@@ -144,7 +144,8 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
     problème est signalée à la fin, les autres sont faites.
   - Sécurité : si les résultats iraient dans le même dossier sous le même nom, Pixane refuse (les originaux
     seraient remplacés).
-- **Fichier > Nouvelle image…** (Ctrl+N) : une image vide, comme dans Photoshop.
+- **Fichier > Nouvelle image…** (Ctrl+N) : une image vide, comme dans Photoshop. Un **aperçu** montre la forme de
+  la feuille, son fond et les repères (fond perdu, zone de sécurité).
   - **Formats tout prêts** (à gauche) : **pochettes** (CD, vinyle 33 et 45 tours, 3000 × 3000 px pour Spotify,
     Deezer, Apple Music), **livres** (poche, roman, Amazon KDP, livre numérique), **réseaux sociaux** (Instagram,
     Story, Facebook, YouTube, X), **impression** (A3, A4, A5, photos, affiches, carte de visite, flyer), **écran**
@@ -270,6 +271,23 @@ son bouton) ou touche **Y**.
   photo chargée, un cadre bien serré aide ; une partie de photo entièrement dans le cadre se retire par Alt + clic.
 - Ctrl+Z annule le dernier cadre ou la dernière correction.
 
+### Trouver une police semblable
+Quelle police a servi pour ce titre ? Pixane cherche parmi **les polices installées sur le PC** celles qui
+ressemblent le plus (sans Internet, rien n'est téléchargé).
+1. Sélectionnez les lettres avec la **Sélection de texte (Y)** (un bloc plein ne marche pas : il faut les lettres
+   seules).
+2. **Sélection > Trouver une police semblable…**, ou le bouton **Police semblable…** dans la barre de l'outil.
+3. **Tapez les mêmes lettres** que dans l'image, en respectant les majuscules (séparez les lignes par « / »), puis
+   **Chercher**. Quelques secondes.
+4. Les polices les plus proches s'affichent d'abord, écrites avec vos lettres, avec leur ressemblance en %.
+   - **Appliquer au texte choisi** : si le calque choisi est un texte de Pixane, il prend cette police ;
+   - **Créer un texte avec cette police** : nouveau calque de texte à la place des lettres, avec leur couleur (les
+     lettres de l'image restent : effacez-les ensuite si besoin) ;
+   - **Copier le nom** de la police.
+- **Option** (case à l'installation, ou **Affichage > Recherche de police semblable**) : pour aller vite, Pixane
+  prépare **une seule fois** la liste de vos polices, en arrière-plan, environ 1 min 20 après le démarrage (15 Mo).
+  Décochée : la fonction est cachée, rien ne tourne en fond, et cette liste est effacée.
+
 ### Baguette magique (W)
 Un clic sur une couleur sélectionne la zone de couleur proche. Sans IA, instantané.
 - **Régler en glissant** : après le clic, **garder le bouton appuyé et glisser à droite** (plus large) **ou à gauche**
@@ -312,6 +330,9 @@ Un calque **verrouillé** est protégé ; un **texte** coupé ou supprimé devie
 
 Les autres outils : **Déplacer** (V) bouge le contenu du **calque choisi** (un texte déplacé reste modifiable ; ce qui
 sort de la feuille est gardé, on peut le faire revenir ; refusé sur un calque verrouillé).
+- **Flèches du clavier** (outil Déplacer) : poussent le calque choisi (ou le texte) de **1 px**, **10 px** avec Maj.
+  Touche tenue : une seule étape dans Annuler. Elles marchent aussi juste après un clic dans le panneau Calques, et
+  poussent le cadre de Transformer (Ctrl+T) en cours.
 - Un **cadre à poignées** entoure ce qu'il y a sur le calque (ou seulement la partie sélectionnée, s'il y a une
   sélection) : **glisser au milieu** déplace ; **un coin** change la taille en gardant les proportions (Maj : libre) ;
   **un milieu de côté**, seulement la largeur ou la hauteur ; **juste à l'extérieur d'un coin** (curseur en croix),
@@ -459,8 +480,9 @@ Deux cadres apparaissent sur la photo :
 - Quand les deux cadres sont l'un sur l'autre (au départ), le **sens du geste** décide : vers l'extérieur = agrandir,
   vers l'intérieur = bord abîmé.
 - **Maj** en tirant : le côté opposé bouge pareil (agrandir à gauche et à droite en même temps, par exemple).
-- **Détection automatique** : à l'ouverture, Pixane repère les liserés clairs ou foncés (1 à 8 px) que beaucoup
-  d'images ont sur leurs bords, et place déjà le cadre rouge dessus. Vous pouvez l'ajuster ou le remettre à 0.
+- **Détection automatique** : à l'ouverture, Pixane repère les bords abîmés et place déjà le cadre rouge dessus :
+  liserés clairs ou foncés, **cadre** ou bordure d'une autre couleur, **bord flou**, bande unie (barre de miniature,
+  bord d'une capture d'écran), jusqu'à 4 % du côté. Vous pouvez l'ajuster ou le remettre à 0.
 - **Barre en haut de la photo** :
   - ligne **Agrandir** : ce qui est ajouté de chaque côté, en % de la photo (0 à 200 %) ;
   - ligne **Bord abîmé** : la bande à refaire de chaque côté, en pixels ;
@@ -476,7 +498,9 @@ Deux cadres apparaissent sur la photo :
   calques ne compte pas (choisis donc le calque de la photo collée). Les traits fins isolés ne comptent pas non plus. Les **ronds rouges** (bord abîmé) marchent aussi : tire-les vers l'intérieur pour faire redessiner un bord douteux de la photo. Le bord à demi transparent d'une photo collée puis réduite est toujours redessiné (pas de liseré clair à la jonction). Les trous transparents à l'intérieur
   de la photo restent transparents.
 - Le raccord entre la photo et l'ajout est fait par Pixane : la photo d'origine est gardée **au pixel près**, avec un
-  fondu progressif et un accord des couleurs, pour qu'aucune ligne ne soit visible.
+  fondu progressif et un accord des couleurs, pour qu'aucune ligne ne soit visible. Dans les **fonds unis** (ciel,
+  mur, fond sombre), l'ajout est remis au niveau de la photo jusqu'au bord : pas de partie plus claire ni de bandes
+  (« effet fantôme »).
 - 3 propositions, environ 1 minute chacune.
 - **Pleine définition** (case dans la barre, cochée par défaut) : l'IA invente l'ajout sur une image réduite à
   environ 1 million de pixels, puis l'ajout est agrandi à la taille de la photo ; sur une grande photo, il serait
@@ -595,7 +619,7 @@ coupé** : on peut le ramener, le réduire, le réafficher.
 |---|---|
 | **Liste** | Le calque du haut est en haut. Cliquez sur un calque pour le choisir (il est surligné) |
 | **Œil** | Afficher / masquer le calque (pratique pour comparer avant / après une retouche IA) |
-| **Vignette** | Aperçu du calque ; le damier gris montre les parties transparentes |
+| **Vignette** | Aperçu du calque, à la forme de l'image ; le damier gris montre les parties transparentes |
 | **Nom** | Double-clic sur le nom pour renommer ; double-clic ailleurs sur la ligne : style du calque |
 | **Opacité** | Transparence du calque choisi, de 0 % (invisible) à 100 % ; affichée sous le nom quand < 100 % |
 | **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. Les actions IA sont refusées avec un message : Effacer et Remplir si le calque choisi est verrouillé, Agrandir et Upscale de toute l'image si un calque quelconque est verrouillé (ils changent la taille de tous les calques), Upscale du calque si ce calque est verrouillé. On peut toujours le masquer, le renommer et le monter / descendre. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .pixane et .ora |
@@ -994,12 +1018,15 @@ direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annul
   - Nouvelle **largeur** et **hauteur** en pixels, pouces, cm, mm, points, picas ou **pourcentage** ; **Relative**
     : on tape ce qu'on ajoute (ex. +200 px).
   - **Ancrage** : où reste l'image (au centre, en haut à gauche…) ; les flèches montrent où la feuille s'agrandit.
+  - **Aperçu** : la nouvelle feuille, la couleur ajoutée et l'image à sa place ; ce qui sera rogné est montré pâle,
+    entouré d'un pointillé rouge.
   - **Couleur ajoutée** sur le calque du bas : blanc, transparent, noir ou une couleur au choix.
   - Les textes restent modifiables, les repères suivent ; Ctrl+Z annule. Ce qui dépassait de la feuille
     réapparaît s'il entre dans la nouvelle feuille.
 - **Tout faire apparaître** : la feuille s'agrandit pour montrer tous les pixels qui dépassent des calques.
 - **Taille de l'image…** (Ctrl+Alt+I) : en pixels ou en %, proportions gardées (case à décocher), boutons rapides
   (par exemple 1920 px pour l'écran et Internet). Sans IA : pour agrandir avec plus de détails, préférez Upscale.
+  **Aperçu** : le centre de l'image à 100 %, avant (à gauche) et après (à droite), pour juger la netteté.
 - **Pivoter** de 90° à droite, à gauche ou de 180°, **Retourner** horizontalement ou verticalement : toute l'image,
   tous les calques, sans perte. Les textes retournés deviennent des images ; pivotés, ils restent modifiables.
 - **Pivoter selon un angle…** : toute l'image tourne de l'angle tapé, **au degré près** (ou au dixième),

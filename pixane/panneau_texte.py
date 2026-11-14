@@ -134,7 +134,11 @@ class PanneauTexte(QScrollArea):
         self.police = ChoixPolice()
         self.police.setItemDelegate(ApercuPolices(self.exemple_police, self.police))
         # survoler une police dans la liste la montre tout de suite sur le texte de la photo (sans rien changer)
-        self.police.highlighted.connect(lambda i: self.apercu_police.emit(self.police.itemText(i)))
+        # (seulement liste ouverte, et pas quand le panneau se remplit : en changeant de calque de texte, l'ancienne
+        # police revenait sur le nouveau texte)
+        self.police.highlighted.connect(
+            lambda i: None if self._remplissage or not self.police.view().isVisible()
+            else self.apercu_police.emit(self.police.itemText(i)))
         self.police.fermee.connect(lambda: self.apercu_police.emit(""))
         self.police.view().setMinimumWidth(460)
         self.police.setToolTip(tr("La liste montre chaque police avec le début de ton texte (ou de la partie "

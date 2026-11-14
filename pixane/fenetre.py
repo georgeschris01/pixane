@@ -278,15 +278,92 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self._appliquer_theme()
         self._choisir_outil(PINCEAU)
         self._actualiser()
+        self.option_polices(self.a_option_polices.isChecked(), demarrage=True)
         self._demarrer_moteur()
         if self.reglages.value("maj_auto", False, type=bool):
             QTimer.singleShot(8000, lambda: self.verifier_maj(silencieux=True))
         QTimer.singleShot(3000, self._convertir_pinceaux)
+        if not os.environ.get("PIXANE_REGLAGES") and self.reglages.value("polices_semblables", True, type=bool):
+            from . import polices_semblables     # mémoire des polices (police semblable) : processus à part
+            QTimer.singleShot(60000, polices_semblables.lancer_en_fond)
         # suivre les changements de couleur ou de thème faits dans Windows
         self._signature_windows = theme.signature_windows()
         self._veille_windows = QTimer(self)
         self._veille_windows.timeout.connect(self._verifier_windows)
         self._veille_windows.start(2000)
+
+    def option_polices(self, actif: bool, demarrage: bool = False) -> None:
+        """Affichage > Recherche de police semblable (aussi choisi à l'installation) : menu et bouton montrés ou
+        cachés ; activé, la mémoire des polices se prépare en fond ; désactivé, elle est effacée."""
+        from . import polices_semblables
+        self.a_police_semblable.setVisible(actif)
+        self.b_police.setVisible(actif)
+        if not demarrage:
+            self.reglages.setValue("polices_semblables", actif)
+        if actif:
+            if not demarrage and not os.environ.get("PIXANE_REGLAGES"):
+                polices_semblables.lancer_en_fond()
+        else:                       # décoché (ici ou à l'installation) : la mémoire des polices ne garde pas de place
+            self._effacer_memoire_polices()
+
+    def _effacer_memoire_polices(self, essais: int = 5) -> None:
+        """Le fichier peut être pris un instant (antivirus qui lit un fichier juste écrit) : nouvel essai plus tard."""
+        from . import polices_semblables
+        try:
+            Path(polices_semblables.fichier_memoire()).unlink(missing_ok=True)
+        except OSError:
+            if essais > 1:
+                QTimer.singleShot(1000, lambda: self._effacer_memoire_polices(essais - 1))
+
+    def police_semblable(self) -> None:
+        """Sélection > Trouver une police semblable : d'après les lettres sélectionnées (outil Sélection de texte)."""
+        if not self.doc:
+            return
+        from dataclasses import replace as remplacer
+        from .dialogue_polices import FenetrePolices
+        from .document import masque as masque_selection
+        rect = self.doc.rect_selection()
+        m = masque_selection(self.doc.selection)
+        if rect is None or rect.width() < 8 or rect.height() < 8:
+            QMessageBox.information(self, tr("Police semblable"), tr(
+                "Sélectionne d'abord les lettres du texte : outil Sélection de texte (Y), un cadre autour du texte."))
+            return
+        zone = m[rect.top():rect.bottom() + 1, rect.left():rect.right() + 1]
+        if (zone > 127).mean() > 0.85:
+            QMessageBox.information(self, tr("Police semblable"), tr(
+                "La sélection est un bloc plein : il faut les lettres seules. Utilise l'outil Sélection de texte "
+                "(Y) : il ne garde que les lettres."))
+            return
+        a = tableau(self.doc.image.copy(rect).convertToFormat(FORMAT_IMAGE)).copy()
+        a[:, :, 3] = np.minimum(a[:, :, 3], zone)          # seulement les lettres, sur fond blanc
+        lettres = QImage(rect.width(), rect.height(), QImage.Format_ARGB32_Premultiplied)
+        lettres.fill(Qt.white)
+        p = QPainter(lettres)
+        from .document import qimage_rgba
+        p.drawImage(0, 0, qimage_rgba(a))
+        p.end()
+        c = self.doc.calque_actif
+        depart = c.texte.texte.replace("\n", " / ") if c.texte is not None else \
+            self.reglages.value("police_lettres", "", type=str)
+        d = FenetrePolices(lettres, zone, depart, c.texte is not None, self)
+        if not d.exec() or d.choisi is None:
+            self.reglages.setValue("police_lettres", d.texte.text())
+            return
+        self.reglages.setValue("police_lettres", d.texte.text())
+        r = d.choisi
+        if d.action == "appliquer" and c.texte is not None:
+            t = remplacer(c.texte, police=r.famille, gras=r.gras, italique=r.italique)
+            self.historique.push(CommandeEtat(self.doc, self.doc.etat(), self.doc.etat_texte_modifie(self.doc.actif, t),
+                                              tr("Police semblable")))
+        else:
+            couleur = a[:, :, :3][zone > 127].mean(axis=0) if (zone > 127).any() else (255, 255, 255)
+            t = Texte(texte=d.lettres() or "Texte", police=r.famille, gras=r.gras, italique=r.italique,
+                      taille=float(rect.height()) / max(1, d.lettres().count("\n") + 1),
+                      couleur=QColor(*(int(v) for v in couleur)).name(QColor.HexArgb),
+                      x=rect.center().x(), y=rect.center().y())
+            self.historique.push(CommandeEtat(self.doc, self.doc.etat(), self.doc.etat_nouveau_texte(t),
+                                              tr("Police semblable")))
+        self.statusBar().showMessage(tr("Police : {nom}", nom=r.famille), 8000)
 
     def _convertir_pinceaux(self) -> None:
         """Une seule fois : les pinceaux et motifs ajoutés avant le 14/11/2026 (copies telles quelles, parfois plus
@@ -383,6 +460,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self._action(sous, tr("Adoucir les bords…"), None, lambda: self._modifier_bord("adoucir"), "a_sel_adoucir")
         self._action(m, tr("Améliorer le contour…"), "Ctrl+Alt+R", self.ameliorer_contour, "a_contour")
         self._action(m, tr("Sélectionner le sujet (IA)"), "Ctrl+Alt+S", self.selectionner_sujet, "a_sujet")
+        self._action(m, tr("Trouver une police semblable…"), None, self.police_semblable, "a_police_semblable")
         m.addSeparator()
         self._action(m, tr("Recadrer à la sélection"), None, self._recadrer_selection, "a_recadrer_selection",
                      "recadrer")
@@ -444,6 +522,14 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         m.addSeparator()
         self.a_barre_rapide = self._action(m, tr("Barre d'accès rapide"), None, None, "a_barre_rapide")
         self.a_barre_rapide.setCheckable(True)
+        # option choisie à l'installation (case « Recherche de police semblable »), modifiable ici
+        a = self._action(m, tr("Recherche de police semblable"), None, None, "a_option_polices")
+        a.setCheckable(True)
+        a.setChecked(self.reglages.value("polices_semblables", True, type=bool))
+        a.setToolTip(tr("Coché : Sélection > Trouver une police semblable, et Pixane prépare une fois la liste de tes "
+                        "polices en arrière-plan (environ 1 min 20, 15 Mo). Décoché : rien de tout cela."))
+        a.toggled.connect(lambda v: self.option_polices(v))
+        m.setToolTipsVisible(True)
         m.addSeparator()
         self._menu_regles(m)
         m.addSeparator()
@@ -789,7 +875,13 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.opt_pleines.toggled.connect(lambda v: self.reglages.setValue("texte_pleines", v))
         self.opt_pleines.toggled.connect(lambda _v: self.selection_auto.texte_relancer())
         lay.addWidget(self.opt_pleines)
-        aide = QLabel(tr("Alt+clic : enlever un morceau · Maj+clic : ajouter · Ctrl en plus : toute la couleur"))
+        b_police = QPushButton(tr("Police semblable…"))
+        b_police.setToolTip(tr("Cherche parmi tes polices celles qui ressemblent le plus aux lettres sélectionnées"))
+        b_police.clicked.connect(self.police_semblable)
+        lay.addWidget(b_police)
+        self.b_police = b_police
+        aide = QLabel(tr("Alt+clic : enlever · Maj+clic : ajouter · Ctrl : toute la couleur"))
+        aide.setToolTip(tr("Alt+clic : enlever un morceau · Maj+clic : ajouter · Ctrl en plus : toute la couleur"))
         aide.setEnabled(False)
         lay.addWidget(aide)
         tout.addWidget(self.opt_sel_texte)
@@ -1847,7 +1939,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         if not self.doc or not self._verifier_verrou(tr("Taille de l'image"), tous=True):
             return
         w, h = self.doc.taille()
-        d = TailleImage(w, h, self)
+        d = TailleImage(w, h, self, image=self.doc.image)
         if d.exec() and d.valeurs() != (w, h):
             W, H = d.valeurs()
             avant = self.doc.etat()
@@ -1863,7 +1955,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         if not self.doc or not self._verifier_verrou(tr("Taille de la zone de travail"), tous=True):
             return
         w, h = self.doc.taille()
-        d = ZoneTravail(w, h, self.doc.dpi, self)
+        d = ZoneTravail(w, h, self.doc.dpi, self, image=self.doc.image)
         if not d.exec() or d.pixels() == (w, h):
             return
         (W, H), (dx, dy) = d.pixels(), d.decalage()

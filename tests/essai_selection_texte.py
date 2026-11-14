@@ -58,6 +58,7 @@ lettres = np.asarray(texte) > 200
 doc = Document(qimage_rgb(rgb))
 f._installer_document(doc)
 f._choisir_outil(SEL_TEXTE)
+app.processEvents()                             # (la barre se réorganise)
 verifier(f.opt_sel_texte.isVisible() and not f.opt_baguette.isVisible(), "outil Y : ses options s'affichent")
 
 # 1. cadre autour du texte (la tache floue est dedans)

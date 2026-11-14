@@ -114,6 +114,8 @@ french.ChoisirDossier=Choisis le dossier de ComfyUI (celui qui contient main.py,
 french.DossierInvalide=Ce dossier ne contient pas ComfyUI (main.py et son Python sont introuvables).
 french.CreerIcone=Créer une icône sur le Bureau
 french.Associer=Ouvrir les projets Pixane (.pixane) avec Pixane
+french.Fonctions=Fonctions :
+french.Polices=Recherche de police semblable (Pixane prépare une fois la liste de tes polices en arrière-plan : environ 1 min 20, 15 Mo ; rien nest téléchargé)
 french.TypeProjet=Projet Pixane
 french.PageMoteurTitre=Moteur IA
 french.PageMoteurDescription=Le moteur IA n'est pas sur ce PC : Pixane peut le télécharger et l'installer.
@@ -157,6 +159,8 @@ english.ChoisirDossier=Select the ComfyUI folder (the one containing main.py, or
 english.DossierInvalide=This folder does not contain ComfyUI (main.py and its Python were not found).
 english.CreerIcone=Create a desktop icon
 english.Associer=Open Pixane projects (.pixane) with Pixane
+english.Fonctions=Features:
+english.Polices=Similar font search (Pixane prepares the list of your fonts once, in the background: about 1 min 20, 15 MB; nothing is downloaded)
 english.TypeProjet=Pixane project
 english.PageMoteurTitre=AI engine
 english.PageMoteurDescription=The AI engine is not on this PC: Pixane can download and install it.
@@ -186,6 +190,7 @@ english.DesinstReglages=Also delete Pixane's settings (language, theme, last fol
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreerIcone}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "polices"; Description: "{cm:Polices}"; GroupDescription: "{cm:Fonctions}"
 #ifndef Essai
 Name: "associer"; Description: "{cm:Associer}"; GroupDescription: "{cm:AdditionalIcons}"
 #endif
@@ -210,6 +215,9 @@ Source: "images\accueil-en-*.png"; Flags: dontcopy
 ; Langue choisie dans l'installateur = langue de Pixane (modifiable ensuite dans Affichage > Langue).
 Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "langue"; ValueData: "fr"; Languages: french
 Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "langue"; ValueData: "en"; Languages: english
+; Option « Recherche de police semblable » (modifiable ensuite dans Affichage > Recherche de police semblable).
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "polices_semblables"; ValueData: "true"; Tasks: polices
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "polices_semblables"; ValueData: "false"; Tasks: not polices
 ; Fichiers .pixane ouverts par Pixane (seulement si la case est cochée ; jamais par un essai : sa désinstallation
 ; effacerait l'association de la vraie installation, arrivé le 09/11/2026).
 #ifndef Essai

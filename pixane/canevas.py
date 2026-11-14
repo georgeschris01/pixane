@@ -114,6 +114,7 @@ class Canevas(QWidget):
         self._poignee = None         # (cible « ext » / « int » / « ? », côtés parmi "h", "b", "g", "d")
         self._depart = None          # point (image) où le glisser du cadre a commencé
         self._texte_glisse = None    # (index, « deplacer » / « tourner », départ, Texte d'origine, état d'avant)
+        self._fleches = None         # outil Déplacer aux flèches : (genre, index, origine, état d'avant, [dx, dy])
         self._calque_glisse = None   # outil Déplacer : (index, départ, image d'origine, état d'avant)
         # pinceau de couleur et tampon
         self.couleur_peinture = QColor(0, 0, 0)
@@ -748,6 +749,53 @@ class Canevas(QWidget):
                                           avant=avant[0][index], decalage=(dx, dy))
             self.selection_modifiee.emit(avant, tr("Déplacer le calque"))
         self._decalage_calque = (0, 0)
+
+    # ---------------------------------------------------------- outil Déplacer aux flèches (1 px, Maj : 10 px)
+    def pousser(self, dx: int, dy: int) -> None:
+        """Pousse le calque choisi (ou le texte) ; touche tenue = une seule étape dans Annuler (finie au lâcher)."""
+        c = self.doc.calque_actif
+        if self._fleches is not None and self._fleches[1] != self.doc.actif:
+            self.finir_fleches()
+        if self._fleches is None:
+            if c.verrou:
+                self.refus.emit(tr("Le calque « {nom} » est verrouillé : clique sur son cadenas pour pouvoir le "
+                                   "modifier.", nom=c.nom))
+                return
+            if c.texte is not None:
+                self._fleches = ("texte", self.doc.actif, c.texte, self.doc.etat(), [0, 0])
+            else:
+                self._fleches = ("calque", self.doc.actif, image_entiere(c), self.doc.etat(), [0, 0])
+        genre, index, origine, _avant, dec = self._fleches
+        dec[0] += dx
+        dec[1] += dy
+        w, h = self.doc.taille()
+        if genre == "texte":
+            t = origine.deplace(dec[0], dec[1])
+            self.doc.apercu_calque(index, rendre(t, w, h), texte=t)
+        else:
+            image, x, y = origine
+            nouvelle = QImage(w, h, image.format())
+            nouvelle.fill(Qt.transparent)
+            p = QPainter(nouvelle)
+            p.drawImage(x + dec[0], y + dec[1], image)
+            p.end()
+            self.doc.apercu_calque(index, nouvelle)
+        self.update()
+
+    def finir_fleches(self) -> None:
+        if self._fleches is None:
+            return
+        genre, index, origine, avant, (dx, dy) = self._fleches
+        self._fleches = None
+        if index >= len(self.doc.calques):
+            return
+        if genre == "texte":
+            if self.doc.calques[index].texte != origine:
+                self.selection_modifiee.emit(avant, tr("Déplacer le texte"))
+        elif (dx, dy) != (0, 0):
+            image, x, y = origine
+            self.doc.apercu_calque_entier(index, image, x + dx, y + dy, avant=avant[0][index], decalage=(dx, dy))
+            self.selection_modifiee.emit(avant, tr("Déplacer le calque"))
 
     # ---------------------------------------------------------- pinceau de couleur et tampon
     def _presser_retouche(self, pos: QPointF, alt: bool):
@@ -1591,6 +1639,7 @@ class Canevas(QWidget):
     def mousePressEvent(self, e):
         if not self.doc:
             return
+        self.finir_fleches()
         self.noter_geste()           # valeurs tapées avant ce geste : un geste à part
         pos = e.position()
         self._pression_evt = self._pression_de(e)
@@ -1890,6 +1939,18 @@ class Canevas(QWidget):
             self.annuler_recadre()
         elif self.outil == RAPIDE and e.key() == Qt.Key_Escape:
             self.fin_session_ia.emit()
+        elif e.key() in FLECHES and self.doc is not None and self.transfo is not None and not self._transfo_glisse:
+            pas = 10 if e.modifiers() & Qt.ShiftModifier else 1          # cadre de transformation : poussé
+            dx, dy = FLECHES[e.key()]
+            self.transfo.centre += QPointF(dx * pas, dy * pas)
+            self._apercu_transfo(lisse=True)
+            self.transfo_change.emit()
+            self.update()
+        elif (e.key() in FLECHES and self.doc is not None and self.outil == DEPLACER and self.cadre is None
+              and not self.style_ouvert and self._calque_glisse is None and self._texte_glisse is None):
+            pas = 10 if e.modifiers() & Qt.ShiftModifier else 1
+            dx, dy = FLECHES[e.key()]
+            self.pousser(dx * pas, dy * pas)
         elif (e.key() in FLECHES and self.doc is not None and self.outil in OUTILS_SELECTION
               and self.transfo is None and self.cadre is None and not self.doc.selection_vide()):
             pas = 10 if e.modifiers() & Qt.ShiftModifier else 1
@@ -1906,11 +1967,17 @@ class Canevas(QWidget):
             super().keyPressEvent(e)
 
     def keyReleaseEvent(self, e):
-        if e.key() == Qt.Key_Space and not e.isAutoRepeat():
+        if e.key() in FLECHES and not e.isAutoRepeat() and self._fleches is not None:
+            self.finir_fleches()
+        elif e.key() == Qt.Key_Space and not e.isAutoRepeat():
             self._espace = False
             self._curseur()
         else:
             super().keyReleaseEvent(e)
+
+    def focusOutEvent(self, e):
+        self.finir_fleches()             # touche lâchée ailleurs : le déplacement est quand même gardé
+        super().focusOutEvent(e)
 
     taille_changee = Signal(int)
 

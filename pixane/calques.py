@@ -20,7 +20,7 @@ from .composition import GROUPES_MODES, MODES, noms_modes, parents
 from .document import Document
 from .langue import tr
 
-VIGNETTE = QSize(44, 34)
+VIGNETTE = QSize(60, 34)           # case de la vignette ; l'image y garde sa forme (sans bandes vides)
 RETRAIT = 16                       # décalage d'un niveau de groupe
 
 
@@ -196,6 +196,7 @@ class PanneauCalques(QWidget):
         self.liste = QListWidget()
         self.liste.setObjectName("calques")
         self.liste.setIconSize(VIGNETTE)
+        self.liste.setFocusPolicy(Qt.NoFocus)      # un clic ici laisse les flèches à l'image (outil Déplacer)
         self.liste.currentRowChanged.connect(self._ligne_choisie)
         self.liste.itemDoubleClicked.connect(self._double_clic)
         self.liste.setContextMenuPolicy(Qt.CustomContextMenu)          # clic droit : menu du calque
@@ -273,14 +274,18 @@ class PanneauCalques(QWidget):
     def _vignette(self, img: QImage, masque: bool = False) -> QPixmap:
         cle = (img.cacheKey(), masque)
         if cle not in self._vignettes:
+            # la vignette a la forme de l'image (damier seulement sous l'image : pas de bandes vides autour)
+            petit = img.scaled(VIGNETTE, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            taille = petit.size().expandedTo(QSize(4, 4))
             if masque:
-                pm = QPixmap(VIGNETTE)
+                pm = QPixmap(taille)
                 pm.fill(QColor(0, 0, 0))
             else:
-                pm = damier(VIGNETTE)
-            petit = img.scaled(VIGNETTE, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                pm = damier(taille)
             p = QPainter(pm)
-            p.drawImage((VIGNETTE.width() - petit.width()) // 2, (VIGNETTE.height() - petit.height()) // 2, petit)
+            p.drawImage(0, 0, petit)
+            p.setPen(QColor(128, 128, 128, 140))           # fin bord : on voit où s'arrête l'image
+            p.drawRect(0, 0, taille.width() - 1, taille.height() - 1)
             p.end()
             if len(self._vignettes) > 300:
                 self._vignettes.clear()

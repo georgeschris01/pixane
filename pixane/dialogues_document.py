@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtCore import QRectF, Qt, Signal
+from PySide6.QtGui import QColor, QFont, QImage, QPainter, QPen
 from PySide6.QtWidgets import (QAbstractItemView, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDialog,
                                QDialogButtonBox, QDoubleSpinBox, QFormLayout, QGridLayout, QHBoxLayout,
                                QInputDialog, QLabel, QLineEdit, QMessageBox, QPushButton, QSpinBox, QToolButton,
@@ -36,8 +36,81 @@ def _nombre(v: float, decimales: int = 2) -> str:
     return s.replace(".", tr(",|décimale"))
 
 
+class ApercuFeuille(QWidget):
+    """Petit aperçu d'une feuille : sa forme, son fond (damier si transparent), l'image posée dessus (ce qui sort de
+    la feuille, donc rogné, est montré pâle avec un pointillé) et les repères (fond perdu, zone de sécurité)."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(260, 190)
+        self.feuille = (1, 1)
+        self.fond = QColor(Qt.white)
+        self.image = None             # (QImage réduite, x, y, largeur, hauteur) en pixels de la feuille
+        self.reperes: list = []
+
+    def definir(self, largeur: int, hauteur: int, fond: QColor, image=None, reperes=None):
+        self.feuille = (max(1, largeur), max(1, hauteur))
+        self.fond, self.image, self.reperes = QColor(fond), image, list(reperes or [])
+        self.update()
+
+    def paintEvent(self, _e):
+        W, H = self.feuille
+        x0, y0, x1, y1 = 0.0, 0.0, float(W), float(H)
+        if self.image is not None:
+            _im, ix, iy, iw, ih = self.image
+            x0, y0, x1, y1 = min(x0, ix), min(y0, iy), max(x1, ix + iw), max(y1, iy + ih)
+        k = min((self.width() - 12) / (x1 - x0), (self.height() - 12) / (y1 - y0))
+        ox = (self.width() - (x1 - x0) * k) / 2 - x0 * k
+        oy = (self.height() - (y1 - y0) * k) / 2 - y0 * k
+        p = QPainter(self)
+        p.setRenderHint(QPainter.SmoothPixmapTransform)
+        feuille = QRectF(ox, oy, W * k, H * k)
+        if self.fond.alpha() < 255:                       # damier sous un fond transparent
+            p.save()
+            p.setClipRect(feuille)
+            case = 6
+            for yy in range(int(feuille.top()), int(feuille.bottom()) + 1, case):
+                for xx in range(int(feuille.left()), int(feuille.right()) + 1, case):
+                    p.fillRect(xx, yy, case, case, QColor(205, 205, 205) if (xx // case + yy // case) % 2
+                               else QColor(240, 240, 240))
+            p.restore()
+        p.fillRect(feuille, self.fond)
+        if self.image is not None:
+            im, ix, iy, iw, ih = self.image
+            cible = QRectF(ox + ix * k, oy + iy * k, iw * k, ih * k)
+            p.setOpacity(0.3)                             # partie qui sera rognée : pâle
+            p.drawImage(cible, im)
+            p.setOpacity(1.0)
+            p.save()
+            p.setClipRect(feuille)
+            p.drawImage(cible, im)
+            p.restore()
+            if not feuille.contains(cible):
+                p.setPen(QPen(QColor(220, 60, 60), 1, Qt.DashLine))
+                p.drawRect(cible)
+        p.setPen(QPen(QColor(0, 170, 220), 1, Qt.DashLine))
+        for sens, v in self.reperes:
+            if sens == "v":
+                p.drawLine(int(ox + v * k), int(feuille.top()), int(ox + v * k), int(feuille.bottom()))
+            else:
+                p.drawLine(int(feuille.left()), int(oy + v * k), int(feuille.right()), int(oy + v * k))
+        p.setPen(QPen(QColor(128, 128, 128), 1))
+        p.drawRect(feuille)
+        p.end()
+
+
+def image_reduite(image: QImage | None, cote: int = 600) -> QImage | None:
+    """Copie réduite (aperçus rapides)."""
+    if image is None or image.isNull():
+        return None
+    if max(image.width(), image.height()) <= cote:
+        return image.copy()
+    return image.scaled(cote, cote, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+
 class ChoixFond(QWidget):
     """Blanc, Transparent, Noir ou une couleur au choix."""
+    change = Signal()
 
     def __init__(self, parent=None, transparent_d_abord: bool = False):
         super().__init__(parent)
@@ -73,6 +146,7 @@ class ChoixFond(QWidget):
         self.bouton.setStyleSheet(f"background:{c.name(QColor.HexArgb) if c.alpha() else 'transparent'};"
                                   "border:1px solid #888;border-radius:3px")
         self.bouton.setVisible(self.liste.currentData() == "autre")
+        self.change.emit()
 
     def couleur(self) -> QColor:
         d = self.liste.currentData()
@@ -201,6 +275,8 @@ class NouvelleImage(QDialog):
         f.addRow(tr("Fond perdu"), self.fond_perdu)
         f.addRow(tr("Zone de sécurité"), self.marge)
         droite.addLayout(f)
+        self.apercu = ApercuFeuille()
+        droite.addWidget(self.apercu, 0, Qt.AlignHCenter)
         self.info = QLabel()
         self.info.setWordWrap(True)
         droite.addWidget(self.info)
@@ -211,6 +287,7 @@ class NouvelleImage(QDialog):
         for s in (self.largeur, self.hauteur, self.dpi, self.fond_perdu, self.marge):
             s.valueChanged.connect(self._actualiser)
         self.unite.currentIndexChanged.connect(self._unite_changee)
+        self.fond.change.connect(self._actualiser)
         self._remplir_arbre()
 
         # ---- point de départ : presse-papiers, sinon le dernier format, sinon Full HD
@@ -323,6 +400,8 @@ class NouvelleImage(QDialog):
         if W * H > 400_000_000:
             texte += "\n" + tr("Attention : image énorme, Pixane risque d'être très lent.")
         self.info.setText(texte)
+        if hasattr(self, "apercu"):
+            self.apercu.definir(W, H, self.couleur(), reperes=self.reperes())
 
     # ---------------------------------------------------------- formats de l'utilisateur
     def _enregistrer_format(self):
@@ -394,10 +473,11 @@ class NouvelleImage(QDialog):
 class ZoneTravail(QDialog):
     """Agrandir (ou rogner) la feuille sans étirer l'image : nouvelle taille, point d'ancrage, couleur ajoutée."""
 
-    def __init__(self, largeur: int, hauteur: int, dpi: float, parent=None):
+    def __init__(self, largeur: int, hauteur: int, dpi: float, parent=None, image: QImage | None = None):
         super().__init__(parent)
         self.setWindowTitle(tr("Taille de la zone de travail"))
         self.w0, self.h0, self.dpi = largeur, hauteur, dpi
+        self._image = image_reduite(image)
         self._unite = "px"
         lay = QVBoxLayout(self)
         lay.addWidget(QLabel(tr("Taille actuelle : {l} × {h} px", l=largeur, h=hauteur)))
@@ -434,11 +514,15 @@ class ZoneTravail(QDialog):
         self.fond = ChoixFond()
         f.addRow(tr("Couleur ajoutée"), self.fond)
         lay.addLayout(f)
+        self.apercu = ApercuFeuille()
+        lay.addWidget(self.apercu, 0, Qt.AlignHCenter)
         self.info = QLabel()
         lay.addWidget(self.info)
         lay.addWidget(_boutons(self, tr("OK")))
         self.unite.currentIndexChanged.connect(self._unite_changee)
         self.relatif.toggled.connect(self._relatif)
+        self._ancres.idClicked.connect(lambda _i: self._actualiser())
+        self.fond.change.connect(self._actualiser)
         for s in (self.largeur, self.hauteur):
             s.valueChanged.connect(self._actualiser)
         self._decimales()
@@ -516,6 +600,13 @@ class ZoneTravail(QDialog):
         W, H = self.pixels()
         self.info.setText(tr("Nouvelle taille : {l} × {h} px", l=W, h=H)
                           + ("" if W >= self.w0 and H >= self.h0 else "\n" + tr("L'image sera rognée.")))
+        if hasattr(self, "apercu"):
+            dx, dy = self.decalage()
+            im = self._image
+            if im is None:                            # sans image : un gris neutre à sa place
+                im = QImage(4, 4, QImage.Format_ARGB32_Premultiplied)
+                im.fill(QColor(150, 150, 150))
+            self.apercu.definir(W, H, self.couleur(), (im, dx, dy, self.w0, self.h0))
 
 
 # ======================================================================== Exporter pour l'impression
