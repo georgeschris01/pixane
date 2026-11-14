@@ -15,7 +15,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 **AI retouching** (several proposals each time: you pick the best one, as in Photoshop; the result arrives on its own layer, the original photo is never damaged)
 - **Erase** an object: paint over it, the AI removes it and rebuilds the background
 - **Fill** an area: the AI invents what fits best in that spot (with or without a prompt)
-- **Expand the image** beyond its edges (outpaint): the AI extends the scenery; it also redraws damaged edges
+- **Expand the image** beyond its edges (outpaint): the AI extends the scenery, joined without a lighter part; it also redraws damaged edges (border line, frame, blurred edge, detected automatically)
 - **Upscale**: increase the resolution (×1.5 to ×4), fast or sharper (details redrawn)
 - **Start from this one**: an option that is almost right? The AI makes variations of it (Close ↔ Free setting), instead of starting over
 - **Remove** (J): one brush stroke on a small defect (wire, spot, dust), it disappears on release
@@ -35,12 +35,13 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 - Non-destructive **layer styles**: drop shadow (including a realistic shadow), perspective ground shadow, inner shadow, glows, multiple outlines, bevel, colour, gradient (several colours) and pattern overlays; 14 ready-made styles, saved styles
 
 **Tools**
-- Crop, colour brush, clone stamp, **healing brush**, layer eraser, move
+- Crop, colour brush, clone stamp, **healing brush**, layer eraser, move (also with the arrow keys)
 - **Shaped brushes** as in Photoshop and Krita: 235 brushes and 87 patterns included, **17 ready-made styles** (pencil, charcoal, watercolour, oil, spray…), import of Photoshop (.abr), GIMP and Krita brushes; size up to 5000 px, rotation, full settings (spacing, angle, scattering, texture, dual brush…) and **tablet pressure**
 - **Multi-colour gradient** with a **Photoshop-like editor** (colour and opacity stops, ready-made and saved gradients), shown **live** while you drag; on a text, it goes on the letters (the text stays editable)
 - **Patterns**: paint bucket, Fill with a pattern, **pattern stamp**, Pattern overlay style (Photoshop .pat, GIMP, Krita patterns, images)
 - **Paint bucket**, **shapes** (rectangle, ellipse, line, arrow)
 - **Editable text**: font, size, colour, outline, shadow, background, rotation, curved text
+- **Find a similar font**: select the letters of a title, Pixane searches the installed fonts for the ones that look most like it (no Internet)
 - Rulers, guides, grid and snapping
 
 **Adjustments and filters**
@@ -212,7 +213,8 @@ Layer names that already exist keep their original language.
     at the end; the others are done.
   - Safety: if the results would go into the same folder under the same name, Pixane refuses (the originals
     would be replaced).
-- **File > New image…** (Ctrl+N): an empty image, as in Photoshop.
+- **File > New image…** (Ctrl+N): an empty image, as in Photoshop. A **preview** shows the shape of the sheet,
+  its background and the guides (bleed, safe area).
   - **Ready-made formats** (on the left): **album covers** (CD, 12-inch and 7-inch vinyl, 3000 × 3000 px for
     Spotify, Deezer, Apple Music), **books** (pocket, novel, Amazon KDP, e-book), **social media** (Instagram, Story,
     Facebook, YouTube, X), **print** (A3, A4, A5, photos, posters, business card, flyer), **screen** (HD, Full HD,
@@ -333,6 +335,23 @@ similar colour touches it. No AI, in less than a second. In the magic wand's gro
   busy photo, a tight frame helps; a piece of photo entirely inside the frame is removed with Alt + click.
 - Ctrl+Z undoes the last frame or the last correction.
 
+### Find a similar font
+Which font was used for this title? Pixane searches **the fonts installed on the PC** for the ones that look most
+alike (no Internet, nothing is downloaded).
+1. Select the letters with **Text selection (Y)** (a solid block does not work: only the letters are needed).
+2. **Selection > Find a similar font…**, or the **Similar font…** button in the tool bar.
+3. **Type the same letters** as in the image, keeping capitals (separate lines with "/"), then **Search**. A few
+   seconds (the more fonts are installed, the longer it takes).
+4. The closest fonts are shown first, written with your letters, with their likeness in %.
+   - **Apply to the chosen text**: if the chosen layer is a Pixane text, it takes this font;
+   - **Create a text with this font**: new text layer in place of the letters, with their colour (the letters in
+     the image stay: erase them afterwards if needed);
+   - **Copy the name** of the font.
+- **Option** (box in the installer, or **View > Similar font search**): to be fast, Pixane prepares the list of
+  your fonts **once only**, in the background, one minute after starting. The time depends on the **number of
+  installed fonts**: about 1 min 20 (and 15 MB) for 1,200 fonts. Unchecked: the feature is
+  hidden, nothing runs in the background, and this list is deleted.
+
 ### Magic wand (W)
 One click on a colour selects the area of similar colour. No AI, instant.
 - **Adjust by dragging**: after the click, **keep the button down and drag right** (wider) **or left** (narrower): the
@@ -375,6 +394,9 @@ A **locked** layer is protected; a **text** that is cut or deleted becomes an im
 
 The other tools: **Move** (V) moves the content of the **chosen layer** (a moved text stays editable; what goes
 outside the canvas is kept and can be brought back; refused on a locked layer).
+- **Arrow keys** (Move tool): nudge the chosen layer (or the text) by **1 px**, **10 px** with Shift. Holding a key
+  down: a single step in Undo. They also work right after a click in the Layers panel, and nudge the Transform
+  (Ctrl+T) frame in progress.
 - A **frame with handles** surrounds what is on the layer (or only the selected part, if there is a selection):
   **drag inside** to move; **a corner** changes the size keeping the proportions (Shift: free); **the middle of a
   side**, only the width or the height; **just outside a corner** (cross cursor), you rotate. As soon as a handle is
@@ -516,8 +538,9 @@ Two frames appear on the photo:
 - When both frames are on top of each other (at the start), the **direction of your drag** decides:
   outward = expand, inward = damaged edge.
 - **Shift** while dragging: the opposite side moves the same way (expand left and right at once, for example).
-- **Automatic detection**: when opened, Pixane finds the light or dark border lines (1 to 8 px) that many
-  images have on their edges, and already places the red frame on them. You can adjust it or set it back to 0.
+- **Automatic detection**: when opened, Pixane finds damaged edges and already places the red frame on them:
+  light or dark border lines, a **frame** or border of another colour, a **blurred edge**, a plain band (thumbnail
+  bar, edge of a screenshot), up to 4% of the side. You can adjust it or set it back to 0.
 - **Bar at the top of the photo**:
   - **Expand** row: what is added on each side, as a % of the photo (0 to 200%);
   - **Damaged edge** row: the strip to redo on each side, in pixels;
@@ -533,7 +556,9 @@ Two frames appear on the photo:
   does not count (so select the layer of the pasted photo). Thin isolated strokes do not count either. The **red circles** (damaged edge) work too: drag them inwards to have a doubtful edge of the photo redrawn. The half-transparent edge of a photo pasted then shrunk is always redrawn (no light line at the seam). Transparent holes inside the photo stay
   transparent.
 - The join between the photo and the addition is made by Pixane: the original photo is kept **pixel for pixel**,
-  with a gradual blend and colour matching, so that no line is visible.
+  with a gradual blend and colour matching, so that no line is visible. In **plain backgrounds** (sky, wall, dark
+  background), the addition is brought back to the photo's level right up to the edge: no lighter part and no bands
+  ("ghosting"). This join is redone after *Full resolution*.
 - 3 options, about 1 minute each.
 - **Full resolution** (box in the bar, ticked by default): the AI invents the addition on an image reduced to about
   1 million pixels, then the addition is enlarged to the size of the photo; on a large photo it would therefore be
@@ -643,7 +668,7 @@ it back, shrink it, show it again.
 |---|---|
 | **List** | The top layer is at the top. Click a layer to select it (it is highlighted) |
 | **Eye** | Show / hide the layer (handy to compare before / after an AI edit) |
-| **Thumbnail** | Preview of the layer; the grey checkerboard shows transparent parts |
+| **Thumbnail** | Preview of the layer, shaped like the image; the grey checkerboard shows transparent parts |
 | **Name** | Double-click the name to rename; double-click elsewhere on the row: layer style |
 | **Opacity** | Transparency of the selected layer, from 0% (invisible) to 100%; shown under the name when < 100% |
 | **Padlock** (right of the name) | Locks the layer to protect it: it can no longer be erased, deleted or merged, and its opacity is fixed; Flatten is disabled while a layer is locked. AI actions are refused with a message: Erase and Fill if the selected layer is locked, Expand and whole-image Upscale if any layer is locked (they change the size of every layer), layer Upscale if that layer is locked. It can still be hidden, renamed and moved up / down. The open padlock is discreet, the closed padlock clearly visible. The lock is kept in .pixane and .ora files |
@@ -866,10 +891,14 @@ grass, leaves, watercolour, splatters… Each tool keeps its own choice.
   the ready-made styles.
 - **Add files…**: Photoshop brushes (**.abr**), GIMP and Krita brushes (**.gbr**, **.gih**), Krita bundles
   (**.bundle**), or a plain image (black paints; a colour image keeps its colours). Each file becomes a group;
-  **Remove this group** takes it away. Files are copied into Pixane: the original can be moved or deleted.
+  **Remove this group** takes it away. Brushes are stored inside Pixane: the original can be moved or deleted.
+- **Storage**: each added brush and pattern is stored separately, **at its original size with no loss of quality**
+  (PNG), along with its thumbnail. Pixane only opens the brush you use: even an .abr over 1 GB opens **without
+  waiting** (library, brush settings, start-up), and takes less space (1.7 GB → 0.86 GB for a large .abr). Adding a
+  very large file takes the time to store it (about 3 minutes for 1.7 GB).
+- Brushes added **with an earlier version** are stored this way **once**, in the background, at the first start
+  (message in the status bar); Pixane stays usable meanwhile.
 - An “animated” brush (.gih: grass, leaves…) has several shapes that alternate along the stroke.
-- A **very large file** (over 50 MB; some .abr files exceed 1 GB) is read in the background: Pixane stays usable,
-  the Brush button shows "Loading…" (over 2 minutes for a 1.7 GB file); meanwhile, strokes use the round brush.
 - **Settings…** (a dot “•” shows when a setting is changed), with a stroke preview:
   - **Shape**: spacing between dabs, angle (or “angle follows the stroke”, like a pen), roundness;
   - **Scatter**: dabs spread away from the stroke, several at once, random size, angle and roundness;
@@ -1029,12 +1058,15 @@ selection if there is one, one step in Undo. They also work on a mask.
   - New **width** and **height** in pixels, inches, cm, mm, points, picas or **percent**; **Relative**: you type
     what you add (e.g. +200 px).
   - **Anchor**: where the image stays (centre, top left…); the arrows show where the sheet grows.
+  - **Preview**: the new sheet, the added colour and the image in its place; what will be cropped is shown faded,
+    with a red dashed outline.
   - **Added colour** on the bottom layer: white, transparent, black or a colour of your choice.
   - Texts stay editable, guides follow; Ctrl+Z undoes it. What extended beyond the canvas reappears if it falls
     inside the new canvas.
 - **Reveal all**: the canvas grows to show all the pixels that extend beyond the layers.
 - **Image size…** (Ctrl+Alt+I): in pixels or %, proportions kept (tick box), quick buttons (for example 1920 px
-  for screen and Internet). No AI: to enlarge with more detail, prefer Upscale.
+  for screen and Internet). No AI: to enlarge with more detail, prefer Upscale. **Preview**: the centre of the
+  image at 100%, before (left) and after (right), to judge sharpness.
 - **Rotate** 90° right, left or 180°, **Flip** horizontally or vertically: the whole image, all layers, lossless.
   Flipped texts become images; rotated ones stay editable.
 - **Rotate by an angle…**: the whole image rotates by the typed angle, **to the degree** (or tenth of a degree),
