@@ -5,7 +5,7 @@ Pixane est un éditeur photo pour Windows qui retouche les images avec une IA qu
 Ce guide explique chaque outil et chaque réglage : **à quoi il sert** et **comment s'en servir**. Il est complété
 à chaque nouvelle fonction.
 
-**Pour qui ?** Pixane est pensé pour celles et ceux qui débutent en retouche photo, ou qui en ont peu l'expérience : les outils vont à l'essentiel, l'IA se charge du travail difficile et l'aide explique chaque réglage pas à pas. Pour un travail professionnel poussé, des logiciels comme Photoshop restent la référence ; Pixane, lui, veut rendre la retouche accessible à tous.
+**Pour qui ?** Pixane est pensé pour celles et ceux qui débutent en retouche photo, ou qui en ont peu l'expérience : les outils vont à l'essentiel, l'IA se charge du travail difficile et l'aide explique chaque réglage pas à pas. Pixane n'a pas la prétention de remplacer des programmes comme Photoshop, GIMP ou Krita, qui restent la référence pour un travail poussé : il veut rendre la retouche accessible à tous.
 
 ## Avant de commencer : une IA 100 % sur votre PC
 

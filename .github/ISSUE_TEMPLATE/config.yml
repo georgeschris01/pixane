@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: ❓ Ask a question / Poser une question
+    url: https://github.com/georgeschris01/pixane/discussions/categories/q-a
+    about: '"How do I…?" questions are answered in Discussions (Q&A). / Les questions « Comment faire… ? » vont dans les Discussions (Q&A).'
+  - name: 🔒 Report a security problem / Signaler un problème de sécurité
+    url: https://github.com/georgeschris01/pixane/security/advisories/new
+    about: Privately. Please never report a vulnerability in a public Issue. / En privé. Jamais dans une Issue publique.
+  - name: 🗺️ See the roadmap / Voir la feuille de route
+    url: https://github.com/georgeschris01/pixane/issues/1
+    about: What is planned for Pixane. / Ce qui est prévu pour Pixane.

@@ -11,6 +11,9 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
 
 ## Corrections
 
+- **À propos** : « Pixane n'a pas la prétention de remplacer des programmes comme Photoshop, GIMP ou Krita… »
+  (aussi dans le README et le guide).
+
 ## À mettre à jour le jour de la publication
 
 - [ ] Numéro de version (`pixane\__init__.py`) selon la règle A.B.C.

@@ -4,7 +4,7 @@
 
 Éditeur photo gratuit pour Windows, avec de la retouche par intelligence artificielle **qui tourne entièrement sur votre PC**. Interface en français et en anglais.
 
-**Pour qui ?** Pixane est pensé pour celles et ceux qui débutent en retouche photo, ou qui en ont peu l'expérience : les outils vont à l'essentiel, l'IA se charge du travail difficile et l'aide explique chaque réglage pas à pas. Pour un travail professionnel poussé, des logiciels comme Photoshop restent la référence ; Pixane, lui, veut rendre la retouche accessible à tous.
+**Pour qui ?** Pixane est pensé pour celles et ceux qui débutent en retouche photo, ou qui en ont peu l'expérience : les outils vont à l'essentiel, l'IA se charge du travail difficile et l'aide explique chaque réglage pas à pas. Pixane n'a pas la prétention de remplacer des programmes comme Photoshop, GIMP ou Krita, qui restent la référence pour un travail poussé : il veut rendre la retouche accessible à tous.
 
 > **Aucune IA en ligne.** Pixane n'envoie jamais vos photos sur Internet : toutes les actions IA tournent sur votre ordinateur, avec des modèles installés sur votre disque. Pas de compte, pas d'abonnement, pas de limite. Internet sert seulement à télécharger le moteur IA une fois ; ensuite, Pixane marche même sans connexion.
 >
@@ -12,7 +12,7 @@
 
 ## Ce que Pixane sait faire
 
-**Retouche par IA** (plusieurs propositions à chaque fois : vous choisissez la meilleure, comme dans Photoshop ; le résultat arrive sur son propre calque, la photo d'origine n'est jamais abîmée)
+**Retouche par IA** (plusieurs propositions à chaque fois : vous choisissez la meilleure, comme dans Photoshop ; le résultat va dans le calque choisi, sans déborder de la sélection, ou dans un nouveau calque si vous préférez ; Annuler remet tout comme avant)
 - **Effacer** un objet : on peint dessus, l'IA le fait disparaître et reconstruit le fond
 - **Remplir** une zone : l'IA invente ce qui va le mieux à cet endroit (avec ou sans texte)
 - **Agrandir l'image** au-delà de ses bords (outpaint) : l'IA prolonge le décor, raccordé sans partie plus claire ; elle refait aussi les bords abîmés (liseré, cadre, bord flou, détectés d'office)
@@ -31,6 +31,8 @@
 
 **Calques, comme dans Photoshop**
 - Visibilité, opacité, verrou, ordre (boutons ou **glisser à la souris**), fusion, aplatir
+- Plusieurs calques choisis à la fois (Ctrl+clic, Maj+clic) ; **aligner**, **répartir**, retourner, grouper, depuis la **barre d'accès rapide**
+- Les pixels qui dépassent de la feuille sont gardés (**Tout faire apparaître**)
 - **17 modes de fusion**, **masques de calque**, **groupes**, **calques de réglage** modifiables à tout moment
 - **Styles de calque** non destructifs : ombre portée (dont ombre réaliste), ombre au sol en perspective, ombre interne, lueurs, contours multiples, biseau, incrustations couleur, dégradé (plusieurs couleurs) et motif ; 14 styles tout prêts, styles enregistrés
 
@@ -59,11 +61,16 @@
 - **Enregistrement automatique** et récupération après un plantage
 - **Exporter pour le web** (JPEG, WebP, PNG ; taille, qualité, poids affiché, informations personnelles enlevées)
 - **Traitement par lot** d'un dossier entier (réduire, réglage auto, upscale IA, arrière-plan, format)
-- Annuler / Rétablir avec panneau Historique ; fichiers récents
+- **Nouvelle image depuis le presse-papiers** ; **Exporter sous** (une copie dans un autre format, la photo ouverte ne change pas)
+- Annuler / Rétablir avec panneau Historique (aussi avec les boutons retour / suivant de la souris) ; fichiers récents
 
 **Confort**
+- Interface en **français** et en **anglais** (langue de Windows par défaut)
 - Thème clair ou sombre, couleur d'accent de Windows ; guide intégré avec recherche (F1)
+- **Recherche des mises à jour** (sur demande ou au démarrage)
 - Installateur qui vérifie le PC et télécharge lui-même le moteur IA (ComfyUI et les modèles), avec reprise après coupure ; avec un ComfyUI déjà installé, seulement ce qui lui manque
+
+![Pixane : texte en arc sur un paysage, panneau Intelligence artificielle à droite](docs/screenshots/pixane-fr.png)
 
 ## Configuration
 
@@ -100,7 +107,7 @@ L'installateur vérifie la carte graphique et la place libre, puis propose de t�
 
 > **Message « Windows a protégé votre ordinateur » :** Pixane est gratuit et n'est pas signé, car un certificat de signature est payant chaque année. Windows affiche donc ce message tant que le programme n'est pas assez connu. Cliquez sur **Informations complémentaires**, puis sur **Exécuter quand même**. Vérifiez que le fichier vient bien de cette page ; son empreinte SHA-256 est donnée avec chaque version.
 
-Pour demander une fonction ou signaler un problème : ouvrez une [« Issue »](../../issues) sur la page GitHub de Pixane.
+Pour demander une fonction ou signaler un problème : ouvrez une [« Issue »](../../issues) sur la page GitHub de Pixane ; pour une question, les [Discussions](../../discussions). Voir [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## À l'origine de ce projet (Pourquoi et comment ?)
 

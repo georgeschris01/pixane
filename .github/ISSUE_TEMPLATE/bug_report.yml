@@ -1,0 +1,83 @@
+name: 🐞 Report a bug / Signaler un problème
+description: Something does not work as it should in Pixane. / Quelque chose ne marche pas comme il faut dans Pixane.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem! The more precise you are, the faster it can be fixed. You can write in English or in French.
+        Merci de prendre le temps de signaler un problème ! Plus vous êtes précis, plus vite il pourra être corrigé. Vous pouvez écrire en français ou en anglais.
+
+        ⚠️ **Never paste a personal photo, a personal path or private information** (replace paths with `C:\folder`…). Issues are public.
+        ⚠️ **Ne collez jamais de photo personnelle, de chemin personnel ni d'information privée** (remplacez les chemins par `C:\dossier`…). Les Issues sont publiques.
+        🔒 A security problem? Do not report it here: use the **Security** tab → **Report a vulnerability** (private).
+  - type: input
+    id: version
+    attributes:
+      label: Pixane version / Version de Pixane
+      description: "Help → About Pixane / Aide → À propos de Pixane. Example: 0.21.0"
+      placeholder: "0.21.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: System / Système
+      options:
+        - Windows 11
+        - Windows 10
+    validations:
+      required: true
+  - type: input
+    id: gpu
+    attributes:
+      label: Graphics card / Carte graphique
+      description: "Only useful for the AI actions. / Utile seulement pour les actions IA. Example: NVIDIA RTX 3060 Ti 8 GB"
+      placeholder: "NVIDIA RTX 3060 Ti 8 GB"
+    validations:
+      required: false
+  - type: dropdown
+    id: engine
+    attributes:
+      label: AI engine / Moteur IA
+      options:
+        - Installed by Pixane / Installé par Pixane
+        - My own ComfyUI / Mon propre ComfyUI
+        - Not installed / Pas installé
+        - I don't know / Je ne sais pas
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened? / Que s'est-il passé ?
+      description: |
+        Describe the problem, and paste the error message if there is one. If Pixane crashed, the details are in `%LOCALAPPDATA%\Pixane\erreurs.log` (reread it before pasting).
+        Décrivez le problème et collez le message d'erreur s'il y en a un. Si Pixane s'est fermé tout seul, les détails sont dans `%LOCALAPPDATA%\Pixane\erreurs.log` (relisez-le avant de le coller).
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / Étapes pour le reproduire
+      description: What did you do, step by step? / Qu'avez-vous fait, étape par étape ?
+      placeholder: |
+        1. Open … / Ouvrir …
+        2. Choose … / Choisir …
+        3. See … / Voir …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect? / À quoi vous attendiez-vous ?
+    validations:
+      required: false
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot / Capture d'écran
+      description: Optional. Drag an image here. Check that it shows no personal photo or information. / Facultatif. Glissez une image ici. Vérifiez qu'elle ne montre aucune photo ni information personnelle.
+    validations:
+      required: false

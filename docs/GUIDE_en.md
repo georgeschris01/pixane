@@ -6,7 +6,7 @@ This guide explains every tool and every setting: **what it is for** and **how t
 each new feature.
 (Version française : `docs\GUIDE.md`.)
 
-**Who is it for?** Pixane is designed for people who are new to photo editing, or have little experience with it: the tools go straight to the point, the AI takes care of the hard work and the help explains every setting step by step. For advanced professional work, software such as Photoshop remains the reference; Pixane aims to make photo editing accessible to everyone.
+**Who is it for?** Pixane is designed for people who are new to photo editing, or have little experience with it: the tools go straight to the point, the AI takes care of the hard work and the help explains every setting step by step. Pixane does not claim to replace programs such as Photoshop, GIMP or Krita, which remain the reference for advanced work: it aims to make photo editing accessible to everyone.
 
 ## Before you start: an AI that runs 100% on your PC
 

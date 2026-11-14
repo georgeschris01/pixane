@@ -4,7 +4,7 @@
 
 Free photo editor for Windows, with artificial intelligence retouching **that runs entirely on your own PC**. Interface in English and French.
 
-**Who is it for?** Pixane is designed for people who are new to photo editing, or have little experience with it: the tools go straight to the point, the AI takes care of the hard work and the help explains every setting step by step. For advanced professional work, software such as Photoshop remains the reference; Pixane aims to make photo editing accessible to everyone.
+**Who is it for?** Pixane is designed for people who are new to photo editing, or have little experience with it: the tools go straight to the point, the AI takes care of the hard work and the help explains every setting step by step. Pixane does not claim to replace programs such as Photoshop, GIMP or Krita, which remain the reference for advanced work: it aims to make photo editing accessible to everyone.
 
 > **No online AI.** Pixane never sends your photos over the Internet: every AI action runs on your computer, with models installed on your disk. No account, no subscription, no limit. The Internet is only used to download the AI engine once; after that, Pixane works even offline.
 >
@@ -12,7 +12,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 
 ## What Pixane can do
 
-**AI retouching** (several proposals each time: you pick the best one, as in Photoshop; the result arrives on its own layer, the original photo is never damaged)
+**AI retouching** (several proposals each time: you pick the best one, as in Photoshop; the result goes into the chosen layer, without spilling outside the selection, or into a new layer if you prefer; Undo puts everything back)
 - **Erase** an object: paint over it, the AI removes it and rebuilds the background
 - **Fill** an area: the AI invents what fits best in that spot (with or without a prompt)
 - **Expand the image** beyond its edges (outpaint): the AI extends the scenery, joined without a lighter part; it also redraws damaged edges (border line, frame, blurred edge, detected automatically)
@@ -31,6 +31,8 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 
 **Layers, as in Photoshop**
 - Visibility, opacity, lock, order (buttons or **drag with the mouse**), merge, flatten
+- Several layers chosen at once (Ctrl+click, Shift+click); **align**, **distribute**, flip, group, from the **quick access bar**
+- Pixels that stick out of the sheet are kept (**Reveal all**)
 - **17 blend modes**, **layer masks**, **groups**, **adjustment layers** editable at any time
 - Non-destructive **layer styles**: drop shadow (including a realistic shadow), perspective ground shadow, inner shadow, glows, multiple outlines, bevel, colour, gradient (several colours) and pattern overlays; 14 ready-made styles, saved styles
 
@@ -59,11 +61,16 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 - **Autosave** and recovery after a crash
 - **Export for web** (JPEG, WebP, PNG; size, quality, file size shown, personal information removed)
 - **Batch processing** of a whole folder (resize, auto adjust, AI upscale, background, format)
-- Undo / Redo with a History panel; recent files
+- **New image from the clipboard**; **Export as** (a copy in another format, the open photo does not change)
+- Undo / Redo with a History panel (also with the mouse back / forward buttons); recent files
 
 **Comfort**
+- Interface in **French** and **English** (Windows language by default)
 - Light or dark theme, Windows accent colour; built-in guide with search (F1)
+- **Update check** (on request or at startup)
 - Installer that checks the PC and downloads the AI engine itself (ComfyUI and the models), resuming after an interruption; with a ComfyUI already installed, only what it is missing
+
+![Pixane: curved text on a landscape, Artificial intelligence panel on the right](docs/screenshots/pixane-en.png)
 
 ## System requirements
 
@@ -100,7 +107,7 @@ The installer checks the graphics card and free space, then offers to download t
 
 > **"Windows protected your PC" message:** Pixane is free and not signed, because a code-signing certificate costs money every year. Windows therefore shows this message until the program is well enough known. Click **More info**, then **Run anyway**. Check that the file really comes from this page; its SHA-256 fingerprint is given with each version.
 
-To request a feature or report a problem: open an [Issue](../../issues) on Pixane's GitHub page.
+To request a feature or report a problem: open an [Issue](../../issues) on Pixane's GitHub page; for a question, the [Discussions](../../discussions). See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Where this project comes from (Why and how?)
 
