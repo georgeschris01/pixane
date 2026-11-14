@@ -34,6 +34,15 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
 - **Masque d'écrêtage** (Ctrl+Alt+G, menu Calque, clic droit) : le calque ne se voit que dans celui du dessous,
   par exemple une photo dans les lettres d'un texte qui reste modifiable. Gardé en .pixane et .psd (les PSD qui en
   ont s'ouvrent maintenant correctement), mis dans les pixels en .ora.
+- **Orthographe** des textes : mots mal écrits soulignés en rouge dans le panneau Texte ; clic droit : suggestions,
+  Ignorer, Ajouter au dictionnaire. Français et anglais (langue choisie par texte). Dictionnaires de LibreOffice
+  (Grammalecte MPL 2.0, SCOWL), lus par spylls (MIT).
+- **Césure** des textes en cadre (pyphen) ; en justifié, une ligne d'un seul mot n'est plus étirée lettre par lettre.
+- **Rechercher et remplacer dans les textes** (Ctrl+H) : tous les textes de l'image, Tout remplacer en une étape
+  d'Annuler, styles par lettre gardés.
+- **Installateur** : case « Orthographe et césure » avec le choix des langues (Français, Anglais) ; modifiable
+  dans Affichage > Orthographe et césure et Affichage > Langues de l'orthographe… (une langue manquante y est
+  téléchargée après accord).
 
 ## Corrections
 

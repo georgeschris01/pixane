@@ -794,6 +794,22 @@ afterwards take the style of the one before them.
   **Paste** gives them to another text (its text and position do not change). **+** saves the style under a name;
   it stays in the list for next time (choosing one applies it); **−** deletes one.
 
+### Spelling, hyphenation, find and replace
+- **Spelling**: in the Text panel's box, misspelled words are **underlined in red**. **Right-click** on an
+  underlined word: the suggestions (missing accents, swapped, extra or missing letters, words stuck together),
+  *Ignore* (until Pixane is closed) or *Add to the dictionary* (kept for good).
+- **Language** (Paragraph part): the language of the text, for spelling and hyphenation; *Pixane's language* by
+  default. French and English.
+- **Hyphenation** (text in a box): long words are split at line ends, with a hyphen, following the language's
+  rules. When justified, a line with a single word stays on the left (its letters are not spread).
+- **Option** (box in the installer, with the choice of languages, or **View > Spelling and hyphenation**): unticked,
+  nothing is underlined or split. **View > Spelling languages…**: tick or untick a language; a language that is not
+  installed is downloaded after you agree (LibreOffice dictionary: French 1.4 MB, English 0.6 MB), into
+  %LOCALAPPDATA%\Pixane\dictionnaires.
+- **Find and replace** (**Ctrl+H**, Edit menu): in all the texts of the image. *Next* chooses the text and selects
+  the word in the panel; *Replace*, *Replace all* (a single Undo step); *Match case*, *Whole word*. Letters with
+  their own style keep it. Locked texts are not changed.
+
 ### A photo inside the letters (clipping mask)
 As in Photoshop: put the photo (or a texture, a gradient…) **on a layer just above the text**, then **Ctrl+Alt+G**
 (Layer menu > *Clipping mask*, or right-click on the layer). The photo is now only visible **inside the letters**;
@@ -1094,6 +1110,7 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+L, Ctrl+M, Ctrl+B, Ctrl+Alt+Shift+B | Levels, Curves, Colour balance, Black & white |
 | Ctrl+G, Ctrl+Shift+G | Group, Ungroup |
 | Ctrl+Alt+G | Clipping mask (the layer only shows inside the one below) |
+| Ctrl+H | Find and replace in texts |
 | Ctrl+\ | Paint the layer's mask / pixels |
 | Ctrl+Alt+R | Refine edge |
 | Ctrl+R, Ctrl+', Ctrl+;, Ctrl+Shift+; | Rulers, Grid, Guides, Snap |

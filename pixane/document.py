@@ -1147,6 +1147,18 @@ class Document(QObject):
         calques[index] = replace(c, nom=nom, image=rendre(t, w, h), texte=t)
         return self.etat_avec(calques)
 
+    def etat_textes_modifies(self, textes: dict):
+        """Plusieurs calques de texte modifiés d'un coup (Rechercher et remplacer : Tout remplacer)."""
+        w, h = self.taille()
+        calques = list(self.calques)
+        for index, t in textes.items():
+            c = calques[index]
+            nom = c.nom
+            if c.texte is not None and c.nom == nom_calque(c.texte, tr("Texte")):
+                nom = nom_calque(t, tr("Texte"))
+            calques[index] = replace(c, nom=nom, image=rendre(t, w, h), texte=t)
+        return self.etat_avec(calques)
+
     def etat_en_pixels(self, index: int):
         """Le calque de texte (ou de pinceau) devient un calque d'image ordinaire (plus modifiable)."""
         return self.etat_calque_modifie(index, texte=None, pinceau=None)

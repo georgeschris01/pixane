@@ -45,7 +45,16 @@ def main():
     shutil.copytree(RACINE / ".venv" / "Lib" / "site-packages", paquets, ignore=ignorer(PAQUETS_EXCLUS))
     # Pixane est trouvé par Python où qu'on le lance (pour « -m pixane » et l'ouverture des .pixane)
     (paquets / "pixane.pth").write_text("../../..\n", encoding="utf-8")
-    shutil.copytree(RACINE / "pixane", SORTIE / "pixane", ignore=ignorer(set()))
+    shutil.copytree(RACINE / "pixane", SORTIE / "pixane", ignore=ignorer({"dictionnaires"}))
+    # dictionnaires d'orthographe : à part, l'installateur ne copie que les langues cochées
+    dicos = RACINE / "publication" / "dictionnaires"
+    if dicos.exists():
+        shutil.rmtree(dicos)
+    for langue, noms in (("fr", ("fr.aff", "fr.dic", "README_dict_fr.txt")),
+                         ("en", ("en_US.aff", "en_US.dic", "README_en_US.txt"))):
+        (dicos / langue).mkdir(parents=True)
+        for n in noms:
+            shutil.copy2(RACINE / "pixane" / "dictionnaires" / n, dicos / langue / n)
     (SORTIE / "docs").mkdir()
     for f in ("GUIDE.md", "GUIDE_en.md", "LICENCES_TIERS.md"):
         shutil.copy2(RACINE / "docs" / f, SORTIE / "docs" / f)

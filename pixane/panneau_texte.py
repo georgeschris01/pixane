@@ -7,11 +7,14 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from PySide6.QtCore import QEvent, QRect, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPixmap
-from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QColorDialog, QComboBox, QInputDialog, QMessageBox, QDoubleSpinBox, QFontComboBox, QFormLayout,
-                               QFrame, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QScrollArea, QSpinBox,
-                               QStyle, QStyledItemDelegate, QToolButton, QVBoxLayout, QWidget)
+from PySide6.QtCore import QEvent, QRect, QSize, Qt, QTimer, Signal
+from PySide6.QtGui import QAction as QAction_
+from PySide6.QtGui import (QColor, QCursor, QFont, QFontMetrics, QPainter, QPixmap, QSyntaxHighlighter,
+                           QTextCharFormat, QTextCursor)
+from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDoubleSpinBox,
+                               QFontComboBox, QFormLayout, QFrame, QHBoxLayout, QInputDialog, QLabel, QMessageBox,
+                               QPlainTextEdit, QPushButton, QScrollArea, QSpinBox, QStyle, QStyledItemDelegate,
+                               QToolButton, QVBoxLayout, QWidget)
 
 from .calques import damier
 from .langue import tr
@@ -86,6 +89,40 @@ class ApercuPolices(QStyledItemDelegate):
         p.restore()
 
 
+class Soulignement(QSyntaxHighlighter):
+    """Mots mal orthographiés soulignés en rouge dans la case du texte (comme un traitement de texte)."""
+
+    def __init__(self, document, langue):
+        super().__init__(document)
+        self.langue = langue              # fonction -> langue du texte choisi
+        self.format = QTextCharFormat()
+        self.format.setUnderlineStyle(QTextCharFormat.SpellCheckUnderline)
+        self.format.setUnderlineColor(QColor(220, 40, 40))
+        self.attente = None               # minuterie : dictionnaire en train de se charger
+
+    def highlightBlock(self, texte: str):
+        from . import orthographe as o
+        langue = self.langue()
+        if not texte or not o.verifiable(langue):
+            return
+        if not o.pret(langue):           # premier usage : chargé en fond (environ 1 s), puis soulignement
+            if self.attente is None:
+                o.precharger(langue)
+                self.attente = QTimer(self)        # détruite avec le soulignement (pas d'appel après coup)
+                self.attente.timeout.connect(lambda: self._verifier_pret(langue))
+                self.attente.start(300)
+            return
+        for a, b in o.fautes(texte, langue):
+            self.setFormat(a, b - a, self.format)
+
+    def _verifier_pret(self, langue):
+        from . import orthographe as o
+        if o.pret(langue):
+            self.attente.stop()
+            self.attente = None
+            self.rehighlight()
+
+
 class ChoixPolice(QFontComboBox):
     """Liste des polices qui prévient quand elle se referme (fin de l'aperçu sur la photo)."""
     fermee = Signal()
@@ -131,6 +168,9 @@ class PanneauTexte(QScrollArea):
         self.saisie.cursorPositionChanged.connect(self._montrer_lettres)
         self.saisie.selectionChanged.connect(self._montrer_lettres)
         self.saisie.installEventFilter(self)
+        self.soulignement = Soulignement(self.saisie.document(), lambda: self.t.langue)
+        self.saisie.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.saisie.customContextMenuRequested.connect(self._menu_saisie)
         pal = self.saisie.palette()              # la sélection reste visible quand on règle à côté
         for role in (pal.ColorRole.Highlight, pal.ColorRole.HighlightedText):
             pal.setColor(pal.ColorGroup.Inactive, role, pal.color(pal.ColorGroup.Active, role))
@@ -284,6 +324,13 @@ class PanneauTexte(QScrollArea):
         self.vertical.setToolTip(tr("Lettres les unes sous les autres ; chaque ligne devient une colonne"))
         self.vertical.toggled.connect(lambda oui: self._changer("vertical", oui))
         lay.addWidget(self.vertical)
+        ligne = QHBoxLayout()
+        self.langue_texte = self._liste("langue", (("", tr("Langue de Pixane")), ("fr", "Français"),
+                                                   ("en", "English")))
+        self.langue_texte.setToolTip(tr("Langue du texte : pour l'orthographe et la césure"))
+        ligne.addWidget(QLabel(tr("Langue")))
+        ligne.addWidget(self.langue_texte, 1)
+        lay.addLayout(ligne)
         self.cadre = QCheckBox(tr("Texte en cadre"))
         self.cadre.setToolTip(tr("Les lignes se coupent toutes seules à la largeur du cadre"))
         self.cadre.toggled.connect(self._cadre_coche)
@@ -295,6 +342,11 @@ class PanneauTexte(QScrollArea):
         self.cadre_h.setSpecialValueText(tr("auto"))
         self.cadre_h.setToolTip(tr("Ce qui dépasse du cadre est caché ; 0 = selon le texte"))
         form.addRow(tr("Hauteur du cadre"), self.cadre_h)
+        self.cesure = QCheckBox(tr("Césure"))
+        self.cesure.setToolTip(tr("Coupe les mots longs en fin de ligne, avec un tiret (texte en cadre ; option "
+                                  "Affichage > Orthographe et césure)"))
+        self.cesure.toggled.connect(lambda oui: self._changer("cesure", oui))
+        form.addRow("", self.cesure)
         self.retrait = self._entier(-500, 2000, " %", "retrait")
         self.retrait.setToolTip(tr("Alinéa de la première ligne de chaque paragraphe, en % de la taille"))
         form.addRow(tr("Retrait"), self.retrait)
@@ -493,6 +545,8 @@ class PanneauTexte(QScrollArea):
             self.cadre_l.setValue(round(t.cadre_l) if t.cadre_l > 0 else 1)
             self.cadre_h.setValue(round(t.cadre_h))
             self.retrait.setValue(round(t.retrait))
+            self.cesure.setChecked(t.cesure)
+            self._choisir_liste(self.langue_texte, t.langue)
             self.espace_paragraphe.setValue(round(t.espace_paragraphe))
             self._choisir_liste(self.deformation, t.deformation)
             self.trace_debut.setValue(round(t.trace_debut))
@@ -509,6 +563,7 @@ class PanneauTexte(QScrollArea):
         self._montrer_lettres()
         for w in (self.cadre_l, self.cadre_h):
             w.setEnabled(self.t.cadre_l > 0 and not self.t.vertical)
+        self.cesure.setEnabled(self.t.cadre_l > 0 and not self.t.vertical and self._ortho_active())
         self.flexion.setEnabled(self.t.deformation != "aucune")
         self.bouton_trace.setEnabled(self.lie and not verrou)
         if not self.lie and self.bouton_trace.isChecked():
@@ -601,6 +656,8 @@ class PanneauTexte(QScrollArea):
         self.t = nouveau
         if champ not in self.PAS_DEFAUT:
             self.defaut = replace(self.defaut, **{champ: valeur})      # le prochain texte reprend ce style
+        if champ == "langue":
+            self.soulignement.rehighlight()
         if champ in ("cadre_l", "vertical", "deformation", "trace"):
             self.afficher(self.t if self.lie else None)
         else:
@@ -631,6 +688,69 @@ class PanneauTexte(QScrollArea):
             self.t = nouveau
             self._montrer_lettres()
             self.modifie.emit(self.t, "crenages")
+
+    # ---------------------------------------------------------- orthographe
+    @staticmethod
+    def _ortho_active() -> bool:
+        try:
+            from . import orthographe
+            return orthographe.active() and orthographe.disponible()
+        except Exception:
+            return False
+
+    def option_orthographe(self):
+        """Option ou langues de l'orthographe changées (menu Affichage) : soulignement et césure à jour."""
+        self.soulignement.rehighlight()
+        self.afficher(self.t if self.lie else None, not self.saisie.isEnabled() and self.lie)
+
+    def _menu_saisie(self, pos):
+        """Clic droit dans la case du texte : sur un mot souligné, les suggestions, Ignorer, Ajouter au dictionnaire ;
+        puis le menu habituel (couper, copier, coller…)."""
+        from . import orthographe as o
+        menu = self.saisie.createStandardContextMenu()
+        curseur = self.saisie.cursorForPosition(pos)
+        texte = self.saisie.toPlainText()
+        span = o.mot_a(texte, curseur.position())
+        langue = self.t.langue
+        if self.lie and self.saisie.isEnabled() and span and o.verifiable(langue) and o.pret(langue):
+            mot = texte[span[0]:span[1]]
+            if not o.correct(mot, langue):
+                QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+                try:
+                    props = o.suggestions(mot, langue)
+                finally:
+                    QApplication.restoreOverrideCursor()
+                premiere = menu.actions()[0] if menu.actions() else None
+                actions = []
+                for s in props:
+                    a = QAction_(s, menu)
+                    f = a.font()
+                    f.setBold(True)
+                    a.setFont(f)
+                    a.triggered.connect(lambda _=False, s=s, sp=span: self._remplacer_mot(sp, s))
+                    actions.append(a)
+                if not props:
+                    a = QAction_(tr("(aucune suggestion)"), menu)
+                    a.setEnabled(False)
+                    actions.append(a)
+                a = QAction_(tr("Ignorer « {mot} »", mot=mot), menu)
+                a.triggered.connect(lambda: (o.ignorer_mot(mot), self.soulignement.rehighlight()))
+                actions.append(a)
+                a = QAction_(tr("Ajouter « {mot} » au dictionnaire", mot=mot), menu)
+                a.triggered.connect(lambda: (o.ajouter_mot(mot), self.soulignement.rehighlight()))
+                actions.append(a)
+                sep = QAction_(menu)
+                sep.setSeparator(True)
+                actions.append(sep)
+                menu.insertActions(premiere, actions)
+        menu.exec(self.saisie.mapToGlobal(pos))
+
+    def _remplacer_mot(self, span, nouveau: str):
+        c = self.saisie.textCursor()
+        c.setPosition(span[0])
+        c.setPosition(span[1], QTextCursor.KeepAnchor)
+        c.insertText(nouveau)
+        self.saisie.setTextCursor(c)
 
     # ---------------------------------------------------------- glyphes
     def ouvrir_glyphes(self):

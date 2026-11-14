@@ -286,6 +286,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self._choisir_outil(PINCEAU)
         self._actualiser()
         self.option_polices(self.a_option_polices.isChecked(), demarrage=True)
+        self.a_langues_orthographe.setEnabled(self.a_option_orthographe.isChecked())
+        if self.a_option_orthographe.isChecked():
+            from . import orthographe
+            orthographe.charger_mots_perso()
         self._demarrer_moteur()
         if self.reglages.value("maj_auto", False, type=bool):
             QTimer.singleShot(8000, lambda: self.verifier_maj(silencieux=True))
@@ -312,6 +316,40 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                 polices_semblables.lancer_en_fond()
         else:                       # décoché (ici ou à l'installation) : la mémoire des polices ne garde pas de place
             self._effacer_memoire_polices()
+
+    def option_orthographe(self, actif: bool) -> None:
+        """Affichage > Orthographe et césure : soulignement et césure (les textes en cadre sont redessinés)."""
+        self.reglages.setValue("orthographe", actif)
+        self.a_langues_orthographe.setEnabled(actif)
+        if actif:
+            from . import orthographe
+            orthographe.charger_mots_perso()
+        self._redessiner_textes()
+        self.panneau_texte.option_orthographe()
+
+    def langues_orthographe(self) -> None:
+        from .dialogue_orthographe import DialogueLangues
+        if DialogueLangues(self).exec():
+            self.panneau_texte.option_orthographe()
+
+    def _redessiner_textes(self) -> None:
+        """Textes à césure redessinés (option changée) : aucune étape d'Annuler, le texte lui-même ne change pas."""
+        from .texte import mise, rendre
+        mise.cache_clear()
+        for doc in list(self.documents):
+            w, h = doc.taille()
+            for i, c in enumerate(doc.calques):
+                if c.texte is not None and c.texte.cesure and c.texte.cadre_l > 0:
+                    doc.apercu_calque(i, rendre(c.texte, w, h), texte=c.texte)
+
+    def rechercher_textes(self) -> None:
+        from .rechercher_texte import FenetreRechercher
+        if getattr(self, "_rechercher", None) is None:
+            self._rechercher = FenetreRechercher(self)
+        self._rechercher.show()
+        self._rechercher.raise_()
+        self._rechercher.cherche.setFocus()
+        self._rechercher.cherche.selectAll()
 
     def _effacer_memoire_polices(self, essais: int = 5) -> None:
         """Le fichier peut être pris un instant (antivirus qui lit un fichier juste écrit) : nouvel essai plus tard."""
@@ -453,6 +491,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                      "a_supprimer_selection")
         m.addSeparator()
         self._action(m, tr("Remplir avec un motif…"), None, self.remplir_motif, "a_remplir_motif")
+        self._action(m, tr("Rechercher et remplacer dans les textes…"), "Ctrl+H", self.rechercher_textes,
+                     "a_rechercher_textes")
         m.addSeparator()
         self._action(m, tr("Transformer le calque"), "Ctrl+T", self.transformer, "a_transformer")
 
@@ -537,6 +577,14 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                         "polices en arrière-plan. La durée dépend du nombre de polices installées (environ 1 min 20 et "
                         "15 Mo pour 1 200 polices). Décoché : rien de tout cela."))
         a.toggled.connect(lambda v: self.option_polices(v))
+        # option choisie à l'installation (case « Orthographe et césure » et ses langues), modifiable ici
+        a = self._action(m, tr("Orthographe et césure"), None, None, "a_option_orthographe")
+        a.setCheckable(True)
+        a.setChecked(self.reglages.value("orthographe", True, type=bool))
+        a.setToolTip(tr("Coché : mots mal orthographiés soulignés en rouge dans le panneau Texte (clic droit : "
+                        "suggestions) et césure possible des textes en cadre. Décoché : rien de tout cela."))
+        a.toggled.connect(self.option_orthographe)
+        self._action(m, tr("Langues de l'orthographe…"), None, self.langues_orthographe, "a_langues_orthographe")
         m.setToolTipsVisible(True)
         m.addSeparator()
         self._menu_regles(m)

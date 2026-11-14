@@ -79,6 +79,7 @@ class Texte:
     cadre_l: float = 0.0             # texte en cadre : largeur du cadre en px (0 : texte libre)
     cadre_h: float = 0.0             # hauteur du cadre en px (0 : selon le texte)
     cesure: bool = False             # couper les longs mots en fin de ligne (texte en cadre)
+    langue: str = ""                 # langue du texte (orthographe, césure) : "fr", "en" ; "" = celle de Pixane
     retrait: float = 0.0             # alinéa de la première ligne de chaque paragraphe, % de la taille
     espace_paragraphe: float = 0.0   # espace entre les paragraphes, % de la taille
     # ---- forme
@@ -308,12 +309,13 @@ def _crenages_main(t: Texte, dispo, lettres: list[Lettre], libre: bool):
         return
     n0 = 0
     total = {}
-    for lay, _segs, a, lignes in dispo:
-        longueur = len(lay.text())
+    for lay, _segs, a, lignes, places in dispo:
+        longueur = len(places) - 1
         for idx, v in t.crenages:
             pos = idx - a
             if not (0 < pos < longueur) or not v:
                 continue
+            pos = places[pos]
             ligne = lay.lineForTextPosition(pos)
             if not ligne.isValid() or pos == ligne.textStart():
                 continue
@@ -335,15 +337,42 @@ def _crenages_main(t: Texte, dispo, lettres: list[Lettre], libre: bool):
                 l.x -= d
 
 
-def _cesure(mots: str) -> tuple[str, list[int]]:
-    """Ajoute les coupures possibles (tiret conditionnel) ; renvoie (texte, index d'origine de chaque caractère)."""
+def _justifie_sans_espace(dispo, lettres: list[Lettre]):
+    """Justifié : une ligne d'un seul mot n'est pas étirée lettre par lettre (Qt le fait) ; elle reste à gauche,
+    comme dans Photoshop."""
+    n0 = 0
+    for lay, _segs, _a, lignes, _p in dispo:
+        texte = lay.text()
+        for k, (ligne, _ind) in enumerate(lignes):
+            morceau = texte[ligne.textStart():ligne.textStart() + ligne.textLength()].replace("­", "")
+            if k < len(lignes) - 1 and not any(c.isspace() for c in morceau.strip()):
+                dans = sorted((l for l in lettres if l.ligne == n0 + k), key=lambda l: l.x)
+                if len(dans) > 1:
+                    plus = (dans[-1].x + dans[-1].avance - dans[0].x - ligne.naturalTextWidth()) / (len(dans) - 1)
+                    if plus > 1e-3:
+                        for i, l in enumerate(dans):
+                            l.chemin.translate(-i * plus, 0)
+                            l.x -= i * plus
+        n0 += len(lignes)
+
+
+def _cesure(t: Texte, morceau: str) -> tuple[str, list[int]]:
+    """Césure : le paragraphe avec ses coupures possibles (tirets conditionnels, montrés seulement en fin de ligne) ;
+    et pour chaque caractère d'origine (plus la fin), sa place dans ce texte."""
     try:
-        from .cesure import couper
-    except ImportError:
-        couper = None
-    if couper is None:
-        return mots, list(range(len(mots)))
-    return couper(mots)
+        from .orthographe import active, couper
+        nouveau = couper(morceau, t.langue) if active() else morceau      # option « Orthographe et césure »
+    except Exception:                       # césure indisponible : texte tel quel
+        nouveau = morceau
+    places = []
+    j = 0
+    for ch in morceau:
+        while j < len(nouveau) and nouveau[j] != ch:
+            j += 1
+        places.append(j)
+        j += 1
+    places.append(len(nouveau))
+    return nouveau, places
 
 
 def _glyphes(t: Texte, lay: QTextLayout, segs, p0: int, ligne_de, lettres_out: list, cache_fm: dict):
@@ -403,13 +432,17 @@ def _horizontal(t: Texte) -> tuple[list[Lettre], QRectF, list[float]]:
 
     def disposer(lineaire: float | None):
         """Une passe de mise en page ; lineaire : largeur des lignes (None : sans retour à la ligne)."""
-        res = []                      # (layout, segments, début, [(ligne, retrait)])
+        res = []                      # (layout, segments, début, [(ligne, retrait)], places des caractères)
         bases = []
         y = None
         cache_fm = {}
         for n_par, (a, b, morceau) in enumerate(paragraphes):
-            segs = _segments(t, a, b, lettres)
-            lay = QTextLayout(morceau, police(t))
+            if en_cadre and t.cesure:
+                dans_lay, places = _cesure(t, morceau)
+            else:
+                dans_lay, places = morceau, list(range(len(morceau) + 1))
+            segs = [(places[sa - a], places[sb - a], st, c) for sa, sb, st, c in _segments(t, a, b, lettres)]
+            lay = QTextLayout(dans_lay, police(t))
             opt = QTextOption()
             opt.setWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere if en_cadre else QTextOption.NoWrap)
             opt.setAlignment(align if (en_cadre or lineaire is not None) else Qt.AlignLeft)
@@ -417,7 +450,7 @@ def _horizontal(t: Texte) -> tuple[list[Lettre], QRectF, list[float]]:
             formats = []
             for sa, sb, st, c in segs:
                 fr = QTextLayout.FormatRange()
-                fr.start, fr.length = sa - a, sb - sa
+                fr.start, fr.length = sa, sb - sa
                 cf = QTextCharFormat()
                 cf.setFont(police_lettre(t, st, c))
                 fr.format = cf
@@ -442,7 +475,7 @@ def _horizontal(t: Texte) -> tuple[list[Lettre], QRectF, list[float]]:
                 lignes.append((ligne, ind))
                 premiere = False
             lay.endLayout()
-            res.append((lay, segs, a, lignes))
+            res.append((lay, segs, a, lignes, places))
         return res, bases
 
     if en_cadre:
@@ -450,22 +483,24 @@ def _horizontal(t: Texte) -> tuple[list[Lettre], QRectF, list[float]]:
         L = largeur
     else:
         dispo, bases = disposer(None)
-        larg = [ind + l.naturalTextWidth() for _lay, _s, _a, lignes in dispo for l, ind in lignes]
+        larg = [ind + l.naturalTextWidth() for _lay, _s, _a, lignes, _p in dispo for l, ind in lignes]
         L = max(larg + [1.0])
         if t.alignement != GAUCHE and len(larg) > 1:
             dispo, bases = disposer(L)               # aligné sur la ligne la plus longue
     sortie: list[Lettre] = []
     cache_fm = {}
-    toutes = [(l.y(), l.height()) for _lay, _s, _a, lignes in dispo for l, _ind in lignes]
+    toutes = [(l.y(), l.height()) for _lay, _s, _a, lignes, _p in dispo for l, _ind in lignes]
 
     def ligne_de(yb: float) -> int:
         for n, (top, h) in enumerate(toutes):
             if top - 1e-3 <= yb <= top + h + 1e-3:
                 return n
         return len(toutes) - 1
-    for lay, segs, a, _lignes in dispo:
-        _glyphes(t, lay, segs, a, ligne_de, sortie, cache_fm)
+    for lay, segs, _a, _lignes, _p in dispo:
+        _glyphes(t, lay, segs, 0, ligne_de, sortie, cache_fm)
     _crenages_main(t, dispo, sortie, not en_cadre)
+    if en_cadre and t.alignement == JUSTIFIE:
+        _justifie_sans_espace(dispo, sortie)
     if not bases:
         bases = [fmb.ascent()]
     haut = 0.0

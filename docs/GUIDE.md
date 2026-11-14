@@ -823,6 +823,23 @@ prennent le style de celle qui les précède.
   texte ; **Coller** les donne à un autre texte (son texte et sa place ne changent pas). **+** enregistre le style
   sous un nom ; il reste dans la liste pour les prochaines fois (en choisir un l'applique) ; **−** en supprime un.
 
+### Orthographe, césure, rechercher et remplacer
+- **Orthographe** : dans la case du panneau Texte, les mots mal écrits sont **soulignés en rouge**. **Clic droit**
+  sur un mot souligné : les suggestions (accents oubliés, lettres inversées, en trop, oubliées, mots collés),
+  *Ignorer* (jusqu'à la fermeture de Pixane) ou *Ajouter au dictionnaire* (gardé pour toujours).
+- **Langue** (partie Paragraphe) : la langue du texte, pour l'orthographe et la césure ; *Langue de Pixane* par
+  défaut. Français et anglais.
+- **Césure** (texte en cadre) : les mots longs sont coupés en fin de ligne, avec un tiret, selon les règles de la
+  langue. En justifié, une ligne d'un seul mot reste à gauche (ses lettres ne sont pas écartées).
+- **Option** (case à l'installation, avec le choix des langues, ou **Affichage > Orthographe et césure**) :
+  décochée, rien n'est souligné ni coupé. **Affichage > Langues de l'orthographe…** : cocher ou décocher une
+  langue ; une langue non installée est téléchargée après accord (dictionnaire de LibreOffice : français 1,4 Mo,
+  anglais 0,6 Mo), dans %LOCALAPPDATA%\Pixane\dictionnaires.
+- **Rechercher et remplacer** (**Ctrl+H**, menu Édition) : dans tous les textes de l'image. *Suivant* choisit le
+  texte et sélectionne le mot dans le panneau ; *Remplacer*, *Tout remplacer* (une seule étape d'Annuler) ;
+  *Respecter les majuscules*, *Mot entier*. Les lettres à style propre gardent leur style. Les textes verrouillés
+  ne sont pas modifiés.
+
 ### Une photo dans les lettres (masque d'écrêtage)
 Comme dans Photoshop : posez la photo (ou une texture, un dégradé…) **sur un calque juste au-dessus du texte**, puis
 **Ctrl+Alt+G** (menu Calque > *Masque d'écrêtage*, ou clic droit sur le calque). La photo ne se voit plus que
@@ -1131,6 +1148,7 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+L, Ctrl+M, Ctrl+B, Ctrl+Alt+Maj+B | Niveaux, Courbes, Balance des couleurs, Noir et blanc |
 | Ctrl+G, Ctrl+Maj+G | Grouper, Dégrouper |
 | Ctrl+Alt+G | Masque d'écrêtage (le calque ne se voit que dans celui du dessous) |
+| Ctrl+H | Rechercher et remplacer dans les textes |
 | Ctrl+\ | Peindre le masque / les pixels du calque |
 | Ctrl+Alt+R | Améliorer le contour |
 | Ctrl+R, Ctrl+', Ctrl+;, Ctrl+Maj+; | Règles, Grille, Repères, Magnétisme |

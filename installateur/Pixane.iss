@@ -115,6 +115,9 @@ french.DossierInvalide=Ce dossier ne contient pas ComfyUI (main.py et son Python
 french.CreerIcone=Créer une icône sur le Bureau
 french.Associer=Ouvrir les projets Pixane (.pixane) avec Pixane
 french.Fonctions=Fonctions :
+french.Orthographe=Orthographe et césure des textes (mots mal écrits soulignés, suggestions, coupure des mots en fin de ligne), dans les langues cochées ci-dessous :
+french.OrthoFr=Français (dictionnaire Grammalecte, 1,4 Mo)
+french.OrthoEn=Anglais (dictionnaire SCOWL en_US, 0,6 Mo)
 french.Polices=Recherche de police semblable (Pixane prépare une fois la liste de tes polices en arrière-plan ; la durée dépend du nombre de polices installées : environ 1 min 20 et 15 Mo pour 1 200 polices ; rien n'est téléchargé)
 french.TypeProjet=Projet Pixane
 french.PageMoteurTitre=Moteur IA
@@ -160,6 +163,9 @@ english.DossierInvalide=This folder does not contain ComfyUI (main.py and its Py
 english.CreerIcone=Create a desktop icon
 english.Associer=Open Pixane projects (.pixane) with Pixane
 english.Fonctions=Features:
+english.Orthographe=Spelling and hyphenation of texts (misspelled words underlined, suggestions, words split at line ends), in the languages ticked below:
+english.OrthoFr=French (Grammalecte dictionary, 1.4 MB)
+english.OrthoEn=English (SCOWL en_US dictionary, 0.6 MB)
 english.Polices=Similar font search (Pixane prepares the list of your fonts once, in the background; the time depends on the number of installed fonts: about 1 min 20 and 15 MB for 1,200 fonts; nothing is downloaded)
 english.TypeProjet=Pixane project
 english.PageMoteurTitre=AI engine
@@ -191,6 +197,9 @@ english.DesinstReglages=Also delete Pixane's settings (language, theme, last fol
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreerIcone}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "polices"; Description: "{cm:Polices}"; GroupDescription: "{cm:Fonctions}"
+Name: "orthographe"; Description: "{cm:Orthographe}"; GroupDescription: "{cm:Fonctions}"; Flags: checkablealone
+Name: "orthographe\fr"; Description: "{cm:OrthoFr}"
+Name: "orthographe\en"; Description: "{cm:OrthoEn}"
 #ifndef Essai
 Name: "associer"; Description: "{cm:Associer}"; GroupDescription: "{cm:AdditionalIcons}"
 #endif
@@ -210,6 +219,9 @@ Type: files; Name: "{autodesktop}\Chrypix.lnk"
 Source: "..\publication\Pixane\*"; DestDir: "{app}"; Excludes: "*.log,*.pixane,*.ora,*.safetensors,*.ckpt"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Images de l'accueil en anglais : seulement pour l'installateur, jamais copiées sur le PC.
 Source: "images\accueil-en-*.png"; Flags: dontcopy
+; Dictionnaires d'orthographe : seulement les langues cochées (option « Orthographe et césure »).
+Source: "..\publication\dictionnaires\fr\*"; DestDir: "{app}\pixane\dictionnaires"; Flags: ignoreversion; Tasks: orthographe\fr
+Source: "..\publication\dictionnaires\en\*"; DestDir: "{app}\pixane\dictionnaires"; Flags: ignoreversion; Tasks: orthographe\en
 
 [Registry]
 ; Langue choisie dans l'installateur = langue de Pixane (modifiable ensuite dans Affichage > Langue).
@@ -218,6 +230,13 @@ Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "langue"; Va
 ; Option « Recherche de police semblable » (modifiable ensuite dans Affichage > Recherche de police semblable).
 Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "polices_semblables"; ValueData: "true"; Tasks: polices
 Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "polices_semblables"; ValueData: "false"; Tasks: not polices
+; Option « Orthographe et césure » et ses langues (modifiables ensuite dans Affichage).
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "orthographe"; ValueData: "true"; Tasks: orthographe
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "orthographe"; ValueData: "false"; Tasks: not orthographe
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "orthographe_langues"; ValueData: "fr,en"; Tasks: orthographe\fr and orthographe\en
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "orthographe_langues"; ValueData: "fr"; Tasks: orthographe\fr and not orthographe\en
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "orthographe_langues"; ValueData: "en"; Tasks: orthographe\en and not orthographe\fr
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "orthographe_langues"; ValueData: ""; Tasks: not orthographe\fr and not orthographe\en
 ; Fichiers .pixane ouverts par Pixane (seulement si la case est cochée ; jamais par un essai : sa désinstallation
 ; effacerait l'association de la vraie installation, arrivé le 09/11/2026).
 #ifndef Essai
@@ -1059,6 +1078,7 @@ begin
       DeleteFile(Travail + '\config.json');
       DeleteFile(Travail + '\moteur.log');
       DeleteFile(Travail + '\installation_moteur.log');
+      DelTree(Travail + '\dictionnaires', True, True, True);      { langues ajoutées depuis Pixane }
       DelTree(ExpandConstant('{%TEMP}\pixane_theme'), True, True, True);
       RemoveDir(Travail);        { seulement s'il est vide : un moteur gardé y reste }
     end;
