@@ -1,4 +1,5 @@
-"""Filtres (menu Filtres) : flou gaussien, flou de mouvement, réduction du bruit, netteté, vignette.
+"""Filtres (menu Filtres) : flou gaussien, flou de mouvement, flou radial, flou de l'objectif, flou de surface,
+réduction du bruit, netteté, vignette.
 
 Calcul pur sur des tableaux RGBA uint8 (couleurs non prémultipliées). Les flous travaillent en couleurs
 prémultipliées : un bord transparent ne fait pas de halo sombre. `appliquer_calque` pose le résultat sur le calque,
@@ -18,6 +19,11 @@ from .langue import tr
 FILTRES = {
     "flou": [("rayon", "Rayon", 1, 250, 6, " px")],
     "mouvement": [("angle", "Angle", -180, 180, 0, "°"), ("distance", "Distance", 2, 500, 30, " px")],
+    "radial": [("quantite", "Quantité", 1, 100, 15, ""), ("zoom", "Méthode", 0, 1, 1, ""),
+               ("cx", "Centre horizontal", 0, 100, 50, " %"), ("cy", "Centre vertical", 0, 100, 50, " %")],
+    "objectif": [("rayon", "Rayon", 1, 200, 12, " px"), ("reflets", "Reflets lumineux", 0, 100, 40, " %"),
+                 ("seuil", "Seuil des reflets", 150, 255, 220, "")],
+    "surface": [("rayon", "Rayon", 1, 100, 6, " px"), ("seuil", "Seuil", 2, 255, 18, "")],
     "bruit": [("force", "Force", 1, 100, 40, ""), ("details", "Garder les détails", 0, 100, 40, " %"),
               ("couleur", "Bruit de couleur", 0, 100, 60, " %")],
     "nettete": [("quantite", "Quantité", 1, 500, 120, " %"), ("rayon", "Rayon", 1, 50, 2, " px"),
@@ -29,7 +35,8 @@ FILTRES = {
 
 
 def noms() -> dict:
-    return {"flou": tr("Flou gaussien"), "mouvement": tr("Flou de mouvement"), "bruit": tr("Réduction du bruit"),
+    return {"flou": tr("Flou gaussien"), "mouvement": tr("Flou de mouvement"), "radial": tr("Flou radial"),
+            "objectif": tr("Flou de l'objectif"), "surface": tr("Flou de surface"), "bruit": tr("Réduction du bruit"),
             "nettete": tr("Netteté"), "vignette": tr("Vignette")}
 
 
@@ -40,7 +47,17 @@ def libelles() -> dict:
             "Quantité": tr("Quantité"), "Seuil": tr("Seuil"),
             "Force (− assombrit, + éclaircit)": tr("Force (− assombrit, + éclaircit)"),
             "Taille du centre": tr("Taille du centre"), "Douceur": tr("Douceur"),
-            "Rond (0 = suit le cadre)": tr("Rond (0 = suit le cadre)")}
+            "Rond (0 = suit le cadre)": tr("Rond (0 = suit le cadre)"),
+            "Méthode": tr("Méthode"),
+            "Centre horizontal": tr("Centre horizontal"), "Centre vertical": tr("Centre vertical"),
+            "Reflets lumineux": tr("Reflets lumineux"), "Seuil des reflets": tr("Seuil des reflets")}
+
+
+def choix(type_: str, cle: str) -> list[str] | None:
+    """Réglages à choisir dans une liste (valeur = place dans la liste) plutôt qu'avec un curseur."""
+    if (type_, cle) == ("radial", "zoom"):
+        return [tr("Rotation"), tr("Zoom")]
+    return None
 
 
 def defauts(type_: str) -> dict:
@@ -113,6 +130,100 @@ def flou_mouvement(t: np.ndarray, p: dict) -> np.ndarray:
         res[..., :3] = res[..., :3] * 255 / np.maximum(res[..., 3:4], 1e-3)
         res[..., 3] = 255
     return _depremul(res)
+
+
+def _opaque(t: np.ndarray, res: np.ndarray) -> np.ndarray:
+    """Photo opaque : les bords floutés ne doivent pas devenir transparents (res prémultiplié, float)."""
+    if np.all(t[..., 3] == 255):
+        res[..., :3] = res[..., :3] * 255 / np.maximum(res[..., 3:4], 1e-3)
+        res[..., 3] = 255
+    return res
+
+
+def flou_radial(t: np.ndarray, p: dict) -> np.ndarray:
+    """Comme Photoshop : rotation (les points tournent autour du centre) ou zoom (ils filent vers le centre).
+    Moyenne de copies tournées ou agrandies autour du centre choisi."""
+    h, w = t.shape[:2]
+    f = _premul(t)
+    q = p["quantite"] / 100
+    cx, cy = w * p["cx"] / 100, h * p["cy"] / 100
+    zoom = bool(p.get("zoom", 1))
+    loin = max(math.hypot(cx - x, cy - y) for x in (0, w) for y in (0, h))
+    longueur = loin * (q / 2 if zoom else math.radians(60 * q))     # trajet du point le plus loin, en pixels
+    passes = int(min(8, max(3, math.ceil(math.log2(max(2.0, longueur / 1.5))))))
+    n = 2 ** passes
+    m = 0 if zoom else int(math.ceil(longueur)) + 2       # rotation : bords prolongés (sinon coins vides)
+    if m:
+        f = np.pad(f, [(m, m), (m, m), (0, 0)], mode="edge")
+        cx, cy, w, h = cx + m, cy + m, w + 2 * m, h + 2 * m
+    # copies doublées à chaque passe : après k passes, moyenne de 2^k copies régulièrement espacées
+    res = [np.ascontiguousarray(f[..., k]) for k in range(4)]
+    for i in range(passes):
+        part = 2 ** i / n
+        for k in range(4):
+            im = Image.fromarray(res[k], "F")
+            if zoom:
+                s_ = (1 - q / 2) ** part
+                a_ = (s_, 0, cx * (1 - s_), 0, s_, cy * (1 - s_))
+                autre = np.asarray(im.transform((w, h), Image.AFFINE, a_, Image.BILINEAR), np.float32)
+            else:
+                autre = np.asarray(im.rotate(60 * q * part, Image.BILINEAR, center=(cx, cy)), np.float32)
+            res[k] = (res[k] + autre) / 2
+    if not zoom:                                     # le flou est centré sur la position d'origine
+        res = [np.asarray(Image.fromarray(c, "F").rotate(-30 * q * (n - 1) / n, Image.BILINEAR, center=(cx, cy)),
+                          np.float32) for c in res]
+    res = np.stack(res, axis=-1)
+    if m:
+        res = np.ascontiguousarray(res[m:-m, m:-m])
+    return _depremul(_opaque(t, res))
+
+
+def _disque(r: int) -> np.ndarray:
+    y, x = np.mgrid[-r:r + 1, -r:r + 1].astype(np.float32)
+    d = np.clip(r + 0.5 - np.sqrt(x * x + y * y), 0, 1)          # bord adouci d'un pixel
+    return d / d.sum()
+
+
+def _convoluer(f: np.ndarray, noyau: np.ndarray) -> np.ndarray:
+    """Convolution (h, w, c) par un noyau (k, k), par transformée de Fourier (bords répétés)."""
+    r = noyau.shape[0] // 2
+    p = np.pad(f, [(r, r), (r, r), (0, 0)], mode="edge")
+    H, W = p.shape[:2]
+    taille = (H + 2 * r, W + 2 * r)
+    K = np.fft.rfft2(noyau, taille)
+    out = np.empty_like(f)
+    for c in range(f.shape[2]):
+        g = np.fft.irfft2(np.fft.rfft2(p[..., c], taille) * K, taille)
+        out[..., c] = g[2 * r:2 * r + f.shape[0], 2 * r:2 * r + f.shape[1]]
+    return out
+
+
+def flou_objectif(t: np.ndarray, p: dict) -> np.ndarray:
+    """Flou d'un vrai objectif : chaque point devient un petit disque (et non une tache floue comme le flou
+    gaussien) ; les points très clairs (au-dessus du seuil) deviennent des reflets ronds bien visibles (bokeh)."""
+    r = max(1, int(p["rayon"]))
+    f = _premul(t) / 255
+    rgb = f[..., :3]
+    seuil = p["seuil"] / 255
+    gain = p["reflets"] / 100 * 12
+    y = rgb.max(axis=-1, keepdims=True)
+    fort = np.clip((y - seuil) / max(1e-3, 1 - seuil), 0, 1) * gain       # lumière « gonflée » des reflets
+    f2 = np.concatenate([rgb * (1 + fort), f[..., 3:4]], axis=-1).astype(np.float32)
+    res = _convoluer(f2, _disque(r)) * 255
+    res[..., :3] = np.minimum(res[..., :3], res[..., 3:4])
+    return _depremul(_opaque(t, res))
+
+
+def flou_surface(t: np.ndarray, p: dict) -> np.ndarray:
+    """Comme le flou de surface de Photoshop : lisse les zones unies (peau, ciel) en gardant les bords nets ; le
+    seuil dit à partir de quelle différence de couleur un bord est gardé."""
+    f = t[..., :3].astype(np.float32) / 255
+    r = max(1, int(p["rayon"]))
+    eps = (p["seuil"] / 255) ** 2
+    out = t.copy()
+    res = np.stack([_guide(f[..., k], f[..., k], r, eps) for k in range(3)], axis=-1)
+    out[..., :3] = np.clip(np.round(res * 255), 0, 255).astype(np.uint8)
+    return out
 
 
 def _guide(I: np.ndarray, P: np.ndarray, r: int, eps: float) -> np.ndarray:
@@ -203,7 +314,8 @@ def garder_teinte(original: np.ndarray, resultat: np.ndarray) -> np.ndarray:
     return out
 
 
-FONCTIONS = {"flou": flou_gaussien, "mouvement": flou_mouvement, "bruit": reduire_bruit, "nettete": nettete,
+FONCTIONS = {"flou": flou_gaussien, "mouvement": flou_mouvement, "radial": flou_radial, "objectif": flou_objectif,
+             "surface": flou_surface, "bruit": reduire_bruit, "nettete": nettete,
              "vignette": vignette}
 
 

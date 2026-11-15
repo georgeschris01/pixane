@@ -301,6 +301,14 @@ Un clic sur une couleur sélectionne la zone de couleur proche. Sans IA, instant
 - **Image visible** ou **Calque choisi** : sur quoi les couleurs sont comparées.
 - Maj ajoute, Alt retire, comme le rectangle.
 
+### Plage de couleurs (menu Sélection)
+Sélectionne **tous les points d'une couleur**, dans toute l'image (la baguette ne prend que les voisins).
+- **Clic** dans l'aperçu sur la couleur voulue ; **Maj+clic** : ajouter une couleur ; **Alt+clic** : en retirer une.
+- **Tolérance** : jusqu'où les couleurs voisines sont prises (bords doux). Un rouge plus sombre (à l'ombre) compte
+  comme du rouge.
+- L'aperçu montre la **sélection** (blanc = pris) ou l'**image** ; la sélection est aussi montrée sur la photo.
+- *Inverser* : tout sauf ces couleurs. **Sélection** : nouvelle, ajouter à la sélection ou en retirer.
+
 ### Améliorer le contour (Ctrl+Alt+R, menu Sélection)
 Pour une sélection grossière autour de **cheveux, poils, feuillage ou bords flous** (par exemple après *Sélectionner
 le sujet* ou un lasso rapide) : Pixane recalcule le bord d'après les couleurs de la photo.
@@ -1067,7 +1075,7 @@ Menu **Image > Réglages de l'image…** (Ctrl+U) : corriger la lumière, les co
   les curseurs restent ajustables ensuite.
 - Un calque **verrouillé** est protégé ; un **texte** réglé devient une image.
 
-### Niveaux, Courbes, Balance, Noir et blanc, Vibrance (menu Image > Réglages)
+### Niveaux, Courbes, Balance, Noir et blanc, Vibrance… (menu Image > Réglages)
 Comme dans Photoshop, avec aperçu en direct et histogramme. Ils changent les pixels du **calque choisi** (dans la
 sélection s'il y en a une). Pour pouvoir y revenir plus tard, utilisez plutôt un **calque de réglage** (chapitre 6).
 
@@ -1078,9 +1086,22 @@ sélection s'il y en a une). Pour pouvoir y revenir plus tard, utilisez plutôt 
 | **Balance des couleurs** | Ctrl+B | Pousse les **Ombres**, **Tons moyens** ou **Hautes lumières** vers Cyan–Rouge, Magenta–Vert, Jaune–Bleu ; *Préserver la luminosité* |
 | **Noir et blanc** | Ctrl+Alt+Maj+B | Passe en noir et blanc en choisissant la clarté de chaque couleur (rouges, jaunes, verts, cyans, bleus, magentas) ; **Virage** : teinte le gris (sépia…) |
 | **Vibrance** | — | Ravive surtout les couleurs ternes en ménageant celles déjà vives (la peau) ; **Saturation** : toutes les couleurs autant |
+| **Remplacer la couleur** | — | Cliquez la couleur à changer dans l'aperçu (Maj+clic : en ajouter une, Alt+clic : en retirer une), réglez la **Tolérance**, puis la **Teinte**, la **Saturation** et la **Clarté** : seuls ces points changent, plis et ombres gardés (un pull rouge devient bleu) |
+| **Filtre photo** | — | Comme un filtre de couleur devant l'objectif : réchauffant, refroidissant, sépia… ou une couleur au choix ; **Densité** ; *Garder la luminosité* |
+| **Mélangeur de couches** | — | Chaque couleur de sortie (rouge, vert, bleu) est faite d'une part de rouge, de vert, de bleu et d'une constante ; **Monochrome** : noir et blanc sur mesure |
+| **Courbe de transfert de dégradé** | — | Les tons sombres prennent la couleur de gauche d'un dégradé, les clairs celle de droite (« duotone », effets d'affiche) ; *Inverser* |
+| **Négatif** | Ctrl+I | Inverse les couleurs |
+| **Seuil** | — | Noir ou blanc selon la clarté (effet tampon, pochoir) |
+| **Postérisation** | — | Garde peu de nuances par couleur : aplats comme une affiche |
+
+Tous existent aussi en **calque de réglage** (Calque > Nouveau calque de réglage), modifiables à tout moment.
 
 ### Filtres (menu Filtres)
-**Flou gaussien**, **Flou de mouvement** (angle, distance), **Réduction du bruit** (force, garder les détails, bruit
+**Flou gaussien**, **Flou de mouvement** (angle, distance), **Flou radial** (*Rotation* : les points tournent autour
+du centre ; *Zoom* : ils filent vers le centre ; quantité, centre en %), **Flou de l'objectif** (comme un vrai objectif :
+chaque point devient un petit disque ; les points très clairs deviennent des **reflets ronds** : réglez leur force et
+leur seuil), **Flou de surface** (lisse la peau ou un ciel en gardant les bords nets ; *Seuil* : à partir de quel écart
+de couleur un bord est gardé), **Réduction du bruit** (force, garder les détails, bruit
 de couleur), **Netteté** (quantité, rayon, seuil : le masque flou de Photoshop), **Vignette** (assombrir ou
 éclaircir les bords : force, taille du centre, douceur, rond). Même fonctionnement que les réglages : aperçu en
 direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annuler. Ils marchent aussi sur un masque.
@@ -1113,6 +1134,11 @@ direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annul
 - **Redresser…** : tourner d'un petit angle (-45° à +45°) avec une grille pour aligner l'horizon ou un mur.
   *Recadrer pour enlever les coins vides* (coché par défaut) ; décoché, l'image s'agrandit et les coins sont
   transparents.
+- **Recadrage en perspective** : pour une **façade, un tableau, un document, un écran photographié de biais**.
+  Tirez les **4 coins** sur les bords de l'objet (une grille en perspective aide à suivre ses lignes ; dedans : tout
+  déplacer), puis **Entrée**, double-clic ou **Recadrer** : l'objet devient un **rectangle droit** qui remplit
+  l'image (largeur et hauteur de ses plus longs bords). Les textes deviennent des images. Échap : annuler ; Ctrl+Z
+  pendant le réglage remet le coin d'avant.
 - **Édition > Transformer le calque** (Ctrl+T) : un cadre entoure le **calque choisi**. Pour agrandir, réduire ou
   tourner **un seul élément** du calque, **sélectionnez-le d'abord** (rectangle, lasso, baguette…) : le cadre
   n'entoure que lui, le reste du calque ne bouge pas, sa place d'origine devient transparente.
@@ -1122,6 +1148,16 @@ direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annul
   - la barre du haut montre **Largeur**, **Hauteur** (en %) et **Angle** (en degrés) dans des cases où l'on peut
     **taper la valeur exacte** (flèches : 1° ; Maj+flèches : 10°) ; **Entrée**, double-clic ou **Valider** pour garder,
     **Échap** ou **Annuler** pour revenir. Changer d'outil valide aussi.
+  - **Mode** (barre du haut, ou **Édition > Transformation**) :
+    - **Libre** : ci-dessus. **Ctrl+coin** : ce coin bouge seul (on passe en *Distordre*).
+    - **Perspective** : un coin tiré entraîne le coin voisin **en miroir** (tiré vers le bas, le bord rétrécit ;
+      tiré de côté, il s'élargit) : comme une façade vue de biais.
+    - **Distordre** : chaque coin bouge seul, pour **poser une image sur un écran, une boîte, un mur, une
+      pochette en 3D** ; un milieu de bord déplace tout ce bord.
+    - **Déformation** : une **grille de 16 points** (des cercles pour les poignées, des carrés aux coins) : tirez-les
+      pour courber, gonfler, plier l'image (drapeau, tasse, page qui ondule). Un coin emmène ses deux poignées.
+    - Dans ces trois modes, **dedans** = déplacer, **dehors** = tourner toute la forme ; Ctrl+Z défait le dernier
+      geste. Les cases Largeur / Hauteur / Angle sont grisées.
   Un texte transformé devient une image (pour garder un texte modifiable, utilisez l'outil Texte).
 
 Tout s'annule par Ctrl+Z.
@@ -1146,6 +1182,7 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+X, Ctrl+C, Ctrl+V, Suppr | Couper, Copier, Coller (nouveau calque), Supprimer la sélection |
 | Ctrl+U | Réglages de l'image |
 | Ctrl+L, Ctrl+M, Ctrl+B, Ctrl+Alt+Maj+B | Niveaux, Courbes, Balance des couleurs, Noir et blanc |
+| Ctrl+I | Négatif |
 | Ctrl+G, Ctrl+Maj+G | Grouper, Dégrouper |
 | Ctrl+Alt+G | Masque d'écrêtage (le calque ne se voit que dans celui du dessous) |
 | Ctrl+H | Rechercher et remplacer dans les textes |

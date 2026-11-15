@@ -290,6 +290,13 @@ One click on a colour selects the area of similar colour. No AI, instant.
 - **Visible image** or **Chosen layer**: what the colours are compared on.
 - Shift adds, Alt removes, like the rectangle.
 
+### Colour range (Select menu)
+Selects **all the pixels of a colour**, across the whole image (the magic wand only takes neighbours).
+- **Click** the colour you want in the preview; **Shift+click**: add a colour; **Alt+click**: remove one.
+- **Tolerance**: how far similar colours are taken (soft edges). A darker red (in the shade) counts as red.
+- The preview shows the **selection** (white = selected) or the **image**; the selection is also shown on the photo.
+- *Invert*: everything but these colours. **Selection**: new, add to the selection or subtract from it.
+
 ### Refine edge (Ctrl+Alt+R, Select menu)
 For a rough selection around **hair, fur, foliage or soft edges** (for example after *Select subject* or a quick
 lasso): Pixane recomputes the edge from the photo's colours.
@@ -1031,7 +1038,7 @@ Groups and adjustment layers have no pixels: a message asks you to choose an ima
   still be adjusted afterwards.
 - A **locked** layer is protected; an adjusted **text** becomes an image.
 
-### Levels, Curves, Colour balance, Black & white, Vibrance (Image > Adjustments menu)
+### Levels, Curves, Colour balance, Black & white, Vibrance… (Image > Adjustments menu)
 As in Photoshop, with live preview and histogram. They change the pixels of the **selected layer** (inside the
 selection if there is one). To be able to come back to them later, use an **adjustment layer** instead (chapter 6).
 
@@ -1042,9 +1049,22 @@ selection if there is one). To be able to come back to them later, use an **adju
 | **Colour balance** | Ctrl+B | Pushes **Shadows**, **Midtones** or **Highlights** towards Cyan–Red, Magenta–Green, Yellow–Blue; *Preserve luminosity* |
 | **Black & white** | Ctrl+Alt+Shift+B | Converts to black & white choosing the lightness of each colour (reds, yellows, greens, cyans, blues, magentas); **Tint**: colours the greys (sepia…) |
 | **Vibrance** | — | Mostly boosts dull colours, sparing those already vivid (skin); **Saturation**: all colours equally |
+| **Replace colour** | — | Click the colour to change in the preview (Shift+click: add one, Alt+click: remove one), set the **Tolerance**, then the **Hue**, **Saturation** and **Lightness**: only those pixels change, folds and shadows kept (a red jumper turns blue) |
+| **Photo filter** | — | Like a colour filter in front of the lens: warming, cooling, sepia… or a custom colour; **Density**; *Preserve luminosity* |
+| **Channel mixer** | — | Each output channel (red, green, blue) is made of a share of red, green, blue and a constant; **Monochrome**: custom black & white |
+| **Gradient map** | — | Dark tones take the colour on the left of a gradient, light tones the one on the right ("duotone", poster effects); *Invert* |
+| **Invert** | Ctrl+I | Inverts the colours |
+| **Threshold** | — | Black or white depending on lightness (stamp, stencil effect) |
+| **Posterize** | — | Keeps few shades per colour: flat areas like a poster |
+
+All of them also exist as an **adjustment layer** (Layer > New adjustment layer), editable at any time.
 
 ### Filters (Filters menu)
-**Gaussian blur**, **Motion blur** (angle, distance), **Noise reduction** (strength, keep details, colour noise),
+**Gaussian blur**, **Motion blur** (angle, distance), **Radial blur** (*Rotation*: pixels spin around the centre;
+*Zoom*: they streak towards the centre; amount, centre in %), **Lens blur** (like a real lens: each point becomes a
+small disc; very bright points become **round highlights**: set their strength and threshold), **Surface blur**
+(smooths skin or a sky while keeping edges sharp; *Threshold*: from which colour difference an edge is kept),
+**Noise reduction** (strength, keep details, colour noise),
 **Sharpen** (amount, radius, threshold: Photoshop's unsharp mask), **Vignette** (darken or lighten the edges:
 strength, centre size, softness, round). Same behaviour as adjustments: live preview, selected layer, inside the
 selection if there is one, one step in Undo. They also work on a mask.
@@ -1076,6 +1096,11 @@ selection if there is one, one step in Undo. They also work on a mask.
 - **Straighten…**: rotate by a small angle (-45° to +45°) with a grid to align the horizon or a wall.
   *Crop to remove the empty corners* (ticked by default); unticked, the image grows and the corners are
   transparent.
+- **Perspective crop**: for a **facade, a painting, a document, a screen photographed at an angle**. Drag the
+  **4 corners** onto the edges of the object (a perspective grid helps follow its lines; inside: move everything),
+  then **Enter**, double-click or **Crop**: the object becomes a **straight rectangle** filling the image (width and
+  height of its longest edges). Texts become images. Esc: cancel; Ctrl+Z while adjusting puts the previous corner
+  back.
 - **Edit > Transform layer** (Ctrl+T): a frame surrounds the **chosen layer**. To enlarge, shrink or rotate **a
   single element** of the layer, **select it first** (rectangle, lasso, magic wand…): the frame surrounds only that
   element, the rest of the layer does not move, and its original place becomes transparent.
@@ -1084,6 +1109,16 @@ selection if there is one, one step in Undo. They also work on a mask.
   - the top bar shows **Width**, **Height** (in %) and **Angle** (in degrees) in boxes where you can **type the
     exact value** (arrows: 1°; Shift+arrows: 10°); **Enter**, double-click or **Apply** to keep, **Esc** or
     **Cancel** to go back. Changing tool also applies.
+  - **Mode** (top bar, or **Edit > Transform**):
+    - **Free**: as above. **Ctrl+corner**: that corner moves on its own (switches to *Distort*).
+    - **Perspective**: a dragged corner moves the neighbouring corner **as a mirror** (dragged down, the edge
+      shrinks; dragged sideways, it widens): like a facade seen at an angle.
+    - **Distort**: each corner moves on its own, to **put an image on a screen, a box, a wall, a 3D sleeve**; an
+      edge middle moves that whole edge.
+    - **Warp**: a **grid of 16 points** (circles for handles, squares at the corners): drag them to bend, inflate,
+      fold the image (flag, mug, waving page). A corner takes its two handles along.
+    - In these three modes, **inside** = move, **outside** = rotate the whole shape; Ctrl+Z undoes the last move.
+      The Width / Height / Angle boxes are greyed out.
   A transformed text becomes an image (to keep a text editable, use the Text tool).
 
 Everything can be undone with Ctrl+Z.
@@ -1108,6 +1143,7 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+X, Ctrl+C, Ctrl+V, Del | Cut, Copy, Paste (new layer), Delete selection |
 | Ctrl+U | Image adjustments |
 | Ctrl+L, Ctrl+M, Ctrl+B, Ctrl+Alt+Shift+B | Levels, Curves, Colour balance, Black & white |
+| Ctrl+I | Invert |
 | Ctrl+G, Ctrl+Shift+G | Group, Ungroup |
 | Ctrl+Alt+G | Clipping mask (the layer only shows inside the one below) |
 | Ctrl+H | Find and replace in texts |

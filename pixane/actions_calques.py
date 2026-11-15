@@ -19,14 +19,23 @@ def alignements() -> tuple:
             ("haut", tr("Bords hauts")), ("centre_v", tr("Centres verticaux")), ("bas", tr("Bords bas")))
 
 
+# Image > Réglages (dans les pixels) ; tous existent aussi en calque de réglage
+REGLAGES_PIXELS = ("niveaux", "courbes", "balance", "noir_blanc", "vibrance", "filtre_photo", "melangeur", "mappe",
+                   "negatif", "seuil", "posterisation")
+
+
 class ActionsCalques:
     # ---------------------------------------------------------------- menus
     def _menus_calques(self, m_image, m_calque):
         sous = m_image.addMenu(tr("Réglages"))
-        for t in ("niveaux", "courbes", "balance", "noir_blanc", "vibrance"):
+        for t in REGLAGES_PIXELS:
+            if t in ("filtre_photo", "negatif"):
+                sous.addSeparator()
             raccourci = {"niveaux": "Ctrl+L", "courbes": "Ctrl+M", "balance": "Ctrl+B",
-                         "noir_blanc": "Ctrl+Alt+Shift+B"}.get(t)
+                         "noir_blanc": "Ctrl+Alt+Shift+B", "negatif": "Ctrl+I"}.get(t)
             self._action(sous, ajustements.nom(t) + "…", raccourci, lambda *_, t=t: self.reglage(t), f"a_regl_{t}")
+            if t == "vibrance":
+                self._action(sous, tr("Remplacer la couleur…"), None, self.remplacer_couleur, "a_remplacer_couleur")
 
         m_calque.addSeparator()
         sous = m_calque.addMenu(tr("Nouveau calque de réglage"))
@@ -80,7 +89,7 @@ class ActionsCalques:
         return m
 
     def _actions_calques_doc(self) -> list:
-        noms = [f"a_regl_{t}" for t in ("niveaux", "courbes", "balance", "noir_blanc", "vibrance")]
+        noms = [f"a_regl_{t}" for t in REGLAGES_PIXELS] + ["a_remplacer_couleur"]
         noms += [f"a_cr_{t}" for t in ajustements.TYPES] + [f"a_filtre_{t}" for t in filtres.FILTRES]
         noms += ["a_taille_grille", "a_nouveau_repere", "a_effacer_reperes", "a_exporter_web"]
         noms += ["a_modifier_reglage", "a_nouveau_groupe", "a_grouper", "a_degrouper", "a_ecretage", "a_masque_blanc",
@@ -585,6 +594,54 @@ class ActionsCalques:
         return True
 
     # ---------------------------------------------------------------- filtres
+    def remplacer_couleur(self):
+        """Image > Réglages > Remplacer la couleur : on clique la couleur dans un aperçu du calque."""
+        from . import plage_couleurs as pc
+        titre = tr("Remplacer la couleur")
+        if not self._verifier_pixels(titre):
+            return
+        rgba = tableau(self.doc.calque_actif.image.convertToFormat(FORMAT_IMAGE))
+        neutres = pc.defaut_remplacer()
+        panneau = pc.panneau_remplacer(rgba)(neutres, {})
+        self._dialogue_pixels(titre, panneau, neutres, pc.remplacer_couleur)
+
+    def plage_couleurs(self):
+        """Sélection > Plage de couleurs : tous les points des couleurs cliquées, dans toute l'image visible."""
+        from . import plage_couleurs as pc
+        from .selection_auto import combiner
+        from .selection_ia import _selection
+        doc = self.doc
+        if doc is None:
+            return
+        rgba = tableau(doc.image.convertToFormat(FORMAT_IMAGE))
+        d = pc.DialoguePlage(self, rgba, getattr(self, "_plage_derniere", None))
+        base = None if doc.selection_vide() else masque(doc.selection)
+
+        def montrer(m):
+            if m is None:
+                self.canevas.apercu_selection = None
+            else:
+                self.canevas.apercu_selection = _selection(combiner(base, m, d.mode()))
+            self.canevas.update()
+        d.apercu.connect(montrer)
+        d.l_mode.currentIndexChanged.connect(lambda *_: d._plus_tard())
+        d.adjustSize()
+        coin = self.mapToGlobal(self.rect().topRight())
+        d.move(coin.x() - d.width() - 20, coin.y() + 110)
+        ok = d.exec() == QDialog.Accepted
+        self.canevas.apercu_selection = None
+        self.canevas.update()
+        if ok:
+            p = d.params()
+            self._plage_derniere = {"couleurs": [], "retirees": [], "tolerance": p.get("tolerance", 40),
+                                    "inverser": p.get("inverser", False)}
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                self.selection_auto._historique(combiner(base, d.masque(), d.mode()), tr("Plage de couleurs"))
+            finally:
+                QApplication.restoreOverrideCursor()
+        d.deleteLater()
+
     def filtre(self, type_: str):
         titre = filtres.noms()[type_]
         if not self._verifier_pixels(titre):

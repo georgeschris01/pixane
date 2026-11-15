@@ -20,7 +20,7 @@ from .pointe import Pointe, Reglages
 from .retouche import GOMME as EFFACER
 from .retouche import Trait
 from .texte import contient, contour_bloc, rendre, transformation
-from .transformation import POIGNEES, Transformation
+from .transformation import POIGNEES, Transformation, point_surface
 
 MAIN, RECTANGLE, LASSO, PINCEAU, GOMME = "main", "rectangle", "lasso", "pinceau", "gomme"
 TAILLE_MAX = 5000                              # taille maximale du pinceau, en pixels (comme Photoshop)
@@ -69,6 +69,9 @@ class Canevas(QWidget):
     recadre_change = Signal(object)             # outil Recadrer : QRect (image) ou None
     recadre_valide = Signal()                   # Entrée ou double-clic dans le cadre
     transfo_change = Signal()                   # Transformer (Ctrl+T) : taille ou angle modifié
+    transfo_mode_change = Signal()              # Transformer : passé en « distordre » par Ctrl+coin
+    persp_valide = Signal()                     # Recadrage en perspective : Entrée ou double-clic
+    persp_annule = Signal()                     # Recadrage en perspective : Échap
     transfo_valide = Signal()                   # Entrée ou double-clic dans le cadre
     transfo_annule = Signal()                   # Échap
     transfo_demandee = Signal()                 # outil Déplacer : poignée du cadre attrapée -> Transformer (Ctrl+T)
@@ -163,6 +166,8 @@ class Canevas(QWidget):
         self._recadre_glisse = None  # (mode « nouveau » / « deplacer » / côtés, point de départ, cadre d'origine)
         # transformer un calque (Ctrl+T)
         self.transfo: Transformation | None = None
+        self.persp: list[QPointF] | None = None     # recadrage en perspective : 4 coins (hg, hd, bd, bg)
+        self._persp_prise = None                    # (coin attrapé ou -1 = tout, point de départ, coins de départ)
         self.cadre_deplacer = True              # outil Déplacer : cadre à poignées autour du calque (comme Photoshop)
         self._cle_cadre_deplacer = None
         self._rect_cadre_deplacer = None
@@ -329,6 +334,9 @@ class Canevas(QWidget):
         if self.transfo is not None:
             self._dessiner_transfo(p)
             return
+        if self.persp is not None:
+            self._dessiner_persp(p)
+            return
         self._dessiner_cadre_deplacer(p)
         if self.outil == RECADRER and self.recadre is not None:
             self._dessiner_recadre(p)
@@ -386,9 +394,11 @@ class Canevas(QWidget):
 
     # ---------------------------------------------------------- gestes d'un travail pas encore validé
     def travail(self) -> str | None:
-        """Travail en cours, pas encore validé : « transfo », « cadre » (Agrandir), « recadre », ou None."""
+        """Travail en cours, pas encore validé : « transfo », « cadre » (Agrandir), « recadre », « persp » ou None."""
         if self.transfo is not None:
             return "transfo"
+        if self.persp is not None:
+            return "persp"
         if self.cadre is not None:
             return "cadre"
         if self.outil == RECADRER and self.recadre is not None:
@@ -399,7 +409,11 @@ class Canevas(QWidget):
         k = self.travail()
         if k == "transfo":
             t = self.transfo
-            return k, QPointF(t.centre), t.sx, t.sy, t.angle
+            return (k, QPointF(t.centre), t.sx, t.sy, t.angle, t.mode,
+                    tuple(QPointF(c) for c in t.quad) if t.quad is not None else None,
+                    tuple(QPointF(c) for c in t.maille) if t.maille is not None else None)
+        if k == "persp":
+            return k, tuple(QPointF(c) for c in self.persp)
         if k == "cadre":
             return k, tuple(self.cadre), tuple(self.abime)
         if k == "recadre":
@@ -438,6 +452,8 @@ class Canevas(QWidget):
             self._remettre(self._gestes.pop())
         elif k == "transfo":
             self.transfo_annule.emit()
+        elif k == "persp":
+            self.persp_annule.emit()
         elif k == "cadre":
             self.cadre_annule.emit()
         else:
@@ -461,9 +477,14 @@ class Canevas(QWidget):
         if e[0] == "transfo":
             t = self.transfo
             t.centre = QPointF(e[1])
-            t.sx, t.sy, t.angle = e[2], e[3], e[4]
+            t.sx, t.sy, t.angle, t.mode = e[2], e[3], e[4], e[5]
+            t.quad = [QPointF(c) for c in e[6]] if e[6] is not None else None
+            t.maille = [QPointF(c) for c in e[7]] if e[7] is not None else None
             self._apercu_transfo(lisse=True)
             self.transfo_change.emit()
+        elif e[0] == "persp":
+            self.persp = [QPointF(c) for c in e[1]]
+            self.update()
         elif e[0] == "cadre":
             self.cadre, self.abime = list(e[1]), list(e[2])
             self._emettre_cadre()
@@ -1342,6 +1363,62 @@ class Canevas(QWidget):
             p.drawText(boite, Qt.AlignCenter, texte)
         p.restore()
 
+    # ---------------------------------------------------------- recadrage en perspective
+    def commencer_persp(self):
+        """4 coins à poser sur les bords de l'objet vu de biais (façade, tableau, document) ; au départ, un peu en
+        retrait des bords de l'image."""
+        w, h = self.doc.taille()
+        mx, my = w * 0.1, h * 0.1
+        self.persp = [QPointF(mx, my), QPointF(w - mx, my), QPointF(w - mx, h - my), QPointF(mx, h - my)]
+        self._persp_prise = None
+        self.setFocus()
+        self._gestes_depart()
+        self.update()
+
+    def finir_persp(self):
+        self.persp = None
+        self._persp_prise = None
+        self._curseur()
+        self.travail_change.emit()
+        self.update()
+
+    def _sous_persp(self, pos: QPointF):
+        """Coin sous la souris (0..3), -1 dedans (tout déplacer), None ailleurs."""
+        for i, c in enumerate(self.persp):
+            if QLineF(self.vers_ecran(c), pos).length() <= 10:
+                return i
+        if QPolygonF(self.persp).containsPoint(self.vers_image(pos), Qt.OddEvenFill):
+            return -1
+        return None
+
+    def _dessiner_persp(self, p: QPainter):
+        coins = [self.vers_ecran(c) for c in self.persp]
+        poly = QPolygonF(coins)
+        p.save()
+        dehors = QPainterPath()
+        dehors.addRect(QRectF(self.rect()))
+        dedans = QPainterPath()
+        dedans.addPolygon(poly)
+        dedans.closeSubpath()
+        p.fillPath(dehors.subtracted(dedans), QColor(0, 0, 0, 110))
+        p.setRenderHint(QPainter.Antialiasing)
+        t = QTransform()
+        if QTransform.quadToQuad(QPolygonF([QPointF(0, 0), QPointF(1, 0), QPointF(1, 1), QPointF(0, 1)]), poly, t):
+            p.setPen(QPen(QColor(255, 255, 255, 120), 1))
+            for k in (0.25, 0.5, 0.75):                       # grille en perspective : aide à aligner les bords
+                p.drawLine(t.map(QPointF(k, 0)), t.map(QPointF(k, 1)))
+                p.drawLine(t.map(QPointF(0, k)), t.map(QPointF(1, k)))
+        p.setBrush(Qt.NoBrush)
+        p.setPen(QPen(QColor(0, 0, 0, 170), 1))
+        p.drawPolygon(poly)
+        p.setPen(QPen(QColor(255, 255, 255), 1, Qt.DashLine))
+        p.drawPolygon(poly)
+        p.setPen(QPen(QColor(0, 0, 0, 180), 1))
+        p.setBrush(self.couleur_accent)
+        for c in coins:
+            p.drawEllipse(QRectF(c.x() - 6, c.y() - 6, 12, 12))
+        p.restore()
+
     # ---------------------------------------------------------- transformer un calque (Ctrl+T)
     def commencer_transfo(self, t: Transformation, index: int):
         self.transfo = t
@@ -1364,31 +1441,53 @@ class Canevas(QWidget):
 
     def _sous_transfo(self, pos: QPointF):
         """Ce qui est sous la souris : nom de poignée, « deplacer » ou « tourner »."""
-        for nom, (gx, gy) in POIGNEES.items():
-            if QLineF(self.vers_ecran(self.transfo.point(gx, gy)), pos).length() <= 9:
-                return nom
+        proche, nom_proche = 9.0, None
+        for nom, pt in self.transfo.poignees().items():
+            d = QLineF(self.vers_ecran(pt), pos).length()
+            if d <= proche:
+                proche, nom_proche = d, nom
+        if nom_proche is not None:
+            return nom_proche
         return "deplacer" if self.transfo.dedans(self.vers_image(pos)) else "tourner"
 
     def _curseur_transfo(self, quoi):
         if quoi == "deplacer":
             self.setCursor(Qt.SizeAllCursor)
+        elif self.transfo.libre() and quoi != "tourner":
+            self.setCursor(Qt.PointingHandCursor)
         else:
             self._curseur_poignee(quoi, self.transfo.angle)
 
     def _dessiner_transfo(self, p: QPainter):
-        coins = [self.vers_ecran(c) for c in self.transfo.coins()]
+        t = self.transfo
+        bord = QPolygonF([self.vers_ecran(c) for c in t.contour()])
         p.save()
         p.setBrush(Qt.NoBrush)
+        p.setRenderHint(QPainter.Antialiasing, t.maille is not None)
         p.setPen(QPen(QColor(0, 0, 0, 160), 1))
-        p.drawPolygon(QPolygonF(coins))
+        p.drawPolygon(bord)
         p.setPen(QPen(QColor(255, 255, 255), 1, Qt.DashLine))
-        p.drawPolygon(QPolygonF(coins))
+        p.drawPolygon(bord)
+        if t.maille is not None:                    # déformation : lignes de la grille et bras des poignées
+            p.setPen(QPen(QColor(255, 255, 255, 150), 1))
+            for k in (1 / 3, 2 / 3):
+                p.drawPolyline(QPolygonF([self.vers_ecran(point_surface(t.maille, i / 16, k)) for i in range(17)]))
+                p.drawPolyline(QPolygonF([self.vers_ecran(point_surface(t.maille, k, i / 16)) for i in range(17)]))
+            p.setPen(QPen(QColor(0, 0, 0, 120), 1))
+            m = [self.vers_ecran(c) for c in t.maille]
+            for i in range(4):
+                p.drawPolyline(QPolygonF([m[i * 4 + j] for j in range(4)]))
+                p.drawPolyline(QPolygonF([m[j * 4 + i] for j in range(4)]))
         p.setPen(QPen(QColor(0, 0, 0, 180), 1))
         p.setBrush(self.couleur_accent)
-        for gx, gy in POIGNEES.values():
-            pt = self.vers_ecran(self.transfo.point(gx, gy))
-            p.drawRect(QRectF(pt.x() - 5, pt.y() - 5, 10, 10))
-        c = self.vers_ecran(self.transfo.centre)
+        for nom, pt in t.poignees().items():
+            pt = self.vers_ecran(pt)
+            r = 4 if nom.startswith("m") and nom not in ("m0", "m3", "m12", "m15") else 5
+            if nom.startswith("m") and r == 4:
+                p.drawEllipse(QRectF(pt.x() - r, pt.y() - r, 2 * r, 2 * r))
+            else:
+                p.drawRect(QRectF(pt.x() - r, pt.y() - r, 2 * r, 2 * r))
+        c = self.vers_ecran(t.centre_forme())
         p.setPen(QPen(QColor(255, 255, 255), 1))
         p.drawLine(QPointF(c.x() - 6, c.y()), QPointF(c.x() + 6, c.y()))
         p.drawLine(QPointF(c.x(), c.y() - 6), QPointF(c.x(), c.y() + 6))
@@ -1741,8 +1840,17 @@ class Canevas(QWidget):
             return
         if self.cadre is not None:
             return
+        if self.persp is not None:
+            quoi = self._sous_persp(pos)
+            if quoi is not None:
+                self._persp_prise = (quoi, self.vers_image(pos), [QPointF(c) for c in self.persp])
+            return
         if self.transfo is not None:
-            self.transfo.commencer(self._sous_transfo(pos), self.vers_image(pos))
+            quoi = self._sous_transfo(pos)
+            if (e.modifiers() & Qt.ControlModifier and not self.transfo.libre() and quoi in ("hg", "hd", "bd", "bg")):
+                self.transfo.passer_mode("distordre")         # Ctrl+coin : le coin bouge seul (comme Photoshop)
+                self.transfo_mode_change.emit()
+            self.transfo.commencer(quoi, self.vers_image(pos))
             self._transfo_glisse = True
             return
         if self.outil == TEXTE:
@@ -1845,6 +1953,20 @@ class Canevas(QWidget):
             else:
                 self._curseur_cadre(self._poignee_sous(pos))
             return
+        if self.persp is not None:
+            if self._persp_prise is not None:
+                quoi, p0, depart = self._persp_prise
+                d = self.vers_image(pos) - p0
+                if quoi == -1:
+                    self.persp = [c + d for c in depart]
+                else:
+                    self.persp[quoi] = depart[quoi] + d
+            else:
+                quoi = self._sous_persp(pos)
+                self.setCursor(Qt.PointingHandCursor if quoi is not None and quoi >= 0 else
+                               Qt.SizeAllCursor if quoi == -1 else Qt.ArrowCursor)
+            self.update()
+            return
         if self.transfo is not None:
             if self._transfo_glisse:
                 self.transfo.glisser(self.vers_image(pos), bool(e.modifiers() & Qt.ShiftModifier))
@@ -1937,6 +2059,9 @@ class Canevas(QWidget):
         if self.cadre is not None:
             self._poignee = None
             return
+        if self.persp is not None:
+            self._persp_prise = None
+            return
         if self.transfo is not None:
             if self._transfo_glisse:
                 self._transfo_glisse = False
@@ -1997,6 +2122,10 @@ class Canevas(QWidget):
             if self.transfo.dedans(self.vers_image(e.position())):
                 self.transfo_valide.emit()
             return
+        if self.persp is not None and e.button() == Qt.LeftButton:
+            if self._sous_persp(e.position()) == -1:
+                self.persp_valide.emit()
+            return
         if (self.outil == RECADRER and self.recadre is not None and e.button() == Qt.LeftButton
                 and self.recadre.contains(self.vers_image(e.position()))):
             self.recadre_valide.emit()
@@ -2015,6 +2144,12 @@ class Canevas(QWidget):
 
     # ---------------------------------------------------------- clavier
     def keyPressEvent(self, e):
+        if self.persp is not None and e.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self.persp_valide.emit()
+            return
+        if self.persp is not None and e.key() == Qt.Key_Escape:
+            self.persp_annule.emit()
+            return
         if self.transfo is not None and e.key() in (Qt.Key_Return, Qt.Key_Enter):
             self.transfo_valide.emit()
         elif self.transfo is not None and e.key() == Qt.Key_Escape:

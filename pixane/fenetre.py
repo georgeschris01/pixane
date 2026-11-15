@@ -255,6 +255,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.canevas.recadre_valide.connect(self._recadrer)
         self.canevas.couleur_prise.connect(self._couleur_prise)
         self.canevas.transfo_change.connect(self._transfo_change)
+        self.canevas.transfo_mode_change.connect(self._transfo_change)
+        self.canevas.persp_valide.connect(self._valider_persp)
+        self.canevas.persp_annule.connect(self._annuler_persp)
         self.canevas.transfo_valide.connect(self._valider_transfo)
         self.canevas.transfo_annule.connect(self._annuler_transfo)
         self.canevas.transfo_demandee.connect(self.transformer)
@@ -495,6 +498,11 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                      "a_rechercher_textes")
         m.addSeparator()
         self._action(m, tr("Transformer le calque"), "Ctrl+T", self.transformer, "a_transformer")
+        sous = m.addMenu(tr("Transformation"))
+        self._m_transformation = sous
+        for mode, texte in (("perspective", tr("Perspective")), ("distordre", tr("Distordre")),
+                            ("deformation", tr("Déformation"))):
+            self._action(sous, texte, None, lambda *_, m_=mode: self.transformer(m_), f"a_transfo_{mode}")
 
         m = self.menuBar().addMenu(tr("&Sélection"))
         self._action(m, tr("Tout sélectionner"), "Ctrl+A", lambda: self._modifier_selection("tout"), "a_tout")
@@ -506,6 +514,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self._action(sous, tr("Réduire…"), None, lambda: self._modifier_bord("reduire"), "a_sel_reduire")
         self._action(sous, tr("Adoucir les bords…"), None, lambda: self._modifier_bord("adoucir"), "a_sel_adoucir")
         self._action(m, tr("Améliorer le contour…"), "Ctrl+Alt+R", self.ameliorer_contour, "a_contour")
+        self._action(m, tr("Plage de couleurs…"), None, self.plage_couleurs, "a_plage_couleurs")
         self._action(m, tr("Sélectionner le sujet (IA)"), "Ctrl+Alt+S", self.selectionner_sujet, "a_sujet")
         self._action(m, tr("Trouver une police semblable…"), None, self.police_semblable, "a_police_semblable")
         m.addSeparator()
@@ -539,6 +548,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self._action(m, tr("Retourner verticalement"), None, lambda: self._geometrie(tr("Retourner"), "v"),
                      "a_miroir_v")
         self._action(m, tr("Redresser…"), None, self.redresser, "a_redresser")
+        self._action(m, tr("Recadrage en perspective"), None, self.recadrage_perspective, "a_recadrage_persp")
 
         m = self.menuBar().addMenu(tr("&Calque"))
         self._action(m, tr("Style du calque…"), "Ctrl+Alt+F", self.style_calque, "a_style", "style")
@@ -756,6 +766,16 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(8)
         self.cases_transfo = {}
+        lay.addWidget(QLabel(tr("Mode")))
+        self.mode_transfo = QComboBox()
+        for mode, texte in (("libre", tr("Libre")), ("perspective", tr("Perspective")),
+                            ("distordre", tr("Distordre")), ("deformation", tr("Déformation"))):
+            self.mode_transfo.addItem(texte, mode)
+        self.mode_transfo.setToolTip(tr("Libre : taille, rotation (Ctrl+coin : le coin bouge seul). Perspective : un "
+                                        "coin tiré entraîne son voisin en miroir. Distordre : chaque coin bouge seul. "
+                                        "Déformation : grille de points pour courber l'image."))
+        self.mode_transfo.activated.connect(self._mode_transfo_choisi)
+        lay.addWidget(self.mode_transfo)
         for cle, texte, bas, haut, suffixe, aide in (
                 ("l", tr("Largeur"), 1, 5000, " %", tr("Largeur en % de la taille de départ")),
                 ("h", tr("Hauteur"), 1, 5000, " %", tr("Hauteur en % de la taille de départ")),
@@ -770,6 +790,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             case.setKeyboardTracking(False)
             case.setToolTip(aide)
             case.valueChanged.connect(self._transfo_tapee)
+            ajuster_case(case, "-180,0 °" if cle == "a" else "5000,0 %")
             lay.addWidget(case)
             self.cases_transfo[cle] = case
         b_ok = QPushButton(tr("Valider"))
@@ -780,6 +801,19 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         lay.addWidget(b_non)
         self.opt_transfo.hide()
         tout.addWidget(self.opt_transfo)
+        self.opt_persp = QWidget()
+        lay = QHBoxLayout(self.opt_persp)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(8)
+        lay.addWidget(QLabel(tr("Recadrage en perspective : posez les 4 coins sur les bords de l'objet")))
+        b_ok = QPushButton(tr("Recadrer"))
+        b_ok.clicked.connect(self._valider_persp)
+        b_non = QPushButton(tr("Annuler"))
+        b_non.clicked.connect(self._annuler_persp)
+        lay.addWidget(b_ok)
+        lay.addWidget(b_non)
+        self.opt_persp.hide()
+        tout.addWidget(self.opt_persp)
         self._options_retouche(tout)
         self._options_pinceau(tout)
         self._options_dessin(tout)
@@ -1456,8 +1490,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         for a in (self.a_enregistrer, self.a_enregistrer_sous, self.a_fermer, self.a_tout, self.a_rien, self.a_inverser,
                   self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster, self.a_recadrer_selection, self.a_taille,
                   self.a_pivoter_d, self.a_pivoter_g, self.a_pivoter_180, self.a_pivoter_angle, self.a_miroir_h, self.a_miroir_v,
-                  self.a_redresser, self.a_transformer, self.a_reglages_image, self.a_sel_agrandir,
-                  self.a_sel_reduire, self.a_sel_adoucir, self.a_contour, self.a_couper, self.a_copier, self.a_supprimer_selection, self.a_remplir_motif,
+                  self.a_redresser, self.a_recadrage_persp, self.a_transformer, self.a_transfo_perspective, self.a_transfo_distordre,
+                  self.a_transfo_deformation, self.a_reglages_image, self.a_sel_agrandir,
+                  self.a_sel_reduire, self.a_sel_adoucir, self.a_contour, self.a_plage_couleurs, self.a_couper, self.a_copier, self.a_supprimer_selection, self.a_remplir_motif,
                   self.a_style, self.a_copier_style, self.a_coller_style, self.a_enlever_style, self.a_figer_style,
                   self.a_nouveau_calque, self.a_dupliquer_calque, self.a_fusionner_calques, self.a_aplatir, self.a_zone_travail, self.a_exporter_cmjn, self.a_exporter_sous,
                   self.a_tout_apparaitre,
@@ -2298,9 +2333,15 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.reglages.setValue("cadre_deplacer", oui)
         self.canevas.update()
 
-    def transformer(self):
-        if not self.doc or self.canevas.transfo is not None or self.canevas.cadre is not None:
+    def transformer(self, mode: str = "libre"):
+        mode = mode if isinstance(mode, str) else "libre"    # (clic de menu : un booléen arrive ici)
+        if not self.doc or self.canevas.cadre is not None:
             return
+        if self.canevas.transfo is not None:              # déjà en cours : on change seulement de mode
+            if mode != "libre":
+                self._changer_mode_transfo(mode)
+            return
+        self._mode_demande = mode
         if not self._verifier_pixels(tr("Transformer le calque")):
             return
         c = self.doc.calque_actif
@@ -2345,6 +2386,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
 
     def _commencer_transfo(self, t: Transformation):
         t.echelle_depart = abs(t.sx * t.sy) or 1.0         # pour mettre le style à l'échelle du geste seul
+        mode, self._mode_demande = getattr(self, "_mode_demande", "libre"), "libre"
+        if mode != "libre":
+            t.passer_mode(mode)
         self._transfo_avant = (self.doc.etat(), self.doc.modifie)
         self.canevas.commencer_transfo(t, self.doc.actif)
         self.opt_pinceau.hide()                   # inutile pendant Ctrl+T ; avant show() (sinon la barre déborde)
@@ -2392,8 +2436,53 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             return True
         return super().eventFilter(objet, e)
 
+    def recadrage_perspective(self):
+        """Image > Recadrage en perspective : 4 coins à poser sur une façade, un tableau, un document photographié de
+        biais ; Entrée : il devient un rectangle droit."""
+        c = self.canevas
+        if not self.doc or c.transfo is not None or c.cadre is not None or c.persp is not None:
+            return
+        c.commencer_persp()
+        self.opt_pinceau.hide()
+        self.opt_persp.show()
+        self.options.adjustSize()
+        self.barre_haut.layout().invalidate()
+        self.statusBar().showMessage(tr("Tirez les 4 coins sur les bords de l'objet vu de biais (la grille aide à "
+                                        "suivre ses lignes) ; dedans : tout déplacer. Entrée ou double-clic pour "
+                                        "recadrer, Échap pour annuler."), 20000)
+
+    def _fin_persp(self):
+        self.canevas.finir_persp()
+        self.opt_persp.hide()
+        if hasattr(self, "opt_pinceau"):
+            self.maj_bouton_pinceau()
+        self.statusBar().clearMessage()
+
+    def _valider_persp(self):
+        c = self.canevas
+        if c.persp is None:
+            return
+        coins = list(c.persp)
+        self._fin_persp()
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            avant = self.doc.etat()
+            apres = self.doc.etat_recadre_perspective(coins)
+        finally:
+            QApplication.restoreOverrideCursor()
+        if apres is None:
+            self.statusBar().showMessage(tr("Ces 4 coins ne forment pas un quadrilatère utilisable."), 6000)
+            return
+        self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Recadrage en perspective")))
+
+    def _annuler_persp(self):
+        if self.canevas.persp is not None:
+            self._fin_persp()
+
     def _historique_bouge(self, _index):
         """Ctrl+Z ou clic dans l'Historique pendant une transformation : elle est abandonnée."""
+        if self.canevas.persp is not None:
+            self._fin_persp()
         if self.canevas.transfo is not None:
             self.canevas.finir_transfo()
             self.opt_transfo.hide()
@@ -2407,7 +2496,34 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             self._transfo_affiche = True                  # ne pas renvoyer ces valeurs au cadre
             for cle, v in zip("lha", t.resume()):
                 self.cases_transfo[cle].setValue(v)
+                self.cases_transfo[cle].setEnabled(not t.libre())
+            self.mode_transfo.setCurrentIndex(max(0, self.mode_transfo.findData(t.mode)))
             self._transfo_affiche = False
+
+    def _mode_transfo_choisi(self, _i=None):
+        self._changer_mode_transfo(self.mode_transfo.currentData())
+
+    def _changer_mode_transfo(self, mode: str):
+        t = self.canevas.transfo
+        if t is None:
+            return
+        if mode == "libre" and t.libre():
+            t.mode = "distordre" if t.quad is not None else "deformation"
+            self.statusBar().showMessage(tr("La forme libre est gardée : pour revenir à un simple cadre, annulez la "
+                                            "transformation (Échap)."), 8000)
+        else:
+            t.passer_mode(mode)
+            messages = {"perspective": tr("Perspective : tirez un coin, le coin voisin bouge en miroir."),
+                        "distordre": tr("Distordre : chaque coin bouge seul ; un milieu de bord déplace ce bord."),
+                        "deformation": tr("Déformation : tirez les points de la grille pour courber l'image ; un "
+                                          "coin emmène ses deux poignées.")}
+            if mode in messages:
+                self.statusBar().showMessage(messages[mode] + " " + tr("Entrée pour valider, Échap pour annuler."),
+                                             15000)
+        self.canevas._apercu_transfo(lisse=True)
+        self.canevas.noter_geste()
+        self._transfo_change()
+        self.canevas.update()
 
     def _transfo_tapee(self, _v=None):
         """Largeur, hauteur ou angle tapés dans la barre d'options de Transformer."""
@@ -2437,16 +2553,22 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.doc.modifie = _modifie
         c = self.doc.calques[index]
         p = calque_pinceau.valide(c)
-        if p is not None and t.fond is None and getattr(t, "depart_pinceau", None) is not None:
+        if p is not None and t.fond is None and getattr(t, "depart_pinceau", None) is not None and not t.libre():
             # calque de pinceau : ses traits passent par la même transformation et sont redessinés (modifiable)
             d = t.depart_pinceau
             apres = self.doc.etat_pinceau(index, p.transforme(QTransform.fromTranslate(-d.x(), -d.y()) * t.transfo()))
             self.historique.push(CommandeEtat(self.doc, avant, apres, titre or tr("Transformer le calque")))
             return
-        k = (abs(t.sx * t.sy) / getattr(t, "echelle_depart", 1.0)) ** 0.5
+        if t.libre():                                     # surface de la forme / surface de départ
+            poly = t.contour(8)
+            aire = abs(sum(poly[i].x() * poly[(i + 1) % len(poly)].y() - poly[(i + 1) % len(poly)].x() * poly[i].y()
+                           for i in range(len(poly)))) / 2
+            k = (aire / max(1.0, t.bw * t.bh) / getattr(t, "echelle_depart", 1.0)) ** 0.5
+        else:
+            k = (abs(t.sx * t.sy) / getattr(t, "echelle_depart", 1.0)) ** 0.5
         style = c.style.mis_a_l_echelle(k) if c.style is not None else None
         apres = self.doc.etat_calque_entier(index, img, x, y, texte=None, style=style)
-        if t.fond is None:                                # calque entier : il garde sa meilleure version
+        if t.fond is None and not t.libre():              # calque entier : il garde sa meilleure version
             o = Origine(getattr(t, "meilleure", None) or t.source, t.sx, t.sy, t.angle, t.centre.x(), t.centre.y())
             calques = list(apres[0])
             calques[index] = attacher_origine(calques[index], o)

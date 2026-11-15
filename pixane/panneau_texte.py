@@ -99,8 +99,20 @@ class Soulignement(QSyntaxHighlighter):
         self.format.setUnderlineStyle(QTextCharFormat.SpellCheckUnderline)
         self.format.setUnderlineColor(QColor(220, 40, 40))
         self.attente = None               # minuterie : dictionnaire en train de se charger
+        self.fini = False
+        app = QApplication.instance()
+        if app is not None:               # à la fermeture : détaché avant que Qt ne détruise la case (sinon Qt
+            app.aboutToQuit.connect(self.detacher)       # appelait encore highlightBlock pendant la destruction)
+
+    def detacher(self):
+        self.fini = True
+        if self.attente is not None:
+            self.attente.stop()
+        self.setDocument(None)
 
     def highlightBlock(self, texte: str):
+        if self.fini:
+            return
         from . import orthographe as o
         langue = self.langue()
         if not texte or not o.verifiable(langue):

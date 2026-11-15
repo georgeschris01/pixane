@@ -7,7 +7,11 @@ Chaque réglage = un type et un dictionnaire de paramètres (enregistrable en JS
 - « courbes » : points [[entrée, sortie], …] de 0 à 255 par canal, courbe douce qui passe par les points ;
 - « balance » : cyan–rouge, magenta–vert, jaune–bleu pour les ombres, les tons moyens et les hautes lumières ;
 - « noir_blanc » : part de chaque couleur (rouges, jaunes, verts, cyans, bleus, magentas) dans le gris, virage ;
-- « vibrance » : vibrance (ravive surtout les couleurs ternes) et saturation.
+- « vibrance » : vibrance (ravive surtout les couleurs ternes) et saturation ;
+- « seuil » : noir ou blanc selon la clarté ; « posterisation » : nombre de niveaux par couleur ; « negatif » ;
+- « mappe » : courbe de transfert de dégradé (la clarté de chaque point choisit sa couleur dans un dégradé) ;
+- « filtre_photo » : filtre de couleur posé devant l'objectif (densité, clarté gardée) ;
+- « melangeur » : mélangeur de couches (chaque couleur de sortie = part du rouge, du vert, du bleu + constante).
 """
 from __future__ import annotations
 
@@ -16,7 +20,10 @@ import numpy as np
 from .langue import tr
 
 TYPES = {"base": "Réglages de l'image", "niveaux": "Niveaux", "courbes": "Courbes",
-         "balance": "Balance des couleurs", "noir_blanc": "Noir et blanc", "vibrance": "Vibrance"}
+         "balance": "Balance des couleurs", "noir_blanc": "Noir et blanc", "vibrance": "Vibrance",
+         "filtre_photo": "Filtre photo", "melangeur": "Mélangeur de couches", "mappe": "Courbe de transfert de dégradé",
+         "seuil": "Seuil", "posterisation": "Postérisation", "negatif": "Négatif"}
+SORTIES = ("rouge", "vert", "bleu")
 CANAUX = ("rvb", "r", "v", "b")
 TONS = ("ombres", "moyens", "lumieres")
 COULEURS_NB = ("rouges", "jaunes", "verts", "cyans", "bleus", "magentas")
@@ -27,7 +34,9 @@ def nom(type_: str) -> str:
     """Nom affiché d'un type (écrit en entier pour la traduction)."""
     return {"base": tr("Réglages de l'image"), "niveaux": tr("Niveaux"), "courbes": tr("Courbes"),
             "balance": tr("Balance des couleurs"), "noir_blanc": tr("Noir et blanc"),
-            "vibrance": tr("Vibrance")}.get(type_, type_)
+            "vibrance": tr("Vibrance"), "filtre_photo": tr("Filtre photo"),
+            "melangeur": tr("Mélangeur de couches"), "mappe": tr("Courbe de transfert de dégradé"),
+            "seuil": tr("Seuil"), "posterisation": tr("Postérisation"), "negatif": tr("Négatif")}.get(type_, type_)
 
 
 def defaut(type_: str) -> dict:
@@ -44,12 +53,34 @@ def defaut(type_: str) -> dict:
                 "virage": False, "couleur": "#c8a878", "force": 50}
     if type_ == "vibrance":
         return {"vibrance": 0, "saturation": 0}
+    if type_ == "seuil":
+        return {"seuil": 128}
+    if type_ == "posterisation":
+        return {"niveaux": 4}
+    if type_ == "negatif":
+        return {}
+    if type_ == "mappe":
+        return {"degrade": {"couleurs": [{"pos": 0.0, "couleur": "#000000", "milieu": 0.5},
+                                         {"pos": 1.0, "couleur": "#ffffff", "milieu": 0.5}],
+                            "opacites": [{"pos": 0.0, "opacite": 1.0, "milieu": 0.5},
+                                         {"pos": 1.0, "opacite": 1.0, "milieu": 0.5}]},
+                "inverser": False}
+    if type_ == "filtre_photo":
+        return {"couleur": "#ec8a00", "densite": 25, "luminosite": True}
+    if type_ == "melangeur":
+        return {"rouge": [100, 0, 0, 0], "vert": [0, 100, 0, 0], "bleu": [0, 0, 100, 0], "gris": [40, 40, 20, 0],
+                "monochrome": False}
     raise ValueError(type_)
 
 
 def neutre(type_: str, p: dict) -> bool:
-    if type_ == "noir_blanc":
+    if type_ in ("noir_blanc", "seuil", "posterisation", "negatif", "mappe"):
         return False
+    if type_ == "filtre_photo":
+        return p.get("densite", 0) == 0
+    if type_ == "melangeur":
+        d = defaut("melangeur")
+        return not p.get("monochrome") and all(p.get(k) == d[k] for k in SORTIES)
     return p == defaut(type_)
 
 
@@ -131,7 +162,60 @@ def appliquer(rgb: np.ndarray, type_: str, p: dict) -> np.ndarray:
         return _noir_blanc(rgb, p)
     if type_ == "vibrance":
         return _vibrance(rgb, p)
+    if type_ == "seuil":
+        g = (rgb.astype(np.float32) @ LUM) >= p.get("seuil", 128) - 0.5
+        v = np.where(g, 255, 0).astype(np.uint8)
+        return np.stack([v, v, v], axis=-1)
+    if type_ == "posterisation":
+        n = int(np.clip(p.get("niveaux", 4), 2, 255))
+        x = np.arange(256)
+        tab = np.clip(np.round(np.minimum(x * n // 256, n - 1) * 255 / (n - 1)), 0, 255).astype(np.uint8)
+        return tab[rgb]
+    if type_ == "negatif":
+        return 255 - rgb
+    if type_ == "mappe":
+        return _mappe(rgb, p)
+    if type_ == "filtre_photo":
+        return _filtre_photo(rgb, p)
+    if type_ == "melangeur":
+        return _melangeur(rgb, p)
     raise ValueError(type_)
+
+
+def _mappe(rgb: np.ndarray, p: dict) -> np.ndarray:
+    """Courbe de transfert de dégradé : la clarté (0 à 255) de chaque point donne sa place dans le dégradé."""
+    from . import degrades
+    tab = degrades.table(p.get("degrade") or defaut("mappe")["degrade"])         # (256, 4) 0..1
+    if p.get("inverser"):
+        tab = tab[::-1]
+    f = rgb.astype(np.float32)
+    y = np.clip(np.round(f @ LUM), 0, 255).astype(np.intp)
+    c = tab[y]
+    out = f + (c[..., :3] * 255 - f) * c[..., 3:4]                  # parties transparentes du dégradé : photo gardée
+    return np.clip(np.round(out), 0, 255).astype(np.uint8)
+
+
+def _filtre_photo(rgb: np.ndarray, p: dict) -> np.ndarray:
+    """Comme un filtre de couleur devant l'objectif : la photo est teintée (produit par la couleur) selon la densité ;
+    « garder la luminosité » rend à chaque point sa clarté d'origine (seule la teinte change)."""
+    from PySide6.QtGui import QColor
+    c = QColor(p.get("couleur", "#ec8a00"))
+    coul = np.array([c.red(), c.green(), c.blue()], np.float32) / 255
+    d = p.get("densite", 25) / 100
+    f = rgb.astype(np.float32)
+    out = f + (f * coul - f) * d
+    if p.get("luminosite", True):
+        out = out + ((f @ LUM) - (out @ LUM))[..., None]
+    return np.clip(np.round(out), 0, 255).astype(np.uint8)
+
+
+def _melangeur(rgb: np.ndarray, p: dict) -> np.ndarray:
+    """Chaque couleur de sortie = rouge × a % + vert × b % + bleu × c % + constante (en % de 255) ; monochrome :
+    la même formule (ligne « gris ») pour les trois, la photo devient grise."""
+    f = rgb.astype(np.float32)
+    lignes = [p.get("gris", [40, 40, 20, 0])] * 3 if p.get("monochrome") else [p[k] for k in SORTIES]
+    out = np.stack([f @ (np.array(l[:3], np.float32) / 100) + l[3] * 2.55 for l in lignes], axis=-1)
+    return np.clip(np.round(out), 0, 255).astype(np.uint8)
 
 
 def _noir_blanc(rgb: np.ndarray, p: dict) -> np.ndarray:

@@ -216,4 +216,8 @@ print("ÉCHECS :" if erreurs else "Tout est bon.", *erreurs, sep="\n  ")
 for dd in f.documents:
     dd.modifie = False
 sys.stdout.flush()
-sys.exit(1 if erreurs else 0)        # sortie normale : os._exit plante après la fenêtre Style (Qt, essai seulement)
+# la fenêtre est fermée par Qt avant la fin de Python (sans cela, plantage à la sortie 1 fois sur 6 environ :
+# Python détruisait les fenêtres dans le désordre ; os._exit, lui, plante après la fenêtre Style)
+QTimer.singleShot(200, f.close)
+app.exec()
+sys.exit(1 if erreurs else 0)

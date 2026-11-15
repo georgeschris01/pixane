@@ -99,9 +99,9 @@ r = px(doc, 10, 10)
 verifier(abs(r[0] - 228) <= 1, f"réglage à 50 % : {r[:3]}")
 for t in ajustements.TYPES:
     a = ajustements.appliquer(np.array([[[200, 100, 50], [10, 200, 30]]], np.uint8), t, ajustements.defaut(t))
-    if t != "noir_blanc":
+    if ajustements.neutre(t, ajustements.defaut(t)):       # (noir et blanc, négatif, seuil… changent toujours)
         verifier(np.array_equal(a, [[[200, 100, 50], [10, 200, 30]]]), f"réglage « {t} » neutre ne change rien")
-    else:
+    elif t == "noir_blanc":
         verifier(a[0, 0, 0] == a[0, 0, 1] == a[0, 0, 2], "noir et blanc : gris")
 c = ajustements.table_courbe([[0, 0], [128, 180], [255, 255]])
 verifier(c[128] == 180 and c[0] == 0 and c[255] == 255 and np.all(np.diff(c.astype(int)) >= 0),

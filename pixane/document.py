@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageFilter, ImageOps
 from PySide6.QtCore import QObject, QPoint, QPointF, QRect, QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QImage, QPainter, QTransform
+from PySide6.QtGui import QColor, QImage, QPainter, QPolygonF, QTransform
 
 from . import composition
 from .composition import (FORMAT_MASQUE, MODE_ORA, MODES, arbre, masque_depuis, masque_plein, masque_tableau,
@@ -974,6 +974,30 @@ class Document(QObject):
         nouveaux = [_avec_masque_transforme(c, lambda im: _transformee(im, transfo, W, H, lisse)) for c in nouveaux]
         sel = _transformee(self.selection, transfo, W, H, lisse)
         return self.etat_avec(tuple(nouveaux), self.actif, sel)
+
+    def etat_recadre_perspective(self, coins: list[QPointF]):
+        """Recadrage en perspective : le quadrilatère `coins` (hg, hd, bd, bg) devient un rectangle droit, de la
+        largeur de son plus long bord horizontal et de la hauteur de son plus long bord vertical ; le reste est
+        coupé. Les textes deviennent des images (ils sont déformés)."""
+        import math
+        q = [QPointF(c) for c in coins]
+        d = lambda a, b: math.hypot(a.x() - b.x(), a.y() - b.y())
+        w, h = self.taille()
+        W = max(1, min(4 * w, round(max(d(q[0], q[1]), d(q[3], q[2])))))
+        H = max(1, min(4 * h, round(max(d(q[0], q[3]), d(q[1], q[2])))))
+        t = QTransform()
+        if not QTransform.quadToQuad(QPolygonF(q), QPolygonF([QPointF(0, 0), QPointF(W, 0), QPointF(W, H),
+                                                              QPointF(0, H)]), t):
+            return None
+        # chaque calque est redessiné directement sur la nouvelle feuille (en perspective, ce qui dépasse loin
+        # pourrait partir « à l'infini » : on ne garde que la feuille, comme Recadrer)
+        nouveaux = []
+        for c in self.calques:
+            img, x, y = image_entiere(c)
+            res = _transformee(img.convertToFormat(FORMAT_CALQUE), QTransform().translate(x, y) * t, W, H)
+            nouveaux.append(replace(c, image=res, hors=None, texte=None))
+        nouveaux = [_avec_masque_transforme(c, lambda im: _transformee(im, t, W, H)) for c in nouveaux]
+        return self.etat_avec(tuple(nouveaux), self.actif, _transformee(self.selection, t, W, H))
 
     def etat_pivote(self, sens: int):
         """sens : 90 (horaire), -90 (antihoraire) ou 180."""

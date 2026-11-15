@@ -1,4 +1,5 @@
-"""Fenêtres des réglages (niveaux, courbes, balance des couleurs, noir et blanc, vibrance) et des filtres, avec
+"""Fenêtres des réglages (niveaux, courbes, balance des couleurs, noir et blanc, vibrance, filtre photo, mélangeur de
+couches, courbe de transfert de dégradé, seuil, postérisation, négatif) et des filtres, avec
 aperçu en direct sur la photo (signal `change`, envoyé après une courte pause)."""
 from __future__ import annotations
 
@@ -450,8 +451,219 @@ class PanneauBase(_Panneau):
         self.change.emit()
 
 
+def _aide(lay, texte: str):
+    aide = QLabel(texte)
+    aide.setObjectName("discret")
+    aide.setWordWrap(True)
+    lay.addWidget(aide)
+
+
+class PanneauSeuil(_Panneau):
+    def __init__(self, params, histo):
+        super().__init__(params, histo)
+        lay = QVBoxLayout(self)
+        self.s = Curseur(tr("Seuil"), 1, 255, self.p.get("seuil", 128))
+        self.s.change.connect(self._lire)
+        lay.addWidget(self.s)
+        _aide(lay, tr("Les points plus clairs que le seuil deviennent blancs, les autres noirs."))
+
+    def _lire(self):
+        self.p = {"seuil": int(self.s.valeur())}
+        self.change.emit()
+
+
+class PanneauPosterisation(_Panneau):
+    def __init__(self, params, histo):
+        super().__init__(params, histo)
+        lay = QVBoxLayout(self)
+        self.n = Curseur(tr("Niveaux"), 2, 255, self.p.get("niveaux", 4))
+        self.n.change.connect(self._lire)
+        lay.addWidget(self.n)
+        _aide(lay, tr("Nombre de nuances gardées pour chaque couleur (rouge, vert, bleu) : peu de niveaux donnent "
+                      "des aplats comme une affiche."))
+
+    def _lire(self):
+        self.p = {"niveaux": int(self.n.valeur())}
+        self.change.emit()
+
+
+class PanneauNegatif(_Panneau):
+    def __init__(self, params, histo):
+        super().__init__(params, histo)
+        lay = QVBoxLayout(self)
+        _aide(lay, tr("Les couleurs sont inversées, comme un négatif de film (le noir devient blanc)."))
+
+
+class PanneauMappe(_Panneau):
+    """Courbe de transfert de dégradé : bouton qui montre le dégradé (clic : éditeur de dégradé), Inverser."""
+    def __init__(self, params, histo):
+        super().__init__(params, histo)
+        lay = QVBoxLayout(self)
+        lay.addWidget(QLabel(tr("Dégradé (clic pour le modifier) :")))
+        self.b = QPushButton()
+        self.b.setFixedHeight(34)
+        self.b.setMinimumWidth(300)
+        self.b.clicked.connect(self._editer)
+        lay.addWidget(self.b)
+        self.inv = QCheckBox(tr("Inverser"))
+        self.inv.setChecked(bool(self.p.get("inverser")))
+        self.inv.toggled.connect(self._lire)
+        lay.addWidget(self.inv)
+        _aide(lay, tr("Les parties sombres prennent la couleur de gauche du dégradé, les claires celle de droite. "
+                      "Un dégradé de deux couleurs donne un « duotone »."))
+        self._peindre()
+
+    def _peindre(self):
+        from PySide6.QtGui import QIcon, QPixmap
+        from . import degrades
+        img = degrades.image_apercu(self.p["degrade"], 300, 26)
+        self.b.setIcon(QIcon(QPixmap.fromImage(img)))
+        self.b.setIconSize(img.size())
+
+    def _editer(self):
+        from . import degrades
+        d = degrades.EditeurDegrade(self.p["degrade"], None, self, avec_peinture=False)
+        avant = copy.deepcopy(self.p["degrade"])
+
+        def direct(v):
+            self.p["degrade"] = v
+            self._peindre()
+            self.change.emit()
+        d.en_direct.connect(direct)
+        if d.exec() == QDialog.Accepted:
+            self.p["degrade"] = d.degrade
+        else:
+            self.p["degrade"] = avant
+        self._peindre()
+        self.change.emit()
+
+    def _lire(self, *_):
+        self.p["inverser"] = self.inv.isChecked()
+        self.change.emit()
+
+
+def filtres_photo() -> list[tuple[str, str]]:
+    """Filtres tout prêts (comme Photoshop)."""
+    return [(tr("Réchauffant (85)"), "#ec8a00"), (tr("Réchauffant (LBA)"), "#fa9600"),
+            (tr("Réchauffant (81)"), "#ebb113"), (tr("Refroidissant (80)"), "#006dff"),
+            (tr("Refroidissant (LBB)"), "#005dff"), (tr("Refroidissant (82)"), "#00b5ff"),
+            (tr("Rouge"), "#ea1a1a"), (tr("Orange"), "#f38417"), (tr("Jaune"), "#f9e31c"), (tr("Vert"), "#19c919"),
+            (tr("Cyan"), "#1dcbea"), (tr("Bleu"), "#1d35ea"), (tr("Violet"), "#9b1dea"), (tr("Magenta"), "#e31ce3"),
+            (tr("Sépia"), "#ac7a33"), (tr("Bleu profond"), "#0060c0"), (tr("Sous-marin"), "#00c1b1")]
+
+
+class PanneauFiltrePhoto(_Panneau):
+    def __init__(self, params, histo):
+        super().__init__(params, histo)
+        lay = QVBoxLayout(self)
+        ligne = QHBoxLayout()
+        ligne.addWidget(QLabel(tr("Filtre :")))
+        self.liste = QComboBox()
+        for nom, c in filtres_photo():
+            self.liste.addItem(nom, c)
+        self.liste.addItem(tr("Couleur au choix"), "")
+        self._accorder_liste()
+        self.liste.activated.connect(self._liste_choisie)
+        ligne.addWidget(self.liste, 1)
+        self.b_couleur = QPushButton()
+        self.b_couleur.setFixedWidth(60)
+        self.b_couleur.clicked.connect(self._couleur)
+        ligne.addWidget(self.b_couleur)
+        lay.addLayout(ligne)
+        self.d = Curseur(tr("Densité"), 0, 100, self.p.get("densite", 25), " %")
+        self.d.change.connect(self._lire)
+        lay.addWidget(self.d)
+        self.lum = QCheckBox(tr("Garder la luminosité"))
+        self.lum.setChecked(bool(self.p.get("luminosite", True)))
+        self.lum.toggled.connect(self._lire)
+        lay.addWidget(self.lum)
+        self._peindre()
+
+    def _accorder_liste(self):
+        i = self.liste.findData(self.p.get("couleur", "").lower())
+        self.liste.setCurrentIndex(i if i >= 0 else self.liste.count() - 1)
+
+    def _liste_choisie(self, i):
+        c = self.liste.itemData(i)
+        if not c:
+            self._couleur()
+            return
+        self.p["couleur"] = c
+        self._peindre()
+        self.change.emit()
+
+    def _peindre(self):
+        self.b_couleur.setStyleSheet(f"background: {self.p.get('couleur', '#ec8a00')};")
+
+    def _couleur(self):
+        c = QColorDialog.getColor(QColor(self.p.get("couleur", "#ec8a00")), self, tr("Couleur du filtre"))
+        if c.isValid():
+            self.p["couleur"] = c.name()
+            self._peindre()
+            self.change.emit()
+        self._accorder_liste()
+
+    def _lire(self, *_):
+        self.p["densite"] = int(self.d.valeur())
+        self.p["luminosite"] = self.lum.isChecked()
+        self.change.emit()
+
+
+class PanneauMelangeur(_Panneau):
+    """Mélangeur de couches : couleur de sortie choisie dans la liste, ses parts de rouge, vert, bleu, constante."""
+    def __init__(self, params, histo):
+        super().__init__(params, histo)
+        lay = QVBoxLayout(self)
+        ligne = QHBoxLayout()
+        ligne.addWidget(QLabel(tr("Couche de sortie :")))
+        self.sortie = QComboBox()
+        for k, nom in (("rouge", tr("Rouge")), ("vert", tr("Vert")), ("bleu", tr("Bleu"))):
+            self.sortie.addItem(nom, k)
+        self.sortie.currentIndexChanged.connect(self._montrer)
+        ligne.addWidget(self.sortie, 1)
+        lay.addLayout(ligne)
+        self.c = [Curseur(n, -200, 200, 0, " %") for n in (tr("Rouge"), tr("Vert"), tr("Bleu"), tr("Constante"))]
+        for c in self.c:
+            c.change.connect(self._lire)
+            lay.addWidget(c)
+        self.total = QLabel()
+        self.total.setObjectName("discret")
+        lay.addWidget(self.total)
+        self.mono = QCheckBox(tr("Monochrome (photo en gris, part de chaque couleur dans le gris)"))
+        self.mono.setChecked(bool(self.p.get("monochrome")))
+        self.mono.toggled.connect(self._mono)
+        lay.addWidget(self.mono)
+        self._montrer()
+
+    def _cle(self) -> str:
+        return "gris" if self.mono.isChecked() else self.sortie.currentData()
+
+    def _montrer(self, *_):
+        self.sortie.setEnabled(not self.mono.isChecked())
+        v = self.p[self._cle()]
+        for c, x in zip(self.c, v):
+            c.definir(x)
+        self._total()
+
+    def _total(self):
+        s = sum(self.p[self._cle()][:3])
+        self.total.setText(tr("Total : {n} %", n=s) + ("" if s == 100 else tr(" (100 % garde la clarté)")))
+
+    def _mono(self, *_):
+        self.p["monochrome"] = self.mono.isChecked()
+        self._montrer()
+        self.change.emit()
+
+    def _lire(self, *_):
+        self.p[self._cle()] = [int(c.valeur()) for c in self.c]
+        self._total()
+        self.change.emit()
+
+
 PANNEAUX = {"base": PanneauBase, "niveaux": PanneauNiveaux, "courbes": PanneauCourbes, "balance": PanneauBalance,
-            "noir_blanc": PanneauNoirBlanc, "vibrance": PanneauVibrance}
+            "noir_blanc": PanneauNoirBlanc, "vibrance": PanneauVibrance, "seuil": PanneauSeuil,
+            "posterisation": PanneauPosterisation, "negatif": PanneauNegatif, "mappe": PanneauMappe,
+            "filtre_photo": PanneauFiltrePhoto, "melangeur": PanneauMelangeur}
 
 
 class PanneauFiltre(_Panneau):
@@ -461,7 +673,11 @@ class PanneauFiltre(_Panneau):
         lib = filtres.libelles()
         self.c = {}
         for cle, libelle, mini, maxi, _d, unite in filtres.FILTRES[type_]:
-            c = Curseur(lib.get(libelle, libelle), mini, maxi, self.p.get(cle, _d), unite)
+            noms = filtres.choix(type_, cle)
+            if noms:
+                c = _Liste(lib.get(libelle, libelle), noms, self.p.get(cle, _d))
+            else:
+                c = Curseur(lib.get(libelle, libelle), mini, maxi, self.p.get(cle, _d), unite)
             c.change.connect(self._lire)
             lay.addWidget(c)
             self.c[cle] = c
@@ -469,6 +685,30 @@ class PanneauFiltre(_Panneau):
     def _lire(self):
         self.p = {k: int(c.valeur()) for k, c in self.c.items()}
         self.change.emit()
+
+
+class _Liste(QWidget):
+    """Comme Curseur, mais une liste (valeur = place dans la liste)."""
+    change = Signal()
+
+    def __init__(self, libelle: str, noms: list, valeur: int):
+        super().__init__()
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        e = QLabel(libelle)
+        e.setMinimumWidth(150)
+        lay.addWidget(e)
+        self.l = QComboBox()
+        self.l.addItems(noms)
+        self.l.setCurrentIndex(int(valeur))
+        self.l.currentIndexChanged.connect(lambda *_: self.change.emit())
+        lay.addWidget(self.l, 1)
+
+    def valeur(self):
+        return self.l.currentIndex()
+
+    def definir(self, v):
+        self.l.setCurrentIndex(int(v))
 
 
 class DialogueReglage(QDialog):

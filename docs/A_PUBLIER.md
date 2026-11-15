@@ -43,6 +43,18 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
 - **Installateur** : case « Orthographe et césure » avec le choix des langues (Français, Anglais) ; modifiable
   dans Affichage > Orthographe et césure et Affichage > Langues de l'orthographe… (une langue manquante y est
   téléchargée après accord).
+- **Nouveaux réglages** (Image > Réglages, et en calques de réglage) : Filtre photo, Mélangeur de couches, Courbe
+  de transfert de dégradé, Négatif (Ctrl+I), Seuil, Postérisation.
+- **Remplacer la couleur** (Image > Réglages) : clic sur la couleur dans un aperçu, tolérance, nouvelle teinte /
+  saturation / clarté ; plis et ombres gardés.
+- **Plage de couleurs** (menu Sélection) : tous les points d'une ou plusieurs couleurs, dans toute l'image ;
+  aperçu sur la photo, inverser, ajouter / retirer.
+- **Nouveaux flous** (menu Filtres) : flou radial (rotation ou zoom), flou de l'objectif (reflets ronds), flou de
+  surface (lisse la peau en gardant les bords).
+- **Ctrl+T : Perspective, Distordre, Déformation** (liste Mode de la barre, Édition > Transformation, Ctrl+coin) :
+  poser une image sur un écran, une boîte, un mur ; courber une image avec une grille de 16 points.
+- **Recadrage en perspective** (menu Image) : 4 coins posés sur une façade, un tableau, un document vu de biais ;
+  il devient un rectangle droit.
 
 ## Corrections
 
