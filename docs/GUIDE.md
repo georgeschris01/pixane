@@ -1058,6 +1058,23 @@ coup, si. Chaque coup est une étape d'Annuler.
 | **Doigt** | Étale la couleur dans le sens du geste, comme de la peinture fraîche ; la force dit jusqu'où elle s'étale |
 | **Pinceau d'historique** | Repeint l'**instantané** : au départ, la photo telle qu'à l'ouverture. Pour annuler un effet seulement à certains endroits. **Prendre un instantané** (barre du haut) garde l'état actuel |
 
+### Fluidité (Filtres > Fluidité…, Ctrl+Maj+X)
+Pour modeler l'image au pinceau, comme la Fluidité de Photoshop : affiner une silhouette, allonger une lettre, gonfler
+un détail. Une fenêtre s'ouvre avec le calque choisi ; on peint dessus avec un des outils :
+
+| Outil | Ce qu'il fait |
+|---|---|
+| **Pousser** | L'image suit le geste (déplacer un contour, allonger) |
+| **Gonfler** | Agrandit ce qui est sous le pinceau ; garder le bouton appuyé ou repasser pour renforcer |
+| **Contracter** | Rétrécit ce qui est sous le pinceau |
+| **Tourbillon** | Fait tourner ce qui est sous le pinceau |
+| **Reconstruire** | Revient peu à peu à l'image d'origine là où l'on peint |
+
+**Taille** (en pixels de la photo) et **Pression** se règlent à gauche. **Défaire le dernier geste** et **Tout
+reconstruire** permettent de revenir en arrière avant d'appliquer. L'aperçu est réduit pour rester rapide, mais le
+résultat est calculé en pleine définition à la fin, sans flou. Avec une sélection, seule la zone sélectionnée change.
+Toute la Fluidité est une seule étape d'Annuler.
+
 ### Formes (U)
 Glissez pour dessiner un **rectangle**, un **rectangle arrondi**, une **ellipse**, une **ligne** ou une **flèche**
 (**Maj** : carré, cercle, ligne droite). Chaque forme va dans un **nouveau calque**, dans la couleur du pinceau.

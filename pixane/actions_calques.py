@@ -84,6 +84,8 @@ class ActionsCalques:
 
         m = self.menuBar().addMenu(tr("Fi&ltres"))
         noms = filtres.noms()
+        self._action(m, tr("Fluidité…"), "Ctrl+Shift+X", self.fluidite, "a_fluidite")
+        m.addSeparator()
         for t in filtres.FILTRES:
             self._action(m, noms[t] + "…", None, lambda *_, t=t: self.filtre(t), f"a_filtre_{t}")
         return m
@@ -91,6 +93,7 @@ class ActionsCalques:
     def _actions_calques_doc(self) -> list:
         noms = [f"a_regl_{t}" for t in REGLAGES_PIXELS] + ["a_remplacer_couleur"]
         noms += [f"a_cr_{t}" for t in ajustements.TYPES] + [f"a_filtre_{t}" for t in filtres.FILTRES]
+        noms += ["a_fluidite"]
         noms += ["a_taille_grille", "a_nouveau_repere", "a_effacer_reperes", "a_exporter_web"]
         noms += ["a_modifier_reglage", "a_nouveau_groupe", "a_grouper", "a_degrouper", "a_ecretage", "a_masque_blanc",
                  "a_masque_sel", "a_masque_cacher", "a_masque_cible", "a_masque_actif", "a_masque_inverser",
@@ -594,6 +597,31 @@ class ActionsCalques:
         return True
 
     # ---------------------------------------------------------------- filtres
+    def fluidite(self):
+        """Filtres > Fluidité : pousser, gonfler, contracter, tourbillon, reconstruire, au pinceau."""
+        from .fenetre import CommandeEtat
+        from .fluidite import DialogueFluidite
+        titre = tr("Fluidité")
+        if not self._verifier_pixels(titre):
+            return
+        doc = self.doc
+        index, calque = doc.actif, doc.calque_actif
+        selection = None if doc.selection_vide() else doc.selection.copy()
+        rgba = tableau(calque.image.convertToFormat(FORMAT_IMAGE))
+        d = DialogueFluidite(self, rgba)
+        d.resize(1200, 780)
+        if d.exec() != QDialog.Accepted or not d.champ.any():
+            return
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            res = d.resultat()
+            img = filtres.appliquer_calque(calque.image, lambda _a: res, selection)
+        finally:
+            QApplication.restoreOverrideCursor()
+        avant = doc.etat()
+        apres = doc.etat_calque_modifie(index, image=img, texte=None)
+        self.historique.push(CommandeEtat(doc, avant, apres, titre))
+
     def remplacer_couleur(self):
         """Image > Réglages > Remplacer la couleur : on clique la couleur dans un aperçu du calque."""
         from . import plage_couleurs as pc

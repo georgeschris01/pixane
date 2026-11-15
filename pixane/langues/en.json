@@ -1530,5 +1530,22 @@
  "Sur un masque, peins avec le pinceau de couleur (noir cache, blanc montre) ou la gomme de calque (cache) ; la goutte d'eau adoucit le bord du masque.": "On a mask, paint with the colour brush (black hides, white shows) or the layer eraser (hides); the blur tool softens the mask's edge.",
  "Éponge": "Sponge",
  "Éponge : peins pour raviver (Saturer) ou ternir (Désaturer) les couleurs.": "Sponge: paint to boost (Saturate) or dull (Desaturate) the colours.",
- "Éponge : ravive ou ternit les couleurs là où l'on peint": "Sponge: boosts or dulls the colours where you paint"
+ "Éponge : ravive ou ternit les couleurs là où l'on peint": "Sponge: boosts or dulls the colours where you paint",
+ "Fluidité": "Liquify",
+ "Fluidité…": "Liquify…",
+ "Pousser": "Push",
+ "Gonfler": "Bloat",
+ "Contracter": "Pucker",
+ "Tourbillon": "Twirl",
+ "Reconstruire": "Reconstruct",
+ "Pression": "Pressure",
+ "Pousser : l'image suit le geste (allonger, affiner, déplacer un contour)": "Push: the image follows the stroke (stretch, slim, move an outline)",
+ "Gonfler : agrandit ce qui est sous le pinceau (garder le bouton appuyé)": "Bloat: enlarges what is under the brush (keep the button pressed)",
+ "Contracter : rétrécit ce qui est sous le pinceau": "Pucker: shrinks what is under the brush",
+ "Tourbillon : fait tourner ce qui est sous le pinceau": "Twirl: turns what is under the brush",
+ "Reconstruire : revient peu à peu à l'image d'origine sous le pinceau": "Reconstruct: gradually goes back to the original image under the brush",
+ "Défaire le dernier geste": "Undo the last stroke",
+ "Tout reconstruire": "Reconstruct all",
+ "Revenir à l'image d'origine": "Go back to the original image",
+ "Peignez sur l'image. Le résultat est calculé en pleine définition à la fin.": "Paint on the image. The result is computed at full resolution at the end."
 }

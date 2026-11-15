@@ -58,6 +58,8 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
 - **Pinceaux de retouche** (deux nouvelles familles d'outils) : Densité − / + (éclaircir, assombrir : ombres, tons
   moyens ou hautes lumières), Éponge (saturer, désaturer), Goutte d'eau (aussi sur un masque), Netteté, Doigt,
   Pinceau d'historique (repeint la photo d'ouverture, ou l'instantané pris).
+- **Fluidité** (Filtres > Fluidité…, Ctrl+Maj+X) : pousser, gonfler, contracter, tourbillon, reconstruire au
+  pinceau ; résultat en pleine définition.
 
 ## Corrections
 

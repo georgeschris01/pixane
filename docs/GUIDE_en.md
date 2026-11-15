@@ -1021,6 +1021,22 @@ one Undo step.
 | **Smudge** | Spreads the colour along the stroke, like wet paint; the strength says how far it spreads |
 | **History brush** | Paints back the **snapshot**: at first, the photo as it was opened. To undo an effect in some places only. **Take a snapshot** (top bar) keeps the current state |
 
+### Liquify (Filters > Liquify…, Ctrl+Shift+X)
+To shape the image with a brush, like Photoshop's Liquify: slim a silhouette, stretch a letter, bloat a detail. A
+window opens with the chosen layer; you paint on it with one of the tools:
+
+| Tool | What it does |
+|---|---|
+| **Push** | The image follows the stroke (move an outline, stretch) |
+| **Bloat** | Enlarges what is under the brush; keep the button pressed or go over again to strengthen |
+| **Pucker** | Shrinks what is under the brush |
+| **Twirl** | Turns what is under the brush |
+| **Reconstruct** | Gradually goes back to the original image where you paint |
+
+**Size** (in photo pixels) and **Pressure** are set on the left. **Undo the last stroke** and **Reconstruct all** let
+you go back before applying. The preview is reduced to stay fast, but the result is computed at full resolution at the
+end, without blur. With a selection, only the selected area changes. The whole Liquify is one Undo step.
+
 ### Shapes (U)
 Drag to draw a **rectangle**, **rounded rectangle**, **ellipse**, **line** or **arrow** (**Shift**: square, circle,
 straight line). Each shape goes on a **new layer**, in the brush colour. **Filled** (box) or outline only; the
