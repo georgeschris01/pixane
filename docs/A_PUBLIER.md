@@ -21,6 +21,8 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.24.0 (non publ
 - [ ] README.md et README.en.md, liste « Ce que Pixane sait faire » (écrite à la main).
 - [ ] Recopier le guide dans les README : `.venv\Scripts\python outils\readme.py`.
 - [ ] FEUILLE_DE_ROUTE : ligne « Dernière version d'essai ».
+- [ ] Issue n°1 « Feuille de route » sur GitHub (`gh issue edit 1 -R pixane-suite/photo`) : Ajouté récemment, En
+      cours, Prévu.
 - [ ] Notes de version (« ## Nouveautés », « ## Corrections ») à partir des listes ci-dessus, sans pied « Generated
       with Claude Code ».
 - [ ] Installateur, push, release GitHub, ligne au JOURNAL ; puis vider ce carnet.
