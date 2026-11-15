@@ -147,7 +147,7 @@ def ajuster_case(case, plus_long: str) -> None:
 
 
 class CommandeProfondeur(QUndoCommand):
-    """Image > Mode > 8 / 16 bits : la profondeur du document change avec ses calques (Annuler la remet)."""
+    """Image > Mode > 8 / 16 / 32 bits : la profondeur du document change avec ses calques (Annuler la remet)."""
 
     def __init__(self, doc: Document, avant, apres, bits_avant: int, bits_apres: int, texte: str):
         super().__init__(texte)
@@ -578,7 +578,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self._actions_mode = groupe
         sous.addSeparator()
         groupe = QActionGroup(self)
-        for bits, texte in ((8, tr("8 bits par couche")), (16, tr("16 bits par couche"))):
+        for bits, texte in ((8, tr("8 bits par couche")), (16, tr("16 bits par couche")),
+                            (32, tr("32 bits par couche (HDR)"))):
             a = QAction(texte, self, checkable=True)
             a.setData(bits)
             a.triggered.connect(lambda *_, b=bits: self.changer_profondeur(b))
@@ -587,7 +588,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self._actions_bits = groupe
         sous.addSeparator()
         self.a_tramage = QAction(tr("Tramage vers 8 bits"), self, checkable=True)
-        self.a_tramage.setToolTip(tr("Image 16 bits montrée, exportée ou passée en 8 bits : un très léger grain "
+        self.a_tramage.setToolTip(tr("Image 16 ou 32 bits montrée, exportée ou passée en 8 bits : un très léger grain "
                                      "invisible évite les marches dans les dégradés (comme Photoshop)."))
         self.a_tramage.setChecked(self.reglages.value("tramage", True, type=bool))
         self.a_tramage.toggled.connect(self.basculer_tramage)
@@ -642,6 +643,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self.a_epreuve = self._action(m, tr("Aperçu de l'impression (CMJN)"), "Ctrl+Alt+Y", self.basculer_epreuve,
                                       "a_epreuve")
         self.a_epreuve.setCheckable(True)
+        self.a_exposition = self._action(m, tr("Exposition 32 bits…"), None, self.exposition_ecran, "a_exposition")
+        self.a_exposition.setToolTip(tr("Image 32 bits : régler l'aperçu à l'écran pour voir les zones plus "
+                                        "claires que le blanc (l'image ne change pas)."))
         m.addSeparator()
         self.a_barre_rapide = self._action(m, tr("Barre d'accès rapide"), None, None, "a_barre_rapide")
         self.a_barre_rapide.setCheckable(True)
@@ -982,7 +986,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         """L'état actuel de l'image devient celui que repeint le pinceau d'historique."""
         if self.doc is None:
             return
-        self.doc.instantane = (tuple(self.doc.calques), QImage(self.doc.image))
+        self.doc.instantane = (tuple(self.doc.calques), QImage(self.doc.image_profonde()))
         self.statusBar().showMessage(tr("Instantané pris : le pinceau d'historique repeindra l'image telle qu'elle "
                                         "est maintenant."), 6000)
 
@@ -1777,6 +1781,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
             a.setChecked(a_doc and (a.text() == tr("Niveaux de gris")) == (self.doc.mode == "gris"))
         for a in self._actions_bits.actions():
             a.setChecked(a_doc and a.data() == self.doc.profondeur)
+        self.a_exposition.setEnabled(a_doc and self.doc.profondeur == 32)
         self.a_epreuve.setChecked(a_doc and bool(self.doc.epreuve))
         for a in (self.a_effacer, self.a_remplir, self.a_modifier, self.a_agrandir, self.a_upscale, self.a_arriere_plan,
                   self.a_ia_bruit, self.a_ia_nettete, self.a_ia_restaurer,
@@ -1789,7 +1794,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         titre = NOM
         if self.doc:
             nom = self.doc.nom_affiche()
-            bits = tr(" (16 bits)") if self.doc.profondeur == 16 else ""
+            bits = {16: tr(" (16 bits)"), 32: tr(" (32 bits)")}.get(self.doc.profondeur, "")
             titre = f"{nom}{bits}{' •' if self.doc.modifie else ''} — {NOM}"
         self.setWindowTitle(titre)
 
@@ -2030,7 +2035,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
                                                                                            else ".jpg")))
         formats = [tr("Projet Pixane Photo") + " (*.pixane)", tr("Photoshop, avec les calques") + " (*.psd)",
                    tr("OpenRaster, pour Krita et GIMP") + " (*.ora)",
-                   "JPEG (*.jpg)", "PNG (*.png)", "TIFF (*.tif)", "WebP (*.webp)"]
+                   "JPEG (*.jpg)", "PNG (*.png)", "TIFF (*.tif)", "WebP (*.webp)",
+                   tr("OpenEXR, 32 bits (HDR)") + " (*.exr)", tr("Radiance, 32 bits (HDR)") + " (*.hdr)"]
         if self.doc.chemin and self.doc.chemin.suffix.lower() == ".psd":
             formats.insert(0, formats.pop(1))           # photo venue de Photoshop : PSD proposé d'abord
         elif not plusieurs:
@@ -2445,19 +2451,46 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         from . import profondeur
         profondeur.tramage = bool(actif)
         self.reglages.setValue("tramage", bool(actif))
-        if self.doc and self.doc.profondeur == 16:
+        if self.doc and self.doc.profondeur > 8:
             self.doc._tramee = None
             self.doc.change.emit()
 
+    def exposition_ecran(self):
+        """Affichage > Exposition 32 bits : aperçu plus clair ou plus sombre (l'image ne change pas)."""
+        if not self.doc or self.doc.profondeur != 32:
+            return
+        from .dialogue_hdr import DialogueExposition
+
+        def rafraichir():
+            if self.doc:
+                self.doc.change.emit()
+        d = DialogueExposition(self, rafraichir)
+        d.exec()
+        d.deleteLater()
+
     def changer_profondeur(self, bits: int):
-        """Image > Mode > 8 / 16 bits par couche (annulable)."""
+        """Image > Mode > 8 / 16 / 32 bits par couche (annulable). De 32 bits vers moins : Virage HDR si l'image a
+        des couleurs plus claires que le blanc."""
         if not self.doc or bits == self.doc.profondeur:
             self._actualiser()
             return
         doc = self.doc
+        virage = None
+        if doc.profondeur == 32:
+            from . import profondeur as prof
+            from .dialogue_hdr import DialogueVirage
+            img = doc.image_profonde()
+            if float(prof.tab32(img)[..., :3].max(initial=0)) > 1.0 + 1e-4:
+                d = DialogueVirage(self, img, bits)
+                ok = d.exec() == QDialog.Accepted
+                virage = d.valeurs()
+                d.deleteLater()
+                if not ok:
+                    self._actualiser()
+                    return
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
-            avant, apres = doc.etat(), doc.etat_profondeur(bits)
+            avant, apres = doc.etat(), doc.etat_profondeur(bits, virage)
             self.historique.push(CommandeProfondeur(doc, avant, apres, doc.profondeur, bits,
                                                     tr("Mode {n} bits", n=bits)))
         finally:
@@ -2465,7 +2498,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self.statusBar().showMessage(
             tr("16 bits par couche : 65 536 nuances par couleur au lieu de 256 (dégradés et réglages sans "
                "cassures). Enregistrez en PSD, TIFF, PNG ou .pixane pour les garder.") if bits == 16
-            else tr("8 bits par couche."), 10000)
+            else tr("32 bits par couche (HDR) : les couleurs peuvent être plus claires que le blanc. Enregistrez en "
+                    ".pixane, EXR, HDR ou TIFF pour les garder ; Affichage > Exposition 32 bits pour les voir.")
+            if bits == 32 else tr("8 bits par couche."), 10000)
         self._actualiser()
 
     def basculer_epreuve(self):
@@ -2497,7 +2532,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         if self.canevas.transfo is not None:
             self._valider_transfo()
         formats = {".jpg": "JPEG (*.jpg)", ".png": tr("PNG (avec la transparence)") + " (*.png)",
-                   ".tif": "TIFF (*.tif)", ".webp": "WebP (*.webp)"}
+                   ".tif": "TIFF (*.tif)", ".webp": "WebP (*.webp)",
+                   ".exr": tr("OpenEXR, 32 bits (HDR)") + " (*.exr)", ".hdr": tr("Radiance, 32 bits (HDR)") + " (*.hdr)"}
         ext = self.reglages.value("exporter_format", ".jpg")
         ext = ext if ext in formats else ".jpg"
         base = self.doc.chemin.stem if self.doc.chemin else (self.doc.nom or "image")
@@ -2512,7 +2548,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         if not chemin:
             return
         chemin = Path(chemin)
-        if chemin.suffix.lower() not in (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"):
+        if chemin.suffix.lower() not in (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp", ".exr", ".hdr"):
             chemin = chemin.with_name(chemin.name + next(e for e in formats if formats[e] == filtre))
         self.reglages.setValue("exporter_format", {".jpeg": ".jpg", ".tiff": ".tif"}.get(chemin.suffix.lower(),
                                                                                          chemin.suffix.lower()))

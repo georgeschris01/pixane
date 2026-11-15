@@ -236,6 +236,20 @@ def appliquer_16(rgb: np.ndarray, type_: str, p: dict) -> np.ndarray:
     raise ValueError(type_)
 
 
+
+# réglages dont le résultat ne suit pas la clarté de départ : en 32 bits, pas d'éclat au-dessus du blanc à rendre
+_SANS_ECLAT = ("seuil", "posterisation", "negatif", "mappe")
+
+
+def appliquer_32(rgb: np.ndarray, type_: str, p: dict) -> np.ndarray:
+    """Comme appliquer, en 32 bits : rgb (..., 3) float32 (1.0 = blanc, peut dépasser) -> float32. Une couleur
+    plus claire que le blanc est ramenée sous le blanc (même teinte), réglée en 16 bits, puis retrouve son éclat."""
+    rgb = np.maximum(rgb, 0).astype(np.float32, copy=False)
+    hd = np.maximum(1.0, rgb.max(axis=-1, keepdims=True)).astype(np.float32)
+    r16 = np.round(np.clip(rgb / hd, 0, 1) * 65535).astype(np.uint16)
+    out = appliquer_16(r16, type_, p).astype(np.float32) / 65535
+    return out if type_ in _SANS_ECLAT else out * hd
+
 def _mappe(rgb: np.ndarray, p: dict) -> np.ndarray:
     """Courbe de transfert de dégradé : la clarté (0 à 255) de chaque point donne sa place dans le dégradé."""
     from . import degrades
@@ -320,13 +334,15 @@ def _vibrance(rgb: np.ndarray, p: dict) -> np.ndarray:
 
 
 def appliquer_rgba(t: np.ndarray, type_: str, p: dict, poids: np.ndarray | None = None) -> np.ndarray:
-    """Tableau RGBA (h, w, 4) uint8 ou uint16 (couleurs non prémultipliées) -> nouveau tableau (même type) ;
-    poids (h, w) 0..1 : mélange avec l'original (sélection, masque, opacité)."""
+    """Tableau RGBA (h, w, 4) uint8, uint16 ou float32 (32 bits, 1.0 = blanc ; couleurs non prémultipliées) ->
+    nouveau tableau (même type) ; poids (h, w) 0..1 : mélange avec l'original (sélection, masque, opacité)."""
     out = t.copy()
-    res = (appliquer_16 if t.dtype == np.uint16 else appliquer)(np.ascontiguousarray(t[..., :3]), type_, p)
+    fn = appliquer_32 if t.dtype == np.float32 else appliquer_16 if t.dtype == np.uint16 else appliquer
+    res = fn(np.ascontiguousarray(t[..., :3]), type_, p)
     if poids is None:
         out[..., :3] = res
     else:
         w = poids.astype(np.float32)[..., None]
-        out[..., :3] = np.round(t[..., :3] + (res.astype(np.float32) - t[..., :3]) * w).astype(t.dtype)
+        v = t[..., :3] + (res.astype(np.float32) - t[..., :3]) * w
+        out[..., :3] = v if t.dtype == np.float32 else np.round(v).astype(t.dtype)
     return out

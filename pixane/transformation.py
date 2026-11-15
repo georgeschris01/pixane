@@ -58,7 +58,14 @@ def redimensionner(image: QImage, w: int, h: int) -> QImage:
     w, h = max(1, w), max(1, h)
     if (w, h) == (image.width(), image.height()):
         return image
-    from .profondeur import est_16, qimage16, tab16
+    from .profondeur import est_16, est_32, qimage16, qimage32, tab16, tab32
+    if est_32(image):                    # 32 bits : chaque couche en flottant (Pillow, mode « F »), sans plafond
+        t = tab32(image, premul=True)
+        r = np.stack([np.asarray(Image.fromarray(np.ascontiguousarray(t[..., k]), "F").resize((w, h), Image.LANCZOS))
+                      for k in range(4)], axis=-1)
+        r[..., 3] = np.clip(r[..., 3], 0, 1)
+        r[..., :3] = np.maximum(r[..., :3], 0)
+        return qimage32(r.astype(np.float32), premul=True)
     if est_16(image):                    # 16 bits : chaque couche en flottant (Pillow, mode « F »), sans arrondi
         t = tab16(image, premul=True).astype(np.float32)
         r = np.stack([np.asarray(Image.fromarray(np.ascontiguousarray(t[..., k]), "F").resize((w, h), Image.LANCZOS))
@@ -229,9 +236,8 @@ class Transformation:
         return self._cache[2]
 
     def _dessiner(self, r: QRect, lisse: bool, qualite: bool = True) -> QImage:
-        from .profondeur import FORMAT_16, est_16
-        img = QImage(max(1, r.width()), max(1, r.height()),
-                     FORMAT_16 if est_16(self.source) else QImage.Format_ARGB32_Premultiplied)
+        from .profondeur import format_de
+        img = QImage(max(1, r.width()), max(1, r.height()), format_de(self.source))
         img.fill(0)
         p = QPainter(img)
         if self.fond is not None:

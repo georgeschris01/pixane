@@ -266,6 +266,8 @@ LIVRES = [
               "Dialogue avec le moteur IA", "Apache-2.0"),
     Composant("rawpy / LibRaw", "https://github.com/letmaik/rawpy", "Ouvrir les fichiers RAW des appareils photo",
               "MIT (LibRaw : LGPL-2.1 ou CDDL-1.0)"),
+    Composant("OpenEXR", "https://openexr.com", "Ouvrir et enregistrer les images HDR (.exr, 32 bits)",
+              "BSD-3-Clause"),
 ]
 TELECHARGES = [
     Composant("ComfyUI", "https://github.com/Comfy-Org/ComfyUI", "Moteur IA (programme séparé)", "GPL-3.0"),

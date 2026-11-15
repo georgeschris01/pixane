@@ -73,9 +73,10 @@ def _premul(t: np.ndarray) -> np.ndarray:
 
 
 def _fin(v, t: np.ndarray) -> np.ndarray:
-    """Résultat 0..255 : arrondi en uint8 ; gardé en float (16 bits) si l'entrée t était en float."""
+    """Résultat 0..255 : arrondi en uint8 ; gardé en float (16 / 32 bits) si l'entrée t était en float, sans
+    plafond (en 32 bits, une couleur peut dépasser le blanc ; en 16 bits, appliquer_calque la ramène)."""
     if t.dtype.kind == "f":
-        return np.clip(np.asarray(v, np.float32), 0, 255)
+        return np.maximum(np.asarray(v, np.float32), 0)
     return np.clip(np.round(v), 0, 255).astype(np.uint8)
 
 
@@ -345,9 +346,23 @@ FONCTIONS = {"flou": flou_gaussien, "mouvement": flou_mouvement, "radial": flou_
 def appliquer_calque(img: QImage, calcul, selection: QImage | None, seize: str | None = None) -> QImage:
     """calcul : tableau RGBA -> tableau RGBA. Résultat posé dans la sélection (avec ses bords doux) s'il y en a une.
     Calque 16 bits : seize = « entier » (calcul reçoit du uint16, ex. les réglages), « flottant » (float32 sur
-    l'échelle 0..255, ex. les filtres) ; None : calcul en 8 bits (pont, voir profondeur.py)."""
+    l'échelle 0..255, ex. les filtres) ; None : calcul en 8 bits (pont, voir profondeur.py).
+    Calque 32 bits : « entier » -> float32 sur l'échelle 0..1 (ajustements.appliquer_rgba en 32 bits),
+    « flottant » -> float32 sur l'échelle 0..255 ; les valeurs peuvent dépasser le blanc."""
     from .document import FORMAT_CALQUE, FORMAT_IMAGE, masque, qimage_rgba, tableau
-    from .profondeur import est_16, qimage16, tab16
+    from .profondeur import est_16, est_32, qimage16, qimage32, tab16, tab32
+    if seize and est_32(img):
+        t = tab32(img)
+        echelle = 1.0 if seize == "entier" else 255.0
+        res = np.asarray(calcul(t * echelle if echelle != 1 else t), np.float32) / echelle
+        if selection is not None:
+            m = masque(selection)
+            if m.any():
+                w = m.astype(np.float32)[..., None] / 255
+                res = t + (res - t) * w
+        res = np.maximum(res, 0)
+        res[..., 3] = np.clip(res[..., 3], 0, 1)
+        return qimage32(res)
     if seize and est_16(img):
         t = tab16(img)
         res = np.asarray(calcul(t if seize == "entier" else t.astype(np.float32) / 257))

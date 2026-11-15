@@ -93,12 +93,16 @@ def _position(style: str, w: int, h: int, angle: float, echelle: float) -> np.nd
     return ((np.arctan2(-y, x) - a) / (2 * math.pi)) % 1.0      # angulaire : un tour complet
 
 
-def rendre(r: Remplissage, w: int, h: int, seize: bool = False) -> QImage:
-    """seize : dégradé calculé en 16 bits (document 16 bits)."""
+def rendre(r: Remplissage, w: int, h: int, seize: bool | int = False) -> QImage:
+    """seize : dégradé calculé en 16 bits (document 16 bits) ; 32 : image 32 bits (document 32 bits)."""
+    b = 32 if seize == 32 and not isinstance(seize, bool) else 16 if seize else 8
     if r.genre == "motif":
         img = motifs.image_pavee(r.motif or motifs.DEFAUT, w, h, r.motif_echelle / 100)
         if img is not None:
-            return img.convertToFormat(FORMAT)
+            if b < 32:
+                return img.convertToFormat(FORMAT)
+            from .profondeur import en_32
+            return en_32(img)
         r = r.avec(genre="couleur", couleur="#ff808080")    # motif introuvable : gris
     if r.genre == "degrade":
         d = degrades.normaliser(r.degrade if r.degrade is not None else NOIR_BLANC)
@@ -108,10 +112,12 @@ def rendre(r: Remplissage, w: int, h: int, seize: bool = False) -> QImage:
         tab = degrades.table(d, None, n)                   # (n, 4) RGBA 0..1, non prémultiplié
         pos = np.clip(_position(r.style, w, h, r.angle, r.echelle), 0, 1)
         if seize:                                          # 16 bits : couleurs interpolées, sans marches
-            from .profondeur import qimage16
+            from .profondeur import qimage16, qimage32
             x = pos * (n - 1)
             c = np.stack([np.interp(x, np.arange(n), tab[:, k]) for k in range(4)], axis=-1)
             a = c[..., 3:4]
+            if b == 32:
+                return qimage32(np.concatenate([c[..., :3] * a, a], axis=2).astype(np.float32), premul=True)
             rgba = np.round(np.concatenate([c[..., :3] * a, a], axis=2) * 65535).astype(np.uint16)
             return qimage16(rgba, premul=True)
         i = np.round(pos * (n - 1)).astype(np.int32)
@@ -120,15 +126,17 @@ def rendre(r: Remplissage, w: int, h: int, seize: bool = False) -> QImage:
         rgba = np.round(np.concatenate([c[..., :3] * a, a], axis=2) * 255).astype(np.uint8)
         rgba = np.ascontiguousarray(rgba)
         return QImage(rgba.data, w, h, 4 * w, QImage.Format_RGBA8888_Premultiplied).convertToFormat(FORMAT)
-    img = QImage(w, h, FORMAT)
+    img = QImage(w, h, FORMAT if b == 8 else QImage.Format_RGBA64_Premultiplied if b == 16
+                 else QImage.Format_RGBA32FPx4_Premultiplied)
     img.fill(QColor(r.couleur))
     return img
 
 
 def calque(c, r: Remplissage, w: int, h: int):
     """Le calque c devient (ou reste) le calque de remplissage r, redessiné à la taille de la feuille."""
-    from .profondeur import est_16
-    img = rendre(r, w, h, est_16(c.image))
+    from .profondeur import bits
+    b = bits(c.image)
+    img = rendre(r, w, h, b if b == 32 else b == 16)
     return replace(c, image=img, remplissage=replace(r, rendu=img), texte=None, pinceau=None, forme=None,
                    hors=None, hors_x=0, hors_y=0, origine=None)
 

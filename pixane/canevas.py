@@ -941,7 +941,7 @@ class Canevas(PlumeMixin, QWidget):
             if self._decalage_tampon is None:
                 self._decalage_tampon = self.source_tampon - pt
             self._trait = Trait("tampon", c.image, self.taille_pinceau, self.durete, self.opacite,
-                                source=self.doc.image.copy(), decalage=self._decalage_tampon)
+                                source=self.doc.image_profonde().copy(), decalage=self._decalage_tampon)
         elif self.outil == TAMPON_MOTIF:
             # le motif, répété depuis le coin de l'image : chaque trait se raccorde aux précédents
             from .motifs import DEFAUT, image_pavee

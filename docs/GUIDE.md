@@ -84,8 +84,8 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 
 ## 2. Ouvrir et enregistrer
 
-- **Fichier > Ouvrir** (Ctrl+O) : JPG, PNG, TIFF, WebP, BMP, et les fichiers à calques **.pixane**, **.ora** et
-  **.psd** (Photoshop).
+- **Fichier > Ouvrir** (Ctrl+O) : JPG, PNG, TIFF, WebP, BMP, les images **HDR** **.exr** (OpenEXR) et **.hdr**
+  (Radiance), et les fichiers à calques **.pixane**, **.ora** et **.psd** (Photoshop).
   La photo est redressée selon son orientation d'appareil.
 - **Fichiers RAW** des appareils photo (Canon .CR2 / .CR3, Nikon .NEF, Sony .ARW, .DNG, Fujifilm .RAF, Olympus
   .ORF, Panasonic .RW2, Pentax .PEF…) : ils s'ouvrent comme une photo, développés avec la balance des blancs de
@@ -1282,8 +1282,8 @@ Comme dans Photoshop : **enregistrer** une suite d'opérations, puis la **rejoue
 
 - **Mode** : **Couleurs RVB** ou **Niveaux de gris**. En niveaux de gris, l'image est montrée et enregistrée en gris
   (JPEG, PNG, TIFF en vrai gris) ; les calques gardent leurs couleurs, pour revenir en RVB sans rien perdre.
-- **8 bits ou 16 bits par couche** (*Image > Mode*, comme Photoshop) : en 8 bits, chaque couleur a 256 nuances ; en
-  **16 bits**, 65 536. Utile pour les retouches fortes (niveaux, courbes, éclaircir une photo sombre), les
+- **8, 16 ou 32 bits par couche** (*Image > Mode*, comme Photoshop) : en 8 bits, chaque couleur a 256 nuances ; en
+  **16 bits**, 65 536 ; en **32 bits (HDR)**, des nombres à virgule (voir plus bas). Utile pour les retouches fortes (niveaux, courbes, éclaircir une photo sombre), les
   **dégradés** et les ciels : pas de **cassures** (marches visibles) même après plusieurs réglages. Le titre de la
   fenêtre indique **(16 bits)**. Ctrl+Z annule le changement.
   - **Ouvert en 16 bits d'office** : les PNG, TIFF et PSD 16 bits, et les **photos RAW** (développées en 16 bits).
@@ -1293,11 +1293,31 @@ Comme dans Photoshop : **enregistrer** une suite d'opérations, puis la **rejoue
     **réglages** (Réglages de l'image, Niveaux, Courbes, Balance…), les **filtres** (flous, netteté, bruit,
     vignette), le **Dégradé** et les calques de remplissage, la taille de l'image, pivoter, miroir, redresser,
     transformer, recadrer, Agrandir.
-  - Les autres outils (pinceaux, gomme, retouche, IA…) travaillent en 8 bits, **seulement là où ils changent
+  - **Les pinceaux travaillent dans la profondeur de l'image** : pinceau, gomme, tampon de duplication, pinceau
+    d'historique, Densité − / +, Éponge, Goutte d'eau, Netteté et Doigt (en 16 bits, sans arrondi à 256 nuances).
+  - Les autres outils (pot de peinture, texte, IA…) travaillent en 8 bits, **seulement là où ils changent
     l'image** : le reste du calque garde ses 16 bits. L'IA rend toujours un résultat en 8 bits, posé seulement dans
     la zone traitée. La *mise à l'échelle d'après le contenu* repasse tout le calque en 8 bits de précision.
   - Une image 16 bits prend **deux fois plus de mémoire**, et les filtres sont un peu plus lents.
-- **Tramage vers 8 bits** (*Image > Mode*, coché par défaut) : quand une image 16 bits est montrée à l'écran,
+- **32 bits par couche (HDR)** (*Image > Mode > 32 bits par couche (HDR)*) : pour les photos **HDR** (plusieurs
+  expositions réunies, rendus 3D). Une couleur peut être **plus claire que le blanc** : le soleil, une lampe ou un
+  ciel très lumineux gardent leur détail, et on peut baisser l'exposition après coup sans rien perdre. Le titre de
+  la fenêtre indique **(32 bits)**.
+  - **Ouvert en 32 bits d'office** : les **.exr** (OpenEXR), **.hdr** (Radiance) et **TIFF 32 bits**.
+  - **Enregistré en 32 bits** : .pixane, EXR, HDR, TIFF. Le PSD et le PNG sont enregistrés en 16 bits, le JPEG en
+    8 bits : ce qui est plus clair que le blanc y devient blanc (passez d'abord en 16 ou 8 bits avec le *Virage
+    HDR* pour choisir comment le ramener).
+  - **Calculé en 32 bits**, sans couper au blanc : la fusion des calques, les calques de réglage, les réglages, les
+    filtres, le Dégradé, les calques de remplissage, la taille, la géométrie, et les pinceaux (le **tampon** recopie
+    aussi les zones plus claires que le blanc). Un réglage traite une couleur trop claire en gardant son éclat.
+  - **Affichage > Exposition 32 bits…** : rend l'aperçu à l'écran plus clair ou plus sombre (en diaphs) pour
+    regarder les zones plus claires que le blanc. L'image et ses exports ne changent pas.
+  - **Virage HDR** : en passant une image 32 bits en 16 ou 8 bits, une fenêtre s'ouvre si l'image a des couleurs
+    plus claires que le blanc : **Exposition** (baisser pour retrouver le ciel), **Gamma** (tons moyens), et
+    **Compresser les hautes lumières** (tout est ramené en douceur sous le blanc, rien n'est coupé). Un aperçu montre
+    le résultat.
+  - Une image 32 bits prend **quatre fois plus de mémoire** qu'en 8 bits.
+- **Tramage vers 8 bits** (*Image > Mode*, coché par défaut) : quand une image 16 ou 32 bits est montrée à l'écran,
   exportée en JPEG / WebP, ou repassée en 8 bits, un très léger grain invisible est ajouté pour que les dégradés ne
   montrent pas de marches (comme le « tramage » de Photoshop). Décochez-le pour un passage en 8 bits sans grain.
 - **Taille de la zone de travail…** (Ctrl+Alt+C) : agrandit la feuille **sans étirer l'image** (par exemple pour

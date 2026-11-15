@@ -6,6 +6,9 @@ Un coup de pinceau est d'abord dessiné dans un « trait » (masque gris de la t
 posé sur l'image
 d'origine du calque avec l'opacité choisie : repasser au même endroit pendant un même coup ne fonce pas la couleur
 (comme Photoshop). Seule la partie touchée est recalculée à chaque mouvement.
+
+Le coup se fait dans la profondeur du calque (8, 16 ou 32 bits, voir profondeur.py) : en 16 bits sans arrondi à
+256 nuances, en 32 bits en gardant les couleurs plus claires que le blanc (le tampon les recopie).
 """
 from __future__ import annotations
 
@@ -26,21 +29,33 @@ _LUM_BVR = np.array([0.114, 0.587, 0.299], np.float32)               # pixels Qt
 
 
 def _vue(img: QImage, zone: QRect) -> np.ndarray:
-    """Pixels (h, w, 4) float32 0..1 d'une zone d'une image ARGB32 prémultipliée (ordre B, V, R, A)."""
+    """Pixels (h, w, 4) float32 d'une zone d'une image prémultipliée (ordre B, V, R, A) : 0..1, au-delà de 1 en
+    32 bits. ARGB32 (8 bits), RGBA64 (16 bits) ou RGBA32FPx4 (32 bits)."""
+    from .profondeur import bits, tab32
     c = img.copy(zone)
+    if bits(c) > 8:
+        return np.ascontiguousarray(tab32(c, premul=True)[..., [2, 1, 0, 3]])
+    c = c.convertToFormat(QImage.Format_ARGB32_Premultiplied)
     h, w, ligne = c.height(), c.width(), c.bytesPerLine()
     brut = np.frombuffer(c.constBits(), np.uint8, count=h * ligne).reshape(h, ligne)
     return brut[:, : w * 4].reshape(h, w, 4).astype(np.float32) / 255
 
 
-def _qimage(a: np.ndarray) -> QImage:
+def _qimage(a: np.ndarray, b: int = 8) -> QImage:
+    """Pixels (h, w, 4) float32 B, V, R, A prémultipliés -> QImage de profondeur b (8, 16, 32)."""
+    if b > 8:
+        from .profondeur import en_bits, qimage32
+        t = a[..., [2, 1, 0, 3]].astype(np.float32)
+        t[..., 3] = np.clip(t[..., 3], 0, 1)
+        t[..., :3] = np.maximum(t[..., :3], 0) if b == 32 else np.clip(t[..., :3], 0, 1)
+        return en_bits(qimage32(t, premul=True), b)
     a = np.ascontiguousarray((np.clip(a, 0, 1) * 255 + 0.5).astype(np.uint8))
     h, w = a.shape[:2]
     return QImage(a.data, w, h, 4 * w, QImage.Format_ARGB32_Premultiplied).copy()
 
 
 class Trait:
-    """Un coup de pinceau ou de tampon sur l'image d'un calque (FORMAT_CALQUE)."""
+    """Un coup de pinceau ou de tampon sur l'image d'un calque (8, 16 ou 32 bits : le coup garde sa profondeur)."""
 
     def __init__(self, mode: str, base: QImage, taille: float, durete: float, opacite: float,
                  couleur: QColor | None = None, source: QImage | None = None, decalage: QPointF | None = None,
@@ -57,9 +72,9 @@ class Trait:
         self._tampon_doigt = None               # Doigt : couleur « emportée » par le doigt
         self._differer = False                  # tracer() : composer une seule fois, à la fin
         self.mode = mode
-        from .profondeur import en_8, est_16
-        if est_16(base):                        # calque 16 bits : le coup se fait en 8 bits (pont, profondeur.py)
-            base = en_8(base)
+        from .profondeur import bits, format_de
+        self._b = bits(base)                    # profondeur du calque : le coup se fait dans la même
+        base = base if base.format() == format_de(base) else base.convertToFormat(format_de(base))
         self.base = base                        # image du calque avant le coup (jamais modifiée)
         self.image = base.copy()                # résultat en cours
         self.taille = max(1.0, float(taille))
@@ -196,7 +211,7 @@ class Trait:
         elif self.mode == PEINTURE:
             res = couche * k + base * (1 - a[..., None] * k)
         else:                                                   # tampon : la source à travers la couche
-            src = QImage(zone.size(), QImage.Format_ARGB32_Premultiplied)
+            src = QImage(zone.size(), self.image.format())
             src.fill(Qt.transparent)
             pp = QPainter(src)
             pp.drawImage(QPointF(-zone.x(), -zone.y()) - self.decalage, self.source)
@@ -206,7 +221,7 @@ class Trait:
             res = s * m + base * (1 - m)
         p = QPainter(self.image)
         p.setCompositionMode(QPainter.CompositionMode_Source)
-        p.drawImage(zone.topLeft(), _qimage(res))
+        p.drawImage(zone.topLeft(), _qimage(res, self._b))
         p.end()
 
     # ------------------------------------------------------------------ Doigt
@@ -246,13 +261,19 @@ class Trait:
             self._tampon_doigt = self._tampon_doigt * force + nouveau * (1 - force)
             p = QPainter(self.image)
             p.setCompositionMode(QPainter.CompositionMode_Source)
-            p.drawImage(rect.topLeft(), _qimage(nouveau))
+            p.drawImage(rect.topLeft(), _qimage(nouveau, self._b))
             p.end()
             zone = zone.united(rect)
         return zone.intersected(self.image.rect())
 
     # ------------------------------------------------------------------ Densité, Éponge, Goutte d'eau, Netteté
     def _flou_zone(self, zone: QRect) -> np.ndarray:
+        if self._flou is None and self._b > 8:          # 16 / 32 bits : flou en flottant (prémultiplié)
+            from .filtres import flou_flottant
+            self._flou = flou_flottant(_vue(self.base, self.base.rect()), max(1.0, self.taille / 14)).astype(np.float32)
+        if self._flou is not None and self._flou.dtype == np.float32:
+            x, y, w, h = zone.x(), zone.y(), zone.width(), zone.height()
+            return self._flou[y:y + h, x:x + w]
         if self._flou is None:                          # une fois par coup : flou de tout le calque d'avant
             from PIL import Image, ImageFilter
             b = self.base
@@ -269,11 +290,12 @@ class Trait:
         a = base[..., 3:4]
         coul = np.where(a > 1e-4, base[..., :3] / np.maximum(a, 1e-4), 0)
         w = m[..., None]
+        hdr = self._b == 32                             # couleurs au-delà du blanc possibles
         if self.mode in (ECLAIRCIR, ASSOMBRIR):
-            l = coul @ _LUM_BVR
+            l = np.clip(coul @ _LUM_BVR, 0, 1)
             poids = {"ombres": (1 - l) ** 2, "moyens": 4 * l * (1 - l), "lumieres": l ** 2}[self.gamme][..., None]
             k = w * poids
-            coul = coul + (1 - coul) * k * 0.6 if self.mode == ECLAIRCIR else coul * (1 - k * 0.6)
+            coul = coul + np.maximum(1 - coul, 0) * k * 0.6 if self.mode == ECLAIRCIR else coul * (1 - k * 0.6)
         elif self.mode == EPONGE:
             y = (coul @ _LUM_BVR)[..., None]
             coul = y + (coul - y) * (1 + w * 0.9 if self.saturer else 1 - w * 0.9)
@@ -282,11 +304,14 @@ class Trait:
             if self.mode == GOUTTE:
                 return base + (flou - base) * w
             res = base + (base - flou) * w * 1.6               # Netteté : masque flou, sous le pinceau
-            res[..., :3] = np.minimum(np.clip(res[..., :3], 0, 1), base[..., 3:4])
+            if hdr:
+                res[..., :3] = np.maximum(res[..., :3], 0)
+            else:
+                res[..., :3] = np.minimum(np.clip(res[..., :3], 0, 1), base[..., 3:4])
             res[..., 3] = base[..., 3]
             return res
         out = base.copy()
-        out[..., :3] = np.clip(coul, 0, 1) * a
+        out[..., :3] = (np.maximum(coul, 0) if hdr else np.clip(coul, 0, 1)) * a
         return out
 
     # ------------------------------------------------------------------ rendu
@@ -299,10 +324,10 @@ class Trait:
             res = self._filtrer(_vue(self.base, zone), g * self.opacite, zone)
             p = QPainter(self.image)
             p.setCompositionMode(QPainter.CompositionMode_Source)
-            p.drawImage(zone.topLeft(), _qimage(res))
+            p.drawImage(zone.topLeft(), _qimage(res, self._b))
             p.end()
             return
-        pose = QImage(zone.size(), QImage.Format_ARGB32_Premultiplied)
+        pose = QImage(zone.size(), self.image.format())
         if self.mode == PEINTURE:
             pose.fill(self.couleur)
         else:
