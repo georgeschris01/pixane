@@ -15,25 +15,32 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 **AI retouching** (several proposals each time: you pick the best one, as in Photoshop; the result goes into the chosen layer, without spilling outside the selection, or into a new layer if you prefer; Undo puts everything back)
 - **Erase** an object: paint over it, the AI removes it and rebuilds the background
 - **Fill** an area: the AI invents what fits best in that spot (with or without a prompt)
-- **Expand the image** beyond its edges (outpaint): the AI extends the scenery, joined without a lighter part; it also redraws damaged edges (border line, frame, blurred edge, detected automatically)
+- **Expand the image** beyond its edges (outpaint): the AI extends the scenery, joined without a lighter part; it also redraws damaged edges (border line, frame, blurred edge, detected automatically); for a plain background, an “Extended background” proposal without AI
 - **Upscale**: increase the resolution (×1.5 to ×4), fast or sharper (details redrawn)
 - **Start from this one**: an option that is almost right? The AI makes variations of it (Close ↔ Free setting), instead of starting over
 - **Remove** (J): one brush stroke on a small defect (wire, spot, dust), it disappears on release
 - **Remove background** and **Select subject** in one click
 - **Reduce noise** (grain, JPEG artefacts) and **Sharpen** (slight blur)
 - **Restore an old photo** (scratches, stains, creases, grain), keeping its colours or **colourising** it
-- **Edit with an instruction**: select, write “replace the text "X" with "Y"”, “change the colour of…”: the AI does it in the style of the image (transparent background kept for a text or a logo); instructions in French with the optional **translator**, which runs on the PC
+- **Edit with an instruction**: select, write “replace the text "X" with "Y"”, “change the colour of…”: the AI does it in the style of the image (transparent background kept for a text or a logo); instructions in French with the optional **translator**, which runs on the PC (translation in under a second)
+- **Create an image from text** (Flux Schnell): new image or new layer, 5 formats
+- **Sky**: select, replace (6 skies, edge refined between branches); **Colourise**; **Change the light** (8 lights); chosen from example thumbnails
+- **Depth blur**: one click on what stays sharp, brushes to correct the AI
+- **Remove people** (the AI finds them, you tick the ones to erase), **Portrait retouch** (skin smoothed while keeping its grain, eyes, teeth)
+- Time of each calculation **measured on your PC** and shown
 
 **Selection**
 - Rectangle, lasso, selection brush and eraser; add / subtract with Shift / Alt
 - AI **object selection** and **quick selection** (SAM 3.1), **magic wand** adjusted by dragging, **text selection** (a frame around a title: only the letters, thin strokes included)
 - **Refine edge** for hair, fur and soft edges; expand, shrink, feather, invert
+- **Colour range**; **Pen** (paths with lines and curves, to a selection or a shape)
 
 **Layers, as in Photoshop**
 - Visibility, opacity, lock, order (buttons or **drag with the mouse**), merge, flatten
 - Several layers chosen at once (Ctrl+click, Shift+click); **align**, **distribute**, flip, group, from the **quick access bar**
 - Pixels that stick out of the sheet are kept (**Reveal all**)
-- **17 blend modes**, **layer masks**, **groups**, **adjustment layers** editable at any time
+- **17 blend modes**, **layer masks**, **clipping mask** (a photo inside the letters of a text), **groups**, **adjustment layers** and **fill layers** (colour, gradient, pattern) editable at any time
+- **Harmonize with the background**: a pasted object takes on the light of the photo
 - Non-destructive **layer styles**: drop shadow (including a realistic shadow), perspective ground shadow, inner shadow, glows, multiple outlines, bevel, colour, gradient (several colours) and pattern overlays; 14 ready-made styles, saved styles
 
 **Tools**
@@ -41,26 +48,31 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 - **Shaped brushes** as in Photoshop and Krita: 235 brushes and 87 patterns included, **17 ready-made styles** (pencil, charcoal, watercolour, oil, spray…), import of Photoshop (.abr), GIMP and Krita brushes; size up to 5000 px, rotation, full settings (spacing, angle, scattering, texture, dual brush…) and **tablet pressure**
 - **Multi-colour gradient** with a **Photoshop-like editor** (colour and opacity stops, ready-made and saved gradients), shown **live** while you drag; on a text, it goes on the letters (the text stays editable)
 - **Patterns**: paint bucket, Fill with a pattern, **pattern stamp**, Pattern overlay style (Photoshop .pat, GIMP, Krita patterns, images)
-- **Paint bucket**, **shapes** (rectangle, ellipse, line, arrow)
-- **Editable text**: font, size, colour, outline, shadow, background, rotation, curved text
+- **Paint bucket**, **editable shapes** (rectangle, ellipse, line, arrow, star, polygon)
+- **Editable brush layer**: colour, size, opacity, brush shape changed afterwards, all strokes are redrawn
+- **Retouching brushes**: Dodge / Burn, Sponge, Blur, Sharpen, Smudge, History brush
+- **Editable text, as in Photoshop**: font, size, colour, outline, shadow, background, rotation, kerning, case, superscript, ligatures, text in a frame (justified, hyphenation), vertical text, **warp** (arc, flag, wave…), **text on a path**, **per-letter style**, glyphs, text styles
+- **Spelling** (French, English) and **find / replace** in texts
 - **Find a similar font**: select the letters of a title, Pixane searches the installed fonts for the ones that look most like it (no Internet)
-- Rulers, guides, grid and snapping
+- Rulers, guides, grid and snapping; **Swatches** panel (Photoshop .aco, GIMP .gpl)
 
 **Adjustments and filters**
 - Image adjustments with an **Auto** button (brightness, contrast, saturation, hue, temperature, sharpness)
-- **Levels**, **Curves**, **Colour balance**, **Black & white** (with sepia toning), **Vibrance**
-- Filters: Gaussian blur, motion blur, noise reduction, sharpen, vignette
-- Image size, **canvas size**, rotate, flip, straighten; transform a layer (size, rotation), **lossless** when shrinking then enlarging again (like a smart object)
+- **Levels**, **Curves**, **Colour balance**, **Black & white** (with sepia toning), **Vibrance**, **Photo filter**, **Channel mixer**, **Gradient map**, **Replace colour**, Invert, Threshold, Posterize
+- Filters: Gaussian blur, motion blur, **radial blur**, **lens blur**, **surface blur**, noise reduction, sharpen, vignette, **Liquify**
+- Image size, **canvas size**, rotate, flip, straighten, **content-aware scale** (change the proportions without squashing the subject); transform a layer (size, rotation, **perspective**, **distort**, **warp**), **lossless** when shrinking then enlarging again (like a smart object); **perspective crop**
+- **Actions**: record a series of adjustments and filters, replay it in one click, also on a whole folder
 - **RGB colour** or **greyscale** mode
 
 **Files**
 - **New image** with 34 ready-made formats (CD and vinyl covers, Spotify, books, Amazon KDP, social media, A4, posters…), units (px, cm, mm, inches, points, picas), resolution, **bleed** and **safe area** for print
 - **Export for print in CMYK** (TIFF, PDF, JPEG; Windows profiles such as Coated FOGRA39) and **on-screen preview** of the printed colours
-- JPG, PNG, TIFF, WebP, BMP; **PSD** (Photoshop) with layers, groups, masks, modes and styles; `.pixane` (Pixane project, everything stays editable) and `.ora` (Krita, GIMP)
+- JPG, PNG, TIFF, WebP, BMP, **camera RAW** (Canon, Nikon, Sony, DNG, Fujifilm…); **PSD** (Photoshop) with layers, groups, masks, modes and styles; `.pixane` (Pixane project, everything stays editable) and `.ora` (Krita, GIMP)
 - **Several photos open** in tabs, each with its own Undo
 - **Autosave** and recovery after a crash
 - **Export for web** (JPEG, WebP, PNG; size, quality, file size shown, personal information removed)
-- **Batch processing** of a whole folder (resize, auto adjust, AI upscale, background, format)
+- **Batch processing** of a whole folder (resize, auto adjust, AI upscale, background, format, recorded action)
+- **Print** (Ctrl+P): paper, orientation, actual size or fill the page, preview
 - **New image from the clipboard**; **Export as** (a copy in another format, the open photo does not change)
 - Undo / Redo with a History panel (also with the mouse back / forward buttons); recent files
 
@@ -164,6 +176,10 @@ Layer names that already exist keep their original language.
 - **File > Open** (Ctrl+O): JPG, PNG, TIFF, WebP, BMP, and the **.pixane**, **.ora** and **.psd** (Photoshop)
   layered files.
   The photo is rotated according to the camera orientation.
+- Camera **RAW files** (Canon .CR2 / .CR3, Nikon .NEF, Sony .ARW, .DNG, Fujifilm .RAF, Olympus .ORF, Panasonic
+  .RW2, Pentax .PEF…): they open like a photo, developed with the camera's white balance (LibRaw library); then
+  retouch with the adjustments (Levels, Curves, Balance…). The RAW file is never replaced: **Save** suggests
+  another file (JPG, or .pixane if there are layers).
 - **Save** (Ctrl+S), **Save as** (Ctrl+Shift+S):
   - **.pixane** (Pixane project): Pixane's own format. Keeps **everything**: layers (names, order, visibility,
     opacity, lock), **editable texts** and **editable layer styles**. Suggested automatically when the image has several layers or a text.
@@ -218,8 +234,17 @@ Layer names that already exist keep their original language.
     WebP, PNG) and quality, **Add to name** (e.g. `_web`).
   - A bar shows progress; **Stop** finishes the current photo then stops. A photo that causes a problem is listed
     at the end; the others are done.
+  - **Action**: an action recorded in the **Actions** panel (see chapter 9) is played on each photo.
+  - RAW files in the folder are processed too.
   - Safety: if the results would go into the same folder under the same name, Pixane refuses (the originals
     would be replaced).
+- **File > Print…** (Ctrl+P): the visible image (all layers), with a **page preview**.
+  - **Printer**, **Paper** (A4, A5, A3, Letter, 10 × 15, 13 × 18, 20 × 30 cm), **Orientation** (automatic: like
+    the image), **Margins**, **Copies**.
+  - **Size**: *Fill the page* (within the margins), *Actual size* (from the image resolution) or *Chosen width* in
+    cm.
+  - Pixane shows the size on the sheet and the dots per inch; under 150 it warns that the print may be blurry
+    (AI > Upscale can help).
 - **File > New image…** (Ctrl+N): an empty image, as in Photoshop. A **preview** shows the shape of the sheet,
   its background and the guides (bleed, safe area).
   - **Ready-made formats** (on the left): **album covers** (CD, 12-inch and 7-inch vinyl, 3000 × 3000 px for
@@ -370,6 +395,13 @@ One click on a colour selects the area of similar colour. No AI, instant.
 - **Fill holes**: adds what is completely surrounded (birds in a sky, reflections on an object…).
 - **Visible image** or **Chosen layer**: what the colours are compared on.
 - Shift adds, Alt removes, like the rectangle.
+
+### Colour range (Select menu)
+Selects **all the pixels of a colour**, across the whole image (the magic wand only takes neighbours).
+- **Click** the colour you want in the preview; **Shift+click**: add a colour; **Alt+click**: remove one.
+- **Tolerance**: how far similar colours are taken (soft edges). A darker red (in the shade) counts as red.
+- The preview shows the **selection** (white = selected) or the **image**; the selection is also shown on the photo.
+- *Invert*: everything but these colours. **Selection**: new, add to the selection or subtract from it.
 
 ### Refine edge (Ctrl+Alt+R, Select menu)
 For a rough selection around **hair, fur, foliage or soft edges** (for example after *Select subject* or a quick
@@ -525,11 +557,12 @@ model, to be added in Install the AI engine).
   greyed out afterwards. **Translator folder… Change…**: you choose where to store it (by default,
   `%LOCALAPPDATA%\Pixane\traducteur`). Not inside the folder where
   Pixane is installed (D:\Programmes\Pixane…): it is replaced at each update, Pixane refuses it.
+- The translator starts in the background as soon as the window opens (about ten seconds, while you write), then stays ready until Pixane is closed: each translation is then almost instant.
 - The AI works on a piece around the selection (more detail than with the whole image); the result is only kept
   inside the selection and where it really changes: the rest keeps its original pixels.
 - **Layer with transparency** (text, logo without background): the AI sees this layer alone, and the result keeps
   a transparent background. Otherwise it sees the visible image and the result is opaque.
-- Proposals: 1 to 4, about 2 to 3 minutes each. Elaborate handwriting is well imitated but slightly less fine
+- Proposals: 1 to 4, about 2 to 3 minutes each on an RTX 3060 Ti (the window shows the time measured on your PC). Elaborate handwriting is well imitated but slightly less fine
   than the original; accents and long texts are sometimes misspelled: ask for more proposals.
 
 ### Expand image (Shift+A)
@@ -565,8 +598,14 @@ Two frames appear on the photo:
 - The join between the photo and the addition is made by Pixane: the original photo is kept **pixel for pixel**,
   with a gradual blend and colour matching, so that no line is visible. In **plain backgrounds** (sky, wall, dark
   background), the addition is brought back to the photo's level right up to the edge: no lighter part and no bands
-  ("ghosting"). This join is redone after *Full resolution*.
+  ("ghosting"), and the faint **swirls** the AI sometimes leaves in these backgrounds are smoothed out (fine grain
+  and what is really drawn, such as a star, are kept). This join is redone after *Full resolution*.
 - 3 options, about 1 minute each.
+- **Extended background**: when the edges to expand are **plain** (cover background, smooth sky, gradient), one more
+  option, made **without AI**, is added to the others: Pixane itself continues the photo's background, row by row,
+  with the same grain. No visible join or swirl, and it is instant. It does not appear if an object touches the
+  edge (it would be stretched). *Start from this one* and *Full resolution* do not apply to it (it is already at
+  full size).
 - **Full resolution** (box in the bar, ticked by default): the AI invents the addition on an image reduced to about
   1 million pixels, then the addition is enlarged to the size of the photo; on a large photo it would therefore be
   blurrier than the rest. With the box ticked, once the option is chosen, the addition is **redrawn at the real
@@ -630,6 +669,36 @@ adds it). A few seconds.
 - **Select subject** (Ctrl+Alt+S, Select menu): selects the subject without erasing anything, for example to
   adjust it (Ctrl+U), or *Invert* (Ctrl+Shift+I) to work on the background.
 
+### Create an image from text (AI menu)
+Describe the image (subject, colours, light, style): **Flux Schnell** creates it, about **30 seconds** per
+proposal. Example prompts in the list (abstract background, landscape, texture, illustration, portrait); as with
+*Edit with an instruction*, a prompt in another language can be translated into English on your PC.
+- **Result**: *New image* (square for an album cover or social media, 4:3, 3:4, 16:9, 9:16) or *New layer in the
+  open image*, at its size (for example a background behind a cut-out).
+- Also works **with no image open**: a new image is created.
+- In the result window, **Start from this one** gives variants of the chosen proposal.
+- The AI is bad at writing text: add text afterwards with the Text tool.
+- Flux Schnell model (Apache-2.0), installed with the AI engine (*Flux Schnell* box).
+
+### Remove people (AI menu)
+The AI (**SAM 3.1**) finds **each person** in the photo. A window shows them: **ticked** people (in red) will be
+erased; **click a person** in the image (or their box) to tick or untick them. At first everyone is ticked except
+the **main subject** (the person clearly larger than the others).
+- **Erase the ticked people**: they are selected (with a small margin for shadows and hair), then **Erase**
+  rebuilds the background behind them (the usual result window).
+- **Only select**: to complete the selection, for example a person the AI missed (**Object selection** tool,
+  Shift + click), before running **AI > Erase**.
+
+### Portrait retouch (AI menu)
+The AI (**SAM 3.1**) finds the face, neck, eyes, eyebrows, lips and teeth (a few seconds), then an adjustment
+window opens, with a **live preview** on the photo:
+- **Smooth skin**: softens spots, redness and fine lines; outlines (nose, eyes), eyelashes and strands of hair stay
+  sharp.
+- **Keep skin texture**: puts the fine grain back, to avoid a "plastic" look.
+- **Brighten eyes**: more sparkle and sharpness in the eyes.
+- **Whiten teeth**: less yellow, a little brighter.
+Applies to the chosen layer (inside the selection if there is one); every face found is retouched.
+
 ### Reduce noise, Sharpen, Restore an old photo (AI menu)
 These three actions work on the visible image; if there is a **selection**, only its inside changes. Like the other
 AI actions, the result goes into the chosen layer (Ctrl+Z undoes it).
@@ -649,6 +718,32 @@ AI actions, the result goes into the chosen layer (Ctrl+Z undoes it).
   small details (facial features, letters): compare carefully with the original (layer eye). **Flux Kontext dev**
   model (11.9 GB, FLUX.1 [dev] licence, **non-commercial** use), optional: *Flux Kontext* box in **AI > Install the
   AI engine…**.
+
+### Sky, colours, lighting, depth (AI)
+- **Select > Select the sky (AI)**: the AI (SAM 3.1) finds the sky and selects it, with a slightly widened and
+  softened edge so the horizon line blends. Pixane then refines the edge from the colours: the sky seen between the
+  branches of a bare tree is selected too (and, with *Replace the sky*, the branches keep their colour). Then every tool works on that selection (adjustments, Fill…). A few
+  seconds.
+- **AI > Replace the sky…**: choose the new sky on **example thumbnails** (blue sky with a few clouds, big clouds, sunset, stormy sky, starry
+  night, dawn). Pixane selects the sky (clouds included), Flux Kontext redraws the photo with that sky, and **only the
+  sky** is kept: the rest keeps its original pixels. Two proposals, about 2 minutes each. At the edge of a roof or a
+  tree, the AI may leave a small shifted remnant: choose the best proposal, or retouch it (stamp, Erase). The sky
+  stays selected: to match it, a colour adjustment on the rest of the photo (Select > Invert) often helps.
+- **AI > Colorize**: adds natural colours to a black & white photo (without restoring it); with a selection, only
+  inside it. Flux Kontext, two proposals, about 2 minutes each.
+- **AI > Change the lighting…**: golden late-day light, soft studio light, strong light from the left or the right,
+  backlight, night lit by street lamps, coloured neon lights, overcast; an example thumbnail for each (double-click:
+  choose and start). With a selection, only inside it. Flux Kontext redraws the photo with that
+  lighting, keeping the people and objects. Compare carefully: the AI may change small details.
+- **Filters > Depth blur (AI)…**: like a camera's background blur. The AI computes the distance of each point (a few
+  seconds); a window shows that map (light = near, dark = far): **click what must stay sharp** (at first: the
+  nearest thing). **Blur** sets the strength, **Sharp zone** the depth kept sharp around the point. **Keep the
+  whole subject sharp** (ticked at first): subject detection fixes what the map wrongly puts far away, for example a
+  grey jacket in front of a grey wall. **Do not blur what is nearer than the sharp point**: only useful when you
+  click something far away (otherwise nothing is in front, the box changes nothing). **If the AI gets it wrong**: choose *Brush: keep sharp* or *Brush: make blurred* and paint on the map
+  (green = sharp, red = blurred; *Brush size*; *Clear the brush strokes*). Live preview on the photo; applies to the chosen layer (inside the
+  selection if there is one). **Depth Anything 3 Small** model (137 MB, Apache-2.0), optional: *Depth blur* box when
+  installing Pixane, or in **AI > Install the AI engine…**.
 
 ---
 
@@ -757,6 +852,26 @@ Image adjustments) to **everything below it**, without touching the pixels: you 
 - Inside a group, it only adjusts the group's layers below it.
 - Kept as is in .pixane; in .ora and .psd it becomes an image layer (the result).
 
+### Fill layers
+**Layer > New fill layer** (or the Layers panel's **Adjustment** button, at the top of the list): a layer that
+covers the whole sheet with a **solid colour**, a **gradient** or a **pattern**, and stays **editable**
+(double-click it).
+- **Gradient**: linear, radial, angle, reflected or diamond style; **Angle**, **Scale**, **Invert**. At first: from
+  the paint colour to white.
+- **Pattern**: a pattern from the library, at the scale you want.
+- If there is a selection, it becomes the layer's **mask** (the fill only shows there).
+- It is redrawn when the sheet changes size (image size, canvas size, crop…); kept in .pixane; in .ora and .psd it
+  becomes an image layer. *Convert to image* (right-click) freezes it.
+
+### Harmonize a composite (Layer > Harmonize with the background…)
+An object pasted from another photo often clashes: colder light, weaker blacks… Choose its layer (the cut-out
+object, with transparency around it, above the photo): it takes on the light of the photo around it.
+- **Light (blacks and whites)**: the same blacks and whites as the surrounding photo.
+- **Light colour**: the same light tint (measured on the bright parts: a red shirt placed on grass does not turn
+  green).
+- **Soften the edge**: a softer edge, towards the inside of the object.
+Live preview, one step in Undo.
+
 ### Layer style: shadows, outline, glow, bevel… (Ctrl+Alt+F)
 **Effects added to the layer**, always editable: the layer's pixels are not touched. To open it: **double-click** a
 layer (anywhere but on its name), the **fx** button in the panel, or **Layer > Layer style…**. The photo shows the
@@ -826,11 +941,23 @@ All layer actions can be undone with Ctrl+Z (changing the selected layer does no
 | **Size** | Letter height, in pixels of the photo |
 | **Colour** (swatch) | Letter colour, with transparency (alpha channel) |
 | **B / I / U / S** | Bold, italic, underline, strikethrough |
-| **Alignment** | Left, centred, right (for several lines) |
+| **Alignment** | Left, centred, right (for several lines), **justified** (text in a box: lines stretched to both edges) |
 | **Letters** | Space added between letters, as a % of the size (negative = tighter letters) |
 | **Lines** | Space between lines, × the letter size |
 | **Rotation** | Angle in degrees |
 | **Curve** | Text on an arc: positive = arch, negative = dip, 360° = full circle |
+| **Width / Height** | Stretch or squash the letters (100% = normal) |
+| **Case** | As typed, ALL CAPS, all lowercase, Small caps, First Letter Capitalized (the typed text does not change: you can go back) |
+| **Position** | Normal, **superscript** (m², 1st) or **subscript** (H₂O): smaller letters, raised or lowered |
+| **Baseline** | Raise (positive) or lower (negative) letters, in % of the size |
+| **Kerning** | *From the font*: spacing corrected between some pairs (AV, To…); *None*: raw spacing |
+| **Here** | Manual kerning between the two letters around the cursor, in thousandths of the size (also **Alt+arrows** in the box, **Ctrl+Alt+arrows**: 5 times more) |
+| **Ligatures, Fractions, Oldstyle figures** | Font options (OpenType): joined fi/fl, 1/2 → ½, figures of varying heights. No effect if the font lacks them |
+| **Smooth edges** | Unchecked: sharp, pixel-by-pixel edges (for pixel art or small text) |
+| **Vertical text** | Letters one below the other; each line becomes a column (right to left) |
+| **Text in a box** | Lines wrap by themselves at the **box width**; **box height**: what overflows is hidden (0 = auto: fit the text) |
+| **Indent / Between paragraphs** | Indent of the first line of each paragraph; space added between paragraphs (% of the size) |
+| **Warp** | Like Photoshop's "Warp Text": Arc, Arc Lower / Upper, Arch, Bulge, Flag, Wave, Fish, Rise, Fisheye, Inflate, Squeeze, Twist. **Bend**: -100 to 100%; **Horiz. / Vert. distortion**: perspective effect |
 | **Outline** | Line around the letters: colour and thickness |
 | **Drop shadow** | Colour, distance, direction (0° = to the right, 90° = down) and blur |
 | **Background** | Coloured rectangle behind the text: colour, margin and corner rounding |
@@ -838,6 +965,47 @@ All layer actions can be undone with Ctrl+Z (changing the selected layer does no
 Effect sizes (thickness, distance, blur, margin, rounding) are a **% of the letter size**:
 they stay in proportion when you change the text size.
 **Transparency** of the whole text: **Opacity** slider in the Layers panel.
+
+### Change only some letters
+**Select letters in the panel's text box** (with the mouse or Shift+arrows): font, size, colour, bold, italic,
+underline, strikethrough, letters, width, height, case, position and baseline change **only for them** (a line under
+the box reminds you). Example: one word in red, a "2" as subscript.
+Without a selection, a setting changes **the whole text**, letters with their own style included. Letters typed
+afterwards take the style of the one before them.
+
+### Text on a path, glyphs, styles
+- **Text on a path**: **Draw a path** button (Layout part), then drag on the photo: the text follows the line you
+  draw (it is smoothed). **Start**: where the text begins along the path; **Remove**: the text becomes straight
+  again. The path follows the text when you move or rotate it; it is shown dotted.
+- **Glyphs** (**Ω** button next to the size): all the characters of the font (symbols, arrows, accented letters, ½,
+  ©, emojis…). One click inserts the character at the cursor; the recently used ones stay at the top. Search by
+  name (*arrow*, *heart*, *euro*) or by code (*U+2192*).
+- **Text styles** (bottom of the panel): **Copy** remembers the font, colour, effects and settings of the text;
+  **Paste** gives them to another text (its text and position do not change). **+** saves the style under a name;
+  it stays in the list for next time (choosing one applies it); **−** deletes one.
+
+### Spelling, hyphenation, find and replace
+- **Spelling**: in the Text panel's box, misspelled words are **underlined in red**. **Right-click** on an
+  underlined word: the suggestions (missing accents, swapped, extra or missing letters, words stuck together),
+  *Ignore* (until Pixane is closed) or *Add to the dictionary* (kept for good).
+- **Language** (Paragraph part): the language of the text, for spelling and hyphenation; *Pixane's language* by
+  default. French and English.
+- **Hyphenation** (text in a box): long words are split at line ends, with a hyphen, following the language's
+  rules. When justified, a line with a single word stays on the left (its letters are not spread).
+- **Option** (box in the installer, with the choice of languages, or **View > Spelling and hyphenation**): unticked,
+  nothing is underlined or split. **View > Spelling languages…**: tick or untick a language; a language that is not
+  installed is downloaded after you agree (LibreOffice dictionary: French 1.4 MB, English 0.6 MB), into
+  %LOCALAPPDATA%\Pixane\dictionnaires.
+- **Find and replace** (**Ctrl+H**, Edit menu): in all the texts of the image. *Next* chooses the text and selects
+  the word in the panel; *Replace*, *Replace all* (a single Undo step); *Match case*, *Whole word*. Letters with
+  their own style keep it. Locked texts are not changed.
+
+### A photo inside the letters (clipping mask)
+As in Photoshop: put the photo (or a texture, a gradient…) **on a layer just above the text**, then **Ctrl+Alt+G**
+(Layer menu > *Clipping mask*, or right-click on the layer). The photo is now only visible **inside the letters**;
+the text stays editable (text, font, size…) and the photo can be moved. In the Layers panel, the clipped layer is
+indented with an arrow ↳. Ctrl+Alt+G again: removed. Works with any layer (not only a text). Kept in .pixane and
+.psd; in .ora it is merged into the pixels.
 
 ### Good to know
 - Every change can be undone with Ctrl+Z; typing several letters is undone in one go.
@@ -873,7 +1041,28 @@ touching the photo).
 - **Colour**: swatch in the top bar. **Alt+click** on the photo picks the colour at that spot (eyedropper).
 - **Size** (or `[` and `]`), **Opacity** (100% fully covers, less lets what is below show through) and **Hardness**
   (100% sharp edge, 0% very soft edge).
+- **Swatches**: the **SWATCHES** panel (tab next to History) keeps your colours: **one click** on a colour makes it
+  the paint colour. **+** adds the paint colour, **−** removes the chosen one, right-click: *Rename*, *Remove*;
+  **…**: **Import** Photoshop (.aco) or GIMP (.gpl) swatches, **Export** as .aco, **Restore the starting colours**.
+  The swatches also appear under "Custom colors" in the colour windows.
 - Going over the same spot during one stroke does not darken the colour; a new stroke does.
+
+#### Editable brush layer
+**Editable layer** box in the top bar (unchecked at first). When checked, the first brush stroke creates a **brush
+layer** above the chosen layer (the photo is not touched), and the following strokes go into it too. This layer
+keeps the **path** of each stroke, not just its pixels:
+- **even later**, select it in the Layers panel with the colour brush: the top bar shows its settings; changing the
+  **colour**, **size**, **opacity**, **hardness**, **rotation** (↻) or **brush shape** (and its Settings…)
+  **redraws all its strokes**. Each change can be undone with Ctrl+Z;
+- **moving** it, transforming it (Ctrl+T, without a selection), rotating or flipping the image, changing its size,
+  cropping, Expand, Upscale: it **stays editable** (the strokes are redrawn sharp);
+- a brush layer has **one setting for all its strokes**: for another colour kept separate, choose another layer (or
+  the photo) before painting, and a new brush layer will be created;
+- the **eraser**, a filter, the AI, the paint bucket… turn it into an ordinary image layer (a message says so; Ctrl+Z
+  to go back). Right-click on the layer > **Convert to image** does it too;
+- it is kept in **.pixane** files; in a PSD, PNG, JPG… it is saved as an image. In the Layers panel, it is marked
+  "editable brush".
+Box unchecked: you paint directly on the chosen layer, as before.
 
 ### Shaped brushes: the library (like Photoshop, Krita)
 The colour brush (and masks), the **layer eraser** and the **selection brush** can take a **shape**: chalk, pencil,
@@ -1003,10 +1192,60 @@ area: it fills until the colour changes.
 - If there is a **selection**, it stays inside it. It paints on the selected layer (tip: an empty layer above makes
   it easy to go back).
 
+### Retouch brushes: Dodge, Burn, Sponge, Blur, Sharpen, Smudge, History
+Two families in the toolbar (right-click or press and hold to choose), like Photoshop. They change the pixels of
+the **chosen layer**, under the brush; **Strength** (top bar) says how much, size and hardness are set as for the
+brush. Going over the same place during one stroke does not strengthen the effect; a new stroke does. Each stroke is
+one Undo step.
+
+| Tool | What it does |
+|---|---|
+| **Dodge** | Lightens. **Tones**: *Shadows*, *Midtones* or *Highlights* (only those tones move: lighten the shadows of a face without burning the forehead) |
+| **Burn** | Darkens, with the same choice of tones (darken a sky, an edge) |
+| **Sponge** | **Desaturate**: dulls the colours (down to grey); **Saturate**: boosts them |
+| **Blur** | Blurs (a background, skin texture, a flaw). On a **mask**, softens its edge |
+| **Sharpen** | Makes details sharper (eyes, letters); at low strength, or grain appears |
+| **Smudge** | Spreads the colour along the stroke, like wet paint; the strength says how far it spreads |
+| **History brush** | Paints back the **snapshot**: at first, the photo as it was opened. To undo an effect in some places only. **Take a snapshot** (top bar) keeps the current state. It is under the Clone stamp, and also at the bottom of the **History** panel (*History brush* button) |
+
+### Liquify (Filters > Liquify…, Ctrl+Shift+X)
+To shape the image with a brush, like Photoshop's Liquify: slim a silhouette, stretch a letter, bloat a detail. A
+window opens with the chosen layer; you paint on it with one of the tools:
+
+| Tool | What it does |
+|---|---|
+| **Push** | The image follows the stroke (move an outline, stretch) |
+| **Bloat** | Enlarges what is under the brush; keep the button pressed or go over again to strengthen |
+| **Pucker** | Shrinks what is under the brush |
+| **Twirl** | Turns what is under the brush |
+| **Reconstruct** | Gradually goes back to the original image where you paint |
+
+**Size** (in photo pixels) and **Pressure** are set on the left. **Undo the last stroke** and **Reconstruct all** let
+you go back before applying. The preview is reduced to stay fast, but the result is computed at full resolution at the
+end, without blur. With a selection, only the selected area changes. The whole Liquify is one Undo step.
+
 ### Shapes (U)
-Drag to draw a **rectangle**, **rounded rectangle**, **ellipse**, **line** or **arrow** (**Shift**: square, circle,
-straight line). Each shape goes on a **new layer**, in the brush colour. **Filled** (box) or outline only; the
-**size** sets the stroke thickness.
+Drag to draw a **rectangle**, **rounded rectangle**, **ellipse**, **star**, **polygon**, **line** or **arrow**
+(**Shift**: square, circle, straight line). **Sides**: number of points of the star or sides of the polygon. Top bar:
+**Fill** and **Outline** (boxes, each with its colour: click the colour to change it) and the outline **thickness**.
+
+Each shape goes on a **shape layer** ("editable shape" in Layers), as in Photoshop: choose that layer with the Shapes
+tool or the Pen, and the top bar shows its settings; changing them redraws the shape (one Undo step). Moved, resized,
+rotated (Ctrl+T), or the image enlarged: the shape is redrawn sharp and stays editable; it is kept in the .pixane
+file. The eraser, a filter or the AI turn it into an ordinary image (a message says so; Ctrl+Z to go back); Layer >
+right-click > **Convert to image** too.
+
+### Pen (A)
+To draw free shapes, with straight lines and curves, point by point (like Photoshop's Pen):
+- **click**: a corner point; **click and drag**: a curve point (you pull its handles); **Shift**: at 45°;
+- **click the first point**: the path closes; **Enter** or **double-click**: it stays open (a stroke);
+- **Backspace** removes the last point, **Esc** drops the path.
+
+**Mode** (top bar): **Shape** (the path becomes a shape layer, with the fill and stroke of the bar) or **Selection**
+(the closed path becomes the selection; Shift when finishing: added, Alt: removed).
+
+With a shape layer chosen, the Pen shows its points: drag a **point** to move it, or a **handle** to change the curve
+(the other handle follows; **Alt**: the handle moves alone and makes a corner).
 
 A **text** retouched with the brush or the stamp becomes an image (a message reminds you; Ctrl+Z to go back).
 Groups and adjustment layers have no pixels: a message asks you to choose an image layer or a mask.
@@ -1036,7 +1275,7 @@ Groups and adjustment layers have no pixels: a message asks you to choose an ima
   still be adjusted afterwards.
 - A **locked** layer is protected; an adjusted **text** becomes an image.
 
-### Levels, Curves, Colour balance, Black & white, Vibrance (Image > Adjustments menu)
+### Levels, Curves, Colour balance, Black & white, Vibrance… (Image > Adjustments menu)
 As in Photoshop, with live preview and histogram. They change the pixels of the **selected layer** (inside the
 selection if there is one). To be able to come back to them later, use an **adjustment layer** instead (chapter 6).
 
@@ -1047,12 +1286,35 @@ selection if there is one). To be able to come back to them later, use an **adju
 | **Colour balance** | Ctrl+B | Pushes **Shadows**, **Midtones** or **Highlights** towards Cyan–Red, Magenta–Green, Yellow–Blue; *Preserve luminosity* |
 | **Black & white** | Ctrl+Alt+Shift+B | Converts to black & white choosing the lightness of each colour (reds, yellows, greens, cyans, blues, magentas); **Tint**: colours the greys (sepia…) |
 | **Vibrance** | — | Mostly boosts dull colours, sparing those already vivid (skin); **Saturation**: all colours equally |
+| **Replace colour** | — | Click the colour to change in the preview (Shift+click: add one, Alt+click: remove one), set the **Tolerance**, then the **Hue**, **Saturation** and **Lightness**: only those pixels change, folds and shadows kept (a red jumper turns blue) |
+| **Photo filter** | — | Like a colour filter in front of the lens: warming, cooling, sepia… or a custom colour; **Density**; *Preserve luminosity* |
+| **Channel mixer** | — | Each output channel (red, green, blue) is made of a share of red, green, blue and a constant; **Monochrome**: custom black & white |
+| **Gradient map** | — | Dark tones take the colour on the left of a gradient, light tones the one on the right ("duotone", poster effects); *Invert* |
+| **Invert** | Ctrl+I | Inverts the colours |
+| **Threshold** | — | Black or white depending on lightness (stamp, stencil effect) |
+| **Posterize** | — | Keeps few shades per colour: flat areas like a poster |
+
+All of them also exist as an **adjustment layer** (Layer > New adjustment layer), editable at any time.
 
 ### Filters (Filters menu)
-**Gaussian blur**, **Motion blur** (angle, distance), **Noise reduction** (strength, keep details, colour noise),
+**Gaussian blur**, **Motion blur** (angle, distance), **Radial blur** (*Rotation*: pixels spin around the centre;
+*Zoom*: they streak towards the centre; amount, centre in %), **Lens blur** (like a real lens: each point becomes a
+small disc; very bright points become **round highlights**: set their strength and threshold), **Surface blur**
+(smooths skin or a sky while keeping edges sharp; *Threshold*: from which colour difference an edge is kept),
+**Noise reduction** (strength, keep details, colour noise),
 **Sharpen** (amount, radius, threshold: Photoshop's unsharp mask), **Vignette** (darken or lighten the edges:
 strength, centre size, softness, round). Same behaviour as adjustments: live preview, selected layer, inside the
 selection if there is one, one step in Undo. They also work on a mask.
+
+### Actions (ACTIONS panel)
+As in Photoshop: **record** a series of operations, then **replay** it in one click on other photos.
+- **● Record**: give a name, then do your work: **adjustments** (Image > Adjustments), **filters**, **image size**
+  (kept as a percentage when the proportions do not change: it works on photos of any size), **rotations** and
+  **flips** are added to the action. **■ Stop** ends it.
+- **▶ Play** (or double-click): the action replays on the open photo, with no window, with the same settings;
+  **a single step** in Undo.
+- **…**: *Rename*, *Delete the action or step*, *Export* / *Import* actions (.json, to keep or share them).
+- **File > Batch processing**: choose an action to play it on **a whole folder**.
 
 ---
 
@@ -1074,6 +1336,13 @@ selection if there is one, one step in Undo. They also work on a mask.
 - **Image size…** (Ctrl+Alt+I): in pixels or %, proportions kept (tick box), quick buttons (for example 1920 px
   for screen and Internet). No AI: to enlarge with more detail, prefer Upscale. **Preview**: the centre of the
   image at 100%, before (left) and after (right), to judge sharpness.
+- **Content-aware scale…**: change the **proportions** (a square to 16:9, a landscape to 4:5…) **without squashing
+  the subject**: mostly the areas without detail (sky, wall, plain background) are stretched or compressed.
+  - **Width**, **Height**, or a quick **format** (1:1, 4:3, 3:2, 16:9, 3:4, 4:5, 9:16: the longest side is kept).
+  - **Protect the selection**: first select the subject (Select > Select subject): it is not distorted at all.
+  - **Content protection**: 0% = ordinary stretch, 100% = only areas without detail change.
+  - **Preview** of the result. All layers follow, masks and selection too; texts, shapes and brush strokes become
+    images (Ctrl+Z to undo).
 - **Rotate** 90° right, left or 180°, **Flip** horizontally or vertically: the whole image, all layers, lossless.
   Flipped texts become images; rotated ones stay editable.
 - **Rotate by an angle…**: the whole image rotates by the typed angle, **to the degree** (or tenth of a degree),
@@ -1081,6 +1350,11 @@ selection if there is one, one step in Undo. They also work on a mask.
 - **Straighten…**: rotate by a small angle (-45° to +45°) with a grid to align the horizon or a wall.
   *Crop to remove the empty corners* (ticked by default); unticked, the image grows and the corners are
   transparent.
+- **Perspective crop**: for a **facade, a painting, a document, a screen photographed at an angle**. Drag the
+  **4 corners** onto the edges of the object (a perspective grid helps follow its lines; inside: move everything),
+  then **Enter**, double-click or **Crop**: the object becomes a **straight rectangle** filling the image (width and
+  height of its longest edges). Texts become images. Esc: cancel; Ctrl+Z while adjusting puts the previous corner
+  back.
 - **Edit > Transform layer** (Ctrl+T): a frame surrounds the **chosen layer**. To enlarge, shrink or rotate **a
   single element** of the layer, **select it first** (rectangle, lasso, magic wand…): the frame surrounds only that
   element, the rest of the layer does not move, and its original place becomes transparent.
@@ -1089,6 +1363,16 @@ selection if there is one, one step in Undo. They also work on a mask.
   - the top bar shows **Width**, **Height** (in %) and **Angle** (in degrees) in boxes where you can **type the
     exact value** (arrows: 1°; Shift+arrows: 10°); **Enter**, double-click or **Apply** to keep, **Esc** or
     **Cancel** to go back. Changing tool also applies.
+  - **Mode** (top bar, or **Edit > Transform**):
+    - **Free**: as above. **Ctrl+corner**: that corner moves on its own (switches to *Distort*).
+    - **Perspective**: a dragged corner moves the neighbouring corner **as a mirror** (dragged down, the edge
+      shrinks; dragged sideways, it widens): like a facade seen at an angle.
+    - **Distort**: each corner moves on its own, to **put an image on a screen, a box, a wall, a 3D sleeve**; an
+      edge middle moves that whole edge.
+    - **Warp**: a **grid of 16 points** (circles for handles, squares at the corners): drag them to bend, inflate,
+      fold the image (flag, mug, waving page). A corner takes its two handles along.
+    - In these three modes, **inside** = move, **outside** = rotate the whole shape; Ctrl+Z undoes the last move.
+      The Width / Height / Angle boxes are greyed out.
   A transformed text becomes an image (to keep a text editable, use the Text tool).
 
 Everything can be undone with Ctrl+Z.
@@ -1113,12 +1397,16 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+X, Ctrl+C, Ctrl+V, Del | Cut, Copy, Paste (new layer), Delete selection |
 | Ctrl+U | Image adjustments |
 | Ctrl+L, Ctrl+M, Ctrl+B, Ctrl+Alt+Shift+B | Levels, Curves, Colour balance, Black & white |
+| Ctrl+I | Invert |
 | Ctrl+G, Ctrl+Shift+G | Group, Ungroup |
+| Ctrl+Alt+G | Clipping mask (the layer only shows inside the one below) |
+| Ctrl+H | Find and replace in texts |
 | Ctrl+\ | Paint the layer's mask / pixels |
 | Ctrl+Alt+R | Refine edge |
 | Ctrl+R, Ctrl+', Ctrl+;, Ctrl+Shift+; | Rulers, Grid, Guides, Snap |
 | Ctrl+W, Ctrl+Tab, Ctrl+Shift+Tab | Close photo, Next photo, Previous photo |
 | Ctrl+Alt+Shift+S, Ctrl+Alt+Shift+W | Export for web, Export as |
+| Ctrl+P | Print |
 | Arrows (Shift: x10) | Move the selection (selection tools) |
 | Ctrl+N, Ctrl+Alt+V | New image, New image from clipboard |
 | Ctrl+Alt+I, Ctrl+Alt+C | Image size, Canvas size |

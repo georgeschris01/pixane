@@ -15,25 +15,32 @@
 **Retouche par IA** (plusieurs propositions à chaque fois : vous choisissez la meilleure, comme dans Photoshop ; le résultat va dans le calque choisi, sans déborder de la sélection, ou dans un nouveau calque si vous préférez ; Annuler remet tout comme avant)
 - **Effacer** un objet : on peint dessus, l'IA le fait disparaître et reconstruit le fond
 - **Remplir** une zone : l'IA invente ce qui va le mieux à cet endroit (avec ou sans texte)
-- **Agrandir l'image** au-delà de ses bords (outpaint) : l'IA prolonge le décor, raccordé sans partie plus claire ; elle refait aussi les bords abîmés (liseré, cadre, bord flou, détectés d'office)
+- **Agrandir l'image** au-delà de ses bords (outpaint) : l'IA prolonge le décor, raccordé sans partie plus claire ; elle refait aussi les bords abîmés (liseré, cadre, bord flou, détectés d'office) ; pour un fond uni, une proposition « Fond prolongé » sans IA
 - **Upscale** : augmenter la définition (×1,5 à ×4), en version rapide ou plus nette (détails redessinés)
 - **Partir de celle-ci** : une proposition presque bonne ? L'IA en fait des variantes (réglage Proche ↔ Libre), au lieu de tout recommencer
 - **Supprimer** (J) : un coup de pinceau sur un petit défaut (fil, tache, poussière), il disparaît au lâcher
 - **Supprimer l'arrière-plan** et **Sélectionner le sujet** en un clic
 - **Réduire le bruit** (grain, défauts JPEG) et **Netteté** (flou léger)
 - **Restaurer une vieille photo** (rayures, taches, plis, grain), en gardant ses couleurs ou en la **colorisant**
-- **Modifier avec une consigne** : on sélectionne, on écrit « remplace le texte « X » par « Y » », « change la couleur de… » : l'IA le fait dans le style de l'image (fond transparent gardé pour un texte ou un logo) ; consignes en français avec le **traducteur** facultatif, qui tourne sur le PC
+- **Modifier avec une consigne** : on sélectionne, on écrit « remplace le texte « X » par « Y » », « change la couleur de… » : l'IA le fait dans le style de l'image (fond transparent gardé pour un texte ou un logo) ; consignes en français avec le **traducteur** facultatif, qui tourne sur le PC (traduction en moins d'une seconde)
+- **Créer une image d'après un texte** (Flux Schnell) : nouvelle image ou nouveau calque, 5 formats
+- **Ciel** : sélectionner, remplacer (6 ciels, bord affiné entre les branches) ; **Coloriser** ; **Changer la lumière** (8 lumières) ; choix sur des vignettes d'exemple
+- **Flou selon la profondeur** : un clic sur ce qui reste net, pinceaux pour corriger l'IA
+- **Supprimer les personnes** (l'IA les trouve, vous cochez celles à effacer), **Retouche portrait** (peau lissée en gardant le grain, yeux, dents)
+- Durée de chaque calcul **mesurée sur votre PC** et affichée
 
 **Sélection**
 - Rectangle, lasso, pinceau et gomme de sélection ; ajouter / retirer avec Maj / Alt
 - **Sélection d'objet** et **sélection rapide** par IA (SAM 3.1), **baguette magique** réglable en glissant, **sélection de texte** (un cadre autour d'un titre : les lettres seules, traits fins compris)
 - **Améliorer le contour** pour les cheveux, poils et bords flous ; agrandir, réduire, adoucir, inverser
+- **Plage de couleurs** ; **Plume** (tracés en lignes et en courbes, vers une sélection ou une forme)
 
 **Calques, comme dans Photoshop**
 - Visibilité, opacité, verrou, ordre (boutons ou **glisser à la souris**), fusion, aplatir
 - Plusieurs calques choisis à la fois (Ctrl+clic, Maj+clic) ; **aligner**, **répartir**, retourner, grouper, depuis la **barre d'accès rapide**
 - Les pixels qui dépassent de la feuille sont gardés (**Tout faire apparaître**)
-- **17 modes de fusion**, **masques de calque**, **groupes**, **calques de réglage** modifiables à tout moment
+- **17 modes de fusion**, **masques de calque**, **masque d'écrêtage** (une photo dans les lettres d'un texte), **groupes**, **calques de réglage** et **calques de remplissage** (couleur, dégradé, motif) modifiables à tout moment
+- **Harmoniser avec l'arrière-plan** : un objet collé prend la lumière de la photo
 - **Styles de calque** non destructifs : ombre portée (dont ombre réaliste), ombre au sol en perspective, ombre interne, lueurs, contours multiples, biseau, incrustations couleur, dégradé (plusieurs couleurs) et motif ; 14 styles tout prêts, styles enregistrés
 
 **Outils**
@@ -41,26 +48,31 @@
 - **Pinceaux à forme** comme dans Photoshop et Krita : 235 pinceaux et 87 motifs livrés, **17 styles prêts** (crayon, fusain, aquarelle, huile, bombe…), import des pinceaux Photoshop (.abr), GIMP et Krita ; taille jusqu'à 5000 px, rotation, réglages complets (espacement, angle, dispersion, texture, double pinceau…) et **pression de la tablette**
 - **Dégradé à plusieurs couleurs** avec un **éditeur comme Photoshop** (points de couleur et d'opacité, dégradés tout prêts et enregistrés), vu **en direct** pendant qu'on le tire ; sur un texte, il se pose sur les lettres (le texte reste modifiable)
 - **Motifs** : pot de peinture, Remplir avec un motif, **tampon de motif**, style Incrustation de motif (motifs Photoshop .pat, GIMP, Krita, images)
-- **Pot de peinture**, **formes** (rectangle, ellipse, ligne, flèche)
-- **Texte modifiable** : police, taille, couleur, contour, ombre, fond, rotation, texte en arc
+- **Pot de peinture**, **formes modifiables** (rectangle, ellipse, ligne, flèche, étoile, polygone)
+- **Calque de pinceau modifiable** : couleur, taille, opacité, forme du pinceau changées après coup, tous les traits sont redessinés
+- **Pinceaux de retouche** : Densité − / +, Éponge, Goutte d'eau, Netteté, Doigt, Pinceau d'historique
+- **Texte modifiable, comme dans Photoshop** : police, taille, couleur, contour, ombre, fond, rotation, crénage, casse, exposant, ligatures, texte en cadre (justifié, césure), texte vertical, **déformation** (arc, drapeau, vague…), **texte sur un tracé**, **style par lettre**, glyphes, styles de texte
+- **Orthographe** (français, anglais) et **rechercher / remplacer** dans les textes
 - **Trouver une police semblable** : on sélectionne les lettres d'un titre, Pixane cherche parmi les polices installées celles qui lui ressemblent le plus (sans Internet)
-- Règles, repères, grille et magnétisme
+- Règles, repères, grille et magnétisme ; panneau **Nuancier** (.aco Photoshop, .gpl GIMP)
 
 **Réglages et filtres**
 - Réglages de l'image avec bouton **Auto** (luminosité, contraste, saturation, teinte, température, netteté)
-- **Niveaux**, **Courbes**, **Balance des couleurs**, **Noir et blanc** (avec virage sépia), **Vibrance**
-- Filtres : flou gaussien, flou de mouvement, réduction du bruit, netteté, vignette
-- Taille de l'image, **taille de la zone de travail**, pivoter, retourner, redresser ; transformer un calque (taille, rotation), **sans perte** en réduisant puis réagrandissant (comme un objet dynamique)
+- **Niveaux**, **Courbes**, **Balance des couleurs**, **Noir et blanc** (avec virage sépia), **Vibrance**, **Filtre photo**, **Mélangeur de couches**, **Courbe de transfert de dégradé**, **Remplacer la couleur**, Négatif, Seuil, Postérisation
+- Filtres : flou gaussien, flou de mouvement, **flou radial**, **flou de l'objectif**, **flou de surface**, réduction du bruit, netteté, vignette, **Fluidité**
+- Taille de l'image, **taille de la zone de travail**, pivoter, retourner, redresser, **mise à l'échelle d'après le contenu** (changer les proportions sans écraser le sujet) ; transformer un calque (taille, rotation, **perspective**, **distordre**, **déformation**), **sans perte** en réduisant puis réagrandissant (comme un objet dynamique) ; **recadrage en perspective**
+- **Actions** : enregistrer une suite de réglages et de filtres, la rejouer d'un clic, aussi sur tout un dossier
 - Mode **couleurs RVB** ou **niveaux de gris**
 
 **Fichiers**
 - **Nouvelle image** avec 34 formats tout prêts (pochettes CD et vinyle, Spotify, livres, Amazon KDP, réseaux sociaux, A4, affiches…), unités (px, cm, mm, pouces, points, picas), résolution, **fond perdu** et **zone de sécurité** pour l'impression
 - **Exporter pour l'impression en CMJN** (TIFF, PDF, JPEG ; profils de Windows comme Coated FOGRA39) et **aperçu à l'écran** des couleurs imprimées
-- JPG, PNG, TIFF, WebP, BMP ; **PSD** (Photoshop) avec calques, groupes, masques, modes et styles ; `.pixane` (projet Pixane, tout reste modifiable) et `.ora` (Krita, GIMP)
+- JPG, PNG, TIFF, WebP, BMP, **RAW des appareils photo** (Canon, Nikon, Sony, DNG, Fujifilm…) ; **PSD** (Photoshop) avec calques, groupes, masques, modes et styles ; `.pixane` (projet Pixane, tout reste modifiable) et `.ora` (Krita, GIMP)
 - **Plusieurs photos ouvertes** dans des onglets, chacune avec son Annuler
 - **Enregistrement automatique** et récupération après un plantage
 - **Exporter pour le web** (JPEG, WebP, PNG ; taille, qualité, poids affiché, informations personnelles enlevées)
-- **Traitement par lot** d'un dossier entier (réduire, réglage auto, upscale IA, arrière-plan, format)
+- **Traitement par lot** d'un dossier entier (réduire, réglage auto, upscale IA, arrière-plan, format, action enregistrée)
+- **Imprimer** (Ctrl+P) : papier, orientation, taille réelle ou remplir la page, aperçu
 - **Nouvelle image depuis le presse-papiers** ; **Exporter sous** (une copie dans un autre format, la photo ouverte ne change pas)
 - Annuler / Rétablir avec panneau Historique (aussi avec les boutons retour / suivant de la souris) ; fichiers récents
 
@@ -164,6 +176,10 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 - **Fichier > Ouvrir** (Ctrl+O) : JPG, PNG, TIFF, WebP, BMP, et les fichiers à calques **.pixane**, **.ora** et
   **.psd** (Photoshop).
   La photo est redressée selon son orientation d'appareil.
+- **Fichiers RAW** des appareils photo (Canon .CR2 / .CR3, Nikon .NEF, Sony .ARW, .DNG, Fujifilm .RAF, Olympus
+  .ORF, Panasonic .RW2, Pentax .PEF…) : ils s'ouvrent comme une photo, développés avec la balance des blancs de
+  l'appareil (bibliothèque LibRaw) ; retouchez ensuite avec les réglages (Niveaux, Courbes, Balance…). Le RAW
+  n'est jamais remplacé : **Enregistrer** propose un autre fichier (JPG, ou .pixane s'il y a des calques).
 - **Enregistrer** (Ctrl+S), **Enregistrer sous** (Ctrl+Maj+S) :
   - **.pixane** (projet Pixane) : le format de Pixane. Garde **tout** : calques (noms, ordre, visibilité, opacité,
     verrou), **textes modifiables** et **styles de calque modifiables**. Proposé d'office quand l'image a plusieurs calques ou un texte.
@@ -221,8 +237,17 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
     **Format** (garder, JPEG, WebP, PNG) et qualité, **Ajouter au nom** (ex. `_web`).
   - Une barre montre l'avancement ; **Arrêter** termine la photo en cours puis s'arrête. Une photo qui pose
     problème est signalée à la fin, les autres sont faites.
+  - **Action** : une action enregistrée dans le panneau **Actions** (voir chapitre 9) est jouée sur chaque photo.
+  - Les fichiers RAW du dossier sont traités aussi.
   - Sécurité : si les résultats iraient dans le même dossier sous le même nom, Pixane refuse (les originaux
     seraient remplacés).
+- **Fichier > Imprimer…** (Ctrl+P) : l'image visible (tous les calques), avec un **aperçu de la page**.
+  - **Imprimante**, **Papier** (A4, A5, A3, Letter, 10 × 15, 13 × 18, 20 × 30 cm), **Orientation** (automatique :
+    comme l'image), **Marges**, **Copies**.
+  - **Taille** : *Remplir la page* (dans les marges), *Taille réelle* (d'après la résolution de l'image) ou
+    *Largeur choisie* en cm.
+  - Pixane indique la taille sur la feuille et le nombre de points par pouce ; en dessous de 150, il prévient que
+    l'impression risque d'être floue (IA > Upscale peut aider).
 - **Fichier > Nouvelle image…** (Ctrl+N) : une image vide, comme dans Photoshop. Un **aperçu** montre la forme de
   la feuille, son fond et les repères (fond perdu, zone de sécurité).
   - **Formats tout prêts** (à gauche) : **pochettes** (CD, vinyle 33 et 45 tours, 3000 × 3000 px pour Spotify,
@@ -380,6 +405,14 @@ Un clic sur une couleur sélectionne la zone de couleur proche. Sans IA, instant
 - **Image visible** ou **Calque choisi** : sur quoi les couleurs sont comparées.
 - Maj ajoute, Alt retire, comme le rectangle.
 
+### Plage de couleurs (menu Sélection)
+Sélectionne **tous les points d'une couleur**, dans toute l'image (la baguette ne prend que les voisins).
+- **Clic** dans l'aperçu sur la couleur voulue ; **Maj+clic** : ajouter une couleur ; **Alt+clic** : en retirer une.
+- **Tolérance** : jusqu'où les couleurs voisines sont prises (bords doux). Un rouge plus sombre (à l'ombre) compte
+  comme du rouge.
+- L'aperçu montre la **sélection** (blanc = pris) ou l'**image** ; la sélection est aussi montrée sur la photo.
+- *Inverser* : tout sauf ces couleurs. **Sélection** : nouvelle, ajouter à la sélection ou en retirer.
+
 ### Améliorer le contour (Ctrl+Alt+R, menu Sélection)
 Pour une sélection grossière autour de **cheveux, poils, feuillage ou bords flous** (par exemple après *Sélectionner
 le sujet* ou un lasso rapide) : Pixane recalcule le bord d'après les couleurs de la photo.
@@ -532,18 +565,19 @@ lunettes »… (modèle **Flux Kontext**, à ajouter dans Installer le moteur IA
   tu choisis : **Installer le traducteur…**, **Corriger**, ou **Envoyer quand même**.
 - Écris dans les guillemets le texte **exactement comme sur l'image** (accents, majuscules) : « Brûler le Feu »,
   pas « bruler le feu ».
-- Le traducteur Il s'installe par le
+- Le traducteur s'installe par le
   **programme d'installation de Pixane** (page « Traducteur des consignes »), par le bouton « Installer le
   traducteur… », ou par sa case dans **IA > Installer le moteur IA** (fenêtre « Installer »
   ou « Compléter le moteur IA » si ComfyUI était déjà là) : cochée tant qu'il n'est pas installé, grisée ensuite.
   **Dossier du traducteur… Changer…** : tu choisis où le ranger (par défaut,
   `%LOCALAPPDATA%\Pixane\traducteur`). Pas dans le dossier où Pixane est
   installé (D:\Programmes\Pixane…) : il est remplacé à chaque mise à jour, Pixane le refuse.
+- Le traducteur démarre en arrière-plan dès l'ouverture de la fenêtre (une dizaine de secondes, le temps que tu écrives), puis il reste prêt jusqu'à la fermeture de Pixane : chaque traduction est alors presque immédiate.
 - L'IA travaille sur un morceau autour de la sélection (plus de détail qu'avec toute l'image) ; le résultat n'est
   gardé que dans la sélection et là où il change vraiment : le reste garde ses pixels d'origine.
 - **Calque avec de la transparence** (texte, logo sans fond) : l'IA voit ce calque seul, et le résultat garde un
   fond transparent. Sinon, elle voit l'image visible et le résultat est opaque.
-- Propositions : 1 à 4, environ 2 à 3 minutes chacune. Les écritures très travaillées sont bien imitées, mais un
+- Propositions : 1 à 4, environ 2 à 3 minutes chacune sur une RTX 3060 Ti (la fenêtre affiche la durée mesurée sur ton PC). Les écritures très travaillées sont bien imitées, mais un
   peu moins fines que l'original ; les accents et les longs textes sont parfois mal écrits : demande d'autres
   propositions.
 
@@ -580,8 +614,14 @@ Deux cadres apparaissent sur la photo :
 - Le raccord entre la photo et l'ajout est fait par Pixane : la photo d'origine est gardée **au pixel près**, avec un
   fondu progressif et un accord des couleurs, pour qu'aucune ligne ne soit visible. Dans les **fonds unis** (ciel,
   mur, fond sombre), l'ajout est remis au niveau de la photo jusqu'au bord : pas de partie plus claire ni de bandes
-  (« effet fantôme »). Ce raccord est refait après *Pleine définition*.
+  (« effet fantôme »), et les légers **tourbillons** que l'IA laisse parfois dans ces fonds sont lissés (le grain
+  fin et ce qui est vraiment dessiné, comme une étoile, sont gardés). Ce raccord est refait après *Pleine définition*.
 - 3 propositions, environ 1 minute chacune.
+- **Fond prolongé** : quand les bords à agrandir sont **unis** (fond de pochette, ciel lisse, dégradé), une
+  proposition de plus, faite **sans IA**, s'ajoute aux autres : Pixane continue lui-même le fond de la photo,
+  ligne par ligne, avec le même grain. Aucun raccord ni tourbillon visible, et c'est instantané. Elle n'apparaît pas
+  si un objet touche le bord (il serait étiré). *Partir de celle-ci* et *Pleine définition* ne la concernent pas
+  (elle est déjà à la vraie taille).
 - **Pleine définition** (case dans la barre, cochée par défaut) : l'IA invente l'ajout sur une image réduite à
   environ 1 million de pixels, puis l'ajout est agrandi à la taille de la photo ; sur une grande photo, il serait
   donc plus flou que le reste. Avec la case cochée, une fois la proposition choisie, l'ajout est **redessiné à la
@@ -649,6 +689,36 @@ l'ajoute). Quelques secondes.
 - **Sélectionner le sujet** (Ctrl+Alt+S, menu Sélection) : sélectionne le sujet sans rien effacer, par exemple
   pour le régler (Ctrl+U), ou *Inverser* (Ctrl+Maj+I) pour travailler le fond.
 
+### Créer une image d'après un texte (menu IA)
+Décrivez l'image (sujet, couleurs, lumière, style) : **Flux Schnell** la crée, environ **30 secondes** par
+proposition. Exemples de consignes dans la liste (fond abstrait, paysage, texture, illustration, portrait) ; comme
+pour *Modifier avec une consigne*, une consigne en français peut être traduite en anglais sur votre PC.
+- **Résultat** : *Nouvelle image* (formats carré pour une pochette ou les réseaux sociaux, 4:3, 3:4, 16:9, 9:16) ou
+  *Nouveau calque dans l'image ouverte*, à sa taille (par exemple un fond derrière un détourage).
+- Marche aussi **sans image ouverte** : une nouvelle image est créée.
+- Dans la fenêtre de choix, **Partir de celle-ci** donne des variantes de la proposition choisie.
+- L'IA écrit mal les textes : ajoutez-les ensuite avec l'outil Texte.
+- Modèle Flux Schnell (Apache-2.0), installé avec le moteur IA (case *Flux Schnell*).
+
+### Supprimer les personnes (menu IA)
+L'IA (**SAM 3.1**) trouve **chaque personne** de la photo. Une fenêtre les montre : les personnes **cochées** (en
+rouge) seront effacées ; **cliquez sur une personne** dans l'image (ou sur sa case) pour la cocher ou la décocher.
+Au départ, tout est coché sauf le **sujet principal** (la personne nettement plus grande que les autres).
+- **Effacer les personnes cochées** : elles sont sélectionnées (avec une petite marge pour les ombres et les
+  cheveux), puis **Effacer** reconstruit le fond derrière elles (fenêtre de choix du résultat habituelle).
+- **Seulement sélectionner** : pour compléter la sélection, par exemple une personne oubliée par l'IA (outil
+  **Sélection d'objet**, Maj + clic), avant de lancer **IA > Effacer**.
+
+### Retouche portrait (menu IA)
+L'IA (**SAM 3.1**) trouve le visage, le cou, les yeux, les sourcils, les lèvres et les dents (quelques secondes),
+puis une fenêtre de réglage s'ouvre, avec **aperçu en direct** sur la photo :
+- **Lisser la peau** : atténue boutons, rougeurs et petites rides ; les contours (nez, yeux), les cils et les mèches
+  de cheveux restent nets.
+- **Garder le grain de la peau** : remet le grain fin, pour éviter l'effet « plastique ».
+- **Éclaircir les yeux** : plus d'éclat et de netteté dans les yeux.
+- **Blanchir les dents** : moins jaunes, un peu plus claires.
+S'applique au calque choisi (dans la sélection s'il y en a une) ; tous les visages trouvés sont retouchés.
+
 ### Réduire le bruit, Netteté, Restaurer une vieille photo (menu IA)
 Ces trois actions travaillent sur l'image visible ; s'il y a une **sélection**, le résultat ne change que
 l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi (Ctrl+Z annule).
@@ -671,6 +741,36 @@ l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi
   *Autres propositions* en redemande. L'IA peut changer de petits détails (traits d'un visage, lettres) :
   comparez bien avec l'original (œil du calque). Modèle **Flux Kontext dev** (11,9 Go, licence FLUX.1 [dev], usage
   **non commercial**), facultatif : case *Flux Kontext* dans **IA > Installer le moteur IA…**.
+
+### Ciel, couleurs, lumière, profondeur (IA)
+- **Sélection > Sélectionner le ciel (IA)** : l'IA (SAM 3.1) trouve le ciel et le sélectionne, bord un peu élargi et
+  adouci pour que la ligne d'horizon se raccorde. Pixane affine ensuite le bord d'après les couleurs : le ciel vu
+  entre les branches d'un arbre nu est sélectionné aussi (et, avec *Remplacer le ciel*, les branches gardent leur
+  couleur). Ensuite, tous les outils marchent sur cette sélection (réglages,
+  Remplir…). Quelques secondes.
+- **IA > Remplacer le ciel…** : choisissez le nouveau ciel sur des **vignettes d'exemple** (ciel bleu avec quelques nuages, grands nuages, coucher
+  de soleil, ciel d'orage, nuit étoilée, aube). Pixane sélectionne le ciel (nuages compris), Flux Kontext redessine
+  la photo avec ce ciel, et **seul le ciel** en est gardé : le reste garde ses pixels d'origine. Deux propositions,
+  environ 2 minutes chacune. Au bord d'un toit ou d'un arbre, l'IA peut laisser un petit reste décalé : choisissez la
+  meilleure proposition, ou retouchez (tampon, Effacer). Le ciel reste sélectionné : pour l'harmoniser, un réglage de
+  couleur sur le reste de la photo (Sélection > Inverser) aide souvent.
+- **IA > Coloriser** : met des couleurs naturelles à une photo en noir et blanc (sans la restaurer) ; avec une
+  sélection, seulement dedans. Flux Kontext, deux propositions, environ 2 minutes chacune.
+- **IA > Changer la lumière…** : lumière dorée de fin de journée, lumière douce de studio, lumière marquée venant
+  de la gauche ou de la droite, contre-jour, nuit éclairée par des lampadaires, néons colorés, temps couvert ; une
+  vignette d'exemple pour chacune (double-clic : choisir et lancer). Avec une sélection, seulement dedans. Flux
+  Kontext redessine la photo avec cette lumière, en gardant les personnes et les objets. Comparez bien : l'IA peut
+  changer de petits détails.
+- **Filtres > Flou selon la profondeur (IA)…** : comme le flou d'arrière-plan d'un appareil photo. L'IA calcule la
+  distance de chaque point (quelques secondes) ; une fenêtre montre cette carte (clair = proche, foncé = loin) :
+  **cliquez sur ce qui doit rester net** (au départ : ce qui est le plus proche). **Flou** règle la force, **Zone
+  nette** la profondeur gardée nette autour du point. **Garder net tout le sujet** (cochée au départ) : le
+  détourage rattrape ce que la carte met à tort au loin, par exemple une veste grise devant un mur gris. **Ne pas
+  flouter ce qui est plus proche que le point net** : utile seulement quand vous cliquez sur quelque chose au loin
+  (sinon rien n'est devant, la case ne change rien). **Si l'IA se trompe** : choisissez *Pinceau : garder net* ou *Pinceau : rendre flou* et peignez sur la carte
+  (vert = net, rouge = flou ; *Taille du pinceau* ; *Effacer les coups de pinceau*). Aperçu en direct sur la photo ; s'applique au calque choisi (dans la sélection s'il y en a une). Modèle
+  **Depth Anything 3 Small** (137 Mo, Apache-2.0), facultatif : case *Flou selon la profondeur* à l'installation de
+  Pixane, ou dans **IA > Installer le moteur IA…**.
 
 ---
 
@@ -783,6 +883,27 @@ dessus, ou **Calque > Modifier le réglage…**), le masquer (œil), baisser son
 - Dans un groupe, il ne règle que les calques du groupe placés dessous.
 - Gardé tel quel en .pixane ; en .ora et .psd, il devient un calque d'image (le résultat).
 
+### Calques de remplissage
+**Calque > Nouveau calque de remplissage** (ou le bouton **Réglage** du panneau Calques, en haut de la liste) : un
+calque qui couvre toute la feuille d'une **couleur unie**, d'un **dégradé** ou d'un **motif**, et qui reste
+**modifiable** (double-clic dessus).
+- **Dégradé** : style linéaire, radial, angulaire, réfléchi ou losange ; **Angle**, **Échelle**, **Inverser**. Au
+  départ : de la couleur de peinture au blanc.
+- **Motif** : un motif de la bibliothèque, à l'échelle voulue.
+- S'il y a une sélection, elle devient le **masque** du calque (le remplissage ne se voit que là).
+- Il est redessiné quand la feuille change de taille (taille de l'image, zone de travail, recadrer…) ; gardé en
+  .pixane ; en .ora et .psd, il devient un calque d'image. *Convertir en image* (clic droit) le fige.
+
+### Harmoniser un collage (Calque > Harmoniser avec l'arrière-plan…)
+Un objet collé d'une autre photo jure souvent : lumière plus froide, noirs moins profonds… Choisissez son calque
+(l'objet détouré, avec de la transparence autour, posé au-dessus de la photo) : il prend la lumière de la photo
+qui l'entoure.
+- **Lumière (noirs et blancs)** : mêmes noirs et mêmes blancs que la photo autour.
+- **Couleur de la lumière** : même teinte de lumière (mesurée sur les parties claires : une chemise rouge posée
+  sur de l'herbe ne devient pas verte).
+- **Adoucir le bord** : bord plus doux, vers l'intérieur de l'objet.
+Aperçu en direct, une étape dans Annuler.
+
 ### Style du calque : ombres, contour, lueur, relief… (Ctrl+Alt+F)
 Des **effets ajoutés au calque**, toujours modifiables : les pixels du calque ne sont pas touchés. Pour l'ouvrir :
 **double-clic** sur un calque (ailleurs que sur son nom), bouton **fx** du panneau, ou menu **Calque > Style du
@@ -853,11 +974,23 @@ Outil **Texte** (touche **T**, icône « T » dans la barre d'outils). Le pannea
 | **Taille** | Hauteur des lettres, en pixels de la photo |
 | **Couleur** (pastille) | Couleur des lettres, avec la transparence (canal alpha) |
 | **G / I / S / B** | Gras, italique, souligné, barré |
-| **Alignement** | À gauche, centré, à droite (pour plusieurs lignes) |
+| **Alignement** | À gauche, centré, à droite (pour plusieurs lignes), **justifié** (texte en cadre : lignes étirées jusqu'aux deux bords) |
 | **Lettres** | Espace ajouté entre les lettres, en % de la taille (négatif = lettres serrées) |
 | **Lignes** | Écart entre les lignes, × la taille des lettres |
 | **Rotation** | Angle en degrés |
 | **Courbe** | Texte en arc : positif = en voûte, négatif = en creux, 360° = cercle complet |
+| **Largeur / Hauteur** | Étirer ou tasser les lettres (100 % = normal) |
+| **Casse** | Comme tapé, TOUT EN MAJUSCULES, tout en minuscules, Petites capitales, Première Lettre En Majuscule (le texte tapé ne change pas : on peut revenir) |
+| **Position** | Normale, **exposant** (m², 1er) ou **indice** (H₂O) : lettres plus petites, montées ou descendues |
+| **Ligne de base** | Monter (positif) ou descendre (négatif) des lettres, en % de la taille |
+| **Crénage** | *De la police* : espaces corrigés entre certaines paires (AV, To…) ; *Aucun* : espaces bruts |
+| **Ici** | Crénage à la main entre les deux lettres autour du curseur, en millièmes de la taille (aussi **Alt+flèches** dans la case, **Ctrl+Alt+flèches** : 5 fois plus) |
+| **Ligatures, Fractions, Chiffres anciens** | Options de la police (OpenType) : fi/fl liés, 1/2 → ½, chiffres de hauteurs variées. Sans effet si la police ne les a pas |
+| **Bords lissés** | Décoché : bords nets pixel par pixel (pour le pixel art ou les petits textes) |
+| **Texte vertical** | Lettres les unes sous les autres ; chaque ligne devient une colonne (de droite à gauche) |
+| **Texte en cadre** | Les lignes se coupent toutes seules à la **largeur du cadre** ; **hauteur du cadre** : ce qui dépasse est caché (0 = auto : selon le texte) |
+| **Retrait / Entre paragraphes** | Alinéa de la première ligne de chaque paragraphe ; espace ajouté entre les paragraphes (% de la taille) |
+| **Déformation** | Comme « Déformer le texte » de Photoshop : Arc, Arc inférieur / supérieur, Arche, Renflement, Drapeau, Vague, Poisson, Montée, Œil de poisson, Gonflement, Compression, Torsion. **Force** : -100 à 100 % ; **Distorsion horiz. / vert.** : effet de perspective |
 | **Contour** | Trait autour des lettres : couleur et épaisseur |
 | **Ombre portée** | Couleur, distance, direction (0° = vers la droite, 90° = vers le bas) et flou |
 | **Fond** | Rectangle coloré derrière le texte : couleur, marge et arrondi des coins |
@@ -865,6 +998,48 @@ Outil **Texte** (touche **T**, icône « T » dans la barre d'outils). Le pannea
 Les tailles des effets (épaisseur, distance, flou, marge, arrondi) sont en **% de la taille des lettres** :
 ils restent proportionnés quand on change la taille du texte.
 **Transparence** du texte entier : curseur **Opacité** du panneau Calques.
+
+### Changer seulement certaines lettres
+**Sélectionnez des lettres dans la case du panneau** (à la souris ou Maj+flèches) : police, taille, couleur, gras,
+italique, souligné, barré, lettres, largeur, hauteur, casse, position et ligne de base ne changent **que pour elles**
+(une phrase sous la case le rappelle). Exemple : un mot en rouge, un « 2 » en indice.
+Sans sélection, un réglage change **tout le texte**, lettres à style propre comprises. Les lettres tapées ensuite
+prennent le style de celle qui les précède.
+
+### Texte sur un tracé, glyphes, styles
+- **Texte sur un tracé** : bouton **Dessiner un tracé** (partie Disposition), puis glissez sur la photo : le texte
+  suit la ligne dessinée (elle est lissée). **Départ** : où le texte commence le long du tracé ; **Retirer** : le
+  texte redevient droit. Le tracé suit le texte quand on le déplace ou le tourne ; il se voit en pointillés.
+- **Glyphes** (bouton **Ω** à côté de la taille) : tous les caractères de la police (symboles, flèches, lettres
+  accentuées, ½, ©, émojis…). Un clic insère le caractère à la place du curseur ; les derniers utilisés restent en
+  haut. Recherche par nom anglais (*arrow*, *heart*, *euro*) ou par code (*U+2192*).
+- **Styles de texte** (en bas du panneau) : **Copier** retient la police, la couleur, les effets et les réglages du
+  texte ; **Coller** les donne à un autre texte (son texte et sa place ne changent pas). **+** enregistre le style
+  sous un nom ; il reste dans la liste pour les prochaines fois (en choisir un l'applique) ; **−** en supprime un.
+
+### Orthographe, césure, rechercher et remplacer
+- **Orthographe** : dans la case du panneau Texte, les mots mal écrits sont **soulignés en rouge**. **Clic droit**
+  sur un mot souligné : les suggestions (accents oubliés, lettres inversées, en trop, oubliées, mots collés),
+  *Ignorer* (jusqu'à la fermeture de Pixane) ou *Ajouter au dictionnaire* (gardé pour toujours).
+- **Langue** (partie Paragraphe) : la langue du texte, pour l'orthographe et la césure ; *Langue de Pixane* par
+  défaut. Français et anglais.
+- **Césure** (texte en cadre) : les mots longs sont coupés en fin de ligne, avec un tiret, selon les règles de la
+  langue. En justifié, une ligne d'un seul mot reste à gauche (ses lettres ne sont pas écartées).
+- **Option** (case à l'installation, avec le choix des langues, ou **Affichage > Orthographe et césure**) :
+  décochée, rien n'est souligné ni coupé. **Affichage > Langues de l'orthographe…** : cocher ou décocher une
+  langue ; une langue non installée est téléchargée après accord (dictionnaire de LibreOffice : français 1,4 Mo,
+  anglais 0,6 Mo), dans %LOCALAPPDATA%\Pixane\dictionnaires.
+- **Rechercher et remplacer** (**Ctrl+H**, menu Édition) : dans tous les textes de l'image. *Suivant* choisit le
+  texte et sélectionne le mot dans le panneau ; *Remplacer*, *Tout remplacer* (une seule étape d'Annuler) ;
+  *Respecter les majuscules*, *Mot entier*. Les lettres à style propre gardent leur style. Les textes verrouillés
+  ne sont pas modifiés.
+
+### Une photo dans les lettres (masque d'écrêtage)
+Comme dans Photoshop : posez la photo (ou une texture, un dégradé…) **sur un calque juste au-dessus du texte**, puis
+**Ctrl+Alt+G** (menu Calque > *Masque d'écrêtage*, ou clic droit sur le calque). La photo ne se voit plus que
+**dans les lettres** ; le texte reste modifiable (texte, police, taille…) et la photo peut être déplacée. Dans le
+panneau Calques, le calque écrêté est décalé avec une flèche ↳. Ctrl+Alt+G encore une fois : retiré. Marche aussi
+avec n'importe quel calque (pas seulement un texte). Gardé en .pixane et .psd ; en .ora, il est mis dans les pixels.
 
 ### Bon à savoir
 - Toutes les modifications s'annulent avec Ctrl+Z ; une saisie de plusieurs lettres s'annule d'un seul coup.
@@ -901,6 +1076,31 @@ corriger sans toucher à la photo).
 - **Taille** (ou `[` et `]`), **Opacité** (100 % couvre tout, moins laisse voir dessous) et **Dureté** (100 % bord
   net, 0 % bord très doux).
 - Repasser au même endroit pendant un même coup ne fonce pas la couleur ; un nouveau coup, si.
+
+#### Nuancier
+Le panneau **NUANCIER** (onglet à côté de l'Historique) garde vos couleurs : **un clic** sur une couleur en fait la
+couleur de peinture.
+- **+** ajoute la couleur de peinture ; **−** retire la couleur choisie ; clic droit : *Renommer*, *Retirer*.
+- **…** : **Importer** un nuancier Photoshop (.aco) ou GIMP (.gpl), **Exporter** en .aco (pour Photoshop),
+  **Remettre les couleurs de départ**.
+- Les couleurs du nuancier se retrouvent aussi dans « Couleurs personnalisées » des fenêtres de choix de couleur.
+
+#### Calque de pinceau modifiable
+Case **Calque modifiable** dans la barre du haut (décochée au départ). Cochée, le premier coup de pinceau crée un
+**calque de pinceau** au-dessus du calque choisi (la photo n'est pas touchée), et les coups suivants y vont aussi.
+Ce calque garde le **tracé** de chaque coup, pas seulement ses pixels :
+- **même plus tard**, choisissez-le dans le panneau Calques avec le pinceau de couleur : la barre du haut montre ses
+  réglages ; changer la **couleur**, la **taille**, l'**opacité**, la **dureté**, la **rotation** (↻) ou la
+  **forme du pinceau** (et ses Réglages…) **redessine tous ses traits**. Chaque changement s'annule avec Ctrl+Z ;
+- le **déplacer**, le transformer (Ctrl+T, sans sélection), pivoter ou retourner l'image, changer sa taille,
+  recadrer, Agrandir, Upscale : il **reste modifiable** (les traits sont redessinés nets) ;
+- un calque de pinceau a **un seul réglage pour tous ses traits** : pour une autre couleur à garder à part, choisissez
+  un autre calque (ou la photo) avant de peindre, un nouveau calque de pinceau sera créé ;
+- la **gomme**, un filtre, l'IA, le pot de peinture… en font un calque d'image ordinaire (un message le dit ; Ctrl+Z
+  pour revenir). Clic droit sur le calque > **Convertir en image** le fait aussi ;
+- il est gardé dans les fichiers **.pixane** ; dans un PSD, PNG, JPG… il est enregistré comme une image. Dans le
+  panneau Calques, il est marqué « pinceau modifiable ».
+Case décochée : on peint directement sur le calque choisi, comme avant.
 
 ### Pinceaux à forme : la bibliothèque (comme Photoshop, Krita)
 Le pinceau de couleur (et les masques), la **gomme de calque** et le **pinceau de sélection** peuvent prendre une
@@ -1036,10 +1236,62 @@ puis cliquez dans la zone : elle se remplit jusqu'à ce que la couleur change.
 - S'il y a une **sélection**, il reste dedans. Il peint sur le calque choisi (astuce : un calque vide au-dessus
   permet de revenir en arrière facilement).
 
+### Pinceaux de retouche : Densité, Éponge, Goutte d'eau, Netteté, Doigt, Historique
+Deux familles dans la barre d'outils (clic droit ou clic maintenu pour choisir), comme Photoshop. Ils changent les
+pixels du **calque choisi**, sous le pinceau ; **Force** (barre du haut) dit combien, la taille et la dureté se
+règlent comme pour le pinceau. Repasser au même endroit pendant un même coup ne renforce pas l'effet ; un nouveau
+coup, si. Chaque coup est une étape d'Annuler.
+
+| Outil | Ce qu'il fait |
+|---|---|
+| **Densité −** | Éclaircit. **Tons** : *Ombres*, *Tons moyens* ou *Hautes lumières* (seuls ces tons bougent : éclaircir les ombres d'un visage sans brûler le front) |
+| **Densité +** | Assombrit, avec le même choix de tons (foncer un ciel, un bord) |
+| **Éponge** | **Désaturer** : ternit les couleurs (jusqu'au gris) ; **Saturer** : les ravive |
+| **Goutte d'eau** | Floute (un fond, un grain de peau, une imperfection). Sur un **masque**, adoucit son bord |
+| **Netteté** | Rend plus nets les détails (yeux, lettres) ; à petite force, sinon du grain apparaît |
+| **Doigt** | Étale la couleur dans le sens du geste, comme de la peinture fraîche ; la force dit jusqu'où elle s'étale |
+| **Pinceau d'historique** | Repeint l'**instantané** : au départ, la photo telle qu'à l'ouverture. Pour annuler un effet seulement à certains endroits. **Prendre un instantané** (barre du haut) garde l'état actuel. Il est rangé sous le Tampon, et aussi en bas du panneau **Historique** (bouton *Pinceau d'historique*) |
+
+### Fluidité (Filtres > Fluidité…, Ctrl+Maj+X)
+Pour modeler l'image au pinceau, comme la Fluidité de Photoshop : affiner une silhouette, allonger une lettre, gonfler
+un détail. Une fenêtre s'ouvre avec le calque choisi ; on peint dessus avec un des outils :
+
+| Outil | Ce qu'il fait |
+|---|---|
+| **Pousser** | L'image suit le geste (déplacer un contour, allonger) |
+| **Gonfler** | Agrandit ce qui est sous le pinceau ; garder le bouton appuyé ou repasser pour renforcer |
+| **Contracter** | Rétrécit ce qui est sous le pinceau |
+| **Tourbillon** | Fait tourner ce qui est sous le pinceau |
+| **Reconstruire** | Revient peu à peu à l'image d'origine là où l'on peint |
+
+**Taille** (en pixels de la photo) et **Pression** se règlent à gauche. **Défaire le dernier geste** et **Tout
+reconstruire** permettent de revenir en arrière avant d'appliquer. L'aperçu est réduit pour rester rapide, mais le
+résultat est calculé en pleine définition à la fin, sans flou. Avec une sélection, seule la zone sélectionnée change.
+Toute la Fluidité est une seule étape d'Annuler.
+
 ### Formes (U)
-Glissez pour dessiner un **rectangle**, un **rectangle arrondi**, une **ellipse**, une **ligne** ou une **flèche**
-(**Maj** : carré, cercle, ligne droite). Chaque forme va dans un **nouveau calque**, dans la couleur du pinceau.
-**Remplie** (case) ou seulement le contour ; la **taille** règle l'épaisseur du trait.
+Glissez pour dessiner un **rectangle**, un **rectangle arrondi**, une **ellipse**, une **étoile**, un **polygone**,
+une **ligne** ou une **flèche** (**Maj** : carré, cercle, ligne droite). **Côtés** : nombre de branches de l'étoile ou
+de côtés du polygone. Barre du haut : **Remplissage** et **Contour** (cases, chacun avec sa couleur : clic sur la
+couleur pour la changer) et l'**épaisseur** du contour.
+
+Chaque forme va dans un **calque de forme** (« forme modifiable » dans Calques), comme dans Photoshop : choisissez ce
+calque avec l'outil Formes ou la Plume, et la barre du haut montre ses réglages ; les changer redessine la forme (une
+étape d'Annuler). Déplacée, redimensionnée, tournée (Ctrl+T), ou l'image agrandie : la forme est redessinée nette et
+reste modifiable ; elle est gardée dans le fichier .pixane. La gomme, un filtre ou l'IA en font une image ordinaire
+(un message le dit ; Ctrl+Z pour revenir) ; Calque > clic droit > **Convertir en image** aussi.
+
+### Plume (A)
+Pour dessiner des formes libres, en lignes droites et en courbes, point par point (comme la Plume de Photoshop) :
+- **clic** : un point d'angle ; **cliquer-glisser** : un point en courbe (on tire ses poignées) ; **Maj** : à 45° ;
+- **clic sur le premier point** : le tracé se ferme ; **Entrée** ou **double-clic** : il reste ouvert (un trait) ;
+- **Retour arrière** retire le dernier point, **Échap** abandonne le tracé.
+
+**Mode** (barre du haut) : **Forme** (le tracé devient un calque de forme, avec le remplissage et le contour de la
+barre) ou **Sélection** (le tracé fermé devient la sélection ; Maj en finissant : ajoutée, Alt : retirée).
+
+Avec un calque de forme choisi, la Plume montre ses points : tirez un **point** pour le déplacer, ou une **poignée**
+pour changer la courbe (l'autre poignée suit ; **Alt** : la poignée bouge seule et fait un angle).
 
 Un **texte** retouché au pinceau ou au tampon devient une image (un message le rappelle ; Ctrl+Z pour revenir).
 Les groupes et calques de réglage n'ont pas de pixels : un message invite à choisir un calque d'image ou un masque.
@@ -1069,7 +1321,7 @@ Menu **Image > Réglages de l'image…** (Ctrl+U) : corriger la lumière, les co
   les curseurs restent ajustables ensuite.
 - Un calque **verrouillé** est protégé ; un **texte** réglé devient une image.
 
-### Niveaux, Courbes, Balance, Noir et blanc, Vibrance (menu Image > Réglages)
+### Niveaux, Courbes, Balance, Noir et blanc, Vibrance… (menu Image > Réglages)
 Comme dans Photoshop, avec aperçu en direct et histogramme. Ils changent les pixels du **calque choisi** (dans la
 sélection s'il y en a une). Pour pouvoir y revenir plus tard, utilisez plutôt un **calque de réglage** (chapitre 6).
 
@@ -1080,12 +1332,37 @@ sélection s'il y en a une). Pour pouvoir y revenir plus tard, utilisez plutôt 
 | **Balance des couleurs** | Ctrl+B | Pousse les **Ombres**, **Tons moyens** ou **Hautes lumières** vers Cyan–Rouge, Magenta–Vert, Jaune–Bleu ; *Préserver la luminosité* |
 | **Noir et blanc** | Ctrl+Alt+Maj+B | Passe en noir et blanc en choisissant la clarté de chaque couleur (rouges, jaunes, verts, cyans, bleus, magentas) ; **Virage** : teinte le gris (sépia…) |
 | **Vibrance** | — | Ravive surtout les couleurs ternes en ménageant celles déjà vives (la peau) ; **Saturation** : toutes les couleurs autant |
+| **Remplacer la couleur** | — | Cliquez la couleur à changer dans l'aperçu (Maj+clic : en ajouter une, Alt+clic : en retirer une), réglez la **Tolérance**, puis la **Teinte**, la **Saturation** et la **Clarté** : seuls ces points changent, plis et ombres gardés (un pull rouge devient bleu) |
+| **Filtre photo** | — | Comme un filtre de couleur devant l'objectif : réchauffant, refroidissant, sépia… ou une couleur au choix ; **Densité** ; *Garder la luminosité* |
+| **Mélangeur de couches** | — | Chaque couleur de sortie (rouge, vert, bleu) est faite d'une part de rouge, de vert, de bleu et d'une constante ; **Monochrome** : noir et blanc sur mesure |
+| **Courbe de transfert de dégradé** | — | Les tons sombres prennent la couleur de gauche d'un dégradé, les clairs celle de droite (« duotone », effets d'affiche) ; *Inverser* |
+| **Négatif** | Ctrl+I | Inverse les couleurs |
+| **Seuil** | — | Noir ou blanc selon la clarté (effet tampon, pochoir) |
+| **Postérisation** | — | Garde peu de nuances par couleur : aplats comme une affiche |
+
+Tous existent aussi en **calque de réglage** (Calque > Nouveau calque de réglage), modifiables à tout moment.
 
 ### Filtres (menu Filtres)
-**Flou gaussien**, **Flou de mouvement** (angle, distance), **Réduction du bruit** (force, garder les détails, bruit
+**Flou gaussien**, **Flou de mouvement** (angle, distance), **Flou radial** (*Rotation* : les points tournent autour
+du centre ; *Zoom* : ils filent vers le centre ; quantité, centre en %), **Flou de l'objectif** (comme un vrai objectif :
+chaque point devient un petit disque ; les points très clairs deviennent des **reflets ronds** : réglez leur force et
+leur seuil), **Flou de surface** (lisse la peau ou un ciel en gardant les bords nets ; *Seuil* : à partir de quel écart
+de couleur un bord est gardé), **Réduction du bruit** (force, garder les détails, bruit
 de couleur), **Netteté** (quantité, rayon, seuil : le masque flou de Photoshop), **Vignette** (assombrir ou
 éclaircir les bords : force, taille du centre, douceur, rond). Même fonctionnement que les réglages : aperçu en
 direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annuler. Ils marchent aussi sur un masque.
+
+### Actions (panneau ACTIONS)
+Comme dans Photoshop : **enregistrer** une suite d'opérations, puis la **rejouer** d'un clic sur d'autres photos.
+- **● Enregistrer** : donnez un nom, puis faites votre travail : les **réglages** (Image > Réglages), les
+  **filtres**, la **taille de l'image** (gardée en pourcentage si les proportions ne changent pas : elle marche sur
+  des photos de toutes tailles), les **rotations** et les **retournements** s'ajoutent à l'action. **■ Arrêter**
+  termine.
+- **▶ Jouer** (ou double-clic) : l'action se rejoue sur la photo ouverte, sans fenêtre, avec les mêmes réglages ;
+  **une seule étape** dans Annuler.
+- **…** : *Renommer*, *Supprimer l'action ou l'étape*, *Exporter* / *Importer* les actions (.json, pour les
+  garder ou les partager).
+- **Fichier > Traitement par lot** : choisissez une action pour la jouer sur **tout un dossier**.
 
 ---
 
@@ -1107,6 +1384,16 @@ direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annul
 - **Taille de l'image…** (Ctrl+Alt+I) : en pixels ou en %, proportions gardées (case à décocher), boutons rapides
   (par exemple 1920 px pour l'écran et Internet). Sans IA : pour agrandir avec plus de détails, préférez Upscale.
   **Aperçu** : le centre de l'image à 100 %, avant (à gauche) et après (à droite), pour juger la netteté.
+- **Mise à l'échelle d'après le contenu…** : changer les **proportions** (un carré en 16:9, un paysage en 4:5…)
+  **sans écraser le sujet** : ce sont surtout les zones sans détails (ciel, mur, fond uni) qui s'étirent ou se
+  tassent.
+  - **Largeur**, **Hauteur**, ou un **format** rapide (1:1, 4:3, 3:2, 16:9, 3:4, 4:5, 9:16 : le plus grand côté
+    est gardé).
+  - **Protéger la sélection** : sélectionnez d'abord le sujet (Sélection > Sélectionner le sujet) : il n'est pas
+    déformé du tout.
+  - **Protection du contenu** : 0 % = étirement ordinaire, 100 % = seules les zones sans détails changent.
+  - **Aperçu** du résultat. Tous les calques suivent, masques et sélection aussi ; les textes, formes et traits de
+    pinceau deviennent des images (Ctrl+Z pour revenir).
 - **Pivoter** de 90° à droite, à gauche ou de 180°, **Retourner** horizontalement ou verticalement : toute l'image,
   tous les calques, sans perte. Les textes retournés deviennent des images ; pivotés, ils restent modifiables.
 - **Pivoter selon un angle…** : toute l'image tourne de l'angle tapé, **au degré près** (ou au dixième),
@@ -1115,6 +1402,11 @@ direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annul
 - **Redresser…** : tourner d'un petit angle (-45° à +45°) avec une grille pour aligner l'horizon ou un mur.
   *Recadrer pour enlever les coins vides* (coché par défaut) ; décoché, l'image s'agrandit et les coins sont
   transparents.
+- **Recadrage en perspective** : pour une **façade, un tableau, un document, un écran photographié de biais**.
+  Tirez les **4 coins** sur les bords de l'objet (une grille en perspective aide à suivre ses lignes ; dedans : tout
+  déplacer), puis **Entrée**, double-clic ou **Recadrer** : l'objet devient un **rectangle droit** qui remplit
+  l'image (largeur et hauteur de ses plus longs bords). Les textes deviennent des images. Échap : annuler ; Ctrl+Z
+  pendant le réglage remet le coin d'avant.
 - **Édition > Transformer le calque** (Ctrl+T) : un cadre entoure le **calque choisi**. Pour agrandir, réduire ou
   tourner **un seul élément** du calque, **sélectionnez-le d'abord** (rectangle, lasso, baguette…) : le cadre
   n'entoure que lui, le reste du calque ne bouge pas, sa place d'origine devient transparente.
@@ -1124,6 +1416,16 @@ direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annul
   - la barre du haut montre **Largeur**, **Hauteur** (en %) et **Angle** (en degrés) dans des cases où l'on peut
     **taper la valeur exacte** (flèches : 1° ; Maj+flèches : 10°) ; **Entrée**, double-clic ou **Valider** pour garder,
     **Échap** ou **Annuler** pour revenir. Changer d'outil valide aussi.
+  - **Mode** (barre du haut, ou **Édition > Transformation**) :
+    - **Libre** : ci-dessus. **Ctrl+coin** : ce coin bouge seul (on passe en *Distordre*).
+    - **Perspective** : un coin tiré entraîne le coin voisin **en miroir** (tiré vers le bas, le bord rétrécit ;
+      tiré de côté, il s'élargit) : comme une façade vue de biais.
+    - **Distordre** : chaque coin bouge seul, pour **poser une image sur un écran, une boîte, un mur, une
+      pochette en 3D** ; un milieu de bord déplace tout ce bord.
+    - **Déformation** : une **grille de 16 points** (des cercles pour les poignées, des carrés aux coins) : tirez-les
+      pour courber, gonfler, plier l'image (drapeau, tasse, page qui ondule). Un coin emmène ses deux poignées.
+    - Dans ces trois modes, **dedans** = déplacer, **dehors** = tourner toute la forme ; Ctrl+Z défait le dernier
+      geste. Les cases Largeur / Hauteur / Angle sont grisées.
   Un texte transformé devient une image (pour garder un texte modifiable, utilisez l'outil Texte).
 
 Tout s'annule par Ctrl+Z.
@@ -1148,12 +1450,16 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+X, Ctrl+C, Ctrl+V, Suppr | Couper, Copier, Coller (nouveau calque), Supprimer la sélection |
 | Ctrl+U | Réglages de l'image |
 | Ctrl+L, Ctrl+M, Ctrl+B, Ctrl+Alt+Maj+B | Niveaux, Courbes, Balance des couleurs, Noir et blanc |
+| Ctrl+I | Négatif |
 | Ctrl+G, Ctrl+Maj+G | Grouper, Dégrouper |
+| Ctrl+Alt+G | Masque d'écrêtage (le calque ne se voit que dans celui du dessous) |
+| Ctrl+H | Rechercher et remplacer dans les textes |
 | Ctrl+\ | Peindre le masque / les pixels du calque |
 | Ctrl+Alt+R | Améliorer le contour |
 | Ctrl+R, Ctrl+', Ctrl+;, Ctrl+Maj+; | Règles, Grille, Repères, Magnétisme |
 | Ctrl+W, Ctrl+Tab, Ctrl+Maj+Tab | Fermer la photo, Photo suivante, Photo précédente |
 | Ctrl+Alt+Maj+S, Ctrl+Alt+Maj+W | Exporter pour le web, Exporter sous |
+| Ctrl+P | Imprimer |
 | Flèches (Maj : x10) | Bouger la sélection (outils de sélection) |
 | Ctrl+N, Ctrl+Alt+V | Nouvelle image, Nouvelle image depuis le presse-papiers |
 | Ctrl+Alt+I, Ctrl+Alt+C | Taille de l'image, Taille de la zone de travail |
