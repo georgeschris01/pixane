@@ -71,6 +71,9 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
   Flux Schnell, redessinée par Kontext avec chaque ciel et chaque lumière), au lieu d'une liste de mots. Consignes
   de lumière revues : *Studio* n'ajoute plus de projecteurs dans la photo, *Gauche / Droite* ne rendent plus la photo
   presque noire (renommées « Lumière venant de la gauche / droite »), *Contre-jour* est vraiment à contre-jour.
+- **Sélectionner / Remplacer le ciel** : bord affiné d'après les couleurs (le ciel entre les branches d'un arbre nu
+  est pris aussi ; au remplacement, les branches gardent leur couleur, sans givre blanc).
+- **Flou selon la profondeur** : pinceaux *Garder net* et *Rendre flou* sur la carte, pour corriger l'IA.
 
 ## Corrections
 

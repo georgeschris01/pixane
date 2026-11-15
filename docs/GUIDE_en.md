@@ -584,7 +584,8 @@ AI actions, the result goes into the chosen layer (Ctrl+Z undoes it).
 
 ### Sky, colours, lighting, depth (AI)
 - **Select > Select the sky (AI)**: the AI (SAM 3.1) finds the sky and selects it, with a slightly widened and
-  softened edge so the horizon line blends. Then every tool works on that selection (adjustments, Fill…). A few
+  softened edge so the horizon line blends. Pixane then refines the edge from the colours: the sky seen between the
+  branches of a bare tree is selected too (and, with *Replace the sky*, the branches keep their colour). Then every tool works on that selection (adjustments, Fill…). A few
   seconds.
 - **AI > Replace the sky…**: choose the new sky on **example thumbnails** (blue sky with a few clouds, big clouds, sunset, stormy sky, starry
   night, dawn). Pixane selects the sky (clouds included), Flux Kontext redraws the photo with that sky, and **only the
@@ -595,14 +596,15 @@ AI actions, the result goes into the chosen layer (Ctrl+Z undoes it).
   inside it. Flux Kontext, two proposals, about 2 minutes each.
 - **AI > Change the lighting…**: golden late-day light, soft studio light, strong light from the left or the right,
   backlight, night lit by street lamps, coloured neon lights, overcast; an example thumbnail for each (double-click:
-  choose and start). Flux Kontext redraws the photo with that
+  choose and start). With a selection, only inside it. Flux Kontext redraws the photo with that
   lighting, keeping the people and objects. Compare carefully: the AI may change small details.
 - **Filters > Depth blur (AI)…**: like a camera's background blur. The AI computes the distance of each point (a few
   seconds); a window shows that map (light = near, dark = far): **click what must stay sharp** (at first: the
   nearest thing). **Blur** sets the strength, **Sharp zone** the depth kept sharp around the point. **Keep the
   whole subject sharp** (ticked at first): subject detection fixes what the map wrongly puts far away, for example a
   grey jacket in front of a grey wall. **Do not blur what is nearer than the sharp point**: only useful when you
-  click something far away (otherwise nothing is in front, the box changes nothing). Live preview on the photo; applies to the chosen layer (inside the
+  click something far away (otherwise nothing is in front, the box changes nothing). **If the AI gets it wrong**: choose *Brush: keep sharp* or *Brush: make blurred* and paint on the map
+  (green = sharp, red = blurred; *Brush size*; *Clear the brush strokes*). Live preview on the photo; applies to the chosen layer (inside the
   selection if there is one). **Depth Anything 3 Small** model (137 MB, Apache-2.0), optional: *Depth blur* box when
   installing Pixane, or in **AI > Install the AI engine…**.
 

@@ -609,7 +609,9 @@ l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi
 
 ### Ciel, couleurs, lumière, profondeur (IA)
 - **Sélection > Sélectionner le ciel (IA)** : l'IA (SAM 3.1) trouve le ciel et le sélectionne, bord un peu élargi et
-  adouci pour que la ligne d'horizon se raccorde. Ensuite, tous les outils marchent sur cette sélection (réglages,
+  adouci pour que la ligne d'horizon se raccorde. Pixane affine ensuite le bord d'après les couleurs : le ciel vu
+  entre les branches d'un arbre nu est sélectionné aussi (et, avec *Remplacer le ciel*, les branches gardent leur
+  couleur). Ensuite, tous les outils marchent sur cette sélection (réglages,
   Remplir…). Quelques secondes.
 - **IA > Remplacer le ciel…** : choisissez le nouveau ciel sur des **vignettes d'exemple** (ciel bleu avec quelques nuages, grands nuages, coucher
   de soleil, ciel d'orage, nuit étoilée, aube). Pixane sélectionne le ciel (nuages compris), Flux Kontext redessine
@@ -621,7 +623,7 @@ l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi
   sélection, seulement dedans. Flux Kontext, deux propositions, environ 2 minutes chacune.
 - **IA > Changer la lumière…** : lumière dorée de fin de journée, lumière douce de studio, lumière marquée venant
   de la gauche ou de la droite, contre-jour, nuit éclairée par des lampadaires, néons colorés, temps couvert ; une
-  vignette d'exemple pour chacune (double-clic : choisir et lancer). Flux
+  vignette d'exemple pour chacune (double-clic : choisir et lancer). Avec une sélection, seulement dedans. Flux
   Kontext redessine la photo avec cette lumière, en gardant les personnes et les objets. Comparez bien : l'IA peut
   changer de petits détails.
 - **Filtres > Flou selon la profondeur (IA)…** : comme le flou d'arrière-plan d'un appareil photo. L'IA calcule la
@@ -630,7 +632,8 @@ l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi
   nette** la profondeur gardée nette autour du point. **Garder net tout le sujet** (cochée au départ) : le
   détourage rattrape ce que la carte met à tort au loin, par exemple une veste grise devant un mur gris. **Ne pas
   flouter ce qui est plus proche que le point net** : utile seulement quand vous cliquez sur quelque chose au loin
-  (sinon rien n'est devant, la case ne change rien). Aperçu en direct sur la photo ; s'applique au calque choisi (dans la sélection s'il y en a une). Modèle
+  (sinon rien n'est devant, la case ne change rien). **Si l'IA se trompe** : choisissez *Pinceau : garder net* ou *Pinceau : rendre flou* et peignez sur la carte
+  (vert = net, rouge = flou ; *Taille du pinceau* ; *Effacer les coups de pinceau*). Aperçu en direct sur la photo ; s'applique au calque choisi (dans la sélection s'il y en a une). Modèle
   **Depth Anything 3 Small** (137 Mo, Apache-2.0), facultatif : case *Flou selon la profondeur* à l'installation de
   Pixane, ou dans **IA > Installer le moteur IA…**.
 

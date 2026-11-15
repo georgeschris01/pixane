@@ -1573,7 +1573,6 @@
  "Changer la lumière…": "Change the lighting…",
  "Ciel bleu avec quelques nuages": "Blue sky with a few clouds",
  "Ciel d'orage": "Stormy sky",
- "Clic : le point qui reste net": "Click: the point that stays sharp",
  "Cliquez sur ce qui doit rester net. Clair = proche, foncé = loin.": "Click what must stay sharp. Light = near, dark = far.",
  "Coloriser": "Colorize",
  "Colorisé": "Colorized",
@@ -1610,5 +1609,11 @@
  "Exemples faits par Pixane sur une photo inventée ; le résultat sur votre photo variera.": "Examples made by Pixane on an invented photo; the result on your photo will vary.",
  "Lumière venant de la gauche": "Light from the left",
  "Lumière venant de la droite": "Light from the right",
- "Temps couvert, sans ombres": "Overcast, no shadows"
+ "Temps couvert, sans ombres": "Overcast, no shadows",
+ "Point net": "Sharp point",
+ "Pinceau : garder net": "Brush: keep sharp",
+ "Pinceau : rendre flou": "Brush: make blurred",
+ "Taille du pinceau": "Brush size",
+ "Effacer les coups de pinceau": "Clear the brush strokes",
+ "Clic : le point qui reste net. Avec un pinceau : peindre les endroits à corriger.": "Click: the point that stays sharp. With a brush: paint the places to correct."
 }
