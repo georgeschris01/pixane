@@ -65,11 +65,12 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 - Image size, **canvas size**, rotate, flip, straighten, **content-aware scale** (change the proportions without squashing the subject); transform a layer (size, rotation, **perspective**, **distort**, **warp**), **lossless** when shrinking then enlarging again (like a smart object); **perspective crop**
 - **Actions**: record a series of adjustments and filters, replay it in one click, also on a whole folder
 - **RGB colour** or **greyscale** mode
+- **16 bits per channel** (65,536 shades per colour: gradients and strong adjustments without banding), with **dithering** when going back to 8 bits
 
 **Files**
 - **New image** with 34 ready-made formats (CD and vinyl covers, Spotify, books, Amazon KDP, social media, A4, posters…), units (px, cm, mm, inches, points, picas), resolution, **bleed** and **safe area** for print
 - **Export for print in CMYK** (TIFF, PDF, JPEG; Windows profiles such as Coated FOGRA39) and **on-screen preview** of the printed colours
-- JPG, PNG, TIFF, WebP, BMP, **camera RAW** (Canon, Nikon, Sony, DNG, Fujifilm…); **PSD** (Photoshop) with layers, groups, masks, modes and styles; `.pixane` (Pixane Photo project, everything stays editable) and `.ora` (Krita, GIMP)
+- JPG, PNG, TIFF, WebP, BMP, **camera RAW** (Canon, Nikon, Sony, DNG, Fujifilm…, developed in 16 bits); PNG, TIFF and PSD in **16 bits**; **PSD** (Photoshop) with layers, groups, masks, modes and styles; `.pixane` (Pixane Photo project, everything stays editable) and `.ora` (Krita, GIMP)
 - **Several photos open** in tabs, each with its own Undo
 - **Autosave** and recovery after a crash
 - **Export for web** (JPEG, WebP, PNG; size, quality, file size shown, personal information removed)
@@ -258,8 +259,9 @@ Layer names that already exist keep their original language.
   - **Orientation**: Portrait or Landscape swaps width and height.
   - **Resolution** (dpi, dots per inch): **300** for print, **72** for screen. It is **kept in the file** (.pixane,
     PSD, JPEG, PNG, TIFF): a printer will see the right size.
-  - **Mode**: RGB colour or **greyscale** (see *Image > Mode*). Pixane Photo works in **8 bits per channel** (16.7 million
-    colours, like JPEG, PNG and the web); 16 and 32 bits are planned for later.
+  - **Mode**: RGB colour or **greyscale** (see *Image > Mode*). A new image is in **8 bits per channel** (16.7 million
+    colours, like JPEG, PNG and the web); for fine work, switch it to **16 bits** afterwards (*Image > Mode >
+    16 bits per channel*).
   - **Background**: white, transparent, black or a colour of your choice.
   - **Bleed** (print): band added all around, trimmed off by the printer (usually 3 mm): the background must run to
     the edge of the image. **Safe area**: margin inside the finished size where nothing important goes (text,
@@ -1324,6 +1326,22 @@ As in Photoshop: **record** a series of operations, then **replay** it in one cl
 
 - **Mode**: **RGB colour** or **Greyscale**. In greyscale the image is shown and saved in grey (JPEG, PNG, TIFF in
   true grey); the layers keep their colours, so you can go back to RGB without losing anything.
+- **8 or 16 bits per channel** (*Image > Mode*, like Photoshop): in 8 bits each colour has 256 shades; in **16 bits**,
+  65,536. Useful for strong edits (levels, curves, brightening a dark photo), **gradients** and skies: no **banding**
+  (visible steps) even after several adjustments. The window title shows **(16 bits)**. Ctrl+Z undoes the change.
+  - **Opened in 16 bits automatically**: 16-bit PNG, TIFF and PSD files, and **RAW photos** (developed in 16 bits).
+  - **Saved in 16 bits**: .pixane, PSD, TIFF, PNG. JPEG, WebP and BMP only have 8 bits: the image is saved in 8 bits
+    there, with **dithering** (see below).
+  - **Computed in 16 bits**: layer blending (blend modes, adjustment layers, masks), all **adjustments** (Image
+    adjustments, Levels, Curves, Balance…), **filters** (blurs, sharpen, noise, vignette), the **Gradient** tool and
+    fill layers, image size, rotate, flip, straighten, transform, crop, Expand.
+  - The other tools (brushes, eraser, retouching, AI…) work in 8 bits, **only where they change the image**: the
+    rest of the layer keeps its 16 bits. The AI always returns an 8-bit result, placed only in the area it worked
+    on. *Content-aware scale* brings the whole layer back to 8-bit precision.
+  - A 16-bit image takes **twice as much memory**, and filters are a little slower.
+- **Dither to 8 bits** (*Image > Mode*, checked by default): when a 16-bit image is shown on screen, exported to JPEG /
+  WebP, or brought back to 8 bits, a very light invisible grain is added so gradients show no steps (like Photoshop's
+  "dither"). Uncheck it for a grain-free conversion to 8 bits.
 - **Canvas size…** (Ctrl+Alt+C): enlarges the sheet **without stretching the image** (for example to add a bleed
   or a band for a title), or crops it.
   - New **width** and **height** in pixels, inches, cm, mm, points, picas or **percent**; **Relative**: you type

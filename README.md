@@ -65,11 +65,12 @@ Fait partie de la **[Suite Pixane](https://github.com/pixane-suite)** : des logi
 - Taille de l'image, **taille de la zone de travail**, pivoter, retourner, redresser, **mise à l'échelle d'après le contenu** (changer les proportions sans écraser le sujet) ; transformer un calque (taille, rotation, **perspective**, **distordre**, **déformation**), **sans perte** en réduisant puis réagrandissant (comme un objet dynamique) ; **recadrage en perspective**
 - **Actions** : enregistrer une suite de réglages et de filtres, la rejouer d'un clic, aussi sur tout un dossier
 - Mode **couleurs RVB** ou **niveaux de gris**
+- **16 bits par couche** (65 536 nuances par couleur : dégradés et réglages forts sans cassures), avec **tramage** au retour en 8 bits
 
 **Fichiers**
 - **Nouvelle image** avec 34 formats tout prêts (pochettes CD et vinyle, Spotify, livres, Amazon KDP, réseaux sociaux, A4, affiches…), unités (px, cm, mm, pouces, points, picas), résolution, **fond perdu** et **zone de sécurité** pour l'impression
 - **Exporter pour l'impression en CMJN** (TIFF, PDF, JPEG ; profils de Windows comme Coated FOGRA39) et **aperçu à l'écran** des couleurs imprimées
-- JPG, PNG, TIFF, WebP, BMP, **RAW des appareils photo** (Canon, Nikon, Sony, DNG, Fujifilm…) ; **PSD** (Photoshop) avec calques, groupes, masques, modes et styles ; `.pixane` (projet Pixane Photo, tout reste modifiable) et `.ora` (Krita, GIMP)
+- JPG, PNG, TIFF, WebP, BMP, **RAW des appareils photo** (Canon, Nikon, Sony, DNG, Fujifilm…, développés en 16 bits) ; PNG, TIFF et PSD en **16 bits** ; **PSD** (Photoshop) avec calques, groupes, masques, modes et styles ; `.pixane` (projet Pixane Photo, tout reste modifiable) et `.ora` (Krita, GIMP)
 - **Plusieurs photos ouvertes** dans des onglets, chacune avec son Annuler
 - **Enregistrement automatique** et récupération après un plantage
 - **Exporter pour le web** (JPEG, WebP, PNG ; taille, qualité, poids affiché, informations personnelles enlevées)
@@ -262,8 +263,9 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
   - **Orientation** : Portrait ou Paysage échange largeur et hauteur.
   - **Résolution** (ppp, points par pouce) : **300** pour l'impression, **72** pour l'écran. Elle est **gardée dans
     le fichier** (.pixane, PSD, JPEG, PNG, TIFF) : un imprimeur verra la bonne taille.
-  - **Mode** : couleurs RVB ou **niveaux de gris** (voir *Image > Mode*). Pixane Photo travaille en **8 bits par couche**
-    (16,7 millions de couleurs, comme le JPEG, le PNG et le web) ; le 16 et le 32 bits sont prévus plus tard.
+  - **Mode** : couleurs RVB ou **niveaux de gris** (voir *Image > Mode*). Une image neuve est en **8 bits par
+    couche** (16,7 millions de couleurs, comme le JPEG, le PNG et le web) ; pour un travail fin, passez-la ensuite en
+    **16 bits** (*Image > Mode > 16 bits par couche*).
   - **Fond** : blanc, transparent, noir ou une couleur au choix.
   - **Fond perdu** (impression) : bande ajoutée tout autour, coupée par l'imprimeur (en général 3 mm) : le fond doit
     aller jusqu'au bord de l'image. **Zone de sécurité** : marge à l'intérieur du format fini où ne mettre rien
@@ -1372,6 +1374,24 @@ Comme dans Photoshop : **enregistrer** une suite d'opérations, puis la **rejoue
 
 - **Mode** : **Couleurs RVB** ou **Niveaux de gris**. En niveaux de gris, l'image est montrée et enregistrée en gris
   (JPEG, PNG, TIFF en vrai gris) ; les calques gardent leurs couleurs, pour revenir en RVB sans rien perdre.
+- **8 bits ou 16 bits par couche** (*Image > Mode*, comme Photoshop) : en 8 bits, chaque couleur a 256 nuances ; en
+  **16 bits**, 65 536. Utile pour les retouches fortes (niveaux, courbes, éclaircir une photo sombre), les
+  **dégradés** et les ciels : pas de **cassures** (marches visibles) même après plusieurs réglages. Le titre de la
+  fenêtre indique **(16 bits)**. Ctrl+Z annule le changement.
+  - **Ouvert en 16 bits d'office** : les PNG, TIFF et PSD 16 bits, et les **photos RAW** (développées en 16 bits).
+  - **Enregistré en 16 bits** : .pixane, PSD, TIFF, PNG. Le JPEG, le WebP et le BMP n'ont que 8 bits : l'image y est
+    enregistrée en 8 bits, avec le **tramage** (voir plus bas).
+  - **Calculé en 16 bits** : la fusion des calques (modes de fusion, calques de réglage, masques), tous les
+    **réglages** (Réglages de l'image, Niveaux, Courbes, Balance…), les **filtres** (flous, netteté, bruit,
+    vignette), le **Dégradé** et les calques de remplissage, la taille de l'image, pivoter, miroir, redresser,
+    transformer, recadrer, Agrandir.
+  - Les autres outils (pinceaux, gomme, retouche, IA…) travaillent en 8 bits, **seulement là où ils changent
+    l'image** : le reste du calque garde ses 16 bits. L'IA rend toujours un résultat en 8 bits, posé seulement dans
+    la zone traitée. La *mise à l'échelle d'après le contenu* repasse tout le calque en 8 bits de précision.
+  - Une image 16 bits prend **deux fois plus de mémoire**, et les filtres sont un peu plus lents.
+- **Tramage vers 8 bits** (*Image > Mode*, coché par défaut) : quand une image 16 bits est montrée à l'écran,
+  exportée en JPEG / WebP, ou repassée en 8 bits, un très léger grain invisible est ajouté pour que les dégradés ne
+  montrent pas de marches (comme le « tramage » de Photoshop). Décochez-le pour un passage en 8 bits sans grain.
 - **Taille de la zone de travail…** (Ctrl+Alt+C) : agrandit la feuille **sans étirer l'image** (par exemple pour
   ajouter un fond perdu ou une bande pour un titre), ou la rogne.
   - Nouvelle **largeur** et **hauteur** en pixels, pouces, cm, mm, points, picas ou **pourcentage** ; **Relative**
