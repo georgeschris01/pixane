@@ -611,7 +611,7 @@ l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi
 - **Sélection > Sélectionner le ciel (IA)** : l'IA (SAM 3.1) trouve le ciel et le sélectionne, bord un peu élargi et
   adouci pour que la ligne d'horizon se raccorde. Ensuite, tous les outils marchent sur cette sélection (réglages,
   Remplir…). Quelques secondes.
-- **IA > Remplacer le ciel…** : choisissez le nouveau ciel (ciel bleu avec quelques nuages, grands nuages, coucher
+- **IA > Remplacer le ciel…** : choisissez le nouveau ciel sur des **vignettes d'exemple** (ciel bleu avec quelques nuages, grands nuages, coucher
   de soleil, ciel d'orage, nuit étoilée, aube). Pixane sélectionne le ciel (nuages compris), Flux Kontext redessine
   la photo avec ce ciel, et **seul le ciel** en est gardé : le reste garde ses pixels d'origine. Deux propositions,
   environ 2 minutes chacune. Au bord d'un toit ou d'un arbre, l'IA peut laisser un petit reste décalé : choisissez la
@@ -619,8 +619,9 @@ l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi
   couleur sur le reste de la photo (Sélection > Inverser) aide souvent.
 - **IA > Coloriser** : met des couleurs naturelles à une photo en noir et blanc (sans la restaurer) ; avec une
   sélection, seulement dedans. Flux Kontext, deux propositions, environ 2 minutes chacune.
-- **IA > Changer la lumière…** : lumière dorée de fin de journée, lumière douce de studio, lumière dramatique venant
-  de la gauche ou de la droite, contre-jour, nuit éclairée par des lampadaires, néons colorés, temps couvert. Flux
+- **IA > Changer la lumière…** : lumière dorée de fin de journée, lumière douce de studio, lumière marquée venant
+  de la gauche ou de la droite, contre-jour, nuit éclairée par des lampadaires, néons colorés, temps couvert ; une
+  vignette d'exemple pour chacune (double-clic : choisir et lancer). Flux
   Kontext redessine la photo avec cette lumière, en gardant les personnes et les objets. Comparez bien : l'IA peut
   changer de petits détails.
 - **Filtres > Flou selon la profondeur (IA)…** : comme le flou d'arrière-plan d'un appareil photo. L'IA calcule la

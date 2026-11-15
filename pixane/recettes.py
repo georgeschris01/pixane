@@ -50,13 +50,18 @@ _profondeur: dict = {"fichier": None}
 TEXTE_COLORISER_SEUL = ("Colorize this black and white photo with natural, realistic colors. Keep exactly the same "
                         "people, faces, expressions, objects, details, lighting, framing and composition.")
 TEXTE_LUMIERE = ("Relight this photo: {lumiere}. Keep exactly the same people, faces, expressions, objects, details, "
-                 "colors of the objects, framing and composition; only the lighting changes.")
+                 "colors of the objects, framing and composition; only the lighting changes. Do not add any new object, lamp or "
+                 "light fixture to the picture.")
 LUMIERES = {
     "doree": "warm golden hour sunlight, low sun, soft long shadows",
-    "studio": "soft, even studio lighting with large softboxes, gentle shadows",
-    "gauche": "dramatic light coming from the left side, deep shadows on the right",
-    "droite": "dramatic light coming from the right side, deep shadows on the left",
-    "contre_jour": "strong backlight, rim light around the subject, bright background",
+    "studio": "soft, even and flattering light like in a professional portrait studio, gentle shadows, clean bright "
+              "look (the light sources stay outside the picture)",
+    "gauche": "strong warm directional light coming from the left side: the left side of every person and object is "
+              "brightly lit, contrasted shadows on the right side; same overall brightness, still daytime",
+    "droite": "strong warm directional light coming from the right side: the right side of every person and object "
+              "is brightly lit, contrasted shadows on the left side; same overall brightness, still daytime",
+    "contre_jour": "backlight: a low bright sun just behind the subject, glowing halo of light around the hair and "
+                   "shoulders, warm hazy bright sky, the front of the subject softly in shadow",
     "nuit": "night time, lit by warm street lamps, dark blue ambient light",
     "neon": "colorful neon lights, pink and blue glow",
     "nuageux": "overcast day, soft diffuse light, no hard shadows",

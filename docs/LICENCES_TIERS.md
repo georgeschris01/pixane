@@ -41,5 +41,11 @@ Pixane itself: Pixane Licence 1.2 (free of charge, source-available, non-commerc
 | SAM 3.1 (sélection d'objet / object selection) | SAM License (Meta) — https://huggingface.co/Comfy-Org/sam3.1/blob/main/LICENSE |
 | Depth Anything 3 Small (flou selon la profondeur, facultatif / depth blur, optional) | Apache-2.0 — https://huggingface.co/Comfy-Org/Depth-Anything-3 |
 
+Les vignettes d'exemple des ciels et des lumières (`pixane/ressources/exemples`) ont été faites par Pixane : une
+photo inventée par FLUX.1 [schnell], redessinée par FLUX.1 Kontext [dev] (la licence FLUX.1 [dev] laisse libre
+l'usage des images produites). / The sky and lighting example thumbnails (`pixane/ressources/exemples`) were made by
+Pixane: a photo invented by FLUX.1 [schnell], redrawn by FLUX.1 Kontext [dev] (the FLUX.1 [dev] licence leaves the
+use of generated images free).
+
 Pixane lance ComfyUI comme un programme séparé (aucun code de ComfyUI n'est inclus dans Pixane).
 Pixane runs ComfyUI as a separate program (no ComfyUI code is included in Pixane).

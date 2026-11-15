@@ -67,6 +67,10 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
 - **IA pour la photo** : Sélectionner le ciel, Remplacer le ciel (6 ciels au choix), Coloriser, Changer la lumière
   (8 lumières au choix), Flou selon la profondeur (clic sur ce qui reste net). Nouveau modèle facultatif Depth Anything
   3 Small (137 Mo, Apache-2.0) : case dans l'installateur et dans IA > Installer le moteur IA.
+- **Remplacer le ciel, Changer la lumière** : le choix se fait sur des vignettes d'exemple (une photo inventée par
+  Flux Schnell, redessinée par Kontext avec chaque ciel et chaque lumière), au lieu d'une liste de mots. Consignes
+  de lumière revues : *Studio* n'ajoute plus de projecteurs dans la photo, *Gauche / Droite* ne rendent plus la photo
+  presque noire (renommées « Lumière venant de la gauche / droite »), *Contre-jour* est vraiment à contre-jour.
 
 ## Corrections
 

@@ -586,15 +586,16 @@ AI actions, the result goes into the chosen layer (Ctrl+Z undoes it).
 - **Select > Select the sky (AI)**: the AI (SAM 3.1) finds the sky and selects it, with a slightly widened and
   softened edge so the horizon line blends. Then every tool works on that selection (adjustments, Fill…). A few
   seconds.
-- **AI > Replace the sky…**: choose the new sky (blue sky with a few clouds, big clouds, sunset, stormy sky, starry
+- **AI > Replace the sky…**: choose the new sky on **example thumbnails** (blue sky with a few clouds, big clouds, sunset, stormy sky, starry
   night, dawn). Pixane selects the sky (clouds included), Flux Kontext redraws the photo with that sky, and **only the
   sky** is kept: the rest keeps its original pixels. Two proposals, about 2 minutes each. At the edge of a roof or a
   tree, the AI may leave a small shifted remnant: choose the best proposal, or retouch it (stamp, Erase). The sky
   stays selected: to match it, a colour adjustment on the rest of the photo (Select > Invert) often helps.
 - **AI > Colorize**: adds natural colours to a black & white photo (without restoring it); with a selection, only
   inside it. Flux Kontext, two proposals, about 2 minutes each.
-- **AI > Change the lighting…**: golden late-day light, soft studio light, dramatic light from the left or the right,
-  backlight, night lit by street lamps, coloured neon lights, overcast. Flux Kontext redraws the photo with that
+- **AI > Change the lighting…**: golden late-day light, soft studio light, strong light from the left or the right,
+  backlight, night lit by street lamps, coloured neon lights, overcast; an example thumbnail for each (double-click:
+  choose and start). Flux Kontext redraws the photo with that
   lighting, keeping the people and objects. Compare carefully: the AI may change small details.
 - **Filters > Depth blur (AI)…**: like a camera's background blur. The AI computes the distance of each point (a few
   seconds); a window shows that map (light = near, dark = far): **click what must stay sharp** (at first: the

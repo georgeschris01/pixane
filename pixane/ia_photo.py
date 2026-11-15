@@ -11,9 +11,9 @@ import numpy as np
 from PIL import Image, ImageFilter
 from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QInputDialog, QLabel, QMessageBox, QVBoxLayout
+from PySide6.QtWidgets import QLabel, QMessageBox, QVBoxLayout
 
-from . import recettes
+from . import choix_exemple, recettes
 from .document import FORMAT_IMAGE, tableau
 from .langue import tr
 from .moteur import ErreurMoteur
@@ -27,10 +27,10 @@ def noms_ciels() -> dict:
 
 def noms_lumieres() -> dict:
     return {"doree": tr("Lumière dorée de fin de journée"), "studio": tr("Lumière douce de studio"),
-            "gauche": tr("Lumière dramatique venant de la gauche"),
-            "droite": tr("Lumière dramatique venant de la droite"), "contre_jour": tr("Contre-jour"),
+            "gauche": tr("Lumière venant de la gauche"),
+            "droite": tr("Lumière venant de la droite"), "contre_jour": tr("Contre-jour"),
             "nuit": tr("Nuit, éclairée par des lampadaires"), "neon": tr("Néons colorés"),
-            "nuageux": tr("Temps couvert (lumière douce, sans ombres)")}
+            "nuageux": tr("Temps couvert, sans ombres")}
 
 
 # ------------------------------------------------------------------ flou selon la profondeur (calcul)
@@ -271,14 +271,10 @@ class ActionsPhotoIA:
         titre = tr("Remplacer le ciel")
         if not self.doc or not self._sam_present(titre) or not self._verifier_verrou(titre)                 or not self._kontext_present(titre):
             return
-        noms = noms_ciels()
-        cles = list(noms)
-        dernier = self.reglages.value("ciel_style", "bleu")
-        nom, ok = QInputDialog.getItem(self, titre, tr("Nouveau ciel :"), [noms[k] for k in cles],
-                                       cles.index(dernier) if dernier in cles else 0, False)
-        if not ok:
+        cle = choix_exemple.choisir(self, titre, tr("Nouveau ciel :"), noms_ciels(), "ciel",
+                                    self.reglages.value("ciel_style", "bleu"))
+        if cle is None:
             return
-        cle = cles[[noms[k] for k in cles].index(nom)]
         self.reglages.setValue("ciel_style", cle)
         texte = recettes.CIELS[cle]
 
@@ -326,14 +322,10 @@ class ActionsPhotoIA:
         titre = tr("Changer la lumière")
         if not self.doc or not self._verifier_verrou(titre) or not self._kontext_present(titre):
             return
-        noms = noms_lumieres()
-        cles = list(noms)
-        dernier = self.reglages.value("lumiere_style", "doree")
-        nom, ok = QInputDialog.getItem(self, titre, tr("Nouvelle lumière :"), [noms[k] for k in cles],
-                                       cles.index(dernier) if dernier in cles else 0, False)
-        if not ok:
+        cle = choix_exemple.choisir(self, titre, tr("Nouvelle lumière :"), noms_lumieres(), "lumiere",
+                                    self.reglages.value("lumiere_style", "doree"))
+        if cle is None:
             return
-        cle = cles[[noms[k] for k in cles].index(nom)]
         self.reglages.setValue("lumiere_style", cle)
         self._kontext(titre, recettes.TEXTE_LUMIERE.format(lumiere=recettes.LUMIERES[cle]), tr("Lumière"),
                       tr("_lumiere"))

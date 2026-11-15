@@ -113,7 +113,8 @@ p, _s = reponses["recette"]
 verifier(p["15"]["inputs"]["text"] == "sky" and p["12"]["class_type"] == "SAM3_Detect", "recette : SAM 3.1 avec « sky »")
 verifier(f.historique.undoText() == "Sélectionner le ciel", "une étape « Sélectionner le ciel »")
 f.historique.undo()
-QInputDialog.getItem = staticmethod(lambda *a, **k: (ia_photo.noms_ciels()["coucher"], True))
+from pixane import choix_exemple
+choix_exemple.choisir = lambda *a, **k: "coucher"
 f.ia_remplacer_ciel()
 titre, avec, (prompt, _s), kw = lances[-1]
 textes = [n["inputs"].get("text", "") for n in prompt.values() if n["class_type"] == "CLIPTextEncode"]
@@ -124,7 +125,7 @@ f.ia_coloriser()
 titre, _a, (prompt, _s), kw = lances[-1]
 textes = [n["inputs"].get("text", "") for n in prompt.values() if n["class_type"] == "CLIPTextEncode"]
 verifier(titre == "Coloriser" and any("Colorize" in t for t in textes), "Coloriser : Flux Kontext, consigne prête")
-QInputDialog.getItem = staticmethod(lambda *a, **k: (ia_photo.noms_lumieres()["gauche"], True))
+choix_exemple.choisir = lambda *a, **k: "gauche"
 f.ia_lumiere()
 titre, _a, (prompt, _s), kw = lances[-1]
 textes = [n["inputs"].get("text", "") for n in prompt.values() if n["class_type"] == "CLIPTextEncode"]
@@ -166,6 +167,24 @@ messages = []
 QMessageBox.information = staticmethod(lambda *a, **k: messages.append(a[2]))
 f.ia_flou_profondeur()
 verifier(messages and "Depth Anything 3" in messages[-1], "modèle absent : message (installer le moteur IA)")
+
+# fenêtre de choix sur vignettes : une vignette par ciel et par lumière, plus la photo de départ
+d = choix_exemple.ChoixExemple(f, "Remplacer le ciel", "Nouveau ciel :", ia_photo.noms_ciels(), "ciel", "orage")
+verifier(d.cle == "orage" and d.boutons["orage"].isChecked() and len(d.boutons) == 6, "fenêtre des ciels : le dernier choix est repris")
+d.boutons["nuit"].click()
+verifier(d.cle == "nuit" and not d.boutons["orage"].isChecked(), "un clic sur une vignette la choisit")
+vues = [k for k in list(ia_photo.noms_ciels()) if choix_exemple.vignette("ciel_" + k)]
+vues += [k for k in list(ia_photo.noms_lumieres()) if choix_exemple.vignette("lumiere_" + k)]
+verifier(len(vues) == 14 and choix_exemple.vignette("origine"), f"14 vignettes d'exemple + la photo de départ ({len(vues)})")
+d.show()
+app.processEvents()
+d.grab().save(str(sortie / "choix_ciel.png"))
+d.reject()
+d = choix_exemple.ChoixExemple(f, "Changer la lumière", "Nouvelle lumière :", ia_photo.noms_lumieres(), "lumiere")
+d.show()
+app.processEvents()
+d.grab().save(str(sortie / "choix_lumiere.png"))
+d.reject()
 
 # 3. installation : case facultative
 from pixane.installation_moteur import catalogue
