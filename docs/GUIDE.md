@@ -1042,6 +1042,22 @@ puis cliquez dans la zone : elle se remplit jusqu'à ce que la couleur change.
 - S'il y a une **sélection**, il reste dedans. Il peint sur le calque choisi (astuce : un calque vide au-dessus
   permet de revenir en arrière facilement).
 
+### Pinceaux de retouche : Densité, Éponge, Goutte d'eau, Netteté, Doigt, Historique
+Deux familles dans la barre d'outils (clic droit ou clic maintenu pour choisir), comme Photoshop. Ils changent les
+pixels du **calque choisi**, sous le pinceau ; **Force** (barre du haut) dit combien, la taille et la dureté se
+règlent comme pour le pinceau. Repasser au même endroit pendant un même coup ne renforce pas l'effet ; un nouveau
+coup, si. Chaque coup est une étape d'Annuler.
+
+| Outil | Ce qu'il fait |
+|---|---|
+| **Densité −** | Éclaircit. **Tons** : *Ombres*, *Tons moyens* ou *Hautes lumières* (seuls ces tons bougent : éclaircir les ombres d'un visage sans brûler le front) |
+| **Densité +** | Assombrit, avec le même choix de tons (foncer un ciel, un bord) |
+| **Éponge** | **Désaturer** : ternit les couleurs (jusqu'au gris) ; **Saturer** : les ravive |
+| **Goutte d'eau** | Floute (un fond, un grain de peau, une imperfection). Sur un **masque**, adoucit son bord |
+| **Netteté** | Rend plus nets les détails (yeux, lettres) ; à petite force, sinon du grain apparaît |
+| **Doigt** | Étale la couleur dans le sens du geste, comme de la peinture fraîche ; la force dit jusqu'où elle s'étale |
+| **Pinceau d'historique** | Repeint l'**instantané** : au départ, la photo telle qu'à l'ouverture. Pour annuler un effet seulement à certains endroits. **Prendre un instantané** (barre du haut) garde l'état actuel |
+
 ### Formes (U)
 Glissez pour dessiner un **rectangle**, un **rectangle arrondi**, une **ellipse**, une **ligne** ou une **flèche**
 (**Maj** : carré, cercle, ligne droite). Chaque forme va dans un **nouveau calque**, dans la couleur du pinceau.

@@ -1005,6 +1005,22 @@ area: it fills until the colour changes.
 - If there is a **selection**, it stays inside it. It paints on the selected layer (tip: an empty layer above makes
   it easy to go back).
 
+### Retouch brushes: Dodge, Burn, Sponge, Blur, Sharpen, Smudge, History
+Two families in the toolbar (right-click or press and hold to choose), like Photoshop. They change the pixels of
+the **chosen layer**, under the brush; **Strength** (top bar) says how much, size and hardness are set as for the
+brush. Going over the same place during one stroke does not strengthen the effect; a new stroke does. Each stroke is
+one Undo step.
+
+| Tool | What it does |
+|---|---|
+| **Dodge** | Lightens. **Tones**: *Shadows*, *Midtones* or *Highlights* (only those tones move: lighten the shadows of a face without burning the forehead) |
+| **Burn** | Darkens, with the same choice of tones (darken a sky, an edge) |
+| **Sponge** | **Desaturate**: dulls the colours (down to grey); **Saturate**: boosts them |
+| **Blur** | Blurs (a background, skin texture, a flaw). On a **mask**, softens its edge |
+| **Sharpen** | Makes details sharper (eyes, letters); at low strength, or grain appears |
+| **Smudge** | Spreads the colour along the stroke, like wet paint; the strength says how far it spreads |
+| **History brush** | Paints back the **snapshot**: at first, the photo as it was opened. To undo an effect in some places only. **Take a snapshot** (top bar) keeps the current state |
+
 ### Shapes (U)
 Drag to draw a **rectangle**, **rounded rectangle**, **ellipse**, **line** or **arrow** (**Shift**: square, circle,
 straight line). Each shape goes on a **new layer**, in the brush colour. **Filled** (box) or outline only; the

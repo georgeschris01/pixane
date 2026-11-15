@@ -1,4 +1,6 @@
-"""Retouche à la main sur un calque : pinceau de couleur et tampon (copier une zone sur une autre).
+"""Retouche à la main sur un calque : pinceau de couleur, tampon (copier une zone sur une autre) et pinceaux de
+retouche comme Photoshop : Densité − (éclaircir), Densité + (assombrir), Éponge (saturer / désaturer), Goutte d'eau
+(flouter), Netteté, Doigt (étaler la couleur), Historique (repeindre l'état d'avant : un « tampon » sans décalage).
 
 Un coup de pinceau est d'abord dessiné dans un « trait » (masque gris de la taille du calque : blanc = touché), puis
 posé sur l'image
@@ -16,6 +18,11 @@ from PySide6.QtGui import QColor, QImage, QPainter, QRadialGradient
 from .pointe import Placement, Pointe, Reglages, dessiner, texture_grise, texture_zone
 
 PEINTURE, TAMPON, GOMME = "peinture", "tampon", "gomme"
+ECLAIRCIR, ASSOMBRIR, EPONGE, GOUTTE, NETTETE, DOIGT = ("eclaircir", "assombrir", "eponge", "goutte", "nettete",
+                                                       "doigt")
+FILTRES_PINCEAU = (ECLAIRCIR, ASSOMBRIR, EPONGE, GOUTTE, NETTETE)    # calculés d'après l'image d'avant le coup
+GAMMES = ("ombres", "moyens", "lumieres")
+_LUM_BVR = np.array([0.114, 0.587, 0.299], np.float32)               # pixels Qt : ordre B, V, R
 
 
 def _vue(img: QImage, zone: QRect) -> np.ndarray:
@@ -39,11 +46,15 @@ class Trait:
                  couleur: QColor | None = None, source: QImage | None = None, decalage: QPointF | None = None,
                  pointe: Pointe | None = None, reglages: Reglages | None = None, fond: QColor | None = None,
                  texture: np.ndarray | None = None, double: Pointe | None = None, graine: int | None = None,
-                 origine: QPoint | None = None):
+                 origine: QPoint | None = None, gamme: str = "moyens", saturer: bool = False):
         """pointe : forme du pinceau (None : rond, réglé par durete). reglages : espacement, dispersion, texture…
         (voir pointe.Reglages). texture : motif (h, w, 4) ; double : deuxième forme. mode GOMME : efface.
         origine : place de `base` dans l'image (trait dessiné seul dans son rectangle : la texture reste alignée)."""
         self.origine = QPoint(origine) if origine is not None else QPoint(0, 0)
+        self.gamme = gamme if gamme in GAMMES else "moyens"   # Densité − / + : tons touchés
+        self.saturer = bool(saturer)            # Éponge : saturer (sinon désaturer)
+        self._flou = None                       # Goutte d'eau, Netteté : image floutée (calculée au premier besoin)
+        self._tampon_doigt = None               # Doigt : couleur « emportée » par le doigt
         self._differer = False                  # tracer() : composer une seule fois, à la fin
         self.mode = mode
         self.base = base                        # image du calque avant le coup (jamais modifiée)
@@ -91,6 +102,8 @@ class Trait:
 
     def ajouter(self, pt: QPointF, pression: float = 1.0) -> QRect:
         """Prolonge le coup jusqu'au point ; renvoie la zone de l'image modifiée. pression : tablette (0..1)."""
+        if self.mode == DOIGT:
+            return self._ajouter_doigt(pt)
         if self.formes:
             return self._ajouter_formes(pt, pression)
         p = QPainter(self.masque)
@@ -193,9 +206,99 @@ class Trait:
         p.drawImage(zone.topLeft(), _qimage(res))
         p.end()
 
+    # ------------------------------------------------------------------ Doigt
+    def _pastille(self) -> np.ndarray:
+        """Forme du doigt (2r+1)² : 1 au centre, bord adouci selon la dureté."""
+        r = max(1, int(round(self.taille / 2)))
+        y, x = np.mgrid[-r:r + 1, -r:r + 1].astype(np.float32)
+        d = np.sqrt(x * x + y * y) / r
+        dur = min(0.98, self.durete)
+        return np.clip((1 - d) / max(1e-3, 1 - dur), 0, 1)
+
+    def _ajouter_doigt(self, pt: QPointF) -> QRect:
+        """Comme le doigt de Photoshop : à chaque touche, la couleur emportée (mélange de ce qui a été touché avant)
+        est étalée sous le doigt, puis se mélange à ce qui s'y trouve. Force = l'opacité de la barre."""
+        r = max(1, int(round(self.taille / 2)))
+        forme = self._pastille()[..., None]
+        pas = max(1.0, self.taille * 0.12)
+        points = [pt]
+        if self._dernier is not None:
+            a = self._dernier
+            d = math.hypot(pt.x() - a.x(), pt.y() - a.y())
+            points, t = [], pas - self._reste
+            while t <= d:
+                points.append(a + (pt - a) * (t / d))
+                t += pas
+            self._reste = d - (t - pas)
+        self._dernier = pt
+        zone = QRect()
+        force = self.opacite
+        for c in points:
+            rect = QRect(int(round(c.x())) - r, int(round(c.y())) - r, 2 * r + 1, 2 * r + 1)
+            dessous = _vue(self.image, rect)               # hors de l'image : transparent
+            if self._tampon_doigt is None:
+                self._tampon_doigt = dessous
+                continue
+            nouveau = dessous + (self._tampon_doigt - dessous) * forme * force
+            self._tampon_doigt = self._tampon_doigt * force + nouveau * (1 - force)
+            p = QPainter(self.image)
+            p.setCompositionMode(QPainter.CompositionMode_Source)
+            p.drawImage(rect.topLeft(), _qimage(nouveau))
+            p.end()
+            zone = zone.united(rect)
+        return zone.intersected(self.image.rect())
+
+    # ------------------------------------------------------------------ Densité, Éponge, Goutte d'eau, Netteté
+    def _flou_zone(self, zone: QRect) -> np.ndarray:
+        if self._flou is None:                          # une fois par coup : flou de tout le calque d'avant
+            from PIL import Image, ImageFilter
+            b = self.base
+            h, w, ligne = b.height(), b.width(), b.bytesPerLine()
+            brut = np.frombuffer(b.constBits(), np.uint8, count=h * ligne).reshape(h, ligne)[:, :w * 4]
+            im = Image.frombuffer("RGBA", (w, h), np.ascontiguousarray(brut).tobytes(), "raw", "RGBA", 0, 1)
+            rayon = max(1.0, self.taille / 14)
+            self._flou = np.asarray(im.filter(ImageFilter.GaussianBlur(rayon))).reshape(h, w, 4)
+        x, y, w, h = zone.x(), zone.y(), zone.width(), zone.height()
+        return self._flou[y:y + h, x:x + w].astype(np.float32) / 255
+
+    def _filtrer(self, base: np.ndarray, m: np.ndarray, zone: QRect) -> np.ndarray:
+        """base : (h, w, 4) prémultiplié 0..1 ; m : (h, w) force sous le pinceau (masque × opacité)."""
+        a = base[..., 3:4]
+        coul = np.where(a > 1e-4, base[..., :3] / np.maximum(a, 1e-4), 0)
+        w = m[..., None]
+        if self.mode in (ECLAIRCIR, ASSOMBRIR):
+            l = coul @ _LUM_BVR
+            poids = {"ombres": (1 - l) ** 2, "moyens": 4 * l * (1 - l), "lumieres": l ** 2}[self.gamme][..., None]
+            k = w * poids
+            coul = coul + (1 - coul) * k * 0.6 if self.mode == ECLAIRCIR else coul * (1 - k * 0.6)
+        elif self.mode == EPONGE:
+            y = (coul @ _LUM_BVR)[..., None]
+            coul = y + (coul - y) * (1 + w * 0.9 if self.saturer else 1 - w * 0.9)
+        else:
+            flou = self._flou_zone(zone)
+            if self.mode == GOUTTE:
+                return base + (flou - base) * w
+            res = base + (base - flou) * w * 1.6               # Netteté : masque flou, sous le pinceau
+            res[..., :3] = np.minimum(np.clip(res[..., :3], 0, 1), base[..., 3:4])
+            res[..., 3] = base[..., 3]
+            return res
+        out = base.copy()
+        out[..., :3] = np.clip(coul, 0, 1) * a
+        return out
+
     # ------------------------------------------------------------------ rendu
     def _composer(self, zone: QRect):
         """Recalcule la zone : image d'origine + (couleur ou copie) à travers le masque, avec l'opacité."""
+        if self.mode in FILTRES_PINCEAU:
+            gris = self.masque.copy(zone).convertToFormat(QImage.Format_Grayscale8)
+            g = np.frombuffer(gris.constBits(), np.uint8, count=gris.height() * gris.bytesPerLine())
+            g = g.reshape(gris.height(), gris.bytesPerLine())[:, :gris.width()].astype(np.float32) / 255
+            res = self._filtrer(_vue(self.base, zone), g * self.opacite, zone)
+            p = QPainter(self.image)
+            p.setCompositionMode(QPainter.CompositionMode_Source)
+            p.drawImage(zone.topLeft(), _qimage(res))
+            p.end()
+            return
         pose = QImage(zone.size(), QImage.Format_ARGB32_Premultiplied)
         if self.mode == PEINTURE:
             pose.fill(self.couleur)

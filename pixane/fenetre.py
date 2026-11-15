@@ -28,7 +28,8 @@ from .contour import ActionContour
 from .onglets import Onglets
 from .options_pinceau import OptionsPinceau
 from .calques import PanneauCalques
-from .canevas import (BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GOMME_CALQUE, LASSO, MAIN, OBJET,
+from .canevas import (DENSITE_MOINS, DENSITE_PLUS, DOIGT, EPONGE, GOUTTE, HISTORIQUE, NETTETE_PINCEAU,
+                      OUTILS_FILTRE, BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GOMME_CALQUE, LASSO, MAIN, OBJET,
                       SEL_TEXTE,
                       OUTILS_AUTO, OUTILS_ROND, PEINTURE, PINCEAU, RAPIDE, RECADRER, RECTANGLE, SEAU, SUPPRIMER,
                       TAILLE_MAX, TAMPON, TAMPON_MOTIF, TEXTE, Canevas)
@@ -852,7 +853,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                 (tr("Opacité"), self.opt_opacite, "outil_opacite", 100, tr("100 % = couvre tout ; moins = laisse "
                                                                             "voir dessous")),
                 (tr("Dureté"), self.opt_durete, "outil_durete", 80, tr("100 % = bord net ; 0 % = bord très doux"))):
-            lay.addWidget(QLabel(nom))
+            etiquette = QLabel(nom)
+            if case is self.opt_opacite:
+                self.etiquette_opacite = etiquette
+            lay.addWidget(etiquette)
             case.setRange(1 if case is self.opt_opacite else 0, 100)
             case.setSuffix(" %")
             case.setToolTip(aide)
@@ -863,6 +867,68 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             lay.addSpacing(6)
         tout.addWidget(self.opt_retouche)
         self._reglages_retouche()
+        # Densité − / + : tons touchés ; Éponge : saturer ou désaturer ; Historique : instantané
+        self.opt_densite = QWidget()
+        lay = QHBoxLayout(self.opt_densite)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.addWidget(QLabel(tr("Tons")))
+        self.opt_gamme = QComboBox()
+        for cle, texte in (("ombres", tr("Ombres")), ("moyens", tr("Tons moyens")),
+                           ("lumieres", tr("Hautes lumières"))):
+            self.opt_gamme.addItem(texte, cle)
+        self.opt_gamme.setCurrentIndex(1)
+        self.opt_gamme.currentIndexChanged.connect(
+            lambda *_: setattr(self.canevas, "gamme_densite", self.opt_gamme.currentData()))
+        lay.addWidget(self.opt_gamme)
+        tout.addWidget(self.opt_densite)
+        self.opt_eponge = QWidget()
+        lay = QHBoxLayout(self.opt_eponge)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.addWidget(QLabel(tr("Mode")))
+        self.opt_mode_eponge = QComboBox()
+        self.opt_mode_eponge.addItem(tr("Désaturer"), False)
+        self.opt_mode_eponge.addItem(tr("Saturer"), True)
+        self.opt_mode_eponge.currentIndexChanged.connect(
+            lambda *_: setattr(self.canevas, "eponge_saturer", bool(self.opt_mode_eponge.currentData())))
+        lay.addWidget(self.opt_mode_eponge)
+        tout.addWidget(self.opt_eponge)
+        self.opt_historique = QWidget()
+        lay = QHBoxLayout(self.opt_historique)
+        lay.setContentsMargins(0, 0, 0, 0)
+        b = QPushButton(tr("Prendre un instantané"))
+        b.setToolTip(tr("Le pinceau d'historique repeindra l'état actuel de l'image (au départ : la photo à "
+                        "l'ouverture)"))
+        b.clicked.connect(self.prendre_instantane)
+        lay.addWidget(b)
+        tout.addWidget(self.opt_historique)
+        for w in (self.opt_densite, self.opt_eponge, self.opt_historique):
+            w.hide()
+        self.canevas.source_historique = self._source_historique
+
+    # ---------------------------------------------------------------- pinceau d'historique
+    def prendre_instantane(self):
+        """L'état actuel de l'image devient celui que repeint le pinceau d'historique."""
+        if self.doc is None:
+            return
+        self.doc.instantane = (tuple(self.doc.calques), QImage(self.doc.image))
+        self.statusBar().showMessage(tr("Instantané pris : le pinceau d'historique repeindra l'image telle qu'elle "
+                                        "est maintenant."), 6000)
+
+    def _source_historique(self, calque):
+        """Image que le pinceau d'historique repeint sur ce calque : le même calque dans l'instantané (même nom et
+        même taille), sinon l'image visible de l'instantané."""
+        doc = self.doc
+        inst = getattr(doc, "instantane", None)
+        if inst is None:
+            return None
+        calques, image = inst
+        for c in calques:
+            if c.nom == calque.nom and c.image.size() == calque.image.size() and not c.special:
+                return c.image
+        if image.size() == calque.image.size():
+            from .document import FORMAT_CALQUE
+            return image.convertToFormat(FORMAT_CALQUE)
+        return None
 
     def _options_recadrer(self, tout: QHBoxLayout):
         self.opt_recadrer = QWidget()
@@ -1083,7 +1149,20 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                                           (SEAU, tr("Pot de peinture : remplit une zone de couleur proche"), "K",
                                            "seau"),
                                           (FORMES, tr("Formes : rectangle, ellipse, ligne, flèche (nouveau calque)"),
-                                           "U", "formes")):
+                                           "U", "formes"),
+                                          (DENSITE_MOINS, tr("Densité − : éclaircit là où l'on peint"), "",
+                                           "densite_moins"),
+                                          (DENSITE_PLUS, tr("Densité + : assombrit là où l'on peint"), "",
+                                           "densite_plus"),
+                                          (EPONGE, tr("Éponge : ravive ou ternit les couleurs là où l'on peint"), "",
+                                           "eponge"),
+                                          (GOUTTE, tr("Goutte d'eau : floute là où l'on peint"), "", "goutte"),
+                                          (NETTETE_PINCEAU, tr("Netteté : rend plus net là où l'on peint"), "",
+                                           "nettete_pinceau"),
+                                          (DOIGT, tr("Doigt : étale la couleur comme de la peinture fraîche"), "",
+                                           "doigt"),
+                                          (HISTORIQUE, tr("Pinceau d'historique : repeint l'état de l'instantané "
+                                                          "(la photo à l'ouverture)"), "", "historique")):
             a = QAction(texte, self, checkable=True)
             if touche:
                 a.setShortcut(touche)
@@ -1099,7 +1178,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         # famille ; le bouton montre le dernier outil choisi. Main et Déplacer restent seuls.
         self._bouton_groupe = {}
         for famille in ((MAIN,), (DEPLACER,), (RECTANGLE, LASSO, PINCEAU, GOMME), (OBJET, RAPIDE, BAGUETTE, SEL_TEXTE),
-                        (SUPPRIMER, CORRECTEUR, TAMPON, TAMPON_MOTIF), (PEINTURE, GOMME_CALQUE, DEGRADE, SEAU), (FORMES,),
+                        (SUPPRIMER, CORRECTEUR, TAMPON, TAMPON_MOTIF, HISTORIQUE),
+                        (PEINTURE, GOMME_CALQUE, DEGRADE, SEAU), (DENSITE_MOINS, DENSITE_PLUS, EPONGE),
+                        (GOUTTE, NETTETE_PINCEAU, DOIGT), (FORMES,),
                         (RECADRER,), (TEXTE,)):
             if len(famille) == 1:
                 barre.addAction(self._actions_outils[famille[0]])
@@ -1158,7 +1239,12 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.opt_baguette.setVisible(outil == BAGUETTE)
         self.opt_sel_texte.setVisible(outil == SEL_TEXTE)
         self.opt_couleur.setVisible(outil in (PEINTURE, DEGRADE, SEAU, FORMES))
-        self.opt_retouche.setVisible(outil in (PEINTURE, TAMPON, TAMPON_MOTIF, CORRECTEUR, DEGRADE, SEAU))
+        self.opt_retouche.setVisible(outil in (PEINTURE, TAMPON, TAMPON_MOTIF, CORRECTEUR, DEGRADE, SEAU, HISTORIQUE)
+                                     + OUTILS_FILTRE)
+        self.opt_densite.setVisible(outil in (DENSITE_MOINS, DENSITE_PLUS))
+        self.opt_eponge.setVisible(outil == EPONGE)
+        self.opt_historique.setVisible(outil == HISTORIQUE)
+        self.etiquette_opacite.setText(tr("Force") if outil in OUTILS_FILTRE else tr("Opacité"))
         self.opt_degrade.setVisible(outil == DEGRADE)
         self.opt_seau.setVisible(outil == SEAU)
         self.opt_motif.setVisible(outil == TAMPON_MOTIF or (outil == SEAU and self.canevas.seau_motif))
@@ -1195,7 +1281,18 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                           "calque choisi, ou l'image visible avec « Tous les calques »). Alt+clic : prendre une "
                           "couleur."),
                  FORMES: tr("Formes : glisse pour dessiner (Maj : carré, cercle, ligne droite). Chaque forme va dans "
-                            "un nouveau calque ; la taille règle l'épaisseur du trait.")}
+                            "un nouveau calque ; la taille règle l'épaisseur du trait."),
+                 DENSITE_MOINS: tr("Densité − : peins pour éclaircir ; choisis en haut les tons touchés (ombres, tons "
+                                   "moyens, hautes lumières) et la force."),
+                 DENSITE_PLUS: tr("Densité + : peins pour assombrir ; choisis en haut les tons touchés et la force."),
+                 EPONGE: tr("Éponge : peins pour raviver (Saturer) ou ternir (Désaturer) les couleurs."),
+                 GOUTTE: tr("Goutte d'eau : peins pour flouter (un fond, un grain de peau) ; sur un masque, adoucit "
+                            "son bord."),
+                 NETTETE_PINCEAU: tr("Netteté : peins sur les détails à rendre plus nets (yeux, texte)."),
+                 DOIGT: tr("Doigt : glisse pour étaler la couleur, comme de la peinture fraîche ; la force dit "
+                           "jusqu'où elle s'étale."),
+                 HISTORIQUE: tr("Pinceau d'historique : peins pour faire revenir l'état de l'instantané (au départ, "
+                                "la photo à l'ouverture) ; « Prendre un instantané » en haut garde l'état actuel.")}
         if outil in aides:
             self.statusBar().showMessage(aides[outil], 10000)
         if outil == RECADRER:

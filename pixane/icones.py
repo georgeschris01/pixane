@@ -112,6 +112,22 @@ DESSINS = {
     "lot": '<rect x="7" y="3.5" width="13" height="10" rx="1.5"/><path d="M4 7v10a1.5 1.5 0 0 0 1.5 1.5H17"/>'
            '<path stroke="A" d="M10 10l2.5-2.5L15 10l2-2"/>',
     "filtre": '<path d="M4 5h16l-6.5 7.5v6L10.5 20v-7.5z"/>',
+    # pinceaux de retouche
+    "densite_moins": '<circle cx="14.5" cy="9.5" r="5"/><path d="M11 13 4 20"/>'
+                     '<path stroke="A" d="M12.5 9.5h4"/>',
+    "densite_plus": '<circle cx="14.5" cy="9.5" r="5"/><path d="M11 13 4 20"/>'
+                    '<path stroke="A" d="M12.5 9.5h4M14.5 7.5v4"/>',
+    "eponge": '<rect x="4" y="6" width="16" height="12" rx="4"/>'
+              '<path stroke="A" d="M8.5 10l.01 0M12.5 9l.01 0M15.5 11.5l.01 0M9.5 14l.01 0M13.5 14.5l.01 0"/>',
+    "goutte": '<path d="M12 3.5c3 4 6 7 6 10.5a6 6 0 0 1-12 0c0-3.5 3-6.5 6-10.5z"/>'
+              '<path stroke="A" d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>',
+    "nettete_pinceau": '<path d="M12 3.5 20 19H4z"/><path stroke="A" d="M12 9.5v5"/>',
+    "doigt": '<path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V12l4.5 1c1.3.3 2 1.5 1.7 2.8l-.9 3.5a1.5 1.5 0 0 1-1.5 1.2H11'
+             'a2 2 0 0 1-1.6-.8L6.3 15.5a1.4 1.4 0 0 1 2.1-1.8z"/>'
+             '<path stroke="A" d="M16 4.5c1.5.5 2.5 1.5 3 3"/>',
+    "historique": '<path d="M19.5 3.5c-1.7.6-7 5.6-8.6 7.6l2 2c2-1.6 7-6.9 7.6-8.6a.8.8 0 0 0-1-1z"/>'
+                  '<path d="M10.9 11.1C8.6 11 7 12.6 7 15c0 1.5-.8 2.4-2.5 3 3.7 1.6 9 .7 8.4-4.9z"/>'
+                  '<path stroke="A" d="M3.5 7a5 5 0 0 1 8-3.5M3.5 3v4h4"/>',
     # texte
     "texte": '<path d="M5 6.5V4.5h14v2M12 4.5v15M9 19.5h6"/>',
     "aligner_gauche": '<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>',

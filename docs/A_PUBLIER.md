@@ -55,6 +55,9 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
   poser une image sur un écran, une boîte, un mur ; courber une image avec une grille de 16 points.
 - **Recadrage en perspective** (menu Image) : 4 coins posés sur une façade, un tableau, un document vu de biais ;
   il devient un rectangle droit.
+- **Pinceaux de retouche** (deux nouvelles familles d'outils) : Densité − / + (éclaircir, assombrir : ombres, tons
+  moyens ou hautes lumières), Éponge (saturer, désaturer), Goutte d'eau (aussi sur un masque), Netteté, Doigt,
+  Pinceau d'historique (repeint la photo d'ouverture, ou l'instantané pris).
 
 ## Corrections
 

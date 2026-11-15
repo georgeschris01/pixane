@@ -40,10 +40,21 @@ CORRECTEUR = "correcteur"                      # pinceau correcteur : comme le t
 DEGRADE = "degrade"                            # dégradé : glisser du début à la fin
 SEAU = "seau"                                  # pot de peinture : remplit une zone de couleur proche
 FORMES = "formes"                              # rectangle, ellipse, ligne, flèche (nouveau calque)
+DENSITE_MOINS = "densite_moins"                # éclaircir au pinceau (ombres, tons moyens ou hautes lumières)
+DENSITE_PLUS = "densite_plus"                  # assombrir au pinceau
+EPONGE = "eponge"                              # saturer ou désaturer au pinceau
+GOUTTE = "goutte"                              # goutte d'eau : flouter au pinceau
+NETTETE_PINCEAU = "nettete_pinceau"            # netteté au pinceau
+DOIGT = "doigt"                                # étaler la couleur
+HISTORIQUE = "historique"                      # pinceau d'historique : repeindre l'état de l'instantané
+OUTILS_FILTRE = (DENSITE_MOINS, DENSITE_PLUS, EPONGE, GOUTTE, NETTETE_PINCEAU, DOIGT)
+OUTILS_RETOUCHE = (PEINTURE, TAMPON, TAMPON_MOTIF, CORRECTEUR, HISTORIQUE) + OUTILS_FILTRE
+MODES_TRAIT = {DENSITE_MOINS: "eclaircir", DENSITE_PLUS: "assombrir", EPONGE: "eponge", GOUTTE: "goutte",
+               NETTETE_PINCEAU: "nettete", DOIGT: "doigt"}
 OUTILS_ROND = (PINCEAU, GOMME, GOMME_CALQUE, PEINTURE, TAMPON, TAMPON_MOTIF, RAPIDE, SUPPRIMER,
-               CORRECTEUR)                                                  # curseur rond
+               CORRECTEUR, HISTORIQUE) + OUTILS_FILTRE                     # curseur rond
 OUTILS_AUTO = (BAGUETTE, RAPIDE, OBJET, SEL_TEXTE)                       # sélections calculées
-OUTILS_CALQUE = (GOMME_CALQUE, PEINTURE, TAMPON, TAMPON_MOTIF, CORRECTEUR, DEGRADE, SEAU)                  # outils qui changent les pixels du calque
+OUTILS_CALQUE = (GOMME_CALQUE, PEINTURE, TAMPON, TAMPON_MOTIF, CORRECTEUR, DEGRADE, SEAU, HISTORIQUE) + OUTILS_FILTRE                  # outils qui changent les pixels du calque
 GROUPES_PINCEAU = ("peinture", "gomme", "selection")   # un pinceau à forme choisi par groupe d'outils
 GROUPE_OUTIL = {PEINTURE: "peinture", GOMME_CALQUE: "gomme", PINCEAU: "selection", GOMME: "selection"}
 OPACITE_SELECTION = 0.45
@@ -166,6 +177,9 @@ class Canevas(QWidget):
         self._recadre_glisse = None  # (mode « nouveau » / « deplacer » / côtés, point de départ, cadre d'origine)
         # transformer un calque (Ctrl+T)
         self.transfo: Transformation | None = None
+        self.gamme_densite = "moyens"               # Densité − / + : tons touchés
+        self.eponge_saturer = False                 # Éponge : saturer (sinon désaturer)
+        self.source_historique = None               # fonction(calque) -> image de l'instantané (ou None)
         self.persp: list[QPointF] | None = None     # recadrage en perspective : 4 coins (hg, hd, bd, bg)
         self._persp_prise = None                    # (coin attrapé ou -1 = tout, point de départ, coins de départ)
         self.cadre_deplacer = True              # outil Déplacer : cadre à poignées autour du calque (comme Photoshop)
@@ -871,9 +885,16 @@ class Canevas(QWidget):
             return
         self._sur_masque = self.sur_masque()
         if self._sur_masque:
-            if self.outil != PEINTURE:
+            if self.outil not in (PEINTURE, GOUTTE):
                 self.refus.emit(tr("Sur un masque, peins avec le pinceau de couleur (noir cache, blanc montre) "
-                                   "ou la gomme de calque (cache)."))
+                                   "ou la gomme de calque (cache) ; la goutte d'eau adoucit le bord du masque."))
+                return
+            if self.outil == GOUTTE:
+                self._avant = self.doc.etat()
+                self._trait = Trait("goutte", masque_vers_argb(c.masque), self.taille_pinceau, self.durete,
+                                    self.opacite)
+                self._trait.ajouter(pt, self._pression_evt)
+                self.doc.apercu_masque(self.doc.actif, argb_vers_masque(self._trait.image))
                 return
             self._avant = self.doc.etat()
             gris = round(QColor(self.couleur_peinture).lightnessF() * 255)
@@ -893,7 +914,19 @@ class Canevas(QWidget):
         if p is not None:
             self.refus.emit(self.texte_devient_image(c))
         self._avant = self.doc.etat()
-        if self.outil in (TAMPON, CORRECTEUR):
+        if self.outil in MODES_TRAIT:
+            self._trait = Trait(MODES_TRAIT[self.outil], c.image, self.taille_pinceau, self.durete, self.opacite,
+                                gamme=self.gamme_densite, saturer=self.eponge_saturer)
+        elif self.outil == HISTORIQUE:
+            source = self.source_historique(c) if self.source_historique is not None else None
+            if source is None:
+                self.refus.emit(tr("Pas d'instantané pour ce calque : clique sur « Prendre un instantané » dans "
+                                   "la barre du haut."))
+                self._avant = None
+                return
+            self._trait = Trait("tampon", c.image, self.taille_pinceau, self.durete, self.opacite,
+                                source=source, decalage=QPointF(0, 0))
+        elif self.outil in (TAMPON, CORRECTEUR):
             if self._decalage_tampon is None:
                 self._decalage_tampon = self.source_tampon - pt
             self._trait = Trait("tampon", c.image, self.taille_pinceau, self.durete, self.opacite,
@@ -979,6 +1012,11 @@ class Canevas(QWidget):
         nom = tr("Tampon") if self._trait.mode == "tampon" else tr("Pinceau de couleur")
         if self.outil == TAMPON_MOTIF:
             nom = tr("Tampon de motif")
+        noms = {DENSITE_MOINS: tr("Densité −"), DENSITE_PLUS: tr("Densité +"), EPONGE: tr("Éponge"),
+                GOUTTE: tr("Goutte d'eau"), NETTETE_PINCEAU: tr("Netteté (pinceau)"), DOIGT: tr("Doigt"),
+                HISTORIQUE: tr("Pinceau d'historique")}
+        if self.outil in noms:
+            nom = noms[self.outil]
         if self._sur_masque:
             nom = tr("Peindre le masque")
         elif self.outil == CORRECTEUR:
@@ -1874,7 +1912,7 @@ class Canevas(QWidget):
             self._presser_recadre(pos)
             self.update()
             return
-        if self.outil in (PEINTURE, TAMPON, TAMPON_MOTIF, CORRECTEUR):
+        if self.outil in OUTILS_RETOUCHE:
             self._presser_retouche(pos, bool(e.modifiers() & Qt.AltModifier))
             self.update()
             return

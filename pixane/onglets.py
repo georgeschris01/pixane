@@ -59,6 +59,9 @@ class Onglets:
         self.groupe_historique.addStack(pile)
         self._piles[id(doc)] = pile
         self._docs.append(doc)
+        if getattr(doc, "instantane", None) is None:   # pinceau d'historique : la photo telle qu'à l'ouverture
+            from PySide6.QtGui import QImage
+            doc.instantane = (tuple(doc.calques), QImage(doc.image))
         doc.change.connect(self._titres_onglets)
         self.barre_onglets.blockSignals(True)
         k = self.barre_onglets.addTab(self._nom_onglet(doc))
