@@ -1759,5 +1759,6 @@
  "{m} minute {s}": "{m} minute {s}",
  "{m} minutes {s}": "{m} minutes {s}",
  "{n} minutes": "{n} minutes",
- "{n} secondes": "{n} seconds"
+ "{n} secondes": "{n} seconds",
+ "Licence Pixane : gratuit, non commercial, modifiable": "Pixane licence: free, non-commercial, modifiable"
 }

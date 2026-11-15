@@ -108,6 +108,8 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
   (avant : 10 à 15 secondes à chaque fois).
 - **Durées mesurées sur ton PC** : *Créer une image*, *Modifier avec une consigne* et *Restaurer* affichent la durée
   par proposition mesurée sur ce PC (avant : une durée fixe, celle d'une RTX 3060 Ti).
+- **Image de la licence** (gratuit · non commercial · modifiable, la même que sur la page GitHub) dans **À propos**
+  et dans la fenêtre **Licence**, en français ou en anglais selon la langue de Pixane.
 
 ## Corrections
 

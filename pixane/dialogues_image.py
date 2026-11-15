@@ -353,8 +353,11 @@ class APropos(QDialog):
         texte.setMinimumWidth(420)
         haut.addWidget(texte, 1)
         lay.addLayout(haut)
+        from .aide import FenetreLicence, FenetreTiers, image_licence
+        image = image_licence(480)
+        if image is not None:
+            lay.addWidget(image)
         liens = QHBoxLayout()
-        from .aide import FenetreLicence, FenetreTiers
         for nom, action in ((tr("Licence"), lambda: FenetreLicence(self).exec()),
                             (tr("Éléments tiers"), lambda: FenetreTiers(self.couleurs, self).exec()),
                             (tr("Guide"), self._guide),

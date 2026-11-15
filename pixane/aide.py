@@ -342,6 +342,25 @@ class FenetreTiers(QDialog):
 
 
 # ====================================================================== licence
+def image_licence(largeur: int = 480) -> QLabel | None:
+    """Image « Licence Pixane : gratuit, non commercial, modifiable » (la même que dans le README), dans la langue
+    de Pixane, à la largeur voulue ; None si le fichier manque."""
+    from PySide6.QtGui import QGuiApplication, QPixmap
+    nom = "licence-pixane-en.png" if langue_active() == "en" else "licence-pixane.png"
+    pm = QPixmap(str(Path(__file__).resolve().parent / "ressources" / nom))
+    if pm.isNull():
+        return None
+    ratio = QGuiApplication.primaryScreen().devicePixelRatio() if QGuiApplication.primaryScreen() else 1.0
+    pm = pm.scaledToWidth(round(largeur * ratio), Qt.SmoothTransformation)
+    pm.setDevicePixelRatio(ratio)
+    l = QLabel()
+    l.setObjectName("image_licence")
+    l.setPixmap(pm)
+    l.setAlignment(Qt.AlignCenter)
+    l.setToolTip(tr("Licence Pixane : gratuit, non commercial, modifiable"))
+    return l
+
+
 class FenetreLicence(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -353,6 +372,9 @@ class FenetreLicence(QDialog):
         except OSError:
             texte = tr("Le texte de la licence est introuvable : {chemin}", chemin=str(f))
         lay = QVBoxLayout(self)
+        image = image_licence(560)
+        if image is not None:
+            lay.addWidget(image)
         if langue_active() == "en":
             note = QLabel(tr("Traduction de courtoisie : seul le texte français (fichier LICENSE) fait foi."))
             note.setWordWrap(True)
