@@ -230,8 +230,10 @@ class PanneauCalques(QWidget):
         opacite.addWidget(self.valeur)
         lay.addLayout(opacite)
 
-        boutons = QHBoxLayout()
-        boutons.setSpacing(1)
+        # deux rangées : sur une seule, les 11 boutons étaient tassés et les icônes paraissaient minuscules
+        rangees = (QHBoxLayout(), QHBoxLayout())
+        for r in rangees:
+            r.setSpacing(2)
         self.boutons = {}
         # bulles d'aide : tr("Nouveau calque vide"), tr("Fusionner avec le calque du dessous"),
         # tr("Aplatir l'image (un seul calque)") ; les autres sont déjà traduites ailleurs
@@ -251,12 +253,13 @@ class PanneauCalques(QWidget):
             b = QToolButton()
             b.setAutoRaise(True)
             b.setToolTip(tr(aide))
-            b.setIconSize(QSize(18, 18))
+            b.setIconSize(QSize(22, 22))
             b.clicked.connect(action)
             self.boutons[nom] = b
-            boutons.addWidget(b)
-        boutons.addStretch(1)
-        lay.addLayout(boutons)
+            rangees[0 if len(self.boutons) <= 6 else 1].addWidget(b)
+        for r in rangees:
+            r.addStretch(1)
+            lay.addLayout(r)
         self.appliquer_icones()
         self.rafraichir()
 

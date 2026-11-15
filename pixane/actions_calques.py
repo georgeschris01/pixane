@@ -504,8 +504,10 @@ class ActionsCalques:
             return
         neutres = ajustements.defaut(type_)
         panneau = PANNEAUX[type_](neutres, self._histo_calque())
+        # Négatif, Seuil, Postérisation, Noir et blanc… changent l'image dès l'ouverture, sans toucher aux curseurs
         self._dialogue_pixels(titre, panneau, neutres,
-                              lambda a, p: ajustements.appliquer_rgba(a, type_, p), auto=type_ == "niveaux")
+                              lambda a, p: ajustements.appliquer_rgba(a, type_, p), auto=type_ == "niveaux",
+                              toujours=not ajustements.neutre(type_, neutres))
 
     def nouveau_calque_reglage(self, type_: str):
         """Calque de réglage : modifiable à tout moment (double-clic), sans toucher aux pixels."""

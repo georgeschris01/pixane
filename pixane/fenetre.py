@@ -186,6 +186,21 @@ class CommandeZoneTravail(CommandeEtat):
         super().undo()
 
 
+class BoutonFamille(QToolButton):
+    """Bouton d'une famille d'outils : un petit triangle dans le coin montre que d'autres outils sont cachés
+    dessous (clic droit ou clic maintenu), comme dans Photoshop."""
+
+    def paintEvent(self, ev):
+        super().paintEvent(ev)
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setPen(Qt.NoPen)
+        p.setBrush(self.palette().buttonText())
+        w, h = self.width(), self.height()
+        p.drawPolygon([QPointF(w - 2, h - 8), QPointF(w - 2, h - 2), QPointF(w - 8, h - 2)])
+        p.end()
+
+
 class Carte(QPushButton):
     """Bouton large du panneau IA : icône, titre et une ligne d'explication."""
 
@@ -1198,7 +1213,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
             if len(famille) == 1:
                 barre.addAction(self._actions_outils[famille[0]])
                 continue
-            bouton = QToolButton()
+            bouton = BoutonFamille()
             bouton.setPopupMode(QToolButton.DelayedPopup)
             bouton.setToolButtonStyle(Qt.ToolButtonIconOnly)
             bouton.setIconSize(barre.iconSize())
@@ -1388,7 +1403,17 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
         self.vue_historique = QUndoView(self.groupe_historique)
         self.vue_historique.setEmptyLabel(tr("Photo ouverte"))
-        dock.setWidget(self.vue_historique)
+        contenu = QWidget()
+        lay = QVBoxLayout(contenu)
+        lay.setContentsMargins(0, 0, 0, 4)
+        lay.addWidget(self.vue_historique, 1)
+        # le pinceau d'historique est aussi rangé sous le Tampon ; ce bouton le rend facile à trouver
+        self.bouton_pinceau_historique = QPushButton(tr("Pinceau d'historique"))
+        self.bouton_pinceau_historique.setToolTip(self._actions_outils[HISTORIQUE].toolTip())
+        self._icone(self.bouton_pinceau_historique, "historique")
+        self.bouton_pinceau_historique.clicked.connect(self._actions_outils[HISTORIQUE].trigger)
+        lay.addWidget(self.bouton_pinceau_historique)
+        dock.setWidget(contenu)
         dock.setFixedWidth(290)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.tabifyDockWidget(self.dock_calques, dock)

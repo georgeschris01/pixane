@@ -70,6 +70,12 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
 
 ## Corrections
 
+- **Négatif, Postérisation, Seuil** (Image > Réglages) : la fenêtre s'ouvrait sans rien changer à la photo, même
+  après OK ; l'effet est maintenant visible dès l'ouverture et appliqué.
+- **Panneau Calques** : les boutons du bas sont sur deux rangées, icônes plus grandes (ils étaient tassés).
+- **Outils** : un petit triangle sur les boutons qui cachent d'autres outils (clic droit ou clic maintenu) ;
+  **Pinceau d'historique** aussi en bas du panneau Historique.
+
 - **Agrandir** : les légers tourbillons (comme des courbes de niveau) que Flux laisse dans les fonds unis ajoutés
   sont lissés ; le grain fin et ce qui est vraiment dessiné sont gardés. Aussi après *Pleine définition*.
 - **À propos** : « Pixane n'a pas la prétention de remplacer des programmes comme Photoshop, GIMP ou Krita… »

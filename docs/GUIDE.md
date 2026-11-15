@@ -1080,7 +1080,7 @@ coup, si. Chaque coup est une étape d'Annuler.
 | **Goutte d'eau** | Floute (un fond, un grain de peau, une imperfection). Sur un **masque**, adoucit son bord |
 | **Netteté** | Rend plus nets les détails (yeux, lettres) ; à petite force, sinon du grain apparaît |
 | **Doigt** | Étale la couleur dans le sens du geste, comme de la peinture fraîche ; la force dit jusqu'où elle s'étale |
-| **Pinceau d'historique** | Repeint l'**instantané** : au départ, la photo telle qu'à l'ouverture. Pour annuler un effet seulement à certains endroits. **Prendre un instantané** (barre du haut) garde l'état actuel |
+| **Pinceau d'historique** | Repeint l'**instantané** : au départ, la photo telle qu'à l'ouverture. Pour annuler un effet seulement à certains endroits. **Prendre un instantané** (barre du haut) garde l'état actuel. Il est rangé sous le Tampon, et aussi en bas du panneau **Historique** (bouton *Pinceau d'historique*) |
 
 ### Fluidité (Filtres > Fluidité…, Ctrl+Maj+X)
 Pour modeler l'image au pinceau, comme la Fluidité de Photoshop : affiner une silhouette, allonger une lettre, gonfler

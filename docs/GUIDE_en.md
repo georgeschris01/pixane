@@ -1040,7 +1040,7 @@ one Undo step.
 | **Blur** | Blurs (a background, skin texture, a flaw). On a **mask**, softens its edge |
 | **Sharpen** | Makes details sharper (eyes, letters); at low strength, or grain appears |
 | **Smudge** | Spreads the colour along the stroke, like wet paint; the strength says how far it spreads |
-| **History brush** | Paints back the **snapshot**: at first, the photo as it was opened. To undo an effect in some places only. **Take a snapshot** (top bar) keeps the current state |
+| **History brush** | Paints back the **snapshot**: at first, the photo as it was opened. To undo an effect in some places only. **Take a snapshot** (top bar) keeps the current state. It is under the Clone stamp, and also at the bottom of the **History** panel (*History brush* button) |
 
 ### Liquify (Filters > Liquify…, Ctrl+Shift+X)
 To shape the image with a brush, like Photoshop's Liquify: slim a silhouette, stretch a letter, bloat a detail. A
