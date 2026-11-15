@@ -104,6 +104,13 @@ verifier(a[..., 3].min() > 0, "Remplir avec un motif sans sélection : tout le c
 verifier(f.historique.undoText() == "Remplir avec un motif", "une entrée d'historique")
 f.historique.undo()
 verifier(pixels(doc, 1)[..., 3].max() == 0, "Ctrl+Z : le calque redevient vide")
+# par le menu (Qt envoie un booléen à remplir_motif : il ne doit pas être pris pour un choix)
+motifs.DialogueRemplirMotif.exec = lambda self: True
+f.a_remplir_motif.trigger()
+app.processEvents()
+verifier(pixels(doc, 1)[..., 3].min() > 0 and f.historique.undoText() == "Remplir avec un motif",
+         "Édition > Remplir avec un motif… par le menu")
+f.historique.undo()
 sel = np.zeros((H, W), np.uint8)
 sel[50:100, 60:160] = 255
 from pixane.document import nouvelle_selection

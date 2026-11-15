@@ -125,6 +125,18 @@ f.dock_actions.raise_()
 pa.arbre.expandAll()
 app.processEvents()
 f.dock_actions.grab().save(str(sortie / "panneau_actions.png"))
+
+# clic réel sur « ● Enregistrer » (Qt envoie un booléen à commencer : il ne doit pas être pris pour le nom)
+from PySide6.QtWidgets import QInputDialog
+QInputDialog.getText = staticmethod(lambda *a, **k: ("Par le bouton", True))
+if pa.enregistre():
+    pa.b_stop.click()
+n = len(pa.liste_actions)
+pa.b_enr.click()
+app.processEvents()
+verifier(len(pa.liste_actions) == n + 1 and pa.liste_actions[-1]["nom"] == "Par le bouton",
+         "clic sur ● Enregistrer : le nom est demandé, l'action est créée")
+pa.b_stop.click()
 QSettings("Pixane", "Pixane-essais").remove("actions")
 
 print("ERREURS :", erreurs if erreurs else "aucune")

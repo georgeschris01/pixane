@@ -11,6 +11,10 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.23.0 (non publ
 
 ## Corrections
 
+- **Édition > Remplir avec un motif…** affichait une erreur au lieu d'ouvrir sa fenêtre (signalé par Christophe le
+  15/11/2026).
+- Panneau Actions : le bouton **● Enregistrer** aurait affiché la même erreur (même cause, trouvé en cherchant).
+
 ## À mettre à jour le jour de la publication
 
 - [ ] Numéro de version (`pixane\__init__.py`) selon la règle A.B.C.

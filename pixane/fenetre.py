@@ -2097,7 +2097,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
             return
         doc, c = self.doc, self.doc.calque_actif
         sel = None if doc.selection_vide() else doc.selection
-        if choix is None:
+        if not isinstance(choix, tuple):                  # (clic de menu : un booléen arrive ici)
             from .motifs import DialogueRemplirMotif
             ou = tr("Calque « {nom} », {ou}.", nom=c.nom,
                     ou=tr("dans la sélection") if sel is not None else tr("sur tout le calque"))

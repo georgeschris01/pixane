@@ -174,7 +174,7 @@ class PanneauActions(QWidget):
         return self.en_cours is not None
 
     def commencer(self, nom: str | None = None):
-        if nom is None:
+        if not isinstance(nom, str):                      # (clic du bouton : un booléen arrive ici)
             nom, ok = QInputDialog.getText(self, tr("Nouvelle action"), tr("Nom de l'action :"),
                                            text=tr("Action {n}", n=len(self.liste_actions) + 1))
             if not ok or not nom.strip():
