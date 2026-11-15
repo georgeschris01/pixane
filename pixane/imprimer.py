@@ -200,7 +200,7 @@ class DialogueImprimer(QDialog):
                                      QMarginsF(0, 0, 0, 0)))
         pr.setFullPage(True)
         pr.setCopyCount(self.copies.value())
-        pr.setDocName("Pixane")
+        pr.setDocName("Pixane Photo")
         return pr
 
     def imprimer(self, fichier_pdf: str | None = None) -> None:

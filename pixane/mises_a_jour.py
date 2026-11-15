@@ -10,8 +10,8 @@ import urllib.request
 from . import __version__
 from .langue import tr
 
-API = "https://api.github.com/repos/georgeschris01/pixane/releases/latest"
-PAGE = "https://github.com/georgeschris01/pixane/releases/latest"
+API = "https://api.github.com/repos/pixane-suite/photo/releases/latest"
+PAGE = "https://github.com/pixane-suite/photo/releases/latest"
 
 
 def _numeros(v: str) -> tuple[int, ...]:
@@ -40,7 +40,7 @@ def derniere_version(delai: float = 10) -> dict:
             "notes": (d.get("body") or "").strip()}
 
 
-API_LISTE = "https://api.github.com/repos/georgeschris01/pixane/releases?per_page=50"
+API_LISTE = "https://api.github.com/repos/pixane-suite/photo/releases?per_page=50"
 
 
 def nouveautes(delai: float = 10, locale: str = __version__) -> dict:
@@ -80,5 +80,5 @@ def texte_nouveautes(versions: list) -> str:
     morceaux = []
     for v, notes in versions:
         notes = re.sub(r"^(#+)", r"#\1", notes, flags=re.M) if notes else tr("(pas de notes pour cette version)")
-        morceaux.append(f"## Pixane {v}\n\n{notes}")
+        morceaux.append(f"## Pixane Photo {v}\n\n{notes}")
     return "\n\n".join(morceaux)

@@ -16,7 +16,7 @@ W, H = 610, 160
 
 def logo(x: float, y: float, cote: float) -> str:
     """Le logo de Pixane (logo\\pixane.svg) placé dans l'image, identifiants renommés pour ne pas se mêler."""
-    s = (RACINE / "logo" / "pixane.svg").read_text(encoding="utf-8")
+    s = (RACINE / "logo" / "suite-pixane.svg").read_text(encoding="utf-8")
     s = s.replace('id="f"', 'id="logo_f"').replace('id="r"', 'id="logo_r"')
     s = s.replace("url(#f)", "url(#logo_f)").replace("url(#r)", "url(#logo_r)")
     s = re.sub(r'^<svg [^>]*>', "", s).replace("</svg>", "")       # un <svg> dans un <svg> n'est pas lu par Qt

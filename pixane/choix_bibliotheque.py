@@ -219,7 +219,7 @@ class ChoixBibliotheque(QDialog):
             texte += ("\n" if texte else "") + tr("Les pinceaux de tous les jours, pour peindre normalement ; la "
                                                    "taille et l'opacité se règlent dans la barre du haut.")
         elif g is not None and g.de_base:
-            texte += ("\n" if texte else "") + tr("Livrés avec Pixane (ressources de Krita, licence CC-0).")
+            texte += ("\n" if texte else "") + tr("Livrés avec Pixane Photo (ressources de Krita, licence CC-0).")
         self.info.setText(texte)
 
     def _ajouter(self) -> None:

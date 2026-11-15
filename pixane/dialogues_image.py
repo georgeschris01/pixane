@@ -13,7 +13,7 @@ from .document import taille_redressee
 from .langue import tr
 
 RACINE = Path(__file__).resolve().parents[1]
-DEPOT = "https://github.com/georgeschris01/pixane"
+DEPOT = "https://github.com/pixane-suite/photo"
 
 
 def _boutons(d: QDialog, texte_ok: str) -> QDialogButtonBox:
@@ -330,7 +330,7 @@ class APropos(QDialog):
     def __init__(self, icone: QPixmap | None, parent=None, couleurs=None):
         super().__init__(parent)
         self.couleurs = couleurs
-        self.setWindowTitle(tr("À propos de Pixane"))
+        self.setWindowTitle(tr("À propos de Pixane Photo"))
         lay = QVBoxLayout(self)
         haut = QHBoxLayout()
         if icone is not None:
@@ -338,11 +338,12 @@ class APropos(QDialog):
             logo.setPixmap(icone)
             haut.addWidget(logo, 0, Qt.AlignTop)
         texte = QLabel(
-            f"<h2 style='margin:0'>Pixane {__version__}</h2>"
+            f"<h2 style='margin:0'>Pixane Photo {__version__}</h2>"
+            + "<p style='margin-top:2px'><i>" + tr("Fait partie de la Suite Pixane.") + "</i></p>"
             + tr("<p>Éditeur photo avec retouche par IA sur votre PC.</p>"
-                 "<p>Pixane est pensé pour celles et ceux qui débutent en retouche photo, ou qui en ont peu "
+                 "<p>Pixane Photo est pensé pour celles et ceux qui débutent en retouche photo, ou qui en ont peu "
                  "l'expérience : les outils vont à l'essentiel, l'IA se charge du travail difficile et l'aide "
-                 "explique chaque réglage pas à pas. Pixane n'a pas la prétention de remplacer des programmes "
+                 "explique chaque réglage pas à pas. Pixane Photo n'a pas la prétention de remplacer des programmes "
                  "comme Photoshop, GIMP ou Krita, qui restent la référence pour un travail poussé : il veut "
                  "rendre la retouche accessible à tous.</p>"
                  "<p>© 2026 Georges Christophe (chrypox)<br>Licence Pixane 1.2 : gratuit, code source disponible, "

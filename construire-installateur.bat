@@ -1,5 +1,5 @@
 @echo off
-rem Fabrique l'installateur de Pixane : publication\installateur\Pixane-Setup-<version>-64bits.exe
+rem Fabrique l'installateur de Pixane Photo : publication\installateur\Pixane-Photo-Setup-<version>-64bits.exe
 rem Il faut Inno Setup 7 (gratuit) : https://jrsoftware.org/isdl.php
 rem La version se change dans pixane\__init__.py (__version__) avant chaque nouvel installateur.
 rem Resultat detaille dans installateur.log.
@@ -14,7 +14,7 @@ if not defined ISCC for /f "delims=" %%i in ('where ISCC.exe 2^>nul') do set ISC
 
 call :work > installateur.log 2>&1
 
-if exist "publication\installateur\Pixane-Setup-%VERSION%-64bits.exe" explorer /select,"publication\installateur\Pixane-Setup-%VERSION%-64bits.exe"
+if exist "publication\installateur\Pixane-Photo-Setup-%VERSION%-64bits.exe" explorer /select,"publication\installateur\Pixane-Photo-Setup-%VERSION%-64bits.exe"
 endlocal
 goto :eof
 
@@ -39,7 +39,7 @@ if errorlevel 1 (
   goto :done
 )
 echo.
-echo Installateur cree : publication\installateur\Pixane-Setup-%VERSION%-64bits.exe
+echo Installateur cree : publication\installateur\Pixane-Photo-Setup-%VERSION%-64bits.exe
 :done
 echo.
 echo === FIN ===

@@ -337,7 +337,7 @@ class PanneauTexte(QScrollArea):
         self.vertical.toggled.connect(lambda oui: self._changer("vertical", oui))
         lay.addWidget(self.vertical)
         ligne = QHBoxLayout()
-        self.langue_texte = self._liste("langue", (("", tr("Langue de Pixane")), ("fr", "Français"),
+        self.langue_texte = self._liste("langue", (("", tr("Langue de Pixane Photo")), ("fr", "Français"),
                                                    ("en", "English")))
         self.langue_texte.setToolTip(tr("Langue du texte : pour l'orthographe et la césure"))
         ligne.addWidget(QLabel(tr("Langue")))

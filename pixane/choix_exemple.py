@@ -58,7 +58,7 @@ class ChoixExemple(QDialog):
                 b.setToolTip(tr("La photo d'exemple avant le changement"))
             grille.addWidget(b, i // 4, i % 4)
         lay.addLayout(grille)
-        note = QLabel(tr("Exemples faits par Pixane sur une photo inventée ; le résultat sur votre photo variera."))
+        note = QLabel(tr("Exemples faits par Pixane Photo sur une photo inventée ; le résultat sur votre photo variera."))
         note.setWordWrap(True)
         note.setEnabled(False)
         lay.addWidget(note)

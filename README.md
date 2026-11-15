@@ -1,16 +1,18 @@
-# Pixane
+# Pixane Photo
 
 **Français** · [English](README.en.md)
 
+Fait partie de la **[Suite Pixane](https://github.com/pixane-suite)** : des logiciels gratuits qui se ressemblent et partagent le même moteur IA. Pixane Photo s'appelait simplement « Pixane » jusqu'à la version 0.22.0.
+
 Éditeur photo gratuit pour Windows, avec de la retouche par intelligence artificielle **qui tourne entièrement sur votre PC**. Interface en français et en anglais.
 
-**Pour qui ?** Pixane est pensé pour celles et ceux qui débutent en retouche photo, ou qui en ont peu l'expérience : les outils vont à l'essentiel, l'IA se charge du travail difficile et l'aide explique chaque réglage pas à pas. Pixane n'a pas la prétention de remplacer des programmes comme Photoshop, GIMP ou Krita, qui restent la référence pour un travail poussé : il veut rendre la retouche accessible à tous.
+**Pour qui ?** Pixane Photo est pensé pour celles et ceux qui débutent en retouche photo, ou qui en ont peu l'expérience : les outils vont à l'essentiel, l'IA se charge du travail difficile et l'aide explique chaque réglage pas à pas. Pixane Photo n'a pas la prétention de remplacer des programmes comme Photoshop, GIMP ou Krita, qui restent la référence pour un travail poussé : il veut rendre la retouche accessible à tous.
 
-> **Aucune IA en ligne.** Pixane n'envoie jamais vos photos sur Internet : toutes les actions IA tournent sur votre ordinateur, avec des modèles installés sur votre disque. Pas de compte, pas d'abonnement, pas de limite. Internet sert seulement à télécharger le moteur IA une fois ; ensuite, Pixane marche même sans connexion.
+> **Aucune IA en ligne.** Pixane Photo n'envoie jamais vos photos sur Internet : toutes les actions IA tournent sur votre ordinateur, avec des modèles installés sur votre disque. Pas de compte, pas d'abonnement, pas de limite. Internet sert seulement à télécharger le moteur IA une fois ; ensuite, Pixane Photo marche même sans connexion.
 >
 > **La vitesse dépend de votre PC**, surtout de la **carte graphique** : plus elle est puissante (et plus elle a de mémoire), plus les traitements IA vont vite. Voir [Configuration](#configuration).
 
-## Ce que Pixane sait faire
+## Ce que Pixane Photo sait faire
 
 **Retouche par IA** (plusieurs propositions à chaque fois : vous choisissez la meilleure, comme dans Photoshop ; le résultat va dans le calque choisi, sans déborder de la sélection, ou dans un nouveau calque si vous préférez ; Annuler remet tout comme avant)
 - **Effacer** un objet : on peint dessus, l'IA le fait disparaître et reconstruit le fond
@@ -53,7 +55,7 @@
 - **Pinceaux de retouche** : Densité − / +, Éponge, Goutte d'eau, Netteté, Doigt, Pinceau d'historique
 - **Texte modifiable, comme dans Photoshop** : police, taille, couleur, contour, ombre, fond, rotation, crénage, casse, exposant, ligatures, texte en cadre (justifié, césure), texte vertical, **déformation** (arc, drapeau, vague…), **texte sur un tracé**, **style par lettre**, glyphes, styles de texte
 - **Orthographe** (français, anglais) et **rechercher / remplacer** dans les textes
-- **Trouver une police semblable** : on sélectionne les lettres d'un titre, Pixane cherche parmi les polices installées celles qui lui ressemblent le plus (sans Internet)
+- **Trouver une police semblable** : on sélectionne les lettres d'un titre, Pixane Photo cherche parmi les polices installées celles qui lui ressemblent le plus (sans Internet)
 - Règles, repères, grille et magnétisme ; panneau **Nuancier** (.aco Photoshop, .gpl GIMP)
 
 **Réglages et filtres**
@@ -67,7 +69,7 @@
 **Fichiers**
 - **Nouvelle image** avec 34 formats tout prêts (pochettes CD et vinyle, Spotify, livres, Amazon KDP, réseaux sociaux, A4, affiches…), unités (px, cm, mm, pouces, points, picas), résolution, **fond perdu** et **zone de sécurité** pour l'impression
 - **Exporter pour l'impression en CMJN** (TIFF, PDF, JPEG ; profils de Windows comme Coated FOGRA39) et **aperçu à l'écran** des couleurs imprimées
-- JPG, PNG, TIFF, WebP, BMP, **RAW des appareils photo** (Canon, Nikon, Sony, DNG, Fujifilm…) ; **PSD** (Photoshop) avec calques, groupes, masques, modes et styles ; `.pixane` (projet Pixane, tout reste modifiable) et `.ora` (Krita, GIMP)
+- JPG, PNG, TIFF, WebP, BMP, **RAW des appareils photo** (Canon, Nikon, Sony, DNG, Fujifilm…) ; **PSD** (Photoshop) avec calques, groupes, masques, modes et styles ; `.pixane` (projet Pixane Photo, tout reste modifiable) et `.ora` (Krita, GIMP)
 - **Plusieurs photos ouvertes** dans des onglets, chacune avec son Annuler
 - **Enregistrement automatique** et récupération après un plantage
 - **Exporter pour le web** (JPEG, WebP, PNG ; taille, qualité, poids affiché, informations personnelles enlevées)
@@ -82,7 +84,7 @@
 - **Recherche des mises à jour** (sur demande ou au démarrage)
 - Installateur qui vérifie le PC et télécharge lui-même le moteur IA (ComfyUI et les modèles), avec reprise après coupure ; avec un ComfyUI déjà installé, seulement ce qui lui manque
 
-![Pixane : texte en arc sur un paysage, panneau Intelligence artificielle à droite](docs/screenshots/pixane-2k-fr.png)
+![Pixane Photo : texte en arc sur un paysage, panneau Intelligence artificielle à droite](docs/screenshots/pixane-2k-fr.png)
 
 ## Configuration
 
@@ -94,7 +96,7 @@
 | **Disque** | 35 Go libres pour le moteur IA | 60 Go libres (avec les options), sur un SSD |
 | **Processeur** | 4 cœurs récent | 6 cœurs ou plus |
 
-Pixane a été testé sur une **RTX 3060 Ti (8 Go) avec 32 Go de mémoire vive** ; le minimum est une estimation. **Sans carte NVIDIA**, Pixane s'ouvre et retouche normalement (calques, texte, réglages, filtres, export…), mais les actions IA ne marchent pas.
+Pixane Photo a été testé sur une **RTX 3060 Ti (8 Go) avec 32 Go de mémoire vive** ; le minimum est une estimation. **Sans carte NVIDIA**, Pixane Photo s'ouvre et retouche normalement (calques, texte, réglages, filtres, export…), mais les actions IA ne marchent pas.
 
 **Durées mesurées sur ce PC d'essai** (une carte plus puissante va plus vite) :
 
@@ -111,35 +113,35 @@ Pixane a été testé sur une **RTX 3060 Ti (8 Go) avec 32 Go de mémoire vive**
 
 ## Télécharger
 
-**[Pixane pour Windows](../../releases/latest)** (installateur 64 bits, `Pixane-Setup-<version>-64bits.exe`).
+**[Pixane Photo pour Windows](../../releases/latest)** (installateur 64 bits, `Pixane-Photo-Setup-<version>-64bits.exe`).
 
 L'installateur vérifie la carte graphique et la place libre, puis propose de télécharger le moteur IA depuis les sites officiels (GitHub, Hugging Face) : **21,5 Go**, environ 31 Go sur le disque. Deux options facultatives : **Flux Schnell** pour « Upscale net » (11,8 Go) et **Flux Kontext** pour « Restaurer une vieille photo » et « Modifier avec une consigne » (11,9 Go), avec le **traducteur** français → anglais (290 Mo, Apache-2.0). Les modèles Flux Fill et Flux Kontext sont sous licence **FLUX.1 [dev] non commerciale** : il faut l'accepter pour les installer.
 
-**ComfyUI déjà installé ?** Pixane l'utilise tel quel : pas de second ComfyUI, rien n'est retéléchargé en double. Au premier démarrage, Pixane regarde ce qui lui manque (extensions, modèles d'IA) et propose de télécharger **seulement ça**, avec la liste, la taille et la licence de chaque élément. Tout est rangé dans les dossiers de votre ComfyUI (même un dossier de modèles partagé), sans rien remplacer ni effacer. S'il a déjà tout, rien n'est téléchargé.
+**ComfyUI déjà installé ?** Pixane Photo l'utilise tel quel : pas de second ComfyUI, rien n'est retéléchargé en double. Au premier démarrage, Pixane Photo regarde ce qui lui manque (extensions, modèles d'IA) et propose de télécharger **seulement ça**, avec la liste, la taille et la licence de chaque élément. Tout est rangé dans les dossiers de votre ComfyUI (même un dossier de modèles partagé), sans rien remplacer ni effacer. S'il a déjà tout, rien n'est téléchargé.
 
-> **Message « Windows a protégé votre ordinateur » :** Pixane est gratuit et n'est pas signé, car un certificat de signature est payant chaque année. Windows affiche donc ce message tant que le programme n'est pas assez connu. Cliquez sur **Informations complémentaires**, puis sur **Exécuter quand même**. Vérifiez que le fichier vient bien de cette page ; son empreinte SHA-256 est donnée avec chaque version.
+> **Message « Windows a protégé votre ordinateur » :** Pixane Photo est gratuit et n'est pas signé, car un certificat de signature est payant chaque année. Windows affiche donc ce message tant que le programme n'est pas assez connu. Cliquez sur **Informations complémentaires**, puis sur **Exécuter quand même**. Vérifiez que le fichier vient bien de cette page ; son empreinte SHA-256 est donnée avec chaque version.
 
-Pour demander une fonction ou signaler un problème : ouvrez une [« Issue »](../../issues) sur la page GitHub de Pixane ; pour une question, les [Discussions](../../discussions). Voir [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Pour demander une fonction ou signaler un problème : ouvrez une [« Issue »](../../issues) sur la page GitHub de Pixane Photo ; pour une question, les [Discussions](../../discussions). Voir [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## À l'origine de ce projet (Pourquoi et comment ?)
 
 J'utilisais Photoshop et j'appréciais beaucoup son IA générative : effacer un objet, remplir une zone, agrandir une image… Elle réussissait presque à chaque fois. Mais je ne voulais plus payer l'abonnement.
 
-J'ai essayé les solutions gratuites, comme Krita avec son extension d'IA : les résultats étaient très aléatoires, l'inverse de ce que j'avais connu. J'ai donc créé **Pixane**, d'abord pour mon usage personnel : un éditeur simple, avec des réglages de l'IA choisis et testés pour réussir au premier essai, qui tourne entièrement sur le PC.
+J'ai essayé les solutions gratuites, comme Krita avec son extension d'IA : les résultats étaient très aléatoires, l'inverse de ce que j'avais connu. J'ai donc créé **Pixane Photo**, d'abord pour mon usage personnel : un éditeur simple, avec des réglages de l'IA choisis et testés pour réussir au premier essai, qui tourne entièrement sur le PC.
 
 ### Une totale transparence avec vous :
 
 Je tiens à être 100 % honnête avec tout le monde : **je n'y connais absolument rien en programmation et je ne parle pas d'autre langue que le français**.
 
-**Pixane** a pu voir le jour, être entièrement codé et traduit en anglais grâce à l'aide de l'intelligence artificielle **Claude Code**. L'IA m'a accompagné pas à pas pour traduire mes besoins en lignes de code et pour générer la version anglaise du logiciel afin qu'il soit accessible au plus grand nombre.
+**Pixane Photo** a pu voir le jour, être entièrement codé et traduit en anglais grâce à l'aide de l'intelligence artificielle **Claude Code**. L'IA m'a accompagné pas à pas pour traduire mes besoins en lignes de code et pour générer la version anglaise du logiciel afin qu'il soit accessible au plus grand nombre.
 
 Le programme est partagé ici tel quel, de bon cœur, dans le seul but d'être utile. Il est entièrement gratuit, mais comme vous pourrez le lire dans la section Licence ci-dessous, il reste protégé pour garantir qu'il ne soit jamais commercialisé.
 
-Bienvenue à tous les futurs utilisateurs de Pixane !
+Bienvenue à tous les futurs utilisateurs de Pixane Photo !
 
 ## Guide
 
-Ce qui suit est le guide complet. C'est le même texte que le fichier `docs\GUIDE.md` livré avec le programme et affiché dans sa fenêtre **Aide > Guide de Pixane** (avec une recherche ; **F1** l'ouvre sur les raccourcis).
+Ce qui suit est le guide complet. C'est le même texte que le fichier `docs\GUIDE.md` livré avec le programme et affiché dans sa fenêtre **Aide > Guide de Pixane Photo** (avec une recherche ; **F1** l'ouvre sur les raccourcis).
 
 <!-- guide -->
 ## 1. La fenêtre
@@ -156,17 +158,17 @@ Ce qui suit est le guide complet. C'est le même texte que le fichier `docs\GUID
 | **Panneau « Calques » (à droite, en dessous)** | Les calques de l'image (voir chapitre 6) ; onglet **Historique** à côté |
 | **Barre d'état (en bas)** | État du moteur IA (point de couleur), taille de la photo |
 
-**Couleurs** : Pixane prend la couleur d'accent choisie dans Windows (Paramètres > Personnalisation > Couleurs)
+**Couleurs** : Pixane Photo prend la couleur d'accent choisie dans Windows (Paramètres > Personnalisation > Couleurs)
 et suit le mode clair / sombre de Windows. Menu **Affichage > Thème** : *Comme Windows*, *Clair* ou *Sombre*.
 Le bouton soleil / lune de la barre du haut bascule aussi entre clair et sombre.
 
-**Langue** : Pixane existe en **français** et en **anglais**. Par défaut, il prend la langue de Windows
+**Langue** : Pixane Photo existe en **français** et en **anglais**. Par défaut, il prend la langue de Windows
 (français si Windows est en français, anglais sinon). Menu **Affichage > Langue** : *Comme Windows*, *Français*
-ou *English* ; Pixane propose alors de redémarrer pour appliquer la langue (le moteur IA redémarre aussi,
+ou *English* ; Pixane Photo propose alors de redémarrer pour appliquer la langue (le moteur IA redémarre aussi,
 environ 20 secondes). Les boutons standard (Oui / Non / Annuler, menu clic droit) suivent la même langue.
 Les noms de calques déjà créés gardent leur langue d'origine. Guide en anglais : `docs\GUIDE_en.md`.
 
-**Moteur IA** : au démarrage, Pixane lance l'IA (ComfyUI) en arrière-plan, sans fenêtre. Comptez environ
+**Moteur IA** : au démarrage, Pixane Photo lance l'IA (ComfyUI) en arrière-plan, sans fenêtre. Comptez environ
 20 secondes. Le point en bas à gauche passe au vert quand le moteur est prêt ; les actions IA sont grisées avant.
 
 ---
@@ -181,20 +183,20 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
   l'appareil (bibliothèque LibRaw) ; retouchez ensuite avec les réglages (Niveaux, Courbes, Balance…). Le RAW
   n'est jamais remplacé : **Enregistrer** propose un autre fichier (JPG, ou .pixane s'il y a des calques).
 - **Enregistrer** (Ctrl+S), **Enregistrer sous** (Ctrl+Maj+S) :
-  - **.pixane** (projet Pixane) : le format de Pixane. Garde **tout** : calques (noms, ordre, visibilité, opacité,
+  - **.pixane** (projet Pixane Photo) : le format de Pixane Photo. Garde **tout** : calques (noms, ordre, visibilité, opacité,
     verrou), **textes modifiables** et **styles de calque modifiables**. Proposé d'office quand l'image a plusieurs calques ou un texte.
   - **.ora** (OpenRaster) : pour **partager avec Krita ou GIMP** (format ouvert). Garde les calques, mais les
     textes y deviennent des images.
   - Bon à savoir : un .pixane est construit comme un .ora ; renommé en .ora, il s'ouvre aussi dans Krita ou GIMP.
   - **.psd** (Photoshop) : pour **travailler avec Photoshop**. Garde les calques (noms, ordre, visibilité,
     opacité, verrou) ; les textes y deviennent des images. Une photo ouverte depuis un PSD est proposée en PSD.
-  - **PSD ouverts dans Pixane** : RVB ou niveaux de gris, 8 ou 16 bits, avec les calques, les **groupes**, les
+  - **PSD ouverts dans Pixane Photo** : RVB ou niveaux de gris, 8 ou 16 bits, avec les calques, les **groupes**, les
     **masques de calque**, les **modes de fusion** et les **styles** (ombre portée et interne, lueurs, contour,
-    biseau, incrustations couleur et dégradé), qui restent modifiables. Pixane ne reproduit pas les calques de
+    biseau, incrustations couleur et dégradé), qui restent modifiables. Pixane Photo ne reproduit pas les calques de
     réglage de Photoshop, les masques d'écrêtage, ni les groupes en mode « traverser » (ouverts en mode Normal) :
     un message le signale à l'ouverture, car l'aspect peut alors différer. Un PSD en CMJN s'ouvre aplati (un seul
     calque). Les grands documents .psb ne sont pas pris en charge.
-  - **PSD enregistrés par Pixane** : calques, groupes, masques et modes de fusion sont gardés ; les styles sont mis
+  - **PSD enregistrés par Pixane Photo** : calques, groupes, masques et modes de fusion sont gardés ; les styles sont mis
     dans les pixels ; un calque de réglage devient un calque d'image (le résultat du réglage).
   - **JPG** (qualité 95), **PNG**, **TIFF**, **WebP** : l'image **à plat** (ce que vous voyez, calques fusionnés).
     Un message le rappelle si l'image a plusieurs calques.
@@ -208,21 +210,21 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
   moment-là ; un clic sur une étape plus bas refait les suivantes. Une nouvelle retouche efface les étapes « en avance ».
 - **Fichier > Fichiers récents** : les 10 dernières images ouvertes ou enregistrées (*Effacer la liste* pour la vider).
 - **Plusieurs photos à la fois** : *Ouvrir* accepte plusieurs fichiers d'un coup (Ctrl+clic ou Maj+clic dans la
-  fenêtre), et on peut en glisser plusieurs sur Pixane. Chaque photo a son **onglet** et son propre **Annuler**
+  fenêtre), et on peut en glisser plusieurs sur Pixane Photo. Chaque photo a son **onglet** et son propre **Annuler**
   (Ctrl+Z ne touche que la photo affichée). Changer de photo : clic sur l'onglet, **Ctrl+Tab** / **Ctrl+Maj+Tab**.
   **Fichier > Fermer la photo** (Ctrl+W, ou la croix de l'onglet) demande d'enregistrer si besoin. Rouvrir une photo
   déjà ouverte revient simplement à son onglet.
 - **Enregistrement automatique** : toutes les 3 minutes, chaque photo modifiée est copiée (calques, textes, styles,
-  masques compris) dans `%LOCALAPPDATA%\Pixane\recuperation`, sans ralentir le travail. Si Pixane se ferme mal
+  masques compris) dans `%LOCALAPPDATA%\Pixane\recuperation`, sans ralentir le travail. Si Pixane Photo se ferme mal
   (plantage, coupure de courant), il propose au démarrage suivant de **rouvrir ces copies** ; elles s'ouvrent
   « à enregistrer », avec le nom du fichier d'origine. Les copies sont effacées quand la photo est enregistrée ou
-  fermée, et quand Pixane se ferme normalement.
-- **En cas d'erreur** : si une commande échoue, Pixane l'affiche et la note dans
+  fermée, et quand Pixane Photo se ferme normalement.
+- **En cas d'erreur** : si une commande échoue, Pixane Photo l'affiche et la note dans
   `%LOCALAPPDATA%\Pixane\erreurs.log` (utile pour signaler le problème).
 - **Fichier > Exporter sous…** (Ctrl+Alt+Maj+W) : une copie **pour un envoi normal** (imprimeur, ami, clé USB) :
   pleine taille, pleine qualité, résolution, profil de couleur et informations de l'appareil photo gardés. JPEG, PNG
   (avec la transparence), TIFF ou WebP. La photo ouverte ne change pas (elle reste à enregistrer si elle a été
-  modifiée) ; Pixane ne propose jamais d'écraser la photo d'origine et retient le dernier format choisi.
+  modifiée) ; Pixane Photo ne propose jamais d'écraser la photo d'origine et retient le dernier format choisi.
 - **Fichier > Exporter pour le web…** (Ctrl+Alt+Maj+S) : une copie légère pour Internet, sans toucher à la photo.
   - **Format** : JPEG (photos), **WebP** (plus léger à qualité égale, garde la transparence), PNG (sans perte).
   - **Réduire : plus grand côté** (par exemple 2048 px) ; jamais agrandie.
@@ -239,14 +241,14 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
     problème est signalée à la fin, les autres sont faites.
   - **Action** : une action enregistrée dans le panneau **Actions** (voir chapitre 9) est jouée sur chaque photo.
   - Les fichiers RAW du dossier sont traités aussi.
-  - Sécurité : si les résultats iraient dans le même dossier sous le même nom, Pixane refuse (les originaux
+  - Sécurité : si les résultats iraient dans le même dossier sous le même nom, Pixane Photo refuse (les originaux
     seraient remplacés).
 - **Fichier > Imprimer…** (Ctrl+P) : l'image visible (tous les calques), avec un **aperçu de la page**.
   - **Imprimante**, **Papier** (A4, A5, A3, Letter, 10 × 15, 13 × 18, 20 × 30 cm), **Orientation** (automatique :
     comme l'image), **Marges**, **Copies**.
   - **Taille** : *Remplir la page* (dans les marges), *Taille réelle* (d'après la résolution de l'image) ou
     *Largeur choisie* en cm.
-  - Pixane indique la taille sur la feuille et le nombre de points par pouce ; en dessous de 150, il prévient que
+  - Pixane Photo indique la taille sur la feuille et le nombre de points par pouce ; en dessous de 150, il prévient que
     l'impression risque d'être floue (IA > Upscale peut aider).
 - **Fichier > Nouvelle image…** (Ctrl+N) : une image vide, comme dans Photoshop. Un **aperçu** montre la forme de
   la feuille, son fond et les repères (fond perdu, zone de sécurité).
@@ -260,7 +262,7 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
   - **Orientation** : Portrait ou Paysage échange largeur et hauteur.
   - **Résolution** (ppp, points par pouce) : **300** pour l'impression, **72** pour l'écran. Elle est **gardée dans
     le fichier** (.pixane, PSD, JPEG, PNG, TIFF) : un imprimeur verra la bonne taille.
-  - **Mode** : couleurs RVB ou **niveaux de gris** (voir *Image > Mode*). Pixane travaille en **8 bits par couche**
+  - **Mode** : couleurs RVB ou **niveaux de gris** (voir *Image > Mode*). Pixane Photo travaille en **8 bits par couche**
     (16,7 millions de couleurs, comme le JPEG, le PNG et le web) ; le 16 et le 32 bits sont prévus plus tard.
   - **Fond** : blanc, transparent, noir ou une couleur au choix.
   - **Fond perdu** (impression) : bande ajoutée tout autour, coupée par l'imprimeur (en général 3 mm) : le fond doit
@@ -268,7 +270,7 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
     d'important (texte, visage). Des **repères** sont posés tout seuls sur ces deux lignes.
   - En bas : la taille en pixels, la taille imprimée et la mémoire utilisée.
 - **Fichier > Exporter pour l'impression (CMJN)…** : pour un imprimeur qui demande du CMJN (les quatre encres).
-  Pixane travaille en RVB et convertit au moment d'exporter, comme le conseillent les imprimeurs.
+  Pixane Photo travaille en RVB et convertit au moment d'exporter, comme le conseillent les imprimeurs.
   - **Format** : TIFF (le plus sûr), PDF ou JPEG.
   - **Profil CMJN** : ceux installés dans Windows, rien à télécharger. Demandez celui de votre imprimeur ; en Europe,
     c'est souvent **Coated FOGRA39** (papier couché).
@@ -360,7 +362,7 @@ seconde par demande (quelques secondes la première fois).
 Pour prendre un **texte** (titre de pochette, lettres manuscrites, texte en dégradé ou à contour) sans le fond, même
 quand une couleur proche le touche. Sans IA, en moins d'une seconde. Dans le groupe de la baguette (clic droit sur
 son bouton) ou touche **Y**.
-1. **Tirer un cadre autour du texte**, en laissant un peu de fond tout autour : Pixane regarde ce qui touche le bord
+1. **Tirer un cadre autour du texte**, en laissant un peu de fond tout autour : Pixane Photo regarde ce qui touche le bord
    du cadre (le fond) et sélectionne ce qui s'en distingue (les lettres). Les traits très fins et les bords des
    lettres sont pris en douceur (sélection progressive). Rien n'est pris hors du cadre.
 2. **Corriger d'un clic**, dans ce cadre :
@@ -376,7 +378,7 @@ son bouton) ou touche **Y**.
 - Ctrl+Z annule le dernier cadre ou la dernière correction.
 
 ### Trouver une police semblable
-Quelle police a servi pour ce titre ? Pixane cherche parmi **les polices installées sur le PC** celles qui
+Quelle police a servi pour ce titre ? Pixane Photo cherche parmi **les polices installées sur le PC** celles qui
 ressemblent le plus (sans Internet, rien n'est téléchargé).
 1. Sélectionnez les lettres avec la **Sélection de texte (Y)** (un bloc plein ne marche pas : il faut les lettres
    seules).
@@ -384,11 +386,11 @@ ressemblent le plus (sans Internet, rien n'est téléchargé).
 3. **Tapez les mêmes lettres** que dans l'image, en respectant les majuscules (séparez les lignes par « / »), puis
    **Chercher**. Quelques secondes (plus il y a de polices installées, plus c'est long).
 4. Les polices les plus proches s'affichent d'abord, écrites avec vos lettres, avec leur ressemblance en %.
-   - **Appliquer au texte choisi** : si le calque choisi est un texte de Pixane, il prend cette police ;
+   - **Appliquer au texte choisi** : si le calque choisi est un texte de Pixane Photo, il prend cette police ;
    - **Créer un texte avec cette police** : nouveau calque de texte à la place des lettres, avec leur couleur (les
      lettres de l'image restent : effacez-les ensuite si besoin) ;
    - **Copier le nom** de la police.
-- **Option** (case à l'installation, ou **Affichage > Recherche de police semblable**) : pour aller vite, Pixane
+- **Option** (case à l'installation, ou **Affichage > Recherche de police semblable**) : pour aller vite, Pixane Photo
   prépare **une seule fois** la liste de vos polices, en arrière-plan, une minute après le démarrage. La durée dépend
   du **nombre de polices installées** : environ 1 min 20 (et 15 Mo) pour 1 200 polices.
   Décochée : la fonction est cachée, rien ne tourne en fond, et cette liste est effacée.
@@ -415,7 +417,7 @@ Sélectionne **tous les points d'une couleur**, dans toute l'image (la baguette 
 
 ### Améliorer le contour (Ctrl+Alt+R, menu Sélection)
 Pour une sélection grossière autour de **cheveux, poils, feuillage ou bords flous** (par exemple après *Sélectionner
-le sujet* ou un lasso rapide) : Pixane recalcule le bord d'après les couleurs de la photo.
+le sujet* ou un lasso rapide) : Pixane Photo recalcule le bord d'après les couleurs de la photo.
 - **Rayon** : largeur de la bande recalculée autour du bord. Augmentez-le jusqu'à ce que les mèches apparaissent ;
   hors de cette bande, rien ne change.
 - **Lissage** : adoucit un bord irrégulier. **Contraste du bord** : bord plus net. **Décaler le bord** : négatif le
@@ -431,7 +433,7 @@ Ils agissent sur le **calque choisi** dans le panneau Calques :
 - **Copier** (Ctrl+C) : copie ce qui est sélectionné (tout le calque s'il n'y a pas de sélection). La copie garde sa
   transparence ; on peut aussi la coller dans un autre logiciel.
 - **Couper** (Ctrl+X) : copie, puis efface la zone sélectionnée (elle devient transparente).
-- **Coller** (Ctrl+V) : met l'image copiée dans un **nouveau calque**, à **la même place** si elle vient de Pixane,
+- **Coller** (Ctrl+V) : met l'image copiée dans un **nouveau calque**, à **la même place** si elle vient de Pixane Photo,
   au centre si elle vient d'ailleurs (capture d'écran, autre logiciel…). Bougez-la ensuite avec l'outil Déplacer (V).
   Pour l'agrandir ou la réduire : **Ctrl+T** (voir *Transformer le calque*).
   - **Image plus grande que la photo** : elle arrive **réduite pour tenir entière**, avec le cadre *Transformer*
@@ -459,7 +461,7 @@ sort de la feuille est gardé, on peut le faire revenir ; refusé sur un calque 
   l'Upscale (calque ramené à sa taille, autres calques agrandis). Un simple déplacement ne change aucun pixel.
 - **Aucune perte en réduisant puis en réagrandissant** (comme un *objet dynamique* de Photoshop, sans rien à faire) :
   chaque calque garde sa **meilleure version** (par exemple celle d'après un Upscale). Réduire, valider, faire autre
-  chose, enregistrer, rouvrir le projet… puis réagrandir : Pixane repart de cette meilleure version, l'image revient
+  chose, enregistrer, rouvrir le projet… puis réagrandir : Pixane Photo repart de cette meilleure version, l'image revient
   **telle qu'elle était, pixel pour pixel**, jusqu'à sa taille d'origine. Valable avec Déplacer (poignées), Ctrl+T,
   *Image > Taille de l'image*, pivoter, retourner, recadrer, aligner. Elle est enregistrée dans le projet **.pixane**
   (qui grossit un peu).
@@ -476,7 +478,7 @@ La **Gomme de calque** (G) efface **pour de vrai** les
 pixels du calque choisi (voir chapitre 6) ; elle est rangée avec le pinceau de couleur et le tampon.
 
 **Conseil (texte, cursive, objet fin)** : couvrez bien chaque lettre, bords compris, avec un pinceau un peu plus large
-que le trait ; n'oubliez pas l'ombre ou le contour s'il y en a. Pixane élargit déjà un peu la zone (environ 16 px)
+que le trait ; n'oubliez pas l'ombre ou le contour s'il y en a. Pixane Photo élargit déjà un peu la zone (environ 16 px)
 pour attraper les bords flous.
 
 ---
@@ -488,11 +490,11 @@ Le résultat gardé va **dans le calque choisi** (celui surligné dans le pannea
 suit quand on le déplace, le transforme ou change sa taille. Ctrl+Z revient en arrière. L'IA travaille toujours sur
 l'image **telle qu'on la voit** (tous les calques visibles ensemble) : choisissez donc le calque de la photo avant
 de lancer.
-- Le résultat **ne sort pas de la sélection** : l'IA retouche un peu autour pour le raccord, mais Pixane ne garde
+- Le résultat **ne sort pas de la sélection** : l'IA retouche un peu autour pour le raccord, mais Pixane Photo ne garde
   que l'intérieur, plus un fondu de quelques pixels, pour qu'aucun bord ne se voie.
 - Les zones **transparentes** (fond transparent, logo détouré, texte seul) **restent transparentes** : aucun noir
   n'est ajouté, ni dans les propositions ni dans le résultat (Upscale aussi). Pour que l'IA voie bien ce qu'il y a
-  dessus, Pixane lui montre ces zones sur un fond uni qui contraste (sombre derrière un texte blanc, blanc derrière
+  dessus, Pixane Photo lui montre ces zones sur un fond uni qui contraste (sombre derrière un texte blanc, blanc derrière
   un logo foncé), puis retire ce fond du résultat, bords des lettres compris.
 - Il va dans un **nouveau calque** (« Effacer 1 », « Remplir 2 »…) quand le calque choisi ne peut pas le recevoir
   (texte, groupe, calque de réglage, calque caché ou verrouillé), ou quand il n'y a pas de sélection et que
@@ -561,18 +563,18 @@ lunettes »… (modèle **Flux Kontext**, à ajouter dans Installer le moteur IA
     écris en français, **Traduire** montre la phrase anglaise, que tu peux corriger ;
   - ou écrire la consigne **directement en anglais** (seule solution pour les autres langues pour l'instant).
 
-  Si ta consigne n'a pas l'air d'être en anglais et n'est pas traduite, Pixane te prévient au clic sur Modifier ;
+  Si ta consigne n'a pas l'air d'être en anglais et n'est pas traduite, Pixane Photo te prévient au clic sur Modifier ;
   tu choisis : **Installer le traducteur…**, **Corriger**, ou **Envoyer quand même**.
 - Écris dans les guillemets le texte **exactement comme sur l'image** (accents, majuscules) : « Brûler le Feu »,
   pas « bruler le feu ».
 - Le traducteur s'installe par le
-  **programme d'installation de Pixane** (page « Traducteur des consignes »), par le bouton « Installer le
+  **programme d'installation de Pixane Photo** (page « Traducteur des consignes »), par le bouton « Installer le
   traducteur… », ou par sa case dans **IA > Installer le moteur IA** (fenêtre « Installer »
   ou « Compléter le moteur IA » si ComfyUI était déjà là) : cochée tant qu'il n'est pas installé, grisée ensuite.
   **Dossier du traducteur… Changer…** : tu choisis où le ranger (par défaut,
-  `%LOCALAPPDATA%\Pixane\traducteur`). Pas dans le dossier où Pixane est
-  installé (D:\Programmes\Pixane…) : il est remplacé à chaque mise à jour, Pixane le refuse.
-- Le traducteur démarre en arrière-plan dès l'ouverture de la fenêtre (une dizaine de secondes, le temps que tu écrives), puis il reste prêt jusqu'à la fermeture de Pixane : chaque traduction est alors presque immédiate.
+  `%LOCALAPPDATA%\Pixane\traducteur`). Pas dans le dossier où Pixane Photo est
+  installé (D:\Programmes\Pixane\Pixane Photo…) : il est remplacé à chaque mise à jour, Pixane Photo le refuse.
+- Le traducteur démarre en arrière-plan dès l'ouverture de la fenêtre (une dizaine de secondes, le temps que tu écrives), puis il reste prêt jusqu'à la fermeture de Pixane Photo : chaque traduction est alors presque immédiate.
 - L'IA travaille sur un morceau autour de la sélection (plus de détail qu'avec toute l'image) ; le résultat n'est
   gardé que dans la sélection et là où il change vraiment : le reste garde ses pixels d'origine.
 - **Calque avec de la transparence** (texte, logo sans fond) : l'IA voit ce calque seul, et le résultat garde un
@@ -594,7 +596,7 @@ Deux cadres apparaissent sur la photo :
 - Quand les deux cadres sont l'un sur l'autre (au départ), le **sens du geste** décide : vers l'extérieur = agrandir,
   vers l'intérieur = bord abîmé.
 - **Maj** en tirant : le côté opposé bouge pareil (agrandir à gauche et à droite en même temps, par exemple).
-- **Détection automatique** : à l'ouverture, Pixane repère les bords abîmés et place déjà le cadre rouge dessus :
+- **Détection automatique** : à l'ouverture, Pixane Photo repère les bords abîmés et place déjà le cadre rouge dessus :
   liserés clairs ou foncés, **cadre** ou bordure d'une autre couleur, **bord flou**, bande unie (barre de miniature,
   bord d'une capture d'écran), jusqu'à 4 % du côté. Vous pouvez l'ajuster ou le remettre à 0.
 - **Barre en haut de la photo** :
@@ -611,14 +613,14 @@ Deux cadres apparaissent sur la photo :
   reste du vide reste transparent. Le cadre part de la photo **du calque choisi** : ce qu'il y a dans les autres
   calques ne compte pas (choisis donc le calque de la photo collée). Les traits fins isolés ne comptent pas non plus. Les **ronds rouges** (bord abîmé) marchent aussi : tire-les vers l'intérieur pour faire redessiner un bord douteux de la photo. Le bord à demi transparent d'une photo collée puis réduite est toujours redessiné (pas de liseré clair à la jonction). Les trous transparents à l'intérieur
   de la photo restent transparents.
-- Le raccord entre la photo et l'ajout est fait par Pixane : la photo d'origine est gardée **au pixel près**, avec un
+- Le raccord entre la photo et l'ajout est fait par Pixane Photo : la photo d'origine est gardée **au pixel près**, avec un
   fondu progressif et un accord des couleurs, pour qu'aucune ligne ne soit visible. Dans les **fonds unis** (ciel,
   mur, fond sombre), l'ajout est remis au niveau de la photo jusqu'au bord : pas de partie plus claire ni de bandes
   (« effet fantôme »), et les légers **tourbillons** que l'IA laisse parfois dans ces fonds sont lissés (le grain
   fin et ce qui est vraiment dessiné, comme une étoile, sont gardés). Ce raccord est refait après *Pleine définition*.
 - 3 propositions, environ 1 minute chacune.
 - **Fond prolongé** : quand les bords à agrandir sont **unis** (fond de pochette, ciel lisse, dégradé), une
-  proposition de plus, faite **sans IA**, s'ajoute aux autres : Pixane continue lui-même le fond de la photo,
+  proposition de plus, faite **sans IA**, s'ajoute aux autres : Pixane Photo continue lui-même le fond de la photo,
   ligne par ligne, avec le même grain. Aucun raccord ni tourbillon visible, et c'est instantané. Elle n'apparaît pas
   si un objet touche le bord (il serait étiré). *Partir de celle-ci* et *Pleine définition* ne la concernent pas
   (elle est déjà à la vraie taille).
@@ -657,11 +659,11 @@ dessus pour redessiner les détails ; la force règle l'importance de ce 2e pass
 La fenêtre le rappelle sous la case Force (bulle d'aide plus complète au survol).
 
 **Rien d'inventé dans les aplats** (mode Net) : sans consigne, Flux a tendance à « voir » des choses dans une zone
-unie (fond de pochette, ciel lisse) et y ajoute taches, textes fantômes ou dessins. Pixane ne garde donc son travail
+unie (fond de pochette, ciel lisse) et y ajoute taches, textes fantômes ou dessins. Pixane Photo ne garde donc son travail
 que là où l'image d'origine a vraiment du détail (traits, texte, matière d'une photo) ; les aplats sont repris de
 l'image d'origine simplement agrandie, et les couleurs restent celles de l'origine. Rien à régler : c'est automatique.
 
-**Image graphique** (pochette, logo, affiche : surtout des aplats) : Pixane le reconnaît et propose d'office la force
+**Image graphique** (pochette, logo, affiche : surtout des aplats) : Pixane Photo le reconnaît et propose d'office la force
 **0,25**, car sur du texte Flux peut changer une lettre (vu en essai : « fig. 5 » devenu « ftp. 5 »). Pour un graphisme
 très simple, le mode **Rapide** suffit souvent.
 
@@ -731,7 +733,7 @@ l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi
   plis et grain, et en rendant le contraste et les visages plus nets. La photo garde **exactement sa taille et ses
   proportions**.
   - **Restaurer** garde les **couleurs d'origine** : une photo noir et blanc ou sépia le reste, une photo en couleur
-    garde ses couleurs. L'IA ne fournit que la lumière et les détails ; Pixane remet ensuite la teinte de
+    garde ses couleurs. L'IA ne fournit que la lumière et les détails ; Pixane Photo remet ensuite la teinte de
     l'original.
   - **Restaurer et coloriser** met en plus des couleurs naturelles à une photo en noir et blanc ou sépia.
   - Le résultat arrive dans un calque **« Restaurée »** (ou **« Restaurée et colorisée »**), et *Enregistrer sous*
@@ -744,12 +746,12 @@ l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi
 
 ### Ciel, couleurs, lumière, profondeur (IA)
 - **Sélection > Sélectionner le ciel (IA)** : l'IA (SAM 3.1) trouve le ciel et le sélectionne, bord un peu élargi et
-  adouci pour que la ligne d'horizon se raccorde. Pixane affine ensuite le bord d'après les couleurs : le ciel vu
+  adouci pour que la ligne d'horizon se raccorde. Pixane Photo affine ensuite le bord d'après les couleurs : le ciel vu
   entre les branches d'un arbre nu est sélectionné aussi (et, avec *Remplacer le ciel*, les branches gardent leur
   couleur). Ensuite, tous les outils marchent sur cette sélection (réglages,
   Remplir…). Quelques secondes.
 - **IA > Remplacer le ciel…** : choisissez le nouveau ciel sur des **vignettes d'exemple** (ciel bleu avec quelques nuages, grands nuages, coucher
-  de soleil, ciel d'orage, nuit étoilée, aube). Pixane sélectionne le ciel (nuages compris), Flux Kontext redessine
+  de soleil, ciel d'orage, nuit étoilée, aube). Pixane Photo sélectionne le ciel (nuages compris), Flux Kontext redessine
   la photo avec ce ciel, et **seul le ciel** en est gardé : le reste garde ses pixels d'origine. Deux propositions,
   environ 2 minutes chacune. Au bord d'un toit ou d'un arbre, l'IA peut laisser un petit reste décalé : choisissez la
   meilleure proposition, ou retouchez (tampon, Effacer). Le ciel reste sélectionné : pour l'harmoniser, un réglage de
@@ -770,7 +772,7 @@ l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi
   (sinon rien n'est devant, la case ne change rien). **Si l'IA se trompe** : choisissez *Pinceau : garder net* ou *Pinceau : rendre flou* et peignez sur la carte
   (vert = net, rouge = flou ; *Taille du pinceau* ; *Effacer les coups de pinceau*). Aperçu en direct sur la photo ; s'applique au calque choisi (dans la sélection s'il y en a une). Modèle
   **Depth Anything 3 Small** (137 Mo, Apache-2.0), facultatif : case *Flou selon la profondeur* à l'installation de
-  Pixane, ou dans **IA > Installer le moteur IA…**.
+  Pixane Photo, ou dans **IA > Installer le moteur IA…**.
 
 ---
 
@@ -861,7 +863,7 @@ Aligner (6) et Répartir (2). La bulle de chaque bouton dit ce qu'il fait. **Aff
 masque ou la remet (masquée : Aligner et Répartir reviennent dans la barre de l'outil Déplacer).
 
 ### Aligner, répartir, retourner les calques
-Dans le menu **Calque** et dans la **barre d'accès rapide**. Pixane prend ce que les calques contiennent vraiment (sans le vide transparent autour). Un groupe choisi
+Dans le menu **Calque** et dans la **barre d'accès rapide**. Pixane Photo prend ce que les calques contiennent vraiment (sans le vide transparent autour). Un groupe choisi
 bouge comme un seul bloc ; les calques verrouillés ne bougent pas ; un seul Ctrl+Z annule.
 - **Aligner** : bords gauches, centres horizontaux, bords droits, bords hauts, centres verticaux, bords bas.
   **Plusieurs calques choisis** : ils s'alignent entre eux (ex. « bords gauches » : sur celui qui est le plus à
@@ -964,7 +966,7 @@ Outil **Texte** (touche **T**, icône « T » dans la barre d'outils). Le pannea
 - **Glisser le texte** : le déplacer (aussi avec l'outil Déplacer, V). Un cadre en pointillés entoure le texte choisi.
 - **Poignée ronde** au-dessus du cadre : tourner le texte (**Maj** : par pas de 15°), ou case *Rotation*.
 - Le nom du calque suit la première ligne du texte (tant qu'on ne l'a pas renommé à la main).
-- Sans texte choisi, les réglages du panneau servent pour le **prochain** texte ; Pixane retient aussi le
+- Sans texte choisi, les réglages du panneau servent pour le **prochain** texte ; Pixane Photo retient aussi le
   dernier style utilisé (police, couleur, effets…). La taille du nouveau texte est calculée d'après la photo.
 
 ### Réglages du panneau
@@ -1020,8 +1022,8 @@ prennent le style de celle qui les précède.
 ### Orthographe, césure, rechercher et remplacer
 - **Orthographe** : dans la case du panneau Texte, les mots mal écrits sont **soulignés en rouge**. **Clic droit**
   sur un mot souligné : les suggestions (accents oubliés, lettres inversées, en trop, oubliées, mots collés),
-  *Ignorer* (jusqu'à la fermeture de Pixane) ou *Ajouter au dictionnaire* (gardé pour toujours).
-- **Langue** (partie Paragraphe) : la langue du texte, pour l'orthographe et la césure ; *Langue de Pixane* par
+  *Ignorer* (jusqu'à la fermeture de Pixane Photo) ou *Ajouter au dictionnaire* (gardé pour toujours).
+- **Langue** (partie Paragraphe) : la langue du texte, pour l'orthographe et la césure ; *Langue de Pixane Photo* par
   défaut. Français et anglais.
 - **Césure** (texte en cadre) : les mots longs sont coupés en fin de ligne, avec un tiret, selon les règles de la
   langue. En justifié, une ligne d'un seul mot reste à gauche (ses lettres ne sont pas écartées).
@@ -1122,18 +1124,18 @@ Le pinceau de couleur (et les masques), la **gomme de calque** et le **pinceau d
   - **Simples** : les pinceaux de tous les jours : rond dur, rond doux, aérographe, carré, plat, biseau ;
   - puis les pinceaux de Krita **par familles** : Crayon et fusain, Peinture, Nature, Effets, Textures, Formes ;
   - enfin les fichiers que tu as ajoutés.
-- **Livrés avec Pixane** : 235 pinceaux et 87 motifs (ressources de Krita, licence CC-0), plus les pinceaux simples
+- **Livrés avec Pixane Photo** : 235 pinceaux et 87 motifs (ressources de Krita, licence CC-0), plus les pinceaux simples
   et les styles prêts.
 - **Ajouter des fichiers…** : pinceaux de Photoshop (**.abr**), de GIMP et Krita (**.gbr**, **.gih**), paquets
   Krita (**.bundle**), ou une simple image (le noir peint ; une image en couleur garde ses couleurs). Chaque fichier
-  devient un groupe ; **Retirer ce groupe** l'enlève. Les pinceaux sont rangés dans Pixane : l'original peut être
+  devient un groupe ; **Retirer ce groupe** l'enlève. Les pinceaux sont rangés dans Pixane Photo : l'original peut être
   déplacé ou supprimé.
 - **Rangement** : chaque pinceau et chaque motif ajouté est rangé à part, **à sa taille d'origine et sans perte de
-  qualité** (PNG), avec sa vignette. Pixane n'ouvre que le pinceau dont on se sert : même un .abr de plus d'un Go
+  qualité** (PNG), avec sa vignette. Pixane Photo n'ouvre que le pinceau dont on se sert : même un .abr de plus d'un Go
   s'ouvre **sans attente** (bibliothèque, réglages du pinceau, démarrage), et prend moins de place (1,7 Go → 0,86
   Go pour un gros .abr). L'ajout d'un très gros fichier prend le temps de le ranger (environ 3 minutes pour 1,7 Go).
 - Les pinceaux ajoutés **avec une version précédente** sont rangés ainsi **une seule fois**, en arrière-plan, au
-  premier démarrage (message dans la barre d'état) ; Pixane reste utilisable pendant ce temps.
+  premier démarrage (message dans la barre d'état) ; Pixane Photo reste utilisable pendant ce temps.
 - Un pinceau « animé » (.gih : herbe, feuilles…) a plusieurs formes qui alternent pendant le trait.
 - **Réglages…** (un point « • » s'affiche quand un réglage est changé), avec un aperçu du trait :
   - **Forme** : espacement entre les touches, angle (ou « l'angle suit le trait », comme une plume), rondeur ;
@@ -1474,61 +1476,63 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+0, Ctrl+1 | Ajuster, 100 % |
 | Entrée / Échap | (Agrandir) Lancer / Annuler ; (Recadrer) Valider / Annuler |
 | Maj (en tournant un texte) | Rotation par pas de 15° |
-| F1 | Guide, ouvert sur les raccourcis (menu Aide > Guide de Pixane : tout le guide, avec une recherche) |
+| F1 | Guide, ouvert sur les raccourcis (menu Aide > Guide de Pixane Photo : tout le guide, avec une recherche) |
 
 ---
 
 ## 12. Matériel et licences
 
-**Installation** : lancer `Pixane-Setup-<version>-64bits.exe`.
-1. Langue de l'installation (ce sera aussi la langue de Pixane, modifiable ensuite dans Affichage > Langue).
+**Installation** : lancer `Pixane-Photo-Setup-<version>-64bits.exe`.
+1. Langue de l'installation (ce sera aussi la langue de Pixane Photo, modifiable ensuite dans Affichage > Langue).
 2. Pour moi seulement (par défaut, sans droits administrateur) ou pour tous les utilisateurs.
-3. Dossier d'installation.
+3. Dossier d'installation : par défaut `…\Pixane\Pixane Photo` (le dossier `Pixane` réunit les logiciels de la
+   Suite Pixane). Une installation plus ancienne (`…\Pixane`) y est déplacée d'elle-même : réglages, projets,
+   moteur IA et raccourcis sont gardés.
 4. **Vérification du PC** : carte graphique NVIDIA et sa mémoire (8 Go conseillés), place libre, moteur IA
    (ComfyUI) trouvé ou non. Si ComfyUI est installé ailleurs, bouton **Parcourir…** pour indiquer son dossier.
-   Sans ComfyUI, Pixane ouvre, retouche (calques, texte) et enregistre, mais les actions IA ne marchent pas.
+   Sans ComfyUI, Pixane Photo ouvre, retouche (calques, texte) et enregistre, mais les actions IA ne marchent pas.
 5. **Moteur IA** (seulement si ComfyUI n'est pas trouvé) : liste de ce qui sera téléchargé, avec taille, site et
    licence (21,5 Go à télécharger, environ 31 Go sur le disque) ; dossier du moteur (par défaut
    `%LOCALAPPDATA%\Pixane\moteur`) ; case facultative **Flux Schnell** pour « Upscale net » (11,8 Go de plus) ;
    case **J'accepte la licence FLUX.1 [dev]** (usage non commercial) obligatoire pour installer le moteur.
-   On peut aussi décocher : Pixane s'installe sans moteur.
-6. Options : icône sur le Bureau ; ouvrir les fichiers .pixane avec Pixane.
+   On peut aussi décocher : Pixane Photo s'installe sans moteur.
+6. Options : icône sur le Bureau ; ouvrir les fichiers .pixane avec Pixane Photo.
 7. À la fin, la fenêtre **Installer le moteur IA** télécharge et installe tout (ComfyUI portable, ses extensions,
    les modèles). Elle montre l'avancement, la vitesse et le temps restant. **Arrêter** est possible à tout moment :
    le téléchargement reprendra plus tard là où il s'était arrêté (même après une coupure). Chaque fichier est
    vérifié (empreinte SHA-256).
 
 La même fenêtre s'ouvre par le menu **IA > Installer le moteur IA…** (par exemple pour ajouter Flux Schnell plus
-tard, ou **Flux Kontext** — 11,9 Go, facultatif — pour *Restaurer une vieille photo*), et Pixane la propose au démarrage s'il ne trouve pas de moteur. Si un ComfyUI installé autrement est déjà
-là (ComfyUI Desktop, ComfyUI portable…), Pixane l'utilise tel quel : au démarrage, il demande à ComfyUI ce qu'il a
+tard, ou **Flux Kontext** — 11,9 Go, facultatif — pour *Restaurer une vieille photo*), et Pixane Photo la propose au démarrage s'il ne trouve pas de moteur. Si un ComfyUI installé autrement est déjà
+là (ComfyUI Desktop, ComfyUI portable…), Pixane Photo l'utilise tel quel : au démarrage, il demande à ComfyUI ce qu'il a
 déjà et, s'il manque des extensions ou des modèles, propose la fenêtre **Compléter le moteur IA** (aussi par
 **IA > Installer le moteur IA…**). Elle liste **seulement ce qui manque** (taille, licence, source, dossier) et le
 range dans les dossiers de ce ComfyUI, même un dossier de modèles partagé, sans rien remplacer ni effacer. Flux
 Schnell et Flux Kontext s'y ajoutent en option. Si de nouvelles extensions sont ajoutées à ComfyUI Desktop ouvert,
 fermez-le puis rouvrez-le pour qu'il les charge. Un ComfyUI trop ancien pour une fonction (par exemple la
-sélection d'objet) est signalé : Pixane ne le met pas à jour lui-même.
+sélection d'objet) est signalé : Pixane Photo ne le met pas à jour lui-même.
 
 **Mises à jour du moteur IA** : les versions de ComfyUI, des extensions et des modèles sont choisies et essayées
-avec chaque version de Pixane ; rien ne change tout seul. Quand une nouvelle version de Pixane demande d'autres
-versions, Pixane le propose une fois au démarrage (liste et taille à télécharger), et la fenêtre **Installer le
+avec chaque version de Pixane Photo ; rien ne change tout seul. Quand une nouvelle version de Pixane Photo demande d'autres
+versions, Pixane Photo le propose une fois au démarrage (liste et taille à télécharger), et la fenêtre **Installer le
 moteur IA** montre l'état de chaque élément (*à jour*, *nouvelle version*) avec le bouton **Mettre à jour**.
 Seul ce qui a changé est téléchargé. ComfyUI est remplacé en gardant ses modèles, ses extensions et ses réglages ;
 un ancien modèle remplacé est effacé. Le moteur est arrêté pendant la mise à jour et relancé après. Un ComfyUI
-installé autrement (par exemple ComfyUI Desktop) se met à jour de son côté : Pixane n'y touche pas.
+installé autrement (par exemple ComfyUI Desktop) se met à jour de son côté : Pixane Photo n'y touche pas.
 
 **Aide > Rechercher une mise à jour…** (ou au démarrage, si *Vérifier les mises à jour au démarrage* est coché) : quand une nouvelle version existe, une fenêtre montre **ce qui change** (nouveautés, corrections) dans toutes les versions que vous n'avez pas encore ; **Télécharger** ouvre la page de téléchargement. Une nouvelle version s'installe par-dessus l'ancienne (réglages gardés). Désinstaller : Paramètres de Windows >
 Applications. Le désinstalleur pose deux questions (réponse « Non » par défaut) :
-- supprimer aussi le **moteur IA installé par Pixane** (ComfyUI, extensions, modèles) ? Un ComfyUI installé
+- supprimer aussi le **moteur IA installé par Pixane Photo** (ComfyUI, extensions, modèles) ? Un ComfyUI installé
   autrement, par exemple ComfyUI Desktop, n'est jamais touché ;
 - supprimer aussi les **réglages** (langue, thème, dernier dossier, style de texte, dossier du moteur) et les
   journaux ?
 
 **Licences et matériel d'essai** :
-- Pixane : Licence Pixane 1.2, © 2026 Georges Christophe (chrypox) : gratuit, modifiable et partageable,
-  nom de l'auteur obligatoire, aucune vente (ni de Pixane ni d'une version modifiée) ; fichier `LICENSE`.
+- Pixane Photo : Licence Pixane 1.2, © 2026 Georges Christophe (chrypox) : gratuit, modifiable et partageable,
+  nom de l'auteur obligatoire, aucune vente (ni de Pixane Photo ni d'une version modifiée) ; fichier `LICENSE`.
   Éléments tiers : `docs\LICENCES_TIERS.md`.
 - Testé sur une carte graphique NVIDIA de 8 Go (RTX 3060 Ti). Les durées indiquées viennent de ce PC.
-- Modèles utilisés : Flux.1 Fill dev (**usage non commercial** ; version GGUF Q8 si installé par Pixane, même
+- Modèles utilisés : Flux.1 Fill dev (**usage non commercial** ; version GGUF Q8 si installé par Pixane Photo, même
   qualité), Flux.1 Kontext dev (**usage non commercial**, facultatif), Flux.1 Schnell (Apache-2.0), LaMa
   (Apache-2.0), RealESRGAN x4plus (BSD-3), SCUNet (Apache-2.0), BiRefNet (MIT), SAM 3.1 (SAM License de Meta).
 - Moteur : ComfyUI (GPL-3.0) et ses extensions Inpaint nodes, Inpaint Crop and Stitch, Ultimate SD Upscale
@@ -1541,29 +1545,29 @@ Applications. Le désinstalleur pose deux questions (réponse « Non » par déf
 Non. L'IA tourne sur votre PC. Internet ne sert qu'une fois, pour télécharger le moteur IA et les modèles.
 
 ### Pourquoi l'IA est-elle lente ?
-Les modèles d'IA sont gros (Flux Fill : 12 Go). Sur une carte de 8 Go, comptez environ une minute par proposition. Pixane ne traite que la zone autour de la sélection, pas toute la photo, pour aller plus vite.
+Les modèles d'IA sont gros (Flux Fill : 12 Go). Sur une carte de 8 Go, comptez environ une minute par proposition. Pixane Photo ne traite que la zone autour de la sélection, pas toute la photo, pour aller plus vite.
 
 ### J'ai une carte AMD ou Intel. Est-ce que ça marche ?
-Pixane s'ouvre et retouche (calques, texte, recadrage…), mais les actions IA demandent une carte NVIDIA.
+Pixane Photo s'ouvre et retouche (calques, texte, recadrage…), mais les actions IA demandent une carte NVIDIA.
 
 ### J'ai déjà ComfyUI. Faut-il tout retélécharger ?
-Non : l'installateur le cherche, et le bouton **Parcourir…** permet d'indiquer son dossier. Pixane l'utilise alors tel quel et ne propose de télécharger que ce qui lui manque (extensions, modèles), dans les dossiers de ce ComfyUI, sans rien remplacer.
+Non : l'installateur le cherche, et le bouton **Parcourir…** permet d'indiquer son dossier. Pixane Photo l'utilise alors tel quel et ne propose de télécharger que ce qui lui manque (extensions, modèles), dans les dossiers de ce ComfyUI, sans rien remplacer.
 
 ### Comment changer la langue ?
-Menu **Affichage > Langue**. Pixane redémarre pour l'appliquer.
+Menu **Affichage > Langue**. Pixane Photo redémarre pour l'appliquer.
 
 ### Puis-je l'utiliser au travail ?
 Oui, gratuitement, aussi en entreprise. Il est seulement interdit de le vendre, le louer ou l'intégrer dans une offre payante. Attention : le modèle **Flux Fill** (Effacer, Remplir, Agrandir) est sous licence non commerciale ; vérifiez qu'elle convient à votre usage.
 
 ### Comment le désinstaller ?
-Paramètres de Windows > Applications > Pixane. Le désinstalleur demande s'il faut aussi supprimer le moteur IA et les réglages.
+Paramètres de Windows > Applications > Pixane Photo. Le désinstalleur demande s'il faut aussi supprimer le moteur IA et les réglages.
 
 ## Développer
 
 Il faut Python 3.11 et [uv](https://github.com/astral-sh/uv).
 
 - `uv venv` puis `uv pip install -e .` : prépare l'environnement.
-- `Pixane.bat` (ou `.venv\Scripts\python -m pixane photo.jpg`) : lance Pixane.
+- `Pixane Photo.bat` (ou `.venv\Scripts\python -m pixane photo.jpg`) : lance Pixane Photo.
 - `construire-installateur.bat` : fabrique l'installateur (il faut [Inno Setup 7](https://jrsoftware.org/isdl.php)).
 - `tests\essai_*.py` : essais automatiques (ils ne touchent pas à vos réglages).
 - `outils\readme.py` : recopie le guide (`docs\GUIDE.md`, `docs\GUIDE_en.md`) dans les README.
@@ -1579,12 +1583,12 @@ Il faut Python 3.11 et [uv](https://github.com/astral-sh/uv).
 
 ![Licence Pixane : gratuit, non commercial, modifiable](logo/licence/licence-pixane.png)
 
-Pixane est publié sous la **Licence Pixane 1.2** — © 2026 Georges Christophe (chrypox). Le texte complet, seul à faire foi, est dans le fichier [`LICENSE`](LICENSE) (traduction anglaise : [`LICENSE.en.txt`](LICENSE.en.txt)). En résumé :
+Pixane Photo est publié sous la **Licence Pixane 1.2** — © 2026 Georges Christophe (chrypox). Le texte complet, seul à faire foi, est dans le fichier [`LICENSE`](LICENSE) (traduction anglaise : [`LICENSE.en.txt`](LICENSE.en.txt)). En résumé :
 
 - **Gratuit** : utilisation libre et gratuite, aussi en entreprise et en interne ; interdit de le vendre, le louer ou l'intégrer dans une offre payante.
 - **Partage** : copie et partage gratuits, avec la licence et le nom de l'auteur.
-- **Modifications permises** : chacun peut modifier Pixane, publier sa version modifiée (« fork ») ou réutiliser son code, à condition de garder le nom de l'auteur, d'indiquer que la version est modifiée, et de la publier sous la même licence : elle reste donc gratuite et non commerciale.
+- **Modifications permises** : chacun peut modifier Pixane Photo, publier sa version modifiée (« fork ») ou réutiliser son code, à condition de garder le nom de l'auteur, d'indiquer que la version est modifiée, et de la publier sous la même licence : elle reste donc gratuite et non commerciale.
 - **Corrections** : proposées par une « Issue » (ticket) ou une demande de fusion ; l'auteur les intègre, en créditant leur auteur.
 - **Droits d'autrui** : un élément qui ne respecterait pas une licence ou vos droits ? Écrivez à admin@chrypox.be.
 
-Le moteur IA (ComfyUI) et les modèles d'IA ne sont pas inclus dans Pixane : ils restent sous leur propre licence, et le modèle **Flux.1 Fill [dev]** est sous licence non commerciale. Liste complète : [`docs/LICENCES_TIERS.md`](docs/LICENCES_TIERS.md).
+Le moteur IA (ComfyUI) et les modèles d'IA ne sont pas inclus dans Pixane Photo : ils restent sous leur propre licence, et le modèle **Flux.1 Fill [dev]** est sous licence non commerciale. Liste complète : [`docs/LICENCES_TIERS.md`](docs/LICENCES_TIERS.md).

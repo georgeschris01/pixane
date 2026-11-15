@@ -85,7 +85,7 @@ def refuser_dossier(parent, d: Path | str, quoi: str) -> bool:
     from PySide6.QtWidgets import QMessageBox
     from .langue import tr
     QMessageBox.warning(parent, quoi, tr(
-        "« {dossier} » est dans le dossier où Pixane est installé ({programme}). Ce dossier est remplacé en entier à "
+        "« {dossier} » est dans le dossier où Pixane Photo est installé ({programme}). Ce dossier est remplacé en entier à "
         "chaque mise à jour : ce qu'on y range serait effacé.\n\nChoisis un dossier ailleurs, par exemple "
         "D:\\Pixane-traducteur.", dossier=str(Path(d)), programme=str(dossier_programme())))
     return True

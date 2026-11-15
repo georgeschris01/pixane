@@ -14,7 +14,7 @@ from .langue import tr
 
 def explication() -> str:
     return tr("L'IA qui modifie les images (Flux Kontext) ne comprend bien que l'anglais. Avec le traducteur, tu "
-              "écris tes consignes en français (« remplace le texte « brûler le feu » par « Flamme » ») et Pixane "
+              "écris tes consignes en français (« remplace le texte « brûler le feu » par « Flamme » ») et Pixane Photo "
               "les traduit avant de les envoyer. La traduction se fait sur ton PC : rien n'est envoyé sur Internet. "
               "Sans lui, il faut écrire les consignes en anglais.")
 

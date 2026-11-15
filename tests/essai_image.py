@@ -169,7 +169,7 @@ verifier(f.doc is not None and f.doc.taille() == (400, 300), "Ctrl+V sans photo 
 # ------------------------------------------------------------------ historique, à propos, mises à jour, Auto
 verifier(f.vue_historique.stack() is f.historique, "panneau Historique relié à Annuler / Rétablir")
 d = APropos(None, f)
-verifier("Pixane" in d.findChildren(type(f.valeur_zoom))[0].text(), "fenêtre À propos")
+verifier("Pixane Photo" in d.findChildren(type(f.valeur_zoom))[0].text(), "fenêtre À propos")
 d.deleteLater()
 verifier(mises_a_jour.plus_recente("0.2.0", "0.1.0") and not mises_a_jour.plus_recente("0.1.0", "0.1.0")
          and mises_a_jour.plus_recente("v1.0", "0.9.9"), "comparaison des versions")
@@ -183,7 +183,7 @@ verifier(mises_a_jour.trier_nouveautes(publiees, "0.6.0")["versions"] == [], "mi
 from pixane.fenetre import FenetreNouveautes  # noqa: E402
 fn = FenetreNouveautes(info, f)
 texte = fn.notes.toPlainText()
-verifier("Pixane 0.6.0" in texte and "six" in texte and "cinq" in texte and texte.index("six") < texte.index("cinq"),
+verifier("Pixane Photo 0.6.0" in texte and "six" in texte and "cinq" in texte and texte.index("six") < texte.index("cinq"),
          "fenêtre de mise à jour : nouveautés de chaque version")
 fn.deleteLater()
 sombre = QImage(str(sortie / "fond.png")).convertToFormat(QImage.Format_ARGB32_Premultiplied)

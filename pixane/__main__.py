@@ -45,7 +45,7 @@ def signaler_erreurs() -> None:
         deja.add(cle)
         from PySide6.QtWidgets import QMessageBox
         from .langue import tr
-        QMessageBox.warning(None, "Pixane", tr("Une erreur s'est produite : l'action n'a pas pu se faire.\n\n"
+        QMessageBox.warning(None, "Pixane Photo", tr("Une erreur s'est produite : l'action n'a pas pu se faire.\n\n"
                                                 "{erreur}\n\nDétails dans le fichier erreurs.log "
                                                 "(%LOCALAPPDATA%\\Pixane).", erreur=f"{type_.__name__} : {valeur}"))
 

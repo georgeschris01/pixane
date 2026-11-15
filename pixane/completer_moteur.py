@@ -99,7 +99,7 @@ def manquants(infos: dict, dossiers: dict[str, list[str]], dossier_comfyui: Path
         liste = [e for e in liste if e.cle != "gguf"]
     notes = []
     if trop_ancien:
-        notes.append(tr("Ce ComfyUI est trop ancien pour : {liste}. Mets-le à jour pour en profiter (Pixane ne le "
+        notes.append(tr("Ce ComfyUI est trop ancien pour : {liste}. Mets-le à jour pour en profiter (Pixane Photo ne le "
                         "remplace pas).", liste=", ".join(trop_ancien)))
     if pas_chargees:
         notes.append(tr("Déjà là mais pas encore chargé par ComfyUI : {liste}. Ferme ComfyUI puis rouvre-le.",
@@ -123,7 +123,7 @@ class FenetreCompleter(QDialog):
         self.travail: Installation | None = None
         self.reussi = False
         lay = QVBoxLayout(self)
-        intro = QLabel(tr("Un ComfyUI est déjà installé sur ce PC ({dossier}) : Pixane l'utilise. Il lui manque "
+        intro = QLabel(tr("Un ComfyUI est déjà installé sur ce PC ({dossier}) : Pixane Photo l'utilise. Il lui manque "
                           "seulement les éléments ci-dessous. Ils seront ajoutés dans les dossiers de ce ComfyUI, "
                           "sans rien remplacer ni effacer. Tout vient des sites officiels (GitHub, Hugging Face).",
                           dossier=install["dir"]))
@@ -250,7 +250,7 @@ class FenetreCompleter(QDialog):
             libre = None
         assez = libre is None or libre > besoin + GO
         if not elements:
-            self.place.setText(tr("Rien ne manque : ce ComfyUI a tout ce qu'il faut à Pixane."))
+            self.place.setText(tr("Rien ne manque : ce ComfyUI a tout ce qu'il faut à Pixane Photo."))
         else:
             self.place.setText(tr("À télécharger : {besoin} ; libre sur le disque : {libre}", besoin=go(besoin),
                                   libre=go(libre) if libre is not None else "?")

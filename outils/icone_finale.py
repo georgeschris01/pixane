@@ -1,4 +1,5 @@
-"""Fabrique l'icône finale de Pixane (logo « P en pixels ») : SVG, ICO multi-tailles, PNG 256."""
+"""Fabrique l'icône finale de Pixane Photo (logo de la Suite Pixane, idée C : « P en pixels » orange-rose et symbole
+photo) : SVG, ICO multi-tailles, PNG 256. L'emblème de la suite (P sans symbole) est dans logo\suite-pixane.svg."""
 import io
 import sys
 from pathlib import Path
@@ -8,9 +9,11 @@ from PySide6.QtCore import QBuffer, QIODevice
 from PySide6.QtGui import QGuiApplication
 
 sys.path.insert(0, str(Path(__file__).parent))
-from logos_pixane import BORD, FOND, LOGOS, rendre, svg  # noqa: E402
+from logos_pixane import rendre, svg  # noqa: E402
+from logos_suite import logo_final  # noqa: E402
 
-titre, defs, corps = LOGOS["1-p-pixels"]
+defs, corps = logo_final("Photo")
+defs_p, corps_p = logo_final("Photo", petit=True)
 
 
 def plein(c):
@@ -20,11 +23,8 @@ def plein(c):
 
 
 complet = svg(defs, plein(corps))
-# version simplifiée pour 16 à 24 px : trait plus épais, un seul pixel, pas d'étincelle
-simple = svg(defs, plein(FOND + BORD
-                         + '<path d="M88 200 V62 H126 A44 44 0 0 1 166 124" fill="none" stroke="url(#r)" '
-                           'stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>'
-                         + '<rect x="128" y="138" width="34" height="34" rx="7" fill="#EC4A60"/>'))
+# version simplifiée pour 16 à 24 px : trait plus épais, sans les petits pixels
+simple = svg(defs_p, plein(corps_p))
 
 app = QGuiApplication(sys.argv)
 racine = Path(__file__).resolve().parents[1]

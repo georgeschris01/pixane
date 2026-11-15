@@ -253,7 +253,7 @@ class NouvelleImage(QDialog):
         self.mode.addItem(tr("Couleurs RVB"), "rvb")
         self.mode.addItem(tr("Niveaux de gris"), "gris")
         bits = QLabel(tr("8 bits par couche"))
-        bits.setToolTip(tr("Pixane travaille en 8 bits par couche (16,7 millions de couleurs), comme le JPEG, le PNG "
+        bits.setToolTip(tr("Pixane Photo travaille en 8 bits par couche (16,7 millions de couleurs), comme le JPEG, le PNG "
                            "et le web. Le 16 et le 32 bits sont prévus plus tard."))
         lm = QHBoxLayout()
         lm.addWidget(self.mode, 1)
@@ -398,7 +398,7 @@ class NouvelleImage(QDialog):
                                l=_nombre(W / f.dpi * 2.54), h=_nombre(H / f.dpi * 2.54))
         texte += "\n" + tr("Mémoire : {poids} par calque", poids=_poids(W, H))
         if W * H > 400_000_000:
-            texte += "\n" + tr("Attention : image énorme, Pixane risque d'être très lent.")
+            texte += "\n" + tr("Attention : image énorme, Pixane Photo risque d'être très lent.")
         self.info.setText(texte)
         if hasattr(self, "apercu"):
             self.apercu.definir(W, H, self.couleur(), reperes=self.reperes())

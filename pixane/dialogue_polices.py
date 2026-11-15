@@ -119,7 +119,7 @@ class FenetrePolices(QDialog):
         self.progres.setVisible(True)
         self.progres.setValue(0)
         manquantes = sum(1 for f in ps.familles() if f not in ps.memoire())
-        self.etat.setText(tr("Première fois : Pixane prépare tes {n} polices, une seule fois. La durée dépend de leur "
+        self.etat.setText(tr("Première fois : Pixane Photo prépare tes {n} polices, une seule fois. La durée dépend de leur "
                              "nombre (environ 1 min 20 pour 1 200 polices)…",
                              n=manquantes) if manquantes > 50 else tr("Recherche…"))
 

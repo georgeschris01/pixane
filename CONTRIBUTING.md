@@ -1,8 +1,8 @@
-# Contribuer à Pixane
+# Contribuer à Pixane Photo
 
 **Français** · [English](#contributing-to-pixane)
 
-Pixane est maintenu par son auteur. Vous pouvez y participer par les « Issues » (tickets) et les « Discussions » de ce dépôt.
+Pixane Photo est maintenu par son auteur. Vous pouvez y participer par les « Issues » (tickets) et les « Discussions » de ce dépôt.
 
 ## Poser une question
 
@@ -16,11 +16,11 @@ Ouvrez une Issue « Proposer une idée » et décrivez ce que vous aimeriez fair
 
 Ouvrez une Issue « Signaler un problème » en indiquant :
 
-- la version de Pixane (**Aide > À propos de Pixane**) et celle de Windows ;
-- pour une action IA : la carte graphique, et si le moteur IA a été installé par Pixane ou si c'est votre propre ComfyUI ;
+- la version de Pixane Photo (**Aide > À propos de Pixane Photo**) et celle de Windows ;
+- pour une action IA : la carte graphique, et si le moteur IA a été installé par Pixane Photo ou si c'est votre propre ComfyUI ;
 - ce que vous avez fait, ce que vous attendiez, ce qui s'est passé.
 
-Si Pixane s'est fermé tout seul, les détails sont dans `%LOCALAPPDATA%\Pixane\erreurs.log`.
+Si Pixane Photo s'est fermé tout seul, les détails sont dans `%LOCALAPPDATA%\Pixane\erreurs.log`.
 
 **Ne mettez jamais dans une Issue** de photo personnelle, de chemin de dossier personnel ni de journal non relu : les Issues sont publiques. Pour montrer un problème, une image d'essai sans rien de privé suffit.
 
@@ -34,11 +34,11 @@ Comme le prévoit l'article 4 de la [licence](LICENSE) :
 2. Partagez votre bout de code corrigé dans l'Issue, ou proposez une demande de fusion (« pull request »).
 3. L'auteur analyse la proposition et, si elle est validée, l'intègre au projet.
 
-En proposant une correction, vous acceptez qu'elle soit publiée sous la licence de Pixane. Vous serez crédité dans la liste des contributeurs.
+En proposant une correction, vous acceptez qu'elle soit publiée sous la licence de Pixane Photo. Vous serez crédité dans la liste des contributeurs.
 
 ## Copie du dépôt (« fork ») et versions modifiées
 
-La [licence](LICENSE) (article 3) permet de modifier Pixane, de publier et de partager gratuitement une version modifiée, et de réutiliser du code dans un autre projet, à condition :
+La [licence](LICENSE) (article 3) permet de modifier Pixane Photo, de publier et de partager gratuitement une version modifiée, et de réutiliser du code dans un autre projet, à condition :
 
 - de garder la mention « Copyright (c) 2026 Georges Christophe (chrypox) » et la licence ;
 - d'indiquer clairement que la version est modifiée, sans la présenter comme la version officielle ;
@@ -48,11 +48,11 @@ Seul le texte français de la licence fait foi ([traduction anglaise](LICENSE.en
 
 ---
 
-# Contributing to Pixane
+# Contributing to Pixane Photo
 
 [Français](#contribuer-à-pixane) · **English**
 
-Pixane is maintained by its author. You can take part through the Issues and Discussions of this repository.
+Pixane Photo is maintained by its author. You can take part through the Issues and Discussions of this repository.
 
 ## Asking a question
 
@@ -66,11 +66,11 @@ Open a "Suggest an idea" Issue and describe what you would like to do and in wha
 
 Open a "Report a bug" Issue and state:
 
-- the Pixane version (**Help > About Pixane**) and the Windows version;
-- for an AI action: the graphics card, and whether the AI engine was installed by Pixane or is your own ComfyUI;
+- the Pixane Photo version (**Help > About Pixane Photo**) and the Windows version;
+- for an AI action: the graphics card, and whether the AI engine was installed by Pixane Photo or is your own ComfyUI;
 - what you did, what you expected, what happened.
 
-If Pixane closed by itself, the details are in `%LOCALAPPDATA%\Pixane\erreurs.log`.
+If Pixane Photo closed by itself, the details are in `%LOCALAPPDATA%\Pixane\erreurs.log`.
 
 **Never put in an Issue** a personal photo, a personal folder path or a log you have not reread: Issues are public. To show a problem, a test image with nothing private is enough.
 
@@ -88,7 +88,7 @@ By proposing a fix, you agree that it may be published under the Pixane license.
 
 ## Copying the repository (fork) and modified versions
 
-The [license](LICENSE.en.txt) (article 3) lets you modify Pixane, publish and share a modified version for free, and reuse code in another project, provided that you:
+The [license](LICENSE.en.txt) (article 3) lets you modify Pixane Photo, publish and share a modified version for free, and reuse code in another project, provided that you:
 
 - keep the notice "Copyright (c) 2026 Georges Christophe (chrypox)" and the license;
 - state clearly that the version is modified, without presenting it as the official version;

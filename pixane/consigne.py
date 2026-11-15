@@ -142,7 +142,7 @@ class DialogueConsigne(QDialog):
 
     def _maj_etat(self):
         if traduction.installe():
-            self.etat.setText(tr("Traducteur installé : écris en français, Pixane traduit (sur ton PC, rien n'est "
+            self.etat.setText(tr("Traducteur installé : écris en français, Pixane Photo traduit (sur ton PC, rien n'est "
                                  "envoyé sur Internet)."))
             self.bouton_traduire.setEnabled(True)
             self.bouton_installer.hide()

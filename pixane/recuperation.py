@@ -157,7 +157,7 @@ class Recuperation(QObject):
             return
         liste = "\n".join(f"• {i.get('nom')}  ({tr('copie du {date}', date=i.get('date', '?'))})" for _c, i in restes)
         rep = QMessageBox.question(self.f, tr("Récupération"), tr(
-            "Pixane ne s'est pas fermé normalement la dernière fois.\n\nPhotos récupérées (copies automatiques) :\n"
+            "Pixane Photo ne s'est pas fermé normalement la dernière fois.\n\nPhotos récupérées (copies automatiques) :\n"
             "{liste}\n\nLes rouvrir ?\n(« Non » les efface.)", liste=liste),
             QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         for chemin, infos in restes:

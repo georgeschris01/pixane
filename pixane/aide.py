@@ -168,7 +168,7 @@ class FenetreGuide(QDialog):
 
     def __init__(self, couleurs: Couleurs | None = None, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(tr("Guide de Pixane"))
+        self.setWindowTitle(tr("Guide de Pixane Photo"))
         self.setWindowFlag(Qt.WindowMaximizeButtonHint, True)
         self.resize(1080, 760)
         self.c = couleurs or CLAIR_C
@@ -319,13 +319,13 @@ class FenetreTiers(QDialog):
                     f"margin:6px 0'>{''.join(lignes)}</table>")
 
         texte = (f"<div style='color:{c.texte}'>"
-                 f"<p>{html.escape(tr('Programmes et modèles d’autres auteurs utilisés par Pixane. Ils restent sous leur propre licence : la licence de Pixane ne s’applique pas à eux. Clic sur un nom : site du projet et texte complet de sa licence.'))}</p>"
-                 f"<p style='font-size:13pt;font-weight:600;margin-top:12px'>{html.escape(tr('Livrés avec Pixane'))}</p>"
+                 f"<p>{html.escape(tr('Programmes et modèles d’autres auteurs utilisés par Pixane Photo. Ils restent sous leur propre licence : la licence de Pixane Photo ne s’applique pas à eux. Clic sur un nom : site du projet et texte complet de sa licence.'))}</p>"
+                 f"<p style='font-size:13pt;font-weight:600;margin-top:12px'>{html.escape(tr('Livrés avec Pixane Photo'))}</p>"
                  f"{tableau(LIVRES)}"
                  f"<p style='font-size:13pt;font-weight:600;margin-top:12px'>"
                  f"{html.escape(tr('Téléchargés seulement si vous installez le moteur IA'))}</p>"
                  f"{tableau(TELECHARGES)}"
-                 f"<p style='color:{c.discret}'>{html.escape(tr('Pixane lance ComfyUI comme un programme séparé : aucun code de ComfyUI n’est inclus dans Pixane. FLUX.1 Fill [dev] : usage non commercial seulement.'))}</p>"
+                 f"<p style='color:{c.discret}'>{html.escape(tr('Pixane Photo lance ComfyUI comme un programme séparé : aucun code de ComfyUI n’est inclus dans Pixane Photo. FLUX.1 Fill [dev] : usage non commercial seulement.'))}</p>"
                  f"</div>")
         lay = QVBoxLayout(self)
         page = QTextBrowser()

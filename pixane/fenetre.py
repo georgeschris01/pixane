@@ -51,7 +51,7 @@ from .transformation import Transformation
 from . import mises_a_jour
 from .texte import Texte
 
-NOM = "Pixane"
+NOM = "Pixane Photo"
 MIME_PLACE = "application/x-pixane-place"   # presse-papiers : place d'origine de ce qui a été copié dans Pixane
 
 
@@ -122,7 +122,7 @@ class FenetreNouveautes(QDialog):
         self.resize(640, 520)
         lay = QVBoxLayout(self)
         n = len(info["versions"])
-        titre = QLabel(tr("<b>Pixane {v} est disponible</b> (vous avez la {actuelle}).", v=info["version"],
+        titre = QLabel(tr("<b>Pixane Photo {v} est disponible</b> (vous avez la {actuelle}).", v=info["version"],
                           actuelle=__version__) + (" " + tr("{n} versions depuis la vôtre.", n=n) if n > 1 else ""))
         titre.setWordWrap(True)
         lay.addWidget(titre)
@@ -613,7 +613,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         a = self._action(m, tr("Recherche de police semblable"), None, None, "a_option_polices")
         a.setCheckable(True)
         a.setChecked(self.reglages.value("polices_semblables", True, type=bool))
-        a.setToolTip(tr("Coché : Sélection > Trouver une police semblable, et Pixane prépare une fois la liste de tes "
+        a.setToolTip(tr("Coché : Sélection > Trouver une police semblable, et Pixane Photo prépare une fois la liste de tes "
                         "polices en arrière-plan. La durée dépend du nombre de polices installées (environ 1 min 20 et "
                         "15 Mo pour 1 200 polices). Décoché : rien de tout cela."))
         a.toggled.connect(lambda v: self.option_polices(v))
@@ -678,7 +678,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self._action(m, tr("Installer le moteur IA…"), None, self.installer_moteur, "a_installer_moteur")
 
         m = self.menuBar().addMenu(tr("&Aide"))
-        self._action(m, tr("Guide de Pixane"), None, lambda: self.guide(), "a_guide")
+        self._action(m, tr("Guide de Pixane Photo"), None, lambda: self.guide(), "a_guide")
         self._action(m, tr("Raccourcis"), "F1", lambda: self.guide(tr("Raccourcis")), "a_raccourcis")
         m.addSeparator()
         self._action(m, tr("Rechercher une mise à jour…"), None, lambda: self.verifier_maj(False))
@@ -687,7 +687,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         a.setChecked(self.reglages.value("maj_auto", False, type=bool))
         a.toggled.connect(lambda v: self.reglages.setValue("maj_auto", v))
         m.addSeparator()
-        self._action(m, tr("À propos de Pixane"), None, self.a_propos)
+        self._action(m, tr("À propos de Pixane Photo"), None, self.a_propos)
 
     def _barre_rapide(self):
         """2e ligne sous le menu : commandes de calque et d'image toujours à portée (Affichage > Barre d'accès
@@ -1674,7 +1674,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
             return
         self.reglages.setValue("langue", code)
         rep = QMessageBox.question(self, NOM, tr("La nouvelle langue sera utilisée au prochain démarrage de "
-                                                 "Pixane.\n\nRedémarrer maintenant ?"))
+                                                 "Pixane Photo.\n\nRedémarrer maintenant ?"))
         if rep == QMessageBox.Yes and self._peut_fermer_tout():
             chemin = str(self.doc.chemin) if self.doc and self.doc.chemin else None
             racine = str(Path(__file__).resolve().parents[1])
@@ -1793,7 +1793,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         install = install or trouver_comfyui()
         if install is None or self.moteur.etat != "prêt":
             QMessageBox.information(self, tr("Compléter le moteur IA"), tr(
-                "Le moteur IA doit être démarré pour que Pixane voie ce qui lui manque. Attends qu'il soit prêt "
+                "Le moteur IA doit être démarré pour que Pixane Photo voie ce qui lui manque. Attends qu'il soit prêt "
                 "(en bas de la fenêtre), puis recommence."))
             return
         f = FenetreCompleter(self.moteur.infos, self.moteur.dossiers_modeles(), install, self.moteur.externe, self)
@@ -1823,7 +1823,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
             return          # essais automatiques : pas de question qui bloque (le vrai Pixane, lui, demande)
         self.reglages.setValue("moteur_complet_vu", cle)
         if QMessageBox.question(self, tr("Moteur IA"), tr(
-                "Pixane utilise le ComfyUI déjà installé sur ce PC, mais il lui manque :\n{liste}\n\n"
+                "Pixane Photo utilise le ComfyUI déjà installé sur ce PC, mais il lui manque :\n{liste}\n\n"
                 "À télécharger : environ {taille} (seulement ce qui manque, rien n'est remplacé).\n\n"
                 "Voir le détail et installer maintenant ? (Plus tard : menu IA > Installer le moteur IA.)",
                 liste="\n".join("• " + e.nom for e in elements),
@@ -1853,7 +1853,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self.reglages.setValue("moteur_maj_vue", cle)
         taille = sum(e.taille or 0 for e in maj)
         if QMessageBox.question(self, tr("Moteur IA"), tr(
-                "Cette version de Pixane utilise de nouvelles versions pour le moteur IA :\n{liste}\n\n"
+                "Cette version de Pixane Photo utilise de nouvelles versions pour le moteur IA :\n{liste}\n\n"
                 "À télécharger : environ {taille}. Le moteur sera arrêté pendant la mise à jour.\n\n"
                 "Mettre à jour maintenant ? (Plus tard : menu IA > Installer le moteur IA.)",
                 liste="\n".join("• " + e.nom for e in maj), taille=go(taille))) == QMessageBox.Yes:
@@ -1877,7 +1877,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self._actualiser()
         if self.moteur.etat == "introuvable":
             if QMessageBox.question(self, tr("Moteur IA"),
-                                    tr("Le moteur IA (ComfyUI) n'est pas installé sur ce PC.\n\nVeux-tu que Pixane "
+                                    tr("Le moteur IA (ComfyUI) n'est pas installé sur ce PC.\n\nVeux-tu que Pixane Photo "
                                        "l'installe maintenant ? Tu verras d'abord la liste des téléchargements "
                                        "(taille, source, licence).\n\nSans lui, tu peux quand même ouvrir, "
                                        "retoucher et enregistrer des photos.")) == QMessageBox.Yes:
@@ -1989,7 +1989,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
             base = self.doc.nom or "image"
             propose = str(Path(self.reglages.value("dossier", str(Path.home()))) / (base + (".pixane" if plusieurs
                                                                                            else ".jpg")))
-        formats = [tr("Projet Pixane") + " (*.pixane)", tr("Photoshop, avec les calques") + " (*.psd)",
+        formats = [tr("Projet Pixane Photo") + " (*.pixane)", tr("Photoshop, avec les calques") + " (*.psd)",
                    tr("OpenRaster, pour Krita et GIMP") + " (*.ora)",
                    "JPEG (*.jpg)", "PNG (*.png)", "TIFF (*.tif)", "WebP (*.webp)"]
         if self.doc.chemin and self.doc.chemin.suffix.lower() == ".psd":
@@ -2970,7 +2970,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
                 if FenetreNouveautes(info, self).exec() == QDialog.Accepted:
                     QDesktopServices.openUrl(QUrl(info["page"]))
             elif not silencieux:
-                QMessageBox.information(self, tr("Mise à jour"), tr("Pixane est à jour."))
+                QMessageBox.information(self, tr("Mise à jour"), tr("Pixane Photo est à jour."))
 
         def echec(message):
             if not silencieux:

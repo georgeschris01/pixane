@@ -231,7 +231,7 @@ def lire_psd(chemin: str | Path):
         return _aplati(chemin, "")
     notes = []
     if remarques:
-        notes.append(tr("Ce PSD utilise des effets que Pixane ne reproduit pas ({quoi}) : l'aspect peut différer "
+        notes.append(tr("Ce PSD utilise des effets que Pixane Photo ne reproduit pas ({quoi}) : l'aspect peut différer "
                         "de Photoshop.", quoi=", ".join(sorted(remarques))))
     return resultat, icc, notes
 

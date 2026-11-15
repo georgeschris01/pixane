@@ -9,6 +9,20 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.22.0 (non publ
 
 ## Nouveautés
 
+- **Pixane devient Pixane Photo**, premier logiciel de la **Suite Pixane** (dépôt GitHub transféré le 15/11/2026 :
+  github.com/pixane-suite/photo ; l'ancienne adresse redirige, la recherche de mise à jour marche). Nom changé
+  partout (fenêtre, À propos avec « Fait partie de la Suite Pixane », messages, guide, README, installateur
+  `Pixane-Photo-Setup-…`, raccourci « Pixane Photo »). Inchangés : projets .pixane, réglages, dossier
+  %LOCALAPPDATA%\Pixane (commun à la suite), moteur IA, traducteur.
+- **Dossier d'installation** : `…\Pixane\Pixane Photo` (le dossier Pixane réunit la suite). Une installation à
+  l'ancienne place (`…\Pixane`) y est déplacée à la mise à jour ; épingle de la barre des tâches et raccourci du
+  Bureau suivis ; fichiers personnels laissés dans l'ancien dossier gardés.
+- **Nouveau logo** (famille de la suite) : le « P en pixels » orange-rose avec un symbole photo (montagne et soleil)
+  à la place de l'étincelle ; icône, images de l'installateur. L'emblème de la suite (P sans symbole) reste sur
+  l'image de la licence (`logo\suite-pixane.svg`).
+- À faire à la publication : capture du README (`docs/screenshots`) avec le nouveau titre ; vérifier la page de
+  l'organisation pixane-suite.
+
 ## Corrections
 
 ## À mettre à jour le jour de la publication

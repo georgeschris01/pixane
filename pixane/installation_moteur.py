@@ -417,7 +417,7 @@ class Installation(QObject):
             self._ecrire_infos(r, versions)
             QSettings("Pixane", os.environ.get("PIXANE_REGLAGES", "Pixane")).setValue("comfyui_dir", str(r))
             _journal("terminé")
-            self.fini.emit(True, tr("Le moteur IA est installé. Pixane le trouvera tout seul."))
+            self.fini.emit(True, tr("Le moteur IA est installé. Pixane Photo le trouvera tout seul."))
         except Arrete:
             _journal("arrêté par l'utilisateur")
             self.fini.emit(False, tr("Arrêté. Relance l'installation plus tard : elle reprendra où elle s'est "
@@ -605,8 +605,8 @@ class FenetreInstallation(QDialog):
         self.travail: Installation | None = None
         lay = QVBoxLayout(self)
 
-        intro = QLabel(tr("Pixane utilise ComfyUI comme moteur IA, caché derrière ses boutons. Il n'est pas sur ce "
-                          "PC : Pixane peut l'installer, avec les extensions et les modèles d'IA dont il a besoin. "
+        intro = QLabel(tr("Pixane Photo utilise ComfyUI comme moteur IA, caché derrière ses boutons. Il n'est pas sur ce "
+                          "PC : Pixane Photo peut l'installer, avec les extensions et les modèles d'IA dont il a besoin. "
                           "Tout est téléchargé depuis les sites officiels (GitHub, Hugging Face)."))
         intro.setWordWrap(True)
         lay.addWidget(intro)
@@ -664,7 +664,7 @@ class FenetreInstallation(QDialog):
         self.c_traducteur.toggled.connect(lambda v: self.dossier_trad.setEnabled(v))
         lay.addWidget(self.dossier_trad)
         aide_trad = QLabel(tr("Le traducteur sert avec Flux Kontext : l'IA ne comprend bien que l'anglais ; tu "
-                              "écris en français, Pixane traduit sur ton PC (rien n'est envoyé sur Internet)."))
+                              "écris en français, Pixane Photo traduit sur ton PC (rien n'est envoyé sur Internet)."))
         aide_trad.setWordWrap(True)
         aide_trad.setObjectName("discret")
         lay.addWidget(aide_trad)

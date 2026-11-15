@@ -1,7 +1,7 @@
 ﻿; Pixane — © 2026 Georges Christophe (chrypox).
 ; Installateur de Pixane (Inno Setup 7, gratuit : https://jrsoftware.org/isdl.php), même présentation que TwinPanel.
 ; Compilé par construire-installateur.bat, qui prépare d'abord les fichiers dans publication\Pixane et donne la version.
-; Une nouvelle version = un nouveau Pixane-Setup-x.y.z-64bits.exe : lancé sur un PC où Pixane est déjà installé, il le met
+; Une nouvelle version = un nouveau Pixane-Photo-Setup-x.y.z-64bits.exe : lancé sur un PC où Pixane est déjà installé, il le met
 ; à jour (même AppId ci-dessous, à NE JAMAIS changer). Les réglages (registre, %LOCALAPPDATA%\Pixane) ne sont pas touchés.
 ; Pages : langue, accueil, licence, dossier, vérification du PC (carte graphique, place libre, moteur IA ComfyUI), moteur IA
 ; (seulement si ComfyUI est absent : liste des téléchargements, licence FLUX.1 [dev] à accepter), installation.
@@ -21,30 +21,33 @@
 ; désinstallation retirait l'épingle de Pixane de la barre des tâches (arrivé le 10/11/2026).
 [Setup]
 #ifdef Essai
-#define NomRaccourci "Pixane essai"
+#define NomRaccourci "Pixane Photo essai"
+#define AncienRaccourci "Pixane essai"
 #define IdBarre "chrypox.Pixane.essai"
 AppId={{5D0E3B7A-2C41-4E8B-9F6A-0E55A1000001}
 #define CleDesinst "Software\Microsoft\Windows\CurrentVersion\Uninstall\{5D0E3B7A-2C41-4E8B-9F6A-0E55A1000001}_is1"
-AppName=Pixane essai
+AppName=Pixane Photo essai
 ; l'essai n'écrit jamais dans les réglages de Pixane : il a effacé le dossier du traducteur choisi par Christophe
 ; (le nettoyage après l'essai retirait la valeur, arrivé le 11/11/2026)
 #define CleReglages "Software\Pixane\Pixane-essais"
 #else
 #define CleReglages "Software\Pixane\Pixane"
-#define NomRaccourci "Pixane"
+#define NomRaccourci "Pixane Photo"
+#define AncienRaccourci "Pixane"
 #define IdBarre "chrypox.Pixane"
 AppId={{89EBA9CC-CDC6-468F-A638-3F71B48EE9A3}
 #define CleDesinst "Software\Microsoft\Windows\CurrentVersion\Uninstall\{89EBA9CC-CDC6-468F-A638-3F71B48EE9A3}_is1"
-AppName=Pixane
+AppName=Pixane Photo
 #endif
 AppVersion={#AppVersion}
-AppVerName=Pixane {#AppVersion}
+AppVerName=Pixane Photo {#AppVersion}
 AppPublisher=chrypox
 AppCopyright=© 2026 Georges Christophe (chrypox)
 ShowLanguageDialog=yes
 VersionInfoVersion={#AppVersion}
-VersionInfoDescription=Installation de Pixane
-; dossier : celui de l'installation précédente (…\Chrypix devient …\Pixane), sinon Program Files\Pixane
+VersionInfoDescription=Installation de Pixane Photo
+; dossier : celui de l'installation précédente ; une ancienne installation …\Pixane (ou …\Chrypix) va dans
+; …\Pixane\Pixane Photo ; sinon Program Files\Pixane\Pixane Photo (le dossier Pixane réunit la Suite Pixane)
 DefaultDirName={code:DossierParDefaut}
 #ifdef Essai
 DefaultGroupName=Pixane essai
@@ -56,16 +59,16 @@ UsePreviousAppDir=no
 DisableDirPage=no
 OutputDir=..\publication\installateur
 #ifdef Essai
-OutputBaseFilename=Pixane-Setup-{#AppVersion}-64bits-ESSAI
+OutputBaseFilename=Pixane-Photo-Setup-{#AppVersion}-64bits-ESSAI
 #else
-OutputBaseFilename=Pixane-Setup-{#AppVersion}-64bits
+OutputBaseFilename=Pixane-Photo-Setup-{#AppVersion}-64bits
 #endif
 SetupIconFile=..\pixane\ressources\pixane.ico
 UninstallDisplayIcon={app}\pixane.ico
 #ifdef Essai
-UninstallDisplayName=Pixane essai
+UninstallDisplayName=Pixane Photo essai
 #else
-UninstallDisplayName=Pixane
+UninstallDisplayName=Pixane Photo
 #endif
 WizardStyle=modern
 ; Présentation : bande bleu nuit à gauche des pages d'accueil et de fin (logo, nom, petite capture), bandeau bleu nuit
@@ -98,32 +101,32 @@ Name: "english"; MessagesFile: "compiler:Default.isl"; LicenseFile: "..\LICENSE.
 
 [CustomMessages]
 french.PagePCTitre=Vérification du PC
-french.PagePCDescription=Pixane vérifie ce dont son moteur d'intelligence artificielle a besoin.
-french.DossierProtege=Windows n'autorise pas Pixane à écrire dans « %1 » : c'est un dossier protégé (comme Program Files), et l'installation se fait « pour moi seulement », sans droits administrateur.%n%nChoisissez un autre dossier, par exemple :%n%2%n%nou relancez l'installateur et choisissez « Installer pour tous les utilisateurs ».
+french.PagePCDescription=Pixane Photo vérifie ce dont son moteur d'intelligence artificielle a besoin.
+french.DossierProtege=Windows n'autorise pas Pixane Photo à écrire dans « %1 » : c'est un dossier protégé (comme Program Files), et l'installation se fait « pour moi seulement », sans droits administrateur.%n%nChoisissez un autre dossier, par exemple :%n%2%n%nou relancez l'installateur et choisissez « Installer pour tous les utilisateurs ».
 french.CarteOk=Carte graphique : %1 (%2 Go de mémoire) — convient.
 french.CartePetite=Carte graphique : %1 (%2 Go de mémoire) — il faut au moins 8 Go : les actions IA risquent d'être très lentes ou de ne pas fonctionner.
-french.CarteAutre=Carte graphique : %1 — ce n'est pas une carte NVIDIA : Pixane s'installera, mais les actions IA (Effacer, Remplir, Agrandir, Upscale) ne fonctionneront pas.
+french.CarteAutre=Carte graphique : %1 — ce n'est pas une carte NVIDIA : Pixane Photo s'installera, mais les actions IA (Effacer, Remplir, Agrandir, Upscale) ne fonctionneront pas.
 french.CarteSansMemoire=Carte graphique : %1 (mémoire inconnue : il faut au moins 8 Go).
-french.CarteAucune=Aucune carte graphique NVIDIA trouvée : Pixane s'installera, mais les actions IA (Effacer, Remplir, Agrandir, Upscale) ne fonctionneront pas.
+french.CarteAucune=Aucune carte graphique NVIDIA trouvée : Pixane Photo s'installera, mais les actions IA (Effacer, Remplir, Agrandir, Upscale) ne fonctionneront pas.
 french.Place=Place libre sur %1 : %2 Go.
-french.ComfyTrouve=Moteur IA (ComfyUI) trouvé : %1%nPixane l'utilisera. Au premier démarrage, il proposera de télécharger seulement ce qui lui manque (extensions, modèles).
+french.ComfyTrouve=Moteur IA (ComfyUI) trouvé : %1%nPixane Photo l'utilisera. Au premier démarrage, il proposera de télécharger seulement ce qui lui manque (extensions, modèles).
 french.ComfyAbsent=Moteur IA (ComfyUI) non trouvé sur ce PC.
-french.ComfyAide=S'il est installé ailleurs, indique son dossier. Sans lui, Pixane sert à ouvrir, retoucher (calques, texte) et enregistrer les photos, mais pas aux actions IA.
+french.ComfyAide=S'il est installé ailleurs, indique son dossier. Sans lui, Pixane Photo sert à ouvrir, retoucher (calques, texte) et enregistrer les photos, mais pas aux actions IA.
 french.Parcourir=Parcourir…
 french.ChoisirDossier=Choisis le dossier de ComfyUI (celui qui contient main.py, ou le dossier de ComfyUI portable ou de ComfyUI Desktop) :
 french.DossierInvalide=Ce dossier ne contient pas ComfyUI (main.py et son Python sont introuvables).
 french.CreerIcone=Créer une icône sur le Bureau
-french.Associer=Ouvrir les projets Pixane (.pixane) avec Pixane
+french.Associer=Ouvrir les projets Pixane Photo (.pixane) avec Pixane Photo
 french.Fonctions=Fonctions :
 french.Orthographe=Orthographe et césure des textes (mots mal écrits soulignés, suggestions, coupure des mots en fin de ligne), dans les langues cochées ci-dessous :
 french.OrthoFr=Français (dictionnaire Grammalecte, 1,4 Mo)
 french.OrthoEn=Anglais (dictionnaire SCOWL en_US, 0,6 Mo)
-french.Polices=Recherche de police semblable (Pixane prépare une fois la liste de tes polices en arrière-plan ; la durée dépend du nombre de polices installées : environ 1 min 20 et 15 Mo pour 1 200 polices ; rien n'est téléchargé)
-french.TypeProjet=Projet Pixane
+french.Polices=Recherche de police semblable (Pixane Photo prépare une fois la liste de tes polices en arrière-plan ; la durée dépend du nombre de polices installées : environ 1 min 20 et 15 Mo pour 1 200 polices ; rien n'est téléchargé)
+french.TypeProjet=Projet Pixane Photo
 french.PageMoteurTitre=Moteur IA
-french.PageMoteurDescription=Le moteur IA n'est pas sur ce PC : Pixane peut le télécharger et l'installer.
-french.MoteurIntro=Les actions IA (Effacer, Remplir, Agrandir, Upscale) utilisent ComfyUI, caché derrière les boutons de Pixane. Tout vient des sites officiels (GitHub, Hugging Face) ; le téléchargement se fait après l'installation, dans une fenêtre qui montre l'avancement. On peut l'arrêter : il reprendra plus tard (menu IA > Installer le moteur IA).
-french.MoteurCase=Télécharger et installer le moteur IA après l'installation de Pixane
+french.PageMoteurDescription=Le moteur IA n'est pas sur ce PC : Pixane Photo peut le télécharger et l'installer.
+french.MoteurIntro=Les actions IA (Effacer, Remplir, Agrandir, Upscale) utilisent ComfyUI, caché derrière les boutons de Pixane Photo. Tout vient des sites officiels (GitHub, Hugging Face) ; le téléchargement se fait après l'installation, dans une fenêtre qui montre l'avancement. On peut l'arrêter : il reprendra plus tard (menu IA > Installer le moteur IA).
+french.MoteurCase=Télécharger et installer le moteur IA après l'installation de Pixane Photo
 french.MoteurDossier=Dossier du moteur IA :
 french.MoteurListe=ComfyUI portable 0.44 (le moteur) — 1,9 Go — GitHub — GPL-3.0%nExtensions Inpaint nodes, Crop and Stitch, Ultimate SD Upscale, GGUF — moins de 5 Mo — GitHub — GPL-3.0, Apache-2.0%nFlux Fill, version GGUF Q8 (effacer, remplir, agrandir) — 11,9 Go — Hugging Face — FLUX.1 [dev] non commerciale%nEncodeurs de texte T5 et CLIP — 5,0 Go — Hugging Face — Apache-2.0%nDécodeur d'image (VAE) — 0,3 Go — Hugging Face — Apache-2.0%nLaMa (effacer) — 0,2 Go — GitHub — Apache-2.0%nBiRefNet (sujet, arrière-plan) — 0,4 Go — Hugging Face — MIT%nSAM 3.1 (sélection d'objet, sélection rapide) — 1,6 Go — Hugging Face — SAM License (Meta)%nRealESRGAN x4 (upscale) — 64 Mo — GitHub — BSD-3-Clause%nSCUNet (réduire le bruit) — 72 Mo — GitHub — Apache-2.0%n7-Zip (pour décompresser) — 0,6 Mo — GitHub — LGPL-2.1%nTotal : 21,5 Go à télécharger, environ 31 Go sur le disque.
 french.MoteurProfondeur=Ajouter Depth Anything 3 pour « Flou selon la profondeur » (137 Mo, Apache-2.0, facultatif)
@@ -131,8 +134,8 @@ french.MoteurSchnell=Ajouter Flux Schnell pour « Upscale net » (11,8 Go de plu
 french.MoteurLicence=Flux Fill est sous licence FLUX.1 [dev] non commerciale : usage personnel permis, pas d'usage commercial.
 french.MoteurLien=Lire la licence FLUX.1 [dev]
 french.MoteurAccepte=J'accepte la licence FLUX.1 [dev] (usage non commercial)
-french.MoteurPasAccepte=Pour installer le moteur IA, il faut accepter la licence FLUX.1 [dev]. Sinon, décoche « Télécharger et installer le moteur IA » : Pixane s'installera sans lui.
-french.DansProgramme=« %1 » est dans le dossier où Pixane est installé (%2). Ce dossier est remplacé en entier à chaque mise à jour : ce qu'on y range serait effacé.%n%nChoisissez un dossier ailleurs, par exemple D:\Pixane-traducteur.
+french.MoteurPasAccepte=Pour installer le moteur IA, il faut accepter la licence FLUX.1 [dev]. Sinon, décoche « Télécharger et installer le moteur IA » : Pixane Photo s'installera sans lui.
+french.DansProgramme=« %1 » est dans le dossier où Pixane Photo est installé (%2). Ce dossier est remplacé en entier à chaque mise à jour : ce qu'on y range serait effacé.%n%nChoisissez un dossier ailleurs, par exemple D:\Pixane-traducteur.
 french.MoteurProtege=Le moteur IA ne peut pas aller dans « %1 » : c'est un dossier protégé (comme Program Files), où le téléchargement n'a pas le droit d'écrire.%n%nChoisissez un autre dossier, par exemple D:\Pixane-moteur.
 french.MoteurPlace=Pas assez de place sur %1 : il faut environ %2 Go, il reste %3 Go. Choisis un autre dossier.
 french.MoteurLancer=Télécharger et installer le moteur IA maintenant
@@ -144,35 +147,35 @@ french.TradDeja=Traducteur des consignes : déjà installé
 french.TradDossier=Dossier du traducteur :
 french.TradDetail=Modèle Opus-MT français → anglais (université d'Helsinki) — 290 Mo — Hugging Face — licence Apache-2.0
 french.TradLancer=Télécharger et installer le traducteur maintenant
-french.DesinstMoteur=Supprimer aussi le moteur IA installé par Pixane (ComfyUI, ses extensions et les modèles d'IA, environ 20 à 32 Go) ?%n%n%1%n%nNon : il reste sur le PC et resservira si tu réinstalles Pixane.
-french.DesinstReglages=Supprimer aussi les réglages de Pixane (langue, thème, dernier dossier, style de texte, dossier du moteur) et ses journaux ?%n%nNon : ils resserviront si tu réinstalles Pixane.
+french.DesinstMoteur=Supprimer aussi le moteur IA installé par Pixane Photo (ComfyUI, ses extensions et les modèles d'IA, environ 20 à 32 Go) ?%n%n%1%n%nNon : il reste sur le PC et resservira si tu réinstalles Pixane Photo.
+french.DesinstReglages=Supprimer aussi les réglages de Pixane Photo (langue, thème, dernier dossier, style de texte, dossier du moteur) et ses journaux ?%n%nNon : ils resserviront si tu réinstalles Pixane Photo.
 english.PagePCTitre=Checking the PC
-english.PagePCDescription=Pixane checks what its artificial intelligence engine needs.
-english.DossierProtege=Windows does not allow Pixane to write to "%1": it is a protected folder (like Program Files), and the installation is "for me only", without administrator rights.%n%nChoose another folder, for example:%n%2%n%nor run the installer again and choose "Install for all users".
+english.PagePCDescription=Pixane Photo checks what its artificial intelligence engine needs.
+english.DossierProtege=Windows does not allow Pixane Photo to write to "%1": it is a protected folder (like Program Files), and the installation is "for me only", without administrator rights.%n%nChoose another folder, for example:%n%2%n%nor run the installer again and choose "Install for all users".
 english.CarteOk=Graphics card: %1 (%2 GB of memory) — suitable.
 english.CartePetite=Graphics card: %1 (%2 GB of memory) — at least 8 GB is needed: AI actions may be very slow or may not work.
-english.CarteAutre=Graphics card: %1 — this is not an NVIDIA card: Pixane will install, but the AI actions (Erase, Fill, Expand, Upscale) will not work.
+english.CarteAutre=Graphics card: %1 — this is not an NVIDIA card: Pixane Photo will install, but the AI actions (Erase, Fill, Expand, Upscale) will not work.
 english.CarteSansMemoire=Graphics card: %1 (memory unknown: at least 8 GB is needed).
-english.CarteAucune=No NVIDIA graphics card found: Pixane will install, but the AI actions (Erase, Fill, Expand, Upscale) will not work.
+english.CarteAucune=No NVIDIA graphics card found: Pixane Photo will install, but the AI actions (Erase, Fill, Expand, Upscale) will not work.
 english.Place=Free space on %1: %2 GB.
-english.ComfyTrouve=AI engine (ComfyUI) found: %1%nPixane will use it. At the first start, it will offer to download only what it is missing (extensions, models).
+english.ComfyTrouve=AI engine (ComfyUI) found: %1%nPixane Photo will use it. At the first start, it will offer to download only what it is missing (extensions, models).
 english.ComfyAbsent=AI engine (ComfyUI) not found on this PC.
-english.ComfyAide=If it is installed elsewhere, select its folder. Without it, Pixane can open, edit (layers, text) and save photos, but not run the AI actions.
+english.ComfyAide=If it is installed elsewhere, select its folder. Without it, Pixane Photo can open, edit (layers, text) and save photos, but not run the AI actions.
 english.Parcourir=Browse…
 english.ChoisirDossier=Select the ComfyUI folder (the one containing main.py, or the ComfyUI portable or ComfyUI Desktop folder):
 english.DossierInvalide=This folder does not contain ComfyUI (main.py and its Python were not found).
 english.CreerIcone=Create a desktop icon
-english.Associer=Open Pixane projects (.pixane) with Pixane
+english.Associer=Open Pixane Photo projects (.pixane) with Pixane Photo
 english.Fonctions=Features:
 english.Orthographe=Spelling and hyphenation of texts (misspelled words underlined, suggestions, words split at line ends), in the languages ticked below:
 english.OrthoFr=French (Grammalecte dictionary, 1.4 MB)
 english.OrthoEn=English (SCOWL en_US dictionary, 0.6 MB)
-english.Polices=Similar font search (Pixane prepares the list of your fonts once, in the background; the time depends on the number of installed fonts: about 1 min 20 and 15 MB for 1,200 fonts; nothing is downloaded)
-english.TypeProjet=Pixane project
+english.Polices=Similar font search (Pixane Photo prepares the list of your fonts once, in the background; the time depends on the number of installed fonts: about 1 min 20 and 15 MB for 1,200 fonts; nothing is downloaded)
+english.TypeProjet=Pixane Photo project
 english.PageMoteurTitre=AI engine
-english.PageMoteurDescription=The AI engine is not on this PC: Pixane can download and install it.
-english.MoteurIntro=The AI actions (Erase, Fill, Expand, Upscale) use ComfyUI, hidden behind Pixane's buttons. Everything comes from the official sites (GitHub, Hugging Face); the download runs after the installation, in a window showing its progress. It can be stopped and resumed later (AI menu > Install the AI engine).
-english.MoteurCase=Download and install the AI engine after installing Pixane
+english.PageMoteurDescription=The AI engine is not on this PC: Pixane Photo can download and install it.
+english.MoteurIntro=The AI actions (Erase, Fill, Expand, Upscale) use ComfyUI, hidden behind Pixane Photo's buttons. Everything comes from the official sites (GitHub, Hugging Face); the download runs after the installation, in a window showing its progress. It can be stopped and resumed later (AI menu > Install the AI engine).
+english.MoteurCase=Download and install the AI engine after installing Pixane Photo
 english.MoteurDossier=AI engine folder:
 english.MoteurListe=ComfyUI portable 0.44 (the engine) — 1.9 GB — GitHub — GPL-3.0%nExtensions Inpaint nodes, Crop and Stitch, Ultimate SD Upscale, GGUF — under 5 MB — GitHub — GPL-3.0, Apache-2.0%nFlux Fill, GGUF Q8 version (erase, fill, expand) — 11.9 GB — Hugging Face — FLUX.1 [dev] non-commercial%nT5 and CLIP text encoders — 5.0 GB — Hugging Face — Apache-2.0%nImage decoder (VAE) — 0.3 GB — Hugging Face — Apache-2.0%nLaMa (erase) — 0.2 GB — GitHub — Apache-2.0%nBiRefNet (subject, background) — 0.4 GB — Hugging Face — MIT%nSAM 3.1 (object selection, quick selection) — 1.6 GB — Hugging Face — SAM License (Meta)%nRealESRGAN x4 (upscale) — 64 MB — GitHub — BSD-3-Clause%nSCUNet (noise reduction) — 72 MB — GitHub — Apache-2.0%n7-Zip (to unpack) — 0.6 MB — GitHub — LGPL-2.1%nTotal: 21.5 GB to download, about 31 GB on disk.
 english.MoteurProfondeur=Add Depth Anything 3 for "Depth blur" (137 MB, Apache-2.0, optional)
@@ -180,8 +183,8 @@ english.MoteurSchnell=Add Flux Schnell for "Sharp upscale" (11.8 GB more, option
 english.MoteurLicence=Flux Fill is under the FLUX.1 [dev] non-commercial licence: personal use allowed, no commercial use.
 english.MoteurLien=Read the FLUX.1 [dev] licence
 english.MoteurAccepte=I accept the FLUX.1 [dev] licence (non-commercial use)
-english.MoteurPasAccepte=To install the AI engine, you must accept the FLUX.1 [dev] licence. Otherwise, untick "Download and install the AI engine": Pixane will install without it.
-english.DansProgramme="%1" is inside the folder where Pixane is installed (%2). This folder is replaced entirely at each update: anything stored in it would be erased.%n%nChoose a folder elsewhere, for example D:\Pixane-translator.
+english.MoteurPasAccepte=To install the AI engine, you must accept the FLUX.1 [dev] licence. Otherwise, untick "Download and install the AI engine": Pixane Photo will install without it.
+english.DansProgramme="%1" is inside the folder where Pixane Photo is installed (%2). This folder is replaced entirely at each update: anything stored in it would be erased.%n%nChoose a folder elsewhere, for example D:\Pixane-translator.
 english.MoteurProtege=The AI engine cannot go into "%1": it is a protected folder (like Program Files), where the download is not allowed to write.%n%nChoose another folder, for example D:\Pixane-engine.
 english.MoteurPlace=Not enough space on %1: about %2 GB is needed, %3 GB is left. Choose another folder.
 english.MoteurLancer=Download and install the AI engine now
@@ -193,8 +196,8 @@ english.TradDeja=Instruction translator: already installed
 english.TradDossier=Translator folder:
 english.TradDetail=Opus-MT French → English model (University of Helsinki) — 290 MB — Hugging Face — Apache-2.0 licence
 english.TradLancer=Download and install the translator now
-english.DesinstMoteur=Also delete the AI engine installed by Pixane (ComfyUI, its extensions and the AI models, about 20 to 32 GB)?%n%n%1%n%nNo: it stays on the PC and will be reused if you reinstall Pixane.
-english.DesinstReglages=Also delete Pixane's settings (language, theme, last folder, text style, engine folder) and its logs?%n%nNo: they will be reused if you reinstall Pixane.
+english.DesinstMoteur=Also delete the AI engine installed by Pixane Photo (ComfyUI, its extensions and the AI models, about 20 to 32 GB)?%n%n%1%n%nNo: it stays on the PC and will be reused if you reinstall Pixane Photo.
+english.DesinstReglages=Also delete Pixane Photo's settings (language, theme, last folder, text style, engine folder) and its logs?%n%nNo: they will be reused if you reinstall Pixane Photo.
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreerIcone}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
@@ -210,6 +213,9 @@ Name: "associer"; Description: "{cm:Associer}"; GroupDescription: "{cm:Additiona
 ; Mise à jour : l'ancienne version est retirée avant de copier la nouvelle (aucun fichier abandonné ne reste).
 Type: filesandordirs; Name: "{app}\python"
 Type: filesandordirs; Name: "{app}\pixane"
+; Raccourcis de l'ancien nom (« Pixane » avant Pixane Photo ; pour un essai : « Pixane essai »)
+Type: files; Name: "{autoprograms}\{#AncienRaccourci}.lnk"
+Type: files; Name: "{autodesktop}\{#AncienRaccourci}.lnk"
 ; Raccourcis de l'ancien nom (Chrypix)
 #ifndef Essai
 Type: files; Name: "{autoprograms}\Chrypix.lnk"
@@ -263,7 +269,7 @@ Name: "{autodesktop}\{#NomRaccourci}"; Filename: "{app}\python\Pixane.exe"; Para
 Filename: "{app}\python\Pixane.exe"; Parameters: "{code:ParamsMoteur}"; WorkingDir: "{app}"; Description: "{cm:MoteurLancer}"; Check: InstallerMoteur; Flags: waituntilterminated postinstall skipifsilent runasoriginaluser
 ; ComfyUI déjà là, traducteur choisi : sa fenêtre de téléchargement.
 Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane.installation_traducteur --demarrer"; WorkingDir: "{app}"; Description: "{cm:TradLancer}"; Check: InstallerTraducteurSeul; Flags: waituntilterminated postinstall skipifsilent runasoriginaluser
-Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,Pixane}"; Flags: nowait postinstall skipifsilent runasoriginaluser
+Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,Pixane Photo}"; Flags: nowait postinstall skipifsilent runasoriginaluser
 
 [UninstallDelete]
 ; Fichiers créés par Python en fonctionnant (__pycache__) dans le dossier du programme.
@@ -324,7 +330,7 @@ begin
 
   Name := TNewStaticText.Create(Panel);
   Name.Parent := Panel;
-  Name.Caption := 'Pixane';
+  Name.Caption := 'Pixane Photo';
   Name.AutoSize := True;
   Name.Font.Style := [fsBold];
   Name.Font.Size := 13;
@@ -454,15 +460,24 @@ begin
   Result := AncienDossier;
 end;
 
+{ Installation d'avant la Suite Pixane : le programme directement dans un dossier nommé Pixane (ou Pixane essai). }
+function AncienneDisposition(D: String): Boolean;
+begin
+  Result := ((CompareText(ExtractFileName(D), 'Pixane') = 0) or (CompareText(ExtractFileName(D), 'Pixane essai') = 0))
+    and FileExists(D + '\pixane\__init__.py');
+end;
+
 function DossierParDefaut(Param: String): String;
 var
   D: String;
 begin
   D := DossierPrecedent;
   if D = '' then
-    Result := ExpandConstant('{autopf}\Pixane')
+    Result := ExpandConstant('{autopf}\Pixane\Pixane Photo')
   else if (CompareText(ExtractFileName(D), 'Chrypix') = 0) or (CompareText(ExtractFileName(D), 'Chrypix essai') = 0) then
-    Result := ExtractFileDir(D) + '\Pixane'
+    Result := ExtractFileDir(D) + '\Pixane\Pixane Photo'
+  else if AncienneDisposition(D) then
+    Result := D + '\Pixane Photo'          { …\Pixane (avant la Suite Pixane) -> …\Pixane\Pixane Photo }
   else
     Result := D;
 end;
@@ -475,13 +490,64 @@ begin
   Result := RegQueryStringValue(HKA, 'Software\Classes\.chr', '', V) and (V = 'Chrypix.Projet');
 end;
 
-{ Après l'installation : l'ancien dossier …\Chrypix est retiré (seulement ce que l'installateur de Chrypix y avait mis). }
+{ Épingles de la barre des tâches et raccourcis restés vers l'ancien programme (Ancien = …\python\Pixane.exe de
+  l'ancien dossier) : ils pointent vers le nouveau. Le nom du raccourci épinglé n'est pas changé (Windows le retient
+  pour l'épingle). }
+procedure SuivreRaccourcis(Dossier, Ancien: String);
+var
+  R: TFindRec;
+  Shell, Lien: Variant;
+begin
+  if not DirExists(Dossier) then Exit;
+  try
+    Shell := CreateOleObject('WScript.Shell');
+  except
+    Exit;
+  end;
+  if FindFirst(Dossier + '\*.lnk', R) then
+  try
+    repeat
+      try
+        Lien := Shell.CreateShortcut(Dossier + '\' + R.Name);
+        if CompareText(Lien.TargetPath, Ancien) = 0 then
+        begin
+          Lien.TargetPath := ExpandConstant('{app}\python\Pixane.exe');
+          Lien.WorkingDirectory := ExpandConstant('{app}');
+          Lien.IconLocation := ExpandConstant('{app}\pixane.ico') + ',0';
+          Lien.Save;
+        end;
+      except
+      end;
+    until not FindNext(R);
+  finally
+    FindClose(R);
+  end;
+end;
+
+{ Après l'installation : l'ancien dossier (…\Chrypix, ou …\Pixane d'avant la Suite Pixane) est vidé de ce que
+  l'ancien installateur y avait mis ; seulement ces fichiers-là. …\Chrypix est retiré s'il est vide ; …\Pixane reste
+  (il contient maintenant Pixane Photo). }
 procedure RetirerAncienDossier;
 var
   D: String;
 begin
   D := DossierPrecedent;
   if (D = '') or (CompareText(D, ExpandConstant('{app}')) = 0) then Exit;
+  if FileExists(D + '\pixane\__init__.py') then
+  begin
+    SuivreRaccourcis(ExpandConstant('{userappdata}\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar'),
+      D + '\python\Pixane.exe');
+    SuivreRaccourcis(ExpandConstant('{userdesktop}'), D + '\python\Pixane.exe');
+    DelTree(D + '\python', True, True, True);
+    DelTree(D + '\pixane', True, True, True);
+    DelTree(D + '\docs', True, True, True);
+    DeleteFile(D + '\pixane.ico');
+    DeleteFile(D + '\LICENSE');
+    DeleteFile(D + '\LICENSE.en.txt');
+    DeleteFile(D + '\unins000.exe');
+    DeleteFile(D + '\unins000.dat');
+    Exit;
+  end;
   if not FileExists(D + '\chrypix\__init__.py') then Exit;
   DelTree(D + '\python', True, True, True);
   DelTree(D + '\chrypix', True, True, True);
@@ -957,7 +1023,7 @@ begin
   if (CurPageID = wpSelectDir) and not IsAdminInstallMode and not DossierInscriptible(WizardDirValue) then
   begin
     MsgBox(FmtMessage(CustomMessage('DossierProtege'), [WizardDirValue,
-      ExpandConstant('{autopf}\Pixane')]), mbError, MB_OK);
+      ExpandConstant('{autopf}\Pixane\Pixane Photo')]), mbError, MB_OK);
     Result := False;
     Exit;
   end;

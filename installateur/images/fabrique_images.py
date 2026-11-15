@@ -1,4 +1,4 @@
-"""Images de l'installateur de Pixane (Inno Setup 7), même présentation que celui de TwinPanel.
+"""Images de l'installateur de Pixane Photo (Inno Setup 7), même présentation que celui de TwinPanel.
 À relancer seulement si le logo ou les captures changent (captures : capture.py fr / en d'abord) :
     .venv\\Scripts\\python.exe installateur\\images\\fabrique_images.py
 - accueil-<langue>-<l>x<h>.png : bande de gauche des pages d'accueil et de fin (logo, nom, petite capture),
@@ -57,8 +57,8 @@ def accueil(capture: Image.Image, logo: Image.Image, w: int, h: int) -> Image.Im
     s = round(110 * u)
     lg = logo.resize((s, s), Image.LANCZOS)
     im.paste(lg, ((w - s) // 2, round(34 * u)), lg)
-    f = gras(round(27 * u))
-    nom = "Pixane"
+    f = gras(round(25 * u))
+    nom = "Pixane Photo"
     tw = d.textlength(nom, font=f)
     d.text(((w - tw) / 2, round(150 * u)), nom, font=f, fill=(255, 255, 255))
     ligne = trait_degrade(w - 2 * round(60 * u), max(2, round(2 * u)))

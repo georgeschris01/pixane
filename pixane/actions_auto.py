@@ -284,14 +284,14 @@ class PanneauActions(QWidget):
     def exporter(self, chemin: str | None = None):
         if chemin is None:
             chemin, _f = QFileDialog.getSaveFileName(self, tr("Exporter les actions"), "actions-pixane.json",
-                                                     tr("Actions Pixane (*.json)"))
+                                                     tr("Actions Pixane Photo (*.json)"))
         if chemin:
             with open(chemin, "w", encoding="utf-8") as f:
                 json.dump({"pixane-actions": 1, "actions": self.liste_actions}, f, ensure_ascii=False, indent=1)
 
     def importer(self, chemin: str | None = None):
         if chemin is None:
-            chemin, _f = QFileDialog.getOpenFileName(self, tr("Importer des actions"), "", tr("Actions Pixane (*.json)"))
+            chemin, _f = QFileDialog.getOpenFileName(self, tr("Importer des actions"), "", tr("Actions Pixane Photo (*.json)"))
         if not chemin:
             return
         try:

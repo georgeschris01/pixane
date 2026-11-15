@@ -1,16 +1,18 @@
-# Pixane
+# Pixane Photo
 
 [Français](README.md) · **English**
 
+Part of the **[Pixane Suite](https://github.com/pixane-suite)**: free programs that look alike and share the same AI engine. Pixane Photo was simply called “Pixane” up to version 0.22.0.
+
 Free photo editor for Windows, with artificial intelligence retouching **that runs entirely on your own PC**. Interface in English and French.
 
-**Who is it for?** Pixane is designed for people who are new to photo editing, or have little experience with it: the tools go straight to the point, the AI takes care of the hard work and the help explains every setting step by step. Pixane does not claim to replace programs such as Photoshop, GIMP or Krita, which remain the reference for advanced work: it aims to make photo editing accessible to everyone.
+**Who is it for?** Pixane Photo is designed for people who are new to photo editing, or have little experience with it: the tools go straight to the point, the AI takes care of the hard work and the help explains every setting step by step. Pixane Photo does not claim to replace programs such as Photoshop, GIMP or Krita, which remain the reference for advanced work: it aims to make photo editing accessible to everyone.
 
-> **No online AI.** Pixane never sends your photos over the Internet: every AI action runs on your computer, with models installed on your disk. No account, no subscription, no limit. The Internet is only used to download the AI engine once; after that, Pixane works even offline.
+> **No online AI.** Pixane Photo never sends your photos over the Internet: every AI action runs on your computer, with models installed on your disk. No account, no subscription, no limit. The Internet is only used to download the AI engine once; after that, Pixane Photo works even offline.
 >
 > **Speed depends on your PC**, above all on the **graphics card**: the more powerful it is (and the more memory it has), the faster the AI processing. See [System requirements](#system-requirements).
 
-## What Pixane can do
+## What Pixane Photo can do
 
 **AI retouching** (several proposals each time: you pick the best one, as in Photoshop; the result goes into the chosen layer, without spilling outside the selection, or into a new layer if you prefer; Undo puts everything back)
 - **Erase** an object: paint over it, the AI removes it and rebuilds the background
@@ -53,7 +55,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 - **Retouching brushes**: Dodge / Burn, Sponge, Blur, Sharpen, Smudge, History brush
 - **Editable text, as in Photoshop**: font, size, colour, outline, shadow, background, rotation, kerning, case, superscript, ligatures, text in a frame (justified, hyphenation), vertical text, **warp** (arc, flag, wave…), **text on a path**, **per-letter style**, glyphs, text styles
 - **Spelling** (French, English) and **find / replace** in texts
-- **Find a similar font**: select the letters of a title, Pixane searches the installed fonts for the ones that look most like it (no Internet)
+- **Find a similar font**: select the letters of a title, Pixane Photo searches the installed fonts for the ones that look most like it (no Internet)
 - Rulers, guides, grid and snapping; **Swatches** panel (Photoshop .aco, GIMP .gpl)
 
 **Adjustments and filters**
@@ -67,7 +69,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 **Files**
 - **New image** with 34 ready-made formats (CD and vinyl covers, Spotify, books, Amazon KDP, social media, A4, posters…), units (px, cm, mm, inches, points, picas), resolution, **bleed** and **safe area** for print
 - **Export for print in CMYK** (TIFF, PDF, JPEG; Windows profiles such as Coated FOGRA39) and **on-screen preview** of the printed colours
-- JPG, PNG, TIFF, WebP, BMP, **camera RAW** (Canon, Nikon, Sony, DNG, Fujifilm…); **PSD** (Photoshop) with layers, groups, masks, modes and styles; `.pixane` (Pixane project, everything stays editable) and `.ora` (Krita, GIMP)
+- JPG, PNG, TIFF, WebP, BMP, **camera RAW** (Canon, Nikon, Sony, DNG, Fujifilm…); **PSD** (Photoshop) with layers, groups, masks, modes and styles; `.pixane` (Pixane Photo project, everything stays editable) and `.ora` (Krita, GIMP)
 - **Several photos open** in tabs, each with its own Undo
 - **Autosave** and recovery after a crash
 - **Export for web** (JPEG, WebP, PNG; size, quality, file size shown, personal information removed)
@@ -82,7 +84,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 - **Update check** (on request or at startup)
 - Installer that checks the PC and downloads the AI engine itself (ComfyUI and the models), resuming after an interruption; with a ComfyUI already installed, only what it is missing
 
-![Pixane: curved text on a landscape, Artificial intelligence panel on the right](docs/screenshots/pixane-2k-en.png)
+![Pixane Photo: curved text on a landscape, Artificial intelligence panel on the right](docs/screenshots/pixane-2k-en.png)
 
 ## System requirements
 
@@ -94,7 +96,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 | **Disk** | 35 GB free for the AI engine | 60 GB free (with the options), on an SSD |
 | **Processor** | recent 4-core | 6 cores or more |
 
-Pixane has been tested on an **RTX 3060 Ti (8 GB) with 32 GB of RAM**; the minimum is an estimate. **Without an NVIDIA card**, Pixane opens and edits normally (layers, text, adjustments, filters, export…), but the AI actions do not work.
+Pixane Photo has been tested on an **RTX 3060 Ti (8 GB) with 32 GB of RAM**; the minimum is an estimate. **Without an NVIDIA card**, Pixane Photo opens and edits normally (layers, text, adjustments, filters, export…), but the AI actions do not work.
 
 **Times measured on this test PC** (a more powerful card is faster):
 
@@ -111,35 +113,35 @@ Pixane has been tested on an **RTX 3060 Ti (8 GB) with 32 GB of RAM**; the minim
 
 ## Download
 
-**[Pixane for Windows](../../releases/latest)** (64-bit installer, `Pixane-Setup-<version>-64bits.exe`).
+**[Pixane Photo for Windows](../../releases/latest)** (64-bit installer, `Pixane-Photo-Setup-<version>-64bits.exe`).
 
 The installer checks the graphics card and free space, then offers to download the AI engine from the official sites (GitHub, Hugging Face): **21.5 GB**, about 31 GB on disk. Two optional extras: **Flux Schnell** for "Sharp upscale" (11.8 GB) and **Flux Kontext** for "Restore an old photo" and "Edit with an instruction" (11.9 GB), with the French → English **translator** (290 MB, Apache-2.0). The Flux Fill and Flux Kontext models are under the **non-commercial FLUX.1 [dev] licence**: you must accept it to install them.
 
-**ComfyUI already installed?** Pixane uses it as it is: no second ComfyUI, nothing downloaded twice. At the first start, Pixane checks what it is missing (extensions, AI models) and offers to download **only that**, with the list, size and licence of each item. Everything goes into your ComfyUI's own folders (even a shared models folder), without replacing or deleting anything. If it already has everything, nothing is downloaded.
+**ComfyUI already installed?** Pixane Photo uses it as it is: no second ComfyUI, nothing downloaded twice. At the first start, Pixane Photo checks what it is missing (extensions, AI models) and offers to download **only that**, with the list, size and licence of each item. Everything goes into your ComfyUI's own folders (even a shared models folder), without replacing or deleting anything. If it already has everything, nothing is downloaded.
 
-> **"Windows protected your PC" message:** Pixane is free and not signed, because a code-signing certificate costs money every year. Windows therefore shows this message until the program is well enough known. Click **More info**, then **Run anyway**. Check that the file really comes from this page; its SHA-256 fingerprint is given with each version.
+> **"Windows protected your PC" message:** Pixane Photo is free and not signed, because a code-signing certificate costs money every year. Windows therefore shows this message until the program is well enough known. Click **More info**, then **Run anyway**. Check that the file really comes from this page; its SHA-256 fingerprint is given with each version.
 
-To request a feature or report a problem: open an [Issue](../../issues) on Pixane's GitHub page; for a question, the [Discussions](../../discussions). See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+To request a feature or report a problem: open an [Issue](../../issues) on Pixane Photo's GitHub page; for a question, the [Discussions](../../discussions). See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Where this project comes from (Why and how?)
 
 I used Photoshop and really liked its generative AI: erasing an object, filling an area, expanding an image… It succeeded almost every time. But I no longer wanted to pay for the subscription.
 
-I tried free solutions, such as Krita with its AI extension: the results were very random, the opposite of what I was used to. So I created **Pixane**, at first for my own use: a simple editor, with AI settings chosen and tested to succeed on the first try, running entirely on the PC.
+I tried free solutions, such as Krita with its AI extension: the results were very random, the opposite of what I was used to. So I created **Pixane Photo**, at first for my own use: a simple editor, with AI settings chosen and tested to succeed on the first try, running entirely on the PC.
 
 ### Full transparency with you:
 
 I want to be 100% honest with everyone: **I know absolutely nothing about programming and I don't speak any language other than French**.
 
-**Pixane** came to life, was entirely coded and translated into English thanks to the help of the artificial intelligence **Claude Code**. The AI guided me step by step to turn my needs into lines of code and to produce the English version of the software so that it is available to as many people as possible.
+**Pixane Photo** came to life, was entirely coded and translated into English thanks to the help of the artificial intelligence **Claude Code**. The AI guided me step by step to turn my needs into lines of code and to produce the English version of the software so that it is available to as many people as possible.
 
 The program is shared here as it is, wholeheartedly, with the sole aim of being useful. It is entirely free, but as you can read in the Licence section below, it remains protected to make sure it is never sold.
 
-Welcome to all future Pixane users!
+Welcome to all future Pixane Photo users!
 
 ## Guide
 
-What follows is the complete guide. It is the same text as the `docs\GUIDE_en.md` file shipped with the program and shown in its **Help > Pixane guide** window (with a search; **F1** opens it at the shortcuts).
+What follows is the complete guide. It is the same text as the `docs\GUIDE_en.md` file shipped with the program and shown in its **Help > Pixane Photo guide** window (with a search; **F1** opens it at the shortcuts).
 
 <!-- guide -->
 ## 1. The window
@@ -156,17 +158,17 @@ What follows is the complete guide. It is the same text as the `docs\GUIDE_en.md
 | **"Layers" panel (right, below)** | The layers of the image (see chapter 6) |
 | **Status bar (bottom)** | AI engine status (coloured dot), photo size |
 
-**Colours**: Pixane uses the accent colour chosen in Windows (Settings > Personalization > Colors)
+**Colours**: Pixane Photo uses the accent colour chosen in Windows (Settings > Personalization > Colors)
 and follows the Windows light / dark mode. **View > Theme** menu: *Same as Windows*, *Light* or *Dark*.
 The sun / moon button in the top bar also switches between light and dark.
 
-**Language**: Pixane is available in **French** and **English**. By default it uses the Windows language
+**Language**: Pixane Photo is available in **French** and **English**. By default it uses the Windows language
 (French if Windows is in French, English otherwise). **View > Language** menu: *Same as Windows*, *Français*
-or *English*; Pixane then offers to restart to apply the language (the AI engine restarts too, about
+or *English*; Pixane Photo then offers to restart to apply the language (the AI engine restarts too, about
 20 seconds). Standard buttons (Yes / No / Cancel, right-click menu) follow the same language.
 Layer names that already exist keep their original language.
 
-**AI engine**: when it starts, Pixane launches the AI (ComfyUI) in the background, without a window. Allow about
+**AI engine**: when it starts, Pixane Photo launches the AI (ComfyUI) in the background, without a window. Allow about
 20 seconds. The dot at the bottom left turns green when the engine is ready; AI actions are greyed out before that.
 
 ---
@@ -181,19 +183,19 @@ Layer names that already exist keep their original language.
   retouch with the adjustments (Levels, Curves, Balance…). The RAW file is never replaced: **Save** suggests
   another file (JPG, or .pixane if there are layers).
 - **Save** (Ctrl+S), **Save as** (Ctrl+Shift+S):
-  - **.pixane** (Pixane project): Pixane's own format. Keeps **everything**: layers (names, order, visibility,
+  - **.pixane** (Pixane Photo project): Pixane Photo's own format. Keeps **everything**: layers (names, order, visibility,
     opacity, lock), **editable texts** and **editable layer styles**. Suggested automatically when the image has several layers or a text.
   - **.ora** (OpenRaster): to **share with Krita or GIMP** (open format). Keeps the layers, but texts become
     images.
   - Good to know: a .pixane file is built like an .ora file; renamed to .ora, it also opens in Krita or GIMP.
   - **.psd** (Photoshop): to **work with Photoshop**. Keeps the layers (names, order, visibility, opacity, lock);
     texts become images. A photo opened from a PSD is suggested as PSD.
-  - **PSD files opened in Pixane**: RGB or greyscale, 8 or 16-bit, with layers, **groups**, **layer masks**,
+  - **PSD files opened in Pixane Photo**: RGB or greyscale, 8 or 16-bit, with layers, **groups**, **layer masks**,
     **blend modes** and **layer styles** (drop and inner shadow, glows, stroke, bevel, colour and gradient overlays),
-    which stay editable. Pixane does not reproduce Photoshop adjustment layers, clipping masks or groups in "pass
+    which stay editable. Pixane Photo does not reproduce Photoshop adjustment layers, clipping masks or groups in "pass
     through" mode (opened as Normal): a message says so when opening, as the result may then look different. A CMYK
     PSD opens flattened (a single layer). Large .psb documents are not supported.
-  - **PSD files saved by Pixane**: layers, groups, masks and blend modes are kept; styles are baked into the
+  - **PSD files saved by Pixane Photo**: layers, groups, masks and blend modes are kept; styles are baked into the
     pixels; an adjustment layer becomes an image layer (the adjusted result).
   - **JPG** (quality 95), **PNG**, **TIFF**, **WebP**: the **flattened** image (what you see, layers merged).
     A message reminds you of this if the image has several layers.
@@ -207,18 +209,18 @@ Layer names that already exist keep their original language.
   further down to redo the next ones. A new edit discards the steps "ahead".
 - **File > Recent files**: the last 10 images opened or saved (*Clear the list* empties it).
 - **Several photos at once**: *Open* accepts several files at a time (Ctrl+click or Shift+click in the dialog),
-  and several files can be dropped on Pixane. Each photo has its own **tab** and its own **Undo** (Ctrl+Z only
+  and several files can be dropped on Pixane Photo. Each photo has its own **tab** and its own **Undo** (Ctrl+Z only
   affects the photo shown). Switch photos: click the tab, **Ctrl+Tab** / **Ctrl+Shift+Tab**. **File > Close photo**
   (Ctrl+W, or the tab's cross) asks to save if needed. Opening a photo that is already open just goes to its tab.
 - **Autosave**: every 3 minutes, each modified photo is copied (layers, texts, styles and masks included) to
-  `%LOCALAPPDATA%\Pixane\recuperation`, without slowing you down. If Pixane closes badly (crash, power cut), it
+  `%LOCALAPPDATA%\Pixane\recuperation`, without slowing you down. If Pixane Photo closes badly (crash, power cut), it
   offers to **reopen these copies** the next time it starts; they open "to be saved", with the original file name.
-  The copies are deleted when the photo is saved or closed, and when Pixane closes normally.
-- **If an error occurs**: when a command fails, Pixane shows it and writes it to
+  The copies are deleted when the photo is saved or closed, and when Pixane Photo closes normally.
+- **If an error occurs**: when a command fails, Pixane Photo shows it and writes it to
   `%LOCALAPPDATA%\Pixane\erreurs.log` (useful to report the problem).
 - **File > Export as…** (Ctrl+Alt+Shift+W): a copy **for a normal send** (printer, friend, USB stick): full size,
   full quality, resolution, colour profile and camera information kept. JPEG, PNG (with transparency), TIFF or WebP.
-  The open photo does not change (it still needs saving if it was modified); Pixane never offers to overwrite the
+  The open photo does not change (it still needs saving if it was modified); Pixane Photo never offers to overwrite the
   original photo and remembers the last format chosen.
 - **File > Export for web…** (Ctrl+Alt+Shift+S): a light copy for the Internet, without touching the photo.
   - **Format**: JPEG (photos), **WebP** (lighter at the same quality, keeps transparency), PNG (lossless).
@@ -236,14 +238,14 @@ Layer names that already exist keep their original language.
     at the end; the others are done.
   - **Action**: an action recorded in the **Actions** panel (see chapter 9) is played on each photo.
   - RAW files in the folder are processed too.
-  - Safety: if the results would go into the same folder under the same name, Pixane refuses (the originals
+  - Safety: if the results would go into the same folder under the same name, Pixane Photo refuses (the originals
     would be replaced).
 - **File > Print…** (Ctrl+P): the visible image (all layers), with a **page preview**.
   - **Printer**, **Paper** (A4, A5, A3, Letter, 10 × 15, 13 × 18, 20 × 30 cm), **Orientation** (automatic: like
     the image), **Margins**, **Copies**.
   - **Size**: *Fill the page* (within the margins), *Actual size* (from the image resolution) or *Chosen width* in
     cm.
-  - Pixane shows the size on the sheet and the dots per inch; under 150 it warns that the print may be blurry
+  - Pixane Photo shows the size on the sheet and the dots per inch; under 150 it warns that the print may be blurry
     (AI > Upscale can help).
 - **File > New image…** (Ctrl+N): an empty image, as in Photoshop. A **preview** shows the shape of the sheet,
   its background and the guides (bleed, safe area).
@@ -256,14 +258,14 @@ Layer names that already exist keep their original language.
   - **Orientation**: Portrait or Landscape swaps width and height.
   - **Resolution** (dpi, dots per inch): **300** for print, **72** for screen. It is **kept in the file** (.pixane,
     PSD, JPEG, PNG, TIFF): a printer will see the right size.
-  - **Mode**: RGB colour or **greyscale** (see *Image > Mode*). Pixane works in **8 bits per channel** (16.7 million
+  - **Mode**: RGB colour or **greyscale** (see *Image > Mode*). Pixane Photo works in **8 bits per channel** (16.7 million
     colours, like JPEG, PNG and the web); 16 and 32 bits are planned for later.
   - **Background**: white, transparent, black or a colour of your choice.
   - **Bleed** (print): band added all around, trimmed off by the printer (usually 3 mm): the background must run to
     the edge of the image. **Safe area**: margin inside the finished size where nothing important goes (text,
     face). **Guides** are placed automatically on these two lines.
   - At the bottom: the size in pixels, the printed size and the memory used.
-- **File > Export for print (CMYK)…**: for a printer who asks for CMYK (the four inks). Pixane works in RGB and
+- **File > Export for print (CMYK)…**: for a printer who asks for CMYK (the four inks). Pixane Photo works in RGB and
   converts when exporting, as printers recommend.
   - **Format**: TIFF (the safest), PDF or JPEG.
   - **CMYK profile**: those installed in Windows, nothing to download. Ask your printer which one they use; in
@@ -353,7 +355,7 @@ per request (a few seconds the first time).
 To take a **text** (cover title, handwritten letters, gradient or outlined text) without the background, even when a
 similar colour touches it. No AI, in less than a second. In the magic wand's group (right-click its button) or key
 **Y**.
-1. **Drag a frame around the text**, leaving a little background all around: Pixane looks at what touches the edge
+1. **Drag a frame around the text**, leaving a little background all around: Pixane Photo looks at what touches the edge
    of the frame (the background) and selects what stands out from it (the letters). Very thin strokes and letter
    edges are taken softly (progressive selection). Nothing outside the frame is taken.
 2. **Correct with a click**, inside that frame:
@@ -368,18 +370,18 @@ similar colour touches it. No AI, in less than a second. In the magic wand's gro
 - Ctrl+Z undoes the last frame or the last correction.
 
 ### Find a similar font
-Which font was used for this title? Pixane searches **the fonts installed on the PC** for the ones that look most
+Which font was used for this title? Pixane Photo searches **the fonts installed on the PC** for the ones that look most
 alike (no Internet, nothing is downloaded).
 1. Select the letters with **Text selection (Y)** (a solid block does not work: only the letters are needed).
 2. **Selection > Find a similar font…**, or the **Similar font…** button in the tool bar.
 3. **Type the same letters** as in the image, keeping capitals (separate lines with "/"), then **Search**. A few
    seconds (the more fonts are installed, the longer it takes).
 4. The closest fonts are shown first, written with your letters, with their likeness in %.
-   - **Apply to the chosen text**: if the chosen layer is a Pixane text, it takes this font;
+   - **Apply to the chosen text**: if the chosen layer is a Pixane Photo text, it takes this font;
    - **Create a text with this font**: new text layer in place of the letters, with their colour (the letters in
      the image stay: erase them afterwards if needed);
    - **Copy the name** of the font.
-- **Option** (box in the installer, or **View > Similar font search**): to be fast, Pixane prepares the list of
+- **Option** (box in the installer, or **View > Similar font search**): to be fast, Pixane Photo prepares the list of
   your fonts **once only**, in the background, one minute after starting. The time depends on the **number of
   installed fonts**: about 1 min 20 (and 15 MB) for 1,200 fonts. Unchecked: the feature is
   hidden, nothing runs in the background, and this list is deleted.
@@ -405,7 +407,7 @@ Selects **all the pixels of a colour**, across the whole image (the magic wand o
 
 ### Refine edge (Ctrl+Alt+R, Select menu)
 For a rough selection around **hair, fur, foliage or soft edges** (for example after *Select subject* or a quick
-lasso): Pixane recomputes the edge from the photo's colours.
+lasso): Pixane Photo recomputes the edge from the photo's colours.
 - **Radius**: width of the band recomputed around the edge. Increase it until the strands appear; outside this
   band, nothing changes.
 - **Smooth**: softens a jagged edge. **Edge contrast**: sharper edge. **Shift edge**: negative pulls it in (removes
@@ -421,7 +423,7 @@ They work on the **layer chosen** in the Layers panel:
 - **Copy** (Ctrl+C): copies what is selected (the whole layer if there is no selection). The copy keeps its
   transparency; it can also be pasted into another program.
 - **Cut** (Ctrl+X): copies, then erases the selected area (it becomes transparent).
-- **Paste** (Ctrl+V): puts the copied image in a **new layer**, at **the same place** if it comes from Pixane, in the
+- **Paste** (Ctrl+V): puts the copied image in a **new layer**, at **the same place** if it comes from Pixane Photo, in the
   centre if it comes from elsewhere (screenshot, another program…). Then move it with the Move tool (V). To enlarge
   or shrink it: **Ctrl+T** (see *Transform layer*).
   - **Image larger than the photo**: it arrives **reduced to fit entirely**, with the *Transform* frame already
@@ -448,7 +450,7 @@ outside the canvas is kept and can be brought back; refused on a locked layer).
   layers enlarged). A simple move changes no pixel.
 - **No loss when shrinking then enlarging again** (like a Photoshop *smart object*, with nothing to do): each layer
   keeps its **best version** (for example the one after an Upscale). Shrink, validate, do something else, save,
-  reopen the project… then enlarge again: Pixane starts again from this best version, and the image comes back
+  reopen the project… then enlarge again: Pixane Photo starts again from this best version, and the image comes back
   **exactly as it was, pixel for pixel**, up to its original size. Works with Move (handles), Ctrl+T,
   *Image > Image size*, rotate, flip, crop, align. It is saved in the **.pixane** project (which gets a little bigger).
   - If you **change the pixels** of the layer (brush, eraser, AI, filter…), the changed version becomes the new
@@ -463,7 +465,7 @@ The **Layer eraser** (G) **really** erases the pixels of the
 chosen layer (see chapter 6); it is grouped with the colour brush and the clone stamp.
 
 **Tip (text, cursive, thin objects)**: cover each letter completely, edges included, with a brush slightly wider
-than the stroke; don't forget the shadow or outline if there is one. Pixane already enlarges the area a little
+than the stroke; don't forget the shadow or outline if there is one. Pixane Photo already enlarges the area a little
 (about 16 px) to catch blurry edges.
 
 ---
@@ -474,10 +476,10 @@ Each action offers **several results**: you pick the best one, as in Photoshop.
 The result you keep goes **into the chosen layer** (the one highlighted in the Layers panel): it becomes part of it
 and follows it when you move, transform or resize it. Ctrl+Z goes back. The AI always works on the image **as you
 see it** (all visible layers together): so choose the photo's layer before starting.
-- The result **does not go outside the selection**: the AI retouches a little around it for the join, but Pixane
+- The result **does not go outside the selection**: the AI retouches a little around it for the join, but Pixane Photo
   only keeps the inside, plus a blend of a few pixels, so that no edge shows.
 - **Transparent** areas (transparent background, cut-out logo, text alone) **stay transparent**: no black is added,
-  neither in the proposals nor in the result (Upscale too). So that the AI sees clearly what is on them, Pixane
+  neither in the proposals nor in the result (Upscale too). So that the AI sees clearly what is on them, Pixane Photo
   shows these areas on a plain contrasting background (dark behind white text, white behind a dark logo), then
   removes that background from the result, letter edges included.
 - It goes into a **new layer** ("Erase 1", "Fill 2"…) when the chosen layer cannot receive it (text, group,
@@ -547,17 +549,17 @@ model, to be added in Install the AI engine).
     write in French, **Translate** shows the English sentence, which you can correct;
   - or write the instruction **directly in English** (the only solution for other languages for now).
 
-  If your instruction does not look like English and is not translated, Pixane warns you when you click Edit; you
+  If your instruction does not look like English and is not translated, Pixane Photo warns you when you click Edit; you
   choose: **Install the translator…**, **Correct**, or **Send anyway**.
 - Write the text between quotes **exactly as in the image** (accents, capitals).
 - The translator
-  It is installed by **Pixane's setup program** (“Instruction translator” page), with the “Install the
+  It is installed by **Pixane Photo's setup program** (“Instruction translator” page), with the “Install the
   translator…” button, or with its box in **AI > Install the AI engine**
   (“Install” window, or “Complete the AI engine” if ComfyUI was already there): ticked while it is not installed,
   greyed out afterwards. **Translator folder… Change…**: you choose where to store it (by default,
   `%LOCALAPPDATA%\Pixane\traducteur`). Not inside the folder where
-  Pixane is installed (D:\Programmes\Pixane…): it is replaced at each update, Pixane refuses it.
-- The translator starts in the background as soon as the window opens (about ten seconds, while you write), then stays ready until Pixane is closed: each translation is then almost instant.
+  Pixane Photo is installed (D:\Programmes\Pixane\Pixane Photo…): it is replaced at each update, Pixane Photo refuses it.
+- The translator starts in the background as soon as the window opens (about ten seconds, while you write), then stays ready until Pixane Photo is closed: each translation is then almost instant.
 - The AI works on a piece around the selection (more detail than with the whole image); the result is only kept
   inside the selection and where it really changes: the rest keeps its original pixels.
 - **Layer with transparency** (text, logo without background): the AI sees this layer alone, and the result keeps
@@ -578,7 +580,7 @@ Two frames appear on the photo:
 - When both frames are on top of each other (at the start), the **direction of your drag** decides:
   outward = expand, inward = damaged edge.
 - **Shift** while dragging: the opposite side moves the same way (expand left and right at once, for example).
-- **Automatic detection**: when opened, Pixane finds damaged edges and already places the red frame on them:
+- **Automatic detection**: when opened, Pixane Photo finds damaged edges and already places the red frame on them:
   light or dark border lines, a **frame** or border of another colour, a **blurred edge**, a plain band (thumbnail
   bar, edge of a screenshot), up to 4% of the side. You can adjust it or set it back to 0.
 - **Bar at the top of the photo**:
@@ -595,14 +597,14 @@ Two frames appear on the photo:
   space stays transparent. The frame starts from the photo **of the selected layer**: what is in other layers
   does not count (so select the layer of the pasted photo). Thin isolated strokes do not count either. The **red circles** (damaged edge) work too: drag them inwards to have a doubtful edge of the photo redrawn. The half-transparent edge of a photo pasted then shrunk is always redrawn (no light line at the seam). Transparent holes inside the photo stay
   transparent.
-- The join between the photo and the addition is made by Pixane: the original photo is kept **pixel for pixel**,
+- The join between the photo and the addition is made by Pixane Photo: the original photo is kept **pixel for pixel**,
   with a gradual blend and colour matching, so that no line is visible. In **plain backgrounds** (sky, wall, dark
   background), the addition is brought back to the photo's level right up to the edge: no lighter part and no bands
   ("ghosting"), and the faint **swirls** the AI sometimes leaves in these backgrounds are smoothed out (fine grain
   and what is really drawn, such as a star, are kept). This join is redone after *Full resolution*.
 - 3 options, about 1 minute each.
 - **Extended background**: when the edges to expand are **plain** (cover background, smooth sky, gradient), one more
-  option, made **without AI**, is added to the others: Pixane itself continues the photo's background, row by row,
+  option, made **without AI**, is added to the others: Pixane Photo itself continues the photo's background, row by row,
   with the same grain. No visible join or swirl, and it is instant. It does not appear if an object touches the
   edge (it would be stretched). *Start from this one* and *Full resolution* do not apply to it (it is already at
   full size).
@@ -638,11 +640,11 @@ over it to redraw the details; the strength sets how much this 2nd pass does.
 The window recalls this under the Strength box (fuller tooltip on hover).
 
 **Nothing invented in flat areas** (Sharp mode): without instructions, Flux tends to "see" things in a plain area
-(cover background, smooth sky) and adds spots, ghost text or drawings there. So Pixane keeps its work only where the
+(cover background, smooth sky) and adds spots, ghost text or drawings there. So Pixane Photo keeps its work only where the
 original image really has detail (lines, text, photo texture); flat areas are taken from the original image simply
 enlarged, and the colours stay those of the original. Nothing to set: it is automatic.
 
-**Graphic image** (cover, logo, poster: mostly flat areas): Pixane recognises it and suggests strength **0.25** right
+**Graphic image** (cover, logo, poster: mostly flat areas): Pixane Photo recognises it and suggests strength **0.25** right
 away, because on text Flux may change a letter (seen in a test: "fig. 5" became "ftp. 5"). For a very simple graphic,
 **Fast** mode is often enough.
 
@@ -710,7 +712,7 @@ AI actions, the result goes into the chosen layer (Ctrl+Z undoes it).
 - **Restore an old photo…**: the AI **redraws** the whole photo, removing scratches, stains, dust, creases and
   grain, and making contrast and faces sharper. The photo keeps **exactly its size and proportions**.
   - **Restore** keeps the **original colours**: a black & white or sepia photo stays so, a colour photo keeps its
-    colours. The AI only provides the light and the details; Pixane then puts back the original's tint.
+    colours. The AI only provides the light and the details; Pixane Photo then puts back the original's tint.
   - **Restore and colourise** also adds natural colours to a black & white or sepia photo.
   - The result arrives in a **"Restored"** (or **"Restored and colourised"**) layer, and *Save as* as well as *Export
     for web* suggest a name that says so: `photo_restored.jpg`, `photo_restored_colourised.jpg`.
@@ -721,11 +723,11 @@ AI actions, the result goes into the chosen layer (Ctrl+Z undoes it).
 
 ### Sky, colours, lighting, depth (AI)
 - **Select > Select the sky (AI)**: the AI (SAM 3.1) finds the sky and selects it, with a slightly widened and
-  softened edge so the horizon line blends. Pixane then refines the edge from the colours: the sky seen between the
+  softened edge so the horizon line blends. Pixane Photo then refines the edge from the colours: the sky seen between the
   branches of a bare tree is selected too (and, with *Replace the sky*, the branches keep their colour). Then every tool works on that selection (adjustments, Fill…). A few
   seconds.
 - **AI > Replace the sky…**: choose the new sky on **example thumbnails** (blue sky with a few clouds, big clouds, sunset, stormy sky, starry
-  night, dawn). Pixane selects the sky (clouds included), Flux Kontext redraws the photo with that sky, and **only the
+  night, dawn). Pixane Photo selects the sky (clouds included), Flux Kontext redraws the photo with that sky, and **only the
   sky** is kept: the rest keeps its original pixels. Two proposals, about 2 minutes each. At the edge of a roof or a
   tree, the AI may leave a small shifted remnant: choose the best proposal, or retouch it (stamp, Erase). The sky
   stays selected: to match it, a colour adjustment on the rest of the photo (Select > Invert) often helps.
@@ -743,7 +745,7 @@ AI actions, the result goes into the chosen layer (Ctrl+Z undoes it).
   click something far away (otherwise nothing is in front, the box changes nothing). **If the AI gets it wrong**: choose *Brush: keep sharp* or *Brush: make blurred* and paint on the map
   (green = sharp, red = blurred; *Brush size*; *Clear the brush strokes*). Live preview on the photo; applies to the chosen layer (inside the
   selection if there is one). **Depth Anything 3 Small** model (137 MB, Apache-2.0), optional: *Depth blur* box when
-  installing Pixane, or in **AI > Install the AI engine…**.
+  installing Pixane Photo, or in **AI > Install the AI engine…**.
 
 ---
 
@@ -830,7 +832,7 @@ says what it does. **View > Quick access bar** hides or shows it (hidden: Align 
 tool bar).
 
 ### Align, distribute, flip layers
-In the **Layer** menu and in the **quick access bar**. Pixane uses
+In the **Layer** menu and in the **quick access bar**. Pixane Photo uses
 what the layers really contain (without the transparent space around). A chosen group moves as one block; locked
 layers do not move; a single Ctrl+Z undoes.
 - **Align**: left edges, horizontal centers, right edges, top edges, vertical centers, bottom edges. **Several chosen
@@ -931,7 +933,7 @@ All layer actions can be undone with Ctrl+Z (changing the selected layer does no
 - **Drag the text**: move it (also with the Move tool, V). A dashed frame surrounds the selected text.
 - **Round handle** above the frame: rotate the text (**Shift**: in 15° steps), or the *Rotation* box.
 - The layer name follows the first line of the text (as long as you have not renamed it yourself).
-- With no text selected, the panel settings are used for the **next** text; Pixane also remembers the last
+- With no text selected, the panel settings are used for the **next** text; Pixane Photo also remembers the last
   style used (font, colour, effects…). The size of a new text is calculated from the photo.
 
 ### Panel settings
@@ -987,8 +989,8 @@ afterwards take the style of the one before them.
 ### Spelling, hyphenation, find and replace
 - **Spelling**: in the Text panel's box, misspelled words are **underlined in red**. **Right-click** on an
   underlined word: the suggestions (missing accents, swapped, extra or missing letters, words stuck together),
-  *Ignore* (until Pixane is closed) or *Add to the dictionary* (kept for good).
-- **Language** (Paragraph part): the language of the text, for spelling and hyphenation; *Pixane's language* by
+  *Ignore* (until Pixane Photo is closed) or *Add to the dictionary* (kept for good).
+- **Language** (Paragraph part): the language of the text, for spelling and hyphenation; *Pixane Photo's language* by
   default. French and English.
 - **Hyphenation** (text in a box): long words are split at line ends, with a hyphen, following the language's
   rules. When justified, a line with a single word stays on the left (its letters are not spread).
@@ -1083,17 +1085,17 @@ grass, leaves, watercolour, splatters… Each tool keeps its own choice.
   - **Basic**: everyday brushes: hard round, soft round, airbrush, square, flat, chisel;
   - then Krita's brushes **by family**: Pencil and charcoal, Paint, Nature, Effects, Textures, Shapes;
   - finally the files you have added.
-- **Shipped with Pixane**: 235 brushes and 87 patterns (Krita resources, CC-0 licence), plus the basic brushes and
+- **Shipped with Pixane Photo**: 235 brushes and 87 patterns (Krita resources, CC-0 licence), plus the basic brushes and
   the ready-made styles.
 - **Add files…**: Photoshop brushes (**.abr**), GIMP and Krita brushes (**.gbr**, **.gih**), Krita bundles
   (**.bundle**), or a plain image (black paints; a colour image keeps its colours). Each file becomes a group;
-  **Remove this group** takes it away. Brushes are stored inside Pixane: the original can be moved or deleted.
+  **Remove this group** takes it away. Brushes are stored inside Pixane Photo: the original can be moved or deleted.
 - **Storage**: each added brush and pattern is stored separately, **at its original size with no loss of quality**
-  (PNG), along with its thumbnail. Pixane only opens the brush you use: even an .abr over 1 GB opens **without
+  (PNG), along with its thumbnail. Pixane Photo only opens the brush you use: even an .abr over 1 GB opens **without
   waiting** (library, brush settings, start-up), and takes less space (1.7 GB → 0.86 GB for a large .abr). Adding a
   very large file takes the time to store it (about 3 minutes for 1.7 GB).
 - Brushes added **with an earlier version** are stored this way **once**, in the background, at the first start
-  (message in the status bar); Pixane stays usable meanwhile.
+  (message in the status bar); Pixane Photo stays usable meanwhile.
 - An “animated” brush (.gih: grass, leaves…) has several shapes that alternate along the stroke.
 - **Settings…** (a dot “•” shows when a setting is changed), with a stroke preview:
   - **Shape**: spacing between dabs, angle (or “angle follows the stroke”, like a pen), roundness;
@@ -1421,60 +1423,62 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+0, Ctrl+1 | Fit, 100% |
 | Enter / Esc | (Expand) Start / Cancel; (Crop) Apply / Cancel |
 | Shift (while rotating a text) | Rotate in 15° steps |
-| F1 | Guide, opened at the shortcuts (Help > Pixane guide: the whole guide, with a search) |
+| F1 | Guide, opened at the shortcuts (Help > Pixane Photo guide: the whole guide, with a search) |
 
 ---
 
 ## 12. Hardware and licences
 
-**Installation**: run `Pixane-Setup-<version>-64bits.exe`.
-1. Installation language (it will also be Pixane's language, which can be changed later in View > Language).
+**Installation**: run `Pixane-Photo-Setup-<version>-64bits.exe`.
+1. Installation language (it will also be Pixane Photo's language, which can be changed later in View > Language).
 2. Just for me (default, no administrator rights) or for all users.
-3. Installation folder.
+3. Installation folder: by default `…\Pixane\Pixane Photo` (the `Pixane` folder gathers the programs of the
+   Pixane Suite). An older installation (`…\Pixane`) is moved there automatically: settings, projects, AI engine
+   and shortcuts are kept.
 4. **PC check**: NVIDIA graphics card and its memory (8 GB recommended), free space, AI engine (ComfyUI) found or
    not. If ComfyUI is installed elsewhere, use **Browse…** to select its folder.
-   Without ComfyUI, Pixane opens, edits (layers, text) and saves photos, but the AI actions do not work.
+   Without ComfyUI, Pixane Photo opens, edits (layers, text) and saves photos, but the AI actions do not work.
 5. **AI engine** (only if ComfyUI is not found): list of what will be downloaded, with size, site and licence
    (21.5 GB to download, about 31 GB on disk); engine folder (default `%LOCALAPPDATA%\Pixane\moteur`); optional
    **Flux Schnell** box for "Sharp upscale" (11.8 GB more); the **I accept the FLUX.1 [dev] licence** box
-   (non-commercial use) is required to install the engine. You can also untick it: Pixane installs without the
+   (non-commercial use) is required to install the engine. You can also untick it: Pixane Photo installs without the
    engine.
-6. Options: desktop icon; open .pixane files with Pixane.
+6. Options: desktop icon; open .pixane files with Pixane Photo.
 7. At the end, the **Install the AI engine** window downloads and installs everything (ComfyUI portable, its
    extensions, the models). It shows progress, speed and time left. You can **Stop** at any time: the download
    resumes later where it stopped (even after a connection loss). Each file is checked (SHA-256 checksum).
 
 The same window opens from **AI > Install the AI engine…** (for example to add Flux Schnell later, or **Flux
-Kontext** — 11.9 GB, optional — for *Restore an old photo*), and Pixane
+Kontext** — 11.9 GB, optional — for *Restore an old photo*), and Pixane Photo
 offers it at start-up if it finds no engine. If a ComfyUI installed another way is already there (ComfyUI Desktop, portable
-ComfyUI…), Pixane uses it as it is: at start-up it asks ComfyUI what it already has and, if extensions or models are
+ComfyUI…), Pixane Photo uses it as it is: at start-up it asks ComfyUI what it already has and, if extensions or models are
 missing, offers the **Complete the AI engine** window (also from **AI > Install the AI engine…**). It lists **only
 what is missing** (size, licence, source, folder) and puts it into that ComfyUI's folders, even a shared models
 folder, without replacing or deleting anything. Flux Schnell and Flux Kontext can be added as options. If new
 extensions are added to an open ComfyUI Desktop, close it and open it again so that it loads them. A ComfyUI too
-old for a feature (for example object selection) is reported: Pixane does not update it itself.
+old for a feature (for example object selection) is reported: Pixane Photo does not update it itself.
 
 **AI engine updates**: the versions of ComfyUI, the extensions and the models are chosen and tested with each
-version of Pixane; nothing changes on its own. When a new version of Pixane needs other versions, Pixane offers
+version of Pixane Photo; nothing changes on its own. When a new version of Pixane Photo needs other versions, Pixane Photo offers
 it once at start-up (list and download size), and the **Install the AI engine** window shows the state of each
 item (*up to date*, *new version*) with the **Update** button. Only what changed is downloaded. ComfyUI is replaced
 while keeping its models, extensions and settings; a replaced old model is deleted. The engine is stopped during the
 update and restarted afterwards. A ComfyUI installed another way (for example ComfyUI Desktop) updates itself:
-Pixane does not touch it.
+Pixane Photo does not touch it.
 
 **Help > Check for updates…** (or at startup, if *Check for updates at startup* is ticked): when a new version exists, a window shows **what's new** (new features, fixes) in every version you do not have yet; **Download** opens the download page. A new version installs over the old one (settings kept). To uninstall: Windows Settings > Apps. The uninstaller
 asks two questions (default answer "No"):
-- also delete the **AI engine installed by Pixane** (ComfyUI, extensions, models)? A ComfyUI installed another
+- also delete the **AI engine installed by Pixane Photo** (ComfyUI, extensions, models)? A ComfyUI installed another
   way, such as ComfyUI Desktop, is never touched;
 - also delete the **settings** (language, theme, last folder, text style, engine folder) and the logs?
 
 **Licences and test hardware**:
-- Pixane: Pixane Licence 1.2, © 2026 Georges Christophe (chrypox): free of charge, may be modified and shared,
-  author's name required, no sale (of Pixane or a modified version); file `LICENSE` (French text prevails;
+- Pixane Photo: Pixane Licence 1.2, © 2026 Georges Christophe (chrypox): free of charge, may be modified and shared,
+  author's name required, no sale (of Pixane Photo or a modified version); file `LICENSE` (French text prevails;
   translation `LICENSE.en.txt`).
   Third-party items: `docs\LICENCES_TIERS.md`.
 - Tested on an 8 GB NVIDIA graphics card (RTX 3060 Ti). The times given come from this PC.
-- Models used: Flux.1 Fill dev (**non-commercial use**; GGUF Q8 version when installed by Pixane, same
+- Models used: Flux.1 Fill dev (**non-commercial use**; GGUF Q8 version when installed by Pixane Photo, same
   quality), Flux.1 Kontext dev (**non-commercial use**, optional), Flux.1 Schnell (Apache-2.0), LaMa (Apache-2.0),
   RealESRGAN x4plus (BSD-3), SCUNet (Apache-2.0), BiRefNet (MIT), SAM 3.1 (Meta SAM License).
 - Engine: ComfyUI (GPL-3.0) and its extensions Inpaint nodes, Inpaint Crop and Stitch, Ultimate SD Upscale
@@ -1487,29 +1491,29 @@ asks two questions (default answer "No"):
 No. The AI runs on your PC. The Internet is only used once, to download the AI engine and the models.
 
 ### Why is the AI slow?
-AI models are large (Flux Fill: 12 GB). On an 8 GB card, count about one minute per proposal. Pixane only processes the area around the selection, not the whole photo, to go faster.
+AI models are large (Flux Fill: 12 GB). On an 8 GB card, count about one minute per proposal. Pixane Photo only processes the area around the selection, not the whole photo, to go faster.
 
 ### I have an AMD or Intel card. Does it work?
-Pixane opens and edits (layers, text, crop…), but the AI actions need an NVIDIA card.
+Pixane Photo opens and edits (layers, text, crop…), but the AI actions need an NVIDIA card.
 
 ### I already have ComfyUI. Do I have to download everything again?
-No: the installer looks for it, and the **Browse…** button lets you point to its folder. Pixane then uses it as it is and only offers to download what it is missing (extensions, models), into that ComfyUI's folders, without replacing anything.
+No: the installer looks for it, and the **Browse…** button lets you point to its folder. Pixane Photo then uses it as it is and only offers to download what it is missing (extensions, models), into that ComfyUI's folders, without replacing anything.
 
 ### How do I change the language?
-**View > Language** menu. Pixane restarts to apply it.
+**View > Language** menu. Pixane Photo restarts to apply it.
 
 ### Can I use it at work?
 Yes, free of charge, in companies too. It is only forbidden to sell it, rent it or include it in a paid offer. Note: the **Flux Fill** model (Erase, Fill, Expand) is under a non-commercial licence; check that it suits your use.
 
 ### How do I uninstall it?
-Windows Settings > Apps > Pixane. The uninstaller asks whether to also delete the AI engine and the settings.
+Windows Settings > Apps > Pixane Photo. The uninstaller asks whether to also delete the AI engine and the settings.
 
 ## Development
 
 You need Python 3.11 and [uv](https://github.com/astral-sh/uv).
 
 - `uv venv` then `uv pip install -e .`: prepares the environment.
-- `Pixane.bat` (or `.venv\Scripts\python -m pixane photo.jpg`): starts Pixane.
+- `Pixane Photo.bat` (or `.venv\Scripts\python -m pixane photo.jpg`): starts Pixane Photo.
 - `construire-installateur.bat`: builds the installer (needs [Inno Setup 7](https://jrsoftware.org/isdl.php)).
 - `tests\essai_*.py`: automatic tests (they do not touch your settings).
 - `outils\readme.py`: copies the guide (`docs\GUIDE.md`, `docs\GUIDE_en.md`) into the READMEs.
@@ -1525,12 +1529,12 @@ You need Python 3.11 and [uv](https://github.com/astral-sh/uv).
 
 ![Pixane licence: free, non-commercial, modifiable](logo/licence/licence-pixane-en.png)
 
-Pixane is published under the **Pixane Licence 1.2** — © 2026 Georges Christophe (chrypox). The French text in the [`LICENSE`](LICENSE) file is the only one that is legally binding; [`LICENSE.en.txt`](LICENSE.en.txt) is a courtesy translation. In short:
+Pixane Photo is published under the **Pixane Licence 1.2** — © 2026 Georges Christophe (chrypox). The French text in the [`LICENSE`](LICENSE) file is the only one that is legally binding; [`LICENSE.en.txt`](LICENSE.en.txt) is a courtesy translation. In short:
 
 - **Free**: free use, in companies and internally too; forbidden to sell it, rent it or include it in a paid offer.
 - **Sharing**: free copying and sharing, with the licence and the author's name.
-- **Modifications allowed**: anyone may modify Pixane, publish their modified version ("fork") or reuse its code, provided they keep the author's name, state that the version is modified, and publish it under the same licence: it therefore stays free and non-commercial.
+- **Modifications allowed**: anyone may modify Pixane Photo, publish their modified version ("fork") or reuse its code, provided they keep the author's name, state that the version is modified, and publish it under the same licence: it therefore stays free and non-commercial.
 - **Fixes**: proposed through an Issue (ticket) or a pull request; the author integrates them, crediting their author.
 - **Rights of others**: an element that does not respect a licence or your rights? Write to admin@chrypox.be.
 
-The AI engine (ComfyUI) and the AI models are not included in Pixane: they remain under their own licence, and the **Flux.1 Fill [dev]** model is under a non-commercial licence. Full list: [`docs/LICENCES_TIERS.md`](docs/LICENCES_TIERS.md).
+The AI engine (ComfyUI) and the AI models are not included in Pixane Photo: they remain under their own licence, and the **Flux.1 Fill [dev]** model is under a non-commercial licence. Full list: [`docs/LICENCES_TIERS.md`](docs/LICENCES_TIERS.md).
