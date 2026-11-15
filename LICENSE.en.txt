@@ -5,7 +5,7 @@ that prevails.
 ======================================================================
 
 ======================================================================
-SOFTWARE LICENCE AGREEMENT: Pixane ("Pixane Licence 1.2")
+LICENCE AGREEMENT FOR THE PIXANE SUITE SOFTWARE ("Pixane Licence 1.3")
 Free-of-charge, source-available, non-commercial software
 AUTHOR AND OWNER: Georges Christophe (chrypox)
 Copyright (c) 2026 Georges Christophe.
@@ -13,6 +13,15 @@ Contact: admin@chrypox.be
 ======================================================================
 
 This software is a personal project shared to be useful to the community.
+
+0. SCOPE: This agreement applies to each program of the Pixane Suite that
+   the author publishes under the "Pixane Licence" (for example Pixane
+   Photo, simply called Pixane up to version 0.22.0, and Pixane Video). In
+   this agreement, "the software" means the program of the suite with which
+   the agreement is provided, its source code and its modified versions.
+   Versions already published under Pixane Licence 1.2 remain governed by
+   it.
+
 By using, copying, modifying or sharing the software, you accept the
 following conditions:
 
@@ -21,7 +30,7 @@ following conditions:
    be sold, rented, monetised or included in a paid product or service, in
    any form, direct or indirect.
    Any person, association, public body or company may use it free of
-   charge, including for their work and internally. Using Pixane as a
+   charge, including for their work and internally. Using the software as a
    work tool, including in a company that makes a profit, is allowed.
 
 2. SHARING: The software may be copied and shared free of charge, together
@@ -34,7 +43,7 @@ following conditions:
    a) keep the notice "Copyright (c) 2026 Georges Christophe (chrypox)"
       and this agreement, without removing or hiding them;
    b) state clearly that the version has been modified, and do not present
-      it as the official version of Pixane published by the author;
+      it as the official version of the software published by the author;
    c) publish the modified version, or the project reusing the code, under
       this agreement: it therefore stays free of charge and non-commercial
       (article 1), and the same rules apply to anyone who reuses it in
@@ -47,14 +56,14 @@ following conditions:
    You will be credited in the list of contributors.
 
 5. OTHER DEVELOPERS' COMPONENTS AND AI MODELS: This agreement applies to
-   the Pixane code only. The libraries shipped with the software, the AI
+   the software's code only. The libraries shipped with the software, the AI
    engine (ComfyUI) and the AI models remain under their own licences;
    they are listed in the file docs/LICENCES_TIERS.md. The AI engine and
-   the models are not included in Pixane: they are downloaded only if
+   the models are not included in the software: they are downloaded only if
    the user chooses to. The FLUX.1 Fill [dev] model is under the
    FLUX.1 [dev] Non-Commercial License.
 
-6. RESPECT FOR OTHERS' RIGHTS: The author makes sure that Pixane respects
+6. RESPECT FOR OTHERS' RIGHTS: The author makes sure that the software respects
    the rights of other developers. If you believe that all or part of the
    software uses code, an image or another protected element without
    respecting its licence or your rights, contact the author at
@@ -81,7 +90,7 @@ IN SHORT:
 ----------------------------------------------------------------------
 Free of charge · usable by everyone, including at work · may be modified
 and shared (forks allowed) · author's name required · no sale, neither of
-Pixane nor of a modified version · modified versions keep these same
+the software nor of a modified version · modified versions keep these same
 rules · no warranty. Only the French text prevails.
 This agreement is not a Creative Commons licence and is neither linked to
 nor endorsed by Creative Commons.

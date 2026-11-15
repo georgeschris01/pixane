@@ -364,7 +364,7 @@ def image_licence(largeur: int = 480) -> QLabel | None:
 class FenetreLicence(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(tr("Licence Pixane 1.2"))
+        self.setWindowTitle(tr("Licence Pixane 1.3"))
         self.resize(760, 640)
         f = RACINE / ("LICENSE.en.txt" if langue_active() == "en" else "LICENSE")
         try:

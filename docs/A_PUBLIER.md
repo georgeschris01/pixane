@@ -20,6 +20,10 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.22.0 (non publ
 - **Nouveau logo** (famille de la suite) : le « P en pixels » orange-rose avec un symbole photo (montagne et soleil)
   à la place de l'étincelle ; icône, images de l'installateur. L'emblème de la suite (P sans symbole) reste sur
   l'image de la licence (`logo\suite-pixane.svg`).
+- **Licence Pixane 1.3**, commune à toute la Suite Pixane (accord de Christophe le 15/11/2026) : nouvel article 0
+  « Champ d'application » (chaque logiciel de la suite publié sous la Licence Pixane ; les versions publiées sous
+  la 1.2 restent régies par elle) ; « Pixane » remplacé par « le logiciel » ; conditions inchangées. À propos,
+  fenêtre Licence, README, guide, LICENCES_TIERS.
 - À faire à la publication : capture du README (`docs/screenshots`) avec le nouveau titre ; vérifier la page de
   l'organisation pixane-suite.
 

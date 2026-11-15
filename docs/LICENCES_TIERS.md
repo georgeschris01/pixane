@@ -1,8 +1,8 @@
 # Licences des éléments tiers / Third-party licences
 
-Pixane lui-même : Licence Pixane 1.2 (gratuit, code source disponible, non commercial), © 2026 Georges Christophe (chrypox) —
+Pixane Photo lui-même : Licence Pixane 1.3 (commune à la Suite Pixane ; gratuit, code source disponible, non commercial), © 2026 Georges Christophe (chrypox) —
 voir `LICENSE` (seul texte qui fait foi).
-Pixane itself: Pixane Licence 1.2 (free of charge, source-available, non-commercial) — see `LICENSE.en.txt`
+Pixane Photo itself: Pixane Licence 1.3 (shared by the Pixane Suite; free of charge, source-available, non-commercial) — see `LICENSE.en.txt`
 (courtesy translation).
 
 ## Inclus dans l'installateur / Included in the installer

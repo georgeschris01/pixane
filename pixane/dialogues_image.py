@@ -346,7 +346,7 @@ class APropos(QDialog):
                  "explique chaque réglage pas à pas. Pixane Photo n'a pas la prétention de remplacer des programmes "
                  "comme Photoshop, GIMP ou Krita, qui restent la référence pour un travail poussé : il veut "
                  "rendre la retouche accessible à tous.</p>"
-                 "<p>© 2026 Georges Christophe (chrypox)<br>Licence Pixane 1.2 : gratuit, code source disponible, "
+                 "<p>© 2026 Georges Christophe (chrypox)<br>Licence Pixane 1.3 : gratuit, code source disponible, "
                  "non commercial. Modifications permises en gardant le nom de l'auteur et la même licence.</p>"
                  "<p>Moteur IA : ComfyUI (GPL-3.0). Modèle Flux Fill : licence FLUX.1 [dev], non commerciale.</p>"))
         texte.setWordWrap(True)

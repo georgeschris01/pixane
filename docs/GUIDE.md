@@ -1437,7 +1437,7 @@ Applications. Le désinstalleur pose deux questions (réponse « Non » par déf
   journaux ?
 
 **Licences et matériel d'essai** :
-- Pixane Photo : Licence Pixane 1.2, © 2026 Georges Christophe (chrypox) : gratuit, modifiable et partageable,
+- Pixane Photo : Licence Pixane 1.3, © 2026 Georges Christophe (chrypox) : gratuit, modifiable et partageable,
   nom de l'auteur obligatoire, aucune vente (ni de Pixane Photo ni d'une version modifiée) ; fichier `LICENSE`.
   Éléments tiers : `docs\LICENCES_TIERS.md`.
 - Testé sur une carte graphique NVIDIA de 8 Go (RTX 3060 Ti). Les durées indiquées viennent de ce PC.
