@@ -146,6 +146,121 @@ class TailleImage(QDialog):
         return self.largeur.value(), self.hauteur.value()
 
 
+class EchelleContenu(QDialog):
+    """Image > Mise à l'échelle d'après le contenu : nouvelle largeur / hauteur ; les zones sans détails (ciel, mur,
+    fond uni) s'étirent ou se tassent, le sujet garde ses proportions. Aperçu sur une petite image."""
+
+    FORMATS = [("1:1", 1, 1), ("4:3", 4, 3), ("3:2", 3, 2), ("16:9", 16, 9), ("3:4", 3, 4), ("4:5", 4, 5),
+               ("9:16", 9, 16)]
+    COTE = 360
+
+    def __init__(self, largeur: int, hauteur: int, image: QImage, selection=None, parent=None):
+        """selection : masque (h, w) 0..255 de la sélection, ou None s'il n'y en a pas."""
+        super().__init__(parent)
+        import numpy as np
+        from .document import tableau
+        self.setWindowTitle(tr("Mise à l'échelle d'après le contenu"))
+        self.w0, self.h0 = largeur, hauteur
+        lay = QVBoxLayout(self)
+        info = QLabel(tr("Change les proportions de l'image (carré vers 16:9…) sans écraser le sujet : ce sont surtout "
+                         "les zones sans détails (ciel, mur, fond uni) qui s'étirent ou se tassent. Taille actuelle : "
+                         "{l} × {h} px.", l=largeur, h=hauteur))
+        info.setWordWrap(True)
+        info.setObjectName("discret")
+        lay.addWidget(info)
+        g = QGridLayout()
+        self.largeur, self.hauteur = QSpinBox(), QSpinBox()
+        for s, v in ((self.largeur, largeur), (self.hauteur, hauteur)):
+            s.setRange(16, 30000)
+            s.setSuffix(" px")
+            s.setValue(v)
+        g.addWidget(QLabel(tr("Largeur")), 0, 0)
+        g.addWidget(self.largeur, 0, 1)
+        g.addWidget(QLabel(tr("Hauteur")), 1, 0)
+        g.addWidget(self.hauteur, 1, 1)
+        lay.addLayout(g)
+        rapides = QHBoxLayout()
+        rapides.addWidget(QLabel(tr("Format :")))
+        for nom, a, b in self.FORMATS:
+            bt = QPushButton(nom)
+            bt.setToolTip(tr("Garde le plus grand côté de l'image et change l'autre"))
+            bt.clicked.connect(lambda _=False, a=a, b=b: self.format(a, b))
+            rapides.addWidget(bt)
+        lay.addLayout(rapides)
+        self.c_proteger = QCheckBox(tr("Protéger la sélection (elle n'est pas déformée)"))
+        self.c_proteger.setEnabled(selection is not None)
+        self.c_proteger.setChecked(selection is not None)
+        if selection is None:
+            self.c_proteger.setToolTip(tr("Sélectionne d'abord le sujet à protéger (par exemple avec Sélection > "
+                                          "Sélectionner le sujet)."))
+        lay.addWidget(self.c_proteger)
+        ligne = QHBoxLayout()
+        ligne.addWidget(QLabel(tr("Protection du contenu")))
+        self.force = QSlider(Qt.Horizontal)
+        self.force.setRange(0, 100)
+        self.force.setValue(100)
+        self.force.setToolTip(tr("0 % : étirement ordinaire, partout pareil ; 100 % : seules les zones sans détails "
+                                 "changent"))
+        ligne.addWidget(self.force, 1)
+        self.force_txt = QLabel("100 %")
+        ligne.addWidget(self.force_txt)
+        lay.addLayout(ligne)
+        self.apercu = QLabel()
+        self.apercu.setAlignment(Qt.AlignCenter)
+        self.apercu.setMinimumSize(self.COTE, self.COTE)
+        lay.addWidget(self.apercu)
+        lay.addWidget(_boutons(self, tr("Appliquer")))
+        # petite image pour l'aperçu
+        k = min(1.0, self.COTE / max(largeur, hauteur))
+        pw, ph = max(1, round(largeur * k)), max(1, round(hauteur * k))
+        petite = image.convertToFormat(QImage.Format_RGBA8888).scaled(pw, ph, Qt.IgnoreAspectRatio,
+                                                                       Qt.SmoothTransformation)
+        self._petite = tableau(petite)
+        self._k = k
+        self._sel = None
+        if selection is not None:
+            from PIL import Image
+            self._sel = np.asarray(Image.fromarray(selection).resize((pw, ph)), np.float32) / 255
+        self._minuteur = QTimer(self)
+        self._minuteur.setSingleShot(True)
+        self._minuteur.setInterval(120)
+        self._minuteur.timeout.connect(self._apercu)
+        for s in (self.largeur, self.hauteur):
+            s.valueChanged.connect(lambda _v: self._minuteur.start())
+        self.force.valueChanged.connect(lambda v: (self.force_txt.setText(f"{v} %"), self._minuteur.start()))
+        self.c_proteger.toggled.connect(lambda _v: self._minuteur.start())
+        self._apercu()
+
+    def format(self, a: int, b: int):
+        """Garde le plus grand côté de l'image et calcule l'autre pour le format a:b."""
+        grand = max(self.w0, self.h0)
+        if a >= b:
+            w, h = grand, round(grand * b / a)
+        else:
+            w, h = round(grand * a / b), grand
+        self.largeur.setValue(w)
+        self.hauteur.setValue(h)
+
+    def valeurs(self) -> tuple[int, int]:
+        return self.largeur.value(), self.hauteur.value()
+
+    def proteger(self) -> bool:
+        return self.c_proteger.isEnabled() and self.c_proteger.isChecked()
+
+    def force_valeur(self) -> float:
+        return self.force.value() / 100
+
+    def _apercu(self):
+        from . import echelle_contenu
+        from .document import qimage_rgba
+        W, H = self.valeurs()
+        k = self._k * min(1.0, self.COTE / max(W * self._k, H * self._k, 1))   # l'aperçu tient dans le carré
+        pw, ph = max(1, round(W * k)), max(1, round(H * k))
+        cx, cy = echelle_contenu.cartes(self._petite[..., :3], pw, ph, self._sel if self.proteger() else None,
+                                        self.force_valeur())
+        self.apercu.setPixmap(QPixmap.fromImage(qimage_rgba(echelle_contenu.deformer(self._petite, cx, cy))))
+
+
 class Redresser(QDialog):
     """Tourner d'un petit angle (horizon penché), avec aperçu et grille."""
 

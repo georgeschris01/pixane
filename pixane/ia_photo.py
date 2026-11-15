@@ -361,9 +361,10 @@ def panneau_profondeur(rgba: np.ndarray, prof: np.ndarray, avec_sujet: bool = Fa
 # ------------------------------------------------------------------ actions
 class ActionsPhotoIA:
     # ---------------------------------------------------------- calcul d'une carte (masque, profondeur)
-    def _carte_ia(self, titre: str, fabriquer, suite, toutes: bool = False):
+    def _carte_ia(self, titre: str, fabriquer, suite, toutes: bool = False, vide_ok: bool = False):
         """Le moteur calcule une image grise (sur l'image visible) ; suite(tableau 0..255 à la taille de l'image).
-        toutes : la recette a plusieurs sorties, suite reçoit la liste des tableaux."""
+        toutes : la recette a plusieurs sorties, suite reçoit la liste des tableaux. vide_ok : une recette qui peut
+        ne rien trouver (SAM, masques séparés) donne une liste vide au lieu d'une erreur."""
         from .dialogues import Attente
         doc = self.doc
         png = doc.png_pour_ia(False)
@@ -372,8 +373,15 @@ class ActionsPhotoIA:
         def calcul(progres):
             nom = self.moteur.envoyer_image(png)
             prompt, sorties = fabriquer(nom)
-            res = self.moteur.executer(prompt, sorties, annuler, progres)
+            try:
+                res = self.moteur.executer(prompt, sorties, annuler, progres)
+            except ErreurMoteur as e:
+                if vide_ok and "size 0" in str(e):        # SAM n'a rien trouvé : lot de masques vide
+                    return []
+                raise
             if not res:
+                if vide_ok:
+                    return []
                 raise ErreurMoteur(tr("Le calcul s'est arrêté sans résultat."))
             cartes = []
             for _nom, octets in (res if toutes else res[:1]):
@@ -538,6 +546,96 @@ class ActionsPhotoIA:
         self.reglages.setValue("lumiere_style", cle)
         self._kontext(titre, recettes.TEXTE_LUMIERE.format(lumiere=recettes.LUMIERES[cle]), tr("Lumière"),
                       tr("_lumiere"))
+
+    # ---------------------------------------------------------- supprimer les personnes
+    def ia_supprimer_personnes(self):
+        """IA > Supprimer les personnes : SAM 3.1 trouve chaque personne, on coche celles à effacer (pas le sujet
+        principal, au départ), puis Effacer reconstruit le fond derrière elles."""
+        titre = tr("Supprimer les personnes")
+        if not self.doc or not self._sam_present(titre) or not self._verifier_verrou(titre):
+            return
+
+        def suite(cartes):
+            masques = [c > 127 for c in cartes]
+            masques = [m for m in masques if m.mean() > 0.0002]
+            if not masques:
+                QMessageBox.information(self, titre, tr("Aucune personne trouvée dans cette image."))
+                return
+            from .choix_personnes import ChoixPersonnes, union
+            d = ChoixPersonnes(self.doc.image, masques, self)
+            if not d.exec():
+                return
+            coches = d.coches()
+            if not any(coches):
+                return
+            w, h = self.doc.taille()
+            self._poser_selection(union(masques, coches, max(3.0, max(w, h) / 250)), titre)
+            if d.resultat() == "effacer":
+                self.ia_effacer()
+            else:
+                self.statusBar().showMessage(tr("Personnes sélectionnées. Complète la sélection si besoin (Sélection "
+                                                "d'objet, Maj + clic), puis IA > Effacer."), 8000)
+        self._carte_ia(titre, recettes.personnes, suite, toutes=True, vide_ok=True)
+
+    # ---------------------------------------------------------- retouche portrait
+    def ia_portrait(self):
+        """IA > Retouche portrait : SAM 3.1 trouve le visage, les yeux, les dents… ; peau lissée (grain gardé),
+        yeux éclaircis, dents blanchies, avec un aperçu en direct, dans le calque choisi."""
+        from . import portrait
+        titre = tr("Retouche portrait")
+        if not self.doc or not self._verifier_pixels(titre) or not self._sam_present(titre):
+            return
+
+        def suite(cartes):
+            parties = dict(zip([nom for nom, _t in recettes.PARTIES_VISAGE], cartes))
+            if "visage" not in parties or (parties["visage"] > 127).mean() < 0.0005:
+                QMessageBox.information(self, titre, tr("Aucun visage trouvé dans cette image."))
+                return
+            z = portrait.zones(parties)
+            depart = {k: int(self.reglages.value("portrait_" + k, v)) for k, v in portrait.DEPART.items()}
+            panneau = portrait.panneau_portrait()(depart, {})
+
+            def calcul(a, p):
+                for k, v in p.items():
+                    self.reglages.setValue("portrait_" + k, v)
+                return portrait.retoucher(a, z, p)
+            self._dialogue_pixels(titre, panneau, dict(portrait.NEUTRES), calcul)
+        self._carte_ia(tr("Recherche du visage"), recettes.visage, suite, toutes=True)
+
+    # ---------------------------------------------------------- créer une image d'après un texte
+    def ia_creer(self):
+        """IA > Créer une image d'après un texte (Flux Schnell) : une nouvelle image, ou un nouveau calque de l'image
+        ouverte, à sa taille. Plusieurs propositions ; « Partir de celle-ci » pour des variantes."""
+        titre = tr("Créer une image d'après un texte")
+        if not recettes.schnell_disponible():
+            QMessageBox.information(self, titre, tr(
+                "Cette action a besoin du modèle Flux Schnell, qui n'est pas installé. Menu IA > Installer le moteur "
+                "IA permet de l'ajouter (case « Flux Schnell »)."))
+            return
+        from .consigne import DialogueConsigne
+        from .document import Document
+        d = DialogueConsigne(self, nb=recettes.NB_CREER, creer=True, image_ouverte=self.doc is not None)
+        if not d.exec():
+            return
+        texte, nb = d.consigne(), d.nombre()
+        if d.nouvelle_image() or self.doc is None:
+            w, h = d.taille()
+            fond = QImage(w, h, QImage.Format_ARGB32_Premultiplied)
+            fond.fill(QColor(255, 255, 255))
+            doc = Document(fond)
+            doc.nom = tr("Image créée")
+            self._installer_document(doc)
+            self._actualiser()
+            placer = lambda image: doc.etat_calque_modifie(0, image=image.convertToFormat(
+                QImage.Format_ARGB32_Premultiplied), nom=tr("Image créée"))
+        else:
+            doc = self.doc
+            placer = lambda image: doc.etat_nouveau_calque(image, tr("Image créée"))
+        taille = doc.taille()
+        self._lancer(titre, False, lambda nom: recettes.creer(texte, taille, nb=nb), placer=placer,
+                     vue=lambda img: img, nom_calque=tr("Image créée"), suffixe=tr("_creee"),
+                     variante=lambda nom, force: recettes.creer(texte, taille, nb=nb, image=nom,
+                                                                force=min(0.9, max(0.3, force))))
 
     # ---------------------------------------------------------- flou selon la profondeur
     def ia_flou_profondeur(self):

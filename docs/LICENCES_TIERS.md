@@ -13,6 +13,7 @@ Pixane itself: Pixane Licence 1.2 (free of charge, source-available, non-commerc
 | PySide6 / Qt 6.12, shiboken6 | LGPL-3.0 (bibliothèques non modifiées / unmodified libraries) |
 | numpy | BSD-3-Clause (et composants 0BSD, MIT, Zlib, CC0) |
 | Pillow | MIT-CMU |
+| rawpy (fichiers RAW / RAW files), avec LibRaw | MIT ; LibRaw : LGPL-2.1 ou / or CDDL-1.0 |
 | websocket-client | Apache-2.0 |
 | pyphen 0.18 (césure / hyphenation) | au choix / either GPL-2.0+, LGPL-2.1+ ou / or MPL-1.1 |
 | spylls 0.1.7 (lecture des dictionnaires Hunspell / Hunspell dictionary reader) | MIT |

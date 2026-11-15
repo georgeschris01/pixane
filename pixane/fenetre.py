@@ -293,6 +293,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self._panneau_ia()
         self._panneau_calques()
         self._panneau_historique()
+        self._panneau_nuancier()
+        self._panneau_actions()
         self._panneau_texte()
         self._barre_etat()
         from .selection_ia import SelectionAuto
@@ -482,6 +484,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self._action(m, tr("Exporter pour l'impression (CMJN)…"), None, self.exporter_impression, "a_exporter_cmjn")
         self._action(m, tr("Traitement par lot…"), None, self.traitement_lot, "a_lot", "lot")
         m.addSeparator()
+        self._action(m, tr("Imprimer…"), QKeySequence.Print, self.imprimer, "a_imprimer")
+        m.addSeparator()
         self._action(m, tr("Fermer la photo"), "Ctrl+W", lambda: self.fermer_onglet(), "a_fermer")
         self._action(m, tr("Photo suivante"), "Ctrl+Tab", lambda: self.onglet_suivant(1))
         self._action(m, tr("Photo précédente"), "Ctrl+Shift+Tab", lambda: self.onglet_suivant(-1))
@@ -556,6 +560,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self._m_mode = sous
         m.addSeparator()
         self._action(m, tr("Taille de l'image…"), "Ctrl+Alt+I", self.taille_image, "a_taille")
+        self._action(m, tr("Mise à l'échelle d'après le contenu…"), None, self.echelle_contenu, "a_echelle_contenu")
         self._action(m, tr("Taille de la zone de travail…"), "Ctrl+Alt+C", self.zone_travail, "a_zone_travail")
         self._action(m, tr("Tout faire apparaître"), None, self.tout_faire_apparaitre, "a_tout_apparaitre")
         self._action(m, tr("Pivoter de 90° à droite"), None, lambda: self._geometrie(tr("Pivoter"), 90), "a_pivoter_d")
@@ -585,6 +590,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
                      "a_fusionner_calques")
         self._action(m, tr("Aplatir l'image"), None, lambda: self.calques.aplatir() if self.doc else None,
                      "a_aplatir")
+        m.addSeparator()
+        self._action(m, tr("Harmoniser avec l'arrière-plan…"), None, self.harmoniser, "a_harmoniser")
         m_filtres = self._menus_calques(self._m_image, m)
         m_filtres.addSeparator()
         self._action(m_filtres, tr("Flou selon la profondeur (IA)…"), None, self.ia_flou_profondeur,
@@ -643,8 +650,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
 
         m = self.menuBar().addMenu(tr("&IA"))
         self._action(m, tr("Effacer"), "Shift+E", self.ia_effacer, "a_effacer", "effacer")
+        self._action(m, tr("Supprimer les personnes…"), None, self.ia_supprimer_personnes, "a_ia_personnes")
         self._action(m, tr("Remplir"), "Shift+R", self.ia_remplir, "a_remplir", "remplir")
         self._action(m, tr("Modifier avec une consigne…"), "Shift+M", self.ia_modifier, "a_modifier", "modifier")
+        self._action(m, tr("Créer une image d'après un texte…"), None, self.ia_creer, "a_ia_creer")
         self._action(m, tr("Agrandir l'image…"), "Shift+A", self.ia_agrandir, "a_agrandir", "agrandir")
         self._action(m, tr("Upscale…"), "Shift+U", self.ia_upscale, "a_upscale", "upscale")
         self._action(m, tr("Supprimer l'arrière-plan"), "Shift+B", self.supprimer_arriere_plan, "a_arriere_plan",
@@ -655,6 +664,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self._action(m, tr("Restaurer une vieille photo…"), None, self.ia_restaurer, "a_ia_restaurer")
         self._action(m, tr("Coloriser"), None, self.ia_coloriser, "a_ia_coloriser")
         self._action(m, tr("Changer la lumière…"), None, self.ia_lumiere, "a_ia_lumiere")
+        self._action(m, tr("Retouche portrait…"), None, self.ia_portrait, "a_ia_portrait")
         self._action(m, tr("Remplacer le ciel…"), None, self.ia_remplacer_ciel, "a_ia_ciel")
         m.addSeparator()
         a = self._action(m, tr("Mettre les résultats dans un nouveau calque"), None, None, "a_ia_nouveau_calque")
@@ -1390,7 +1400,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self.calques.demande.connect(self._commande_calques)
         self.calques.style_demande.connect(self.style_calque)
         self.calques.refus.connect(lambda m: self.statusBar().showMessage(m, 6000))
-        self.calques.reglage_demande.connect(lambda t: self.nouveau_calque_reglage(t) if t else self.modifier_reglage())
+        self.calques.reglage_demande.connect(
+            lambda t: self.nouveau_calque_remplissage(t.split(":", 1)[1]) if t.startswith("remplissage:")
+            else self.nouveau_calque_reglage(t) if t else self.modifier_reglage())
         dock.setWidget(self.calques)
         dock.setFixedWidth(290)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
@@ -1419,6 +1431,90 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self.tabifyDockWidget(self.dock_calques, dock)
         self.dock_calques.raise_()
         self.dock_historique = dock
+
+    def _panneau_nuancier(self):
+        """Nuancier (comme Photoshop) : couleurs enregistrées ; un clic = couleur de peinture."""
+        from .nuancier import PanneauNuancier
+        dock = QDockWidget(tr("NUANCIER"), self)
+        dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
+        self.nuancier = PanneauNuancier(lambda: self.canevas.couleur_peinture)
+        self.nuancier.choisi.connect(self._couleur_nuancier)
+        dock.setWidget(self.nuancier)
+        dock.setFixedWidth(290)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.tabifyDockWidget(self.dock_historique, dock)
+        self.dock_calques.raise_()
+        self.dock_nuancier = dock
+
+    def imprimer(self):
+        """Fichier > Imprimer : l'image visible, sur le papier et à la taille choisis."""
+        if not self.doc:
+            return
+        from .imprimer import DialogueImprimer
+        d = DialogueImprimer(self.doc.image, self.doc.dpi, self)
+        if d.exec():
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                d.imprimer()
+            finally:
+                QApplication.restoreOverrideCursor()
+            self.statusBar().showMessage(tr("Envoyé à l'imprimante « {nom} ».", nom=d.imprimante.currentText()), 6000)
+        d.deleteLater()
+
+    def _panneau_actions(self):
+        """Actions (comme Photoshop) : enregistrer des réglages, filtres, tailles, rotations, puis les rejouer."""
+        from .actions_auto import PanneauActions
+        dock = QDockWidget(tr("ACTIONS"), self)
+        dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
+        self.panneau_actions = PanneauActions()
+        self.panneau_actions.jouer.connect(self.jouer_action)
+        dock.setWidget(self.panneau_actions)
+        dock.setFixedWidth(290)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.tabifyDockWidget(self.dock_historique, dock)
+        self.dock_calques.raise_()
+        self.dock_actions = dock
+
+    def noter_action(self, etape: dict):
+        """Une opération enregistrable vient d'être faite : elle va dans l'action en cours d'enregistrement."""
+        if hasattr(self, "panneau_actions"):
+            self.panneau_actions.ajouter(etape)
+
+    def jouer_action(self, action: dict):
+        """Rejoue une action sur l'image ouverte : une seule étape d'Annuler."""
+        from .actions_auto import etat_apres, nom_etape
+        titre = tr("Action : {nom}", nom=action["nom"])
+        if not self.doc:
+            return
+        if not self._verifier_verrou(titre, tous=True):
+            return
+        doc = self.doc
+        avant = doc.etat()
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        sautees = []
+        try:
+            for e in action["etapes"]:
+                etat = etat_apres(doc, e)
+                if etat is None:
+                    sautees.append(nom_etape(e))
+                    continue
+                doc.appliquer_etat(etat)
+        finally:
+            QApplication.restoreOverrideCursor()
+        apres = doc.etat()
+        doc.appliquer_etat(avant)
+        self.historique.push(CommandeEtat(doc, avant, apres, titre))
+        if sautees:
+            self.statusBar().showMessage(tr("Étapes sautées (le calque choisi n'a pas de pixels) : {liste}",
+                                            liste=", ".join(sautees)), 8000)
+        else:
+            self.statusBar().showMessage(tr("Action « {nom} » jouée ({n} étape(s)). Ctrl+Z pour revenir.",
+                                            nom=action["nom"], n=len(action["etapes"])), 6000)
+
+    def _couleur_nuancier(self, couleur: str):
+        self.opt_couleur.definir(QColor(couleur).name(QColor.HexArgb))
+        self._couleur_peinture(self.opt_couleur.couleur)
+        self.statusBar().showMessage(tr("Couleur de peinture : {couleur}", couleur=couleur), 3000)
 
     def _panneau_texte(self):
         self.dock_texte = QDockWidget(tr("TEXTE"), self)
@@ -1630,13 +1726,13 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self._maj_cible_degrade()
         pret = a_doc and self.moteur.etat == "prêt"
         for a in (self.a_enregistrer, self.a_enregistrer_sous, self.a_fermer, self.a_tout, self.a_rien, self.a_inverser,
-                  self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster, self.a_recadrer_selection, self.a_taille,
+                  self.a_zoom_plus, self.a_zoom_moins, self.a_ajuster, self.a_recadrer_selection, self.a_taille, self.a_echelle_contenu,
                   self.a_pivoter_d, self.a_pivoter_g, self.a_pivoter_180, self.a_pivoter_angle, self.a_miroir_h, self.a_miroir_v,
                   self.a_redresser, self.a_recadrage_persp, self.a_transformer, self.a_transfo_perspective, self.a_transfo_distordre,
                   self.a_transfo_deformation, self.a_reglages_image, self.a_sel_agrandir,
                   self.a_sel_reduire, self.a_sel_adoucir, self.a_contour, self.a_plage_couleurs, self.a_couper, self.a_copier, self.a_supprimer_selection, self.a_remplir_motif,
                   self.a_style, self.a_copier_style, self.a_coller_style, self.a_enlever_style, self.a_figer_style,
-                  self.a_nouveau_calque, self.a_dupliquer_calque, self.a_fusionner_calques, self.a_aplatir, self.a_zone_travail, self.a_exporter_cmjn, self.a_exporter_sous,
+                  self.a_nouveau_calque, self.a_dupliquer_calque, self.a_fusionner_calques, self.a_aplatir, self.a_zone_travail, self.a_exporter_cmjn, self.a_exporter_sous, self.a_imprimer,
                   self.a_tout_apparaitre,
                   self.a_epreuve, *self._actions_calques_doc()):
             a.setEnabled(a_doc)
@@ -1647,8 +1743,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         for a in (self.a_effacer, self.a_remplir, self.a_modifier, self.a_agrandir, self.a_upscale, self.a_arriere_plan,
                   self.a_ia_bruit, self.a_ia_nettete, self.a_ia_restaurer,
                   self.a_sujet, self.a_sel_ciel, self.a_ia_coloriser, self.a_ia_lumiere, self.a_ia_ciel,
-                  self.a_ia_profondeur):
+                  self.a_ia_profondeur, self.a_ia_personnes, self.a_ia_portrait):
             a.setEnabled(pret)
+        self.a_ia_creer.setEnabled(self.moteur.etat == "prêt")      # aussi sans image ouverte : en crée une
         for b in (self.b_effacer, self.b_remplir, self.b_modifier, self.b_agrandir, self.b_upscale, self.b_arriere_plan):
             b.setEnabled(pret)
         titre = NOM
@@ -1862,7 +1959,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
     def enregistrer(self) -> bool:
         if not self.doc:
             return False
-        if self.doc.chemin is None:
+        from .raw import est_raw
+        if self.doc.chemin is None or est_raw(self.doc.chemin):    # un RAW n'est jamais remplacé
             return self.enregistrer_sous()
         rep = QMessageBox.question(self, tr("Enregistrer"),
                                    tr("Remplacer le fichier d'origine ?\n{chemin}\n\n"
@@ -1880,8 +1978,11 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         plusieurs = len(self.doc.calques) > 1 or any(c.texte is not None or c.style is not None
                                                       for c in self.doc.calques)
         if self.doc.chemin:
+            from .raw import est_raw
             garde = not plusieurs or self.doc.chemin.suffix.lower() in (".psd", ".ora")
             ext = self.doc.chemin.suffix if garde else ".pixane"
+            if est_raw(self.doc.chemin):
+                ext = ".pixane" if plusieurs else ".jpg"
             ajout = getattr(self.doc, "suffixe_nom", None) or tr("_retouche")
             propose = str(self.doc.chemin.with_name(self.doc.chemin.stem + ajout + ext))
         else:
@@ -2209,6 +2310,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         else:
             apres = self.doc.etat_pivote(quoi)
         self.historique.push(CommandeEtat(self.doc, avant, apres, titre))
+        self.noter_action({"genre": "geometrie", "quoi": quoi})
 
     def taille_image(self):
         if not self.doc or not self._verifier_verrou(tr("Taille de l'image"), tous=True):
@@ -2224,6 +2326,34 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
             finally:
                 QApplication.restoreOverrideCursor()
             self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Taille de l'image")))
+            from .actions_auto import etape_taille
+            self.noter_action(etape_taille(w, h, W, H))
+
+    def echelle_contenu(self):
+        """Image > Mise à l'échelle d'après le contenu : nouvelles proportions, le sujet garde les siennes."""
+        titre = tr("Mise à l'échelle d'après le contenu")
+        if not self.doc or not self._verifier_verrou(titre, tous=True):
+            return
+        from .dialogues_image import EchelleContenu
+        from .document import masque
+        w, h = self.doc.taille()
+        sel = None if self.doc.selection_vide() else masque(self.doc.selection)
+        d = EchelleContenu(w, h, self.doc.image, sel, self)
+        if not d.exec() or d.valeurs() == (w, h):
+            return
+        W, H = d.valeurs()
+        avant = self.doc.etat()
+        modifiables = any(c.texte is not None or c.pinceau is not None or c.forme is not None
+                          for c in self.doc.calques)
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            apres = self.doc.etat_echelle_contenu(W, H, d.proteger(), d.force_valeur())
+        finally:
+            QApplication.restoreOverrideCursor()
+        self.historique.push(CommandeEtat(self.doc, avant, apres, titre))
+        if modifiables:
+            self.statusBar().showMessage(tr("Les textes, formes et traits de pinceau sont devenus des images "
+                                            "(Ctrl+Z pour revenir)."), 6000)
 
     def zone_travail(self):
         """Image > Taille de la zone de travail : agrandit (ou rogne) la feuille sans étirer l'image."""

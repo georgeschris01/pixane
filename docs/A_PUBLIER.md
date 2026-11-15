@@ -74,6 +74,35 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
 - **Sélectionner / Remplacer le ciel** : bord affiné d'après les couleurs (le ciel entre les branches d'un arbre nu
   est pris aussi ; au remplacement, les branches gardent leur couleur, sans givre blanc).
 - **Flou selon la profondeur** : pinceaux *Garder net* et *Rendre flou* sur la carte, pour corriger l'IA.
+- **Calques de remplissage** (Calque > Nouveau calque de remplissage, ou le bouton Réglage du panneau Calques) :
+  couleur unie, dégradé (linéaire, radial, angulaire, réfléchi, losange ; angle, échelle, inverser) ou motif ;
+  modifiables à tout moment (double-clic), redessinés quand la feuille change de taille, gardés en .pixane. Avec
+  une sélection, elle devient leur masque.
+- **Panneau NUANCIER** (onglet à côté de l'Historique) : couleurs enregistrées, un clic = couleur de peinture ;
+  ajouter la couleur de peinture, retirer, renommer ; importer un nuancier Photoshop (.aco) ou GIMP (.gpl),
+  exporter en .aco. Les couleurs sont aussi dans « Couleurs personnalisées » des fenêtres de couleur.
+- **IA > Créer une image d'après un texte** (Flux Schnell, environ 30 s par proposition) : une nouvelle image
+  (5 formats : carré, 4:3, 3:4, 16:9, 9:16) ou un nouveau calque de l'image ouverte ; exemples de consignes ;
+  « Partir de celle-ci » pour des variantes. Marche aussi sans image ouverte.
+- **Image > Mise à l'échelle d'après le contenu** : changer les proportions (carré vers 16:9…) sans écraser le
+  sujet : les zones sans détails (ciel, mur, fond uni) s'étirent ou se tassent. Formats rapides, protection de la
+  sélection, force réglable, aperçu. Tous les calques suivent (masques et sélection aussi).
+- **IA > Supprimer les personnes** : l'IA (SAM 3.1) trouve chaque personne ; une fenêtre montre les personnes
+  trouvées (cases, clic sur l'image), le sujet principal est décoché au départ ; puis Effacer reconstruit le fond,
+  ou « Seulement sélectionner » pour compléter la sélection à la main.
+- **IA > Retouche portrait** : l'IA trouve le visage, les yeux, les dents ; peau lissée (contours, cils, cheveux
+  et grain de la peau gardés), yeux éclaircis, dents blanchies ; quatre curseurs, aperçu en direct.
+- **Calque > Harmoniser avec l'arrière-plan** : un objet collé prend la lumière de la photo autour (noirs et
+  blancs, couleur de la lumière), bord adouci ; aperçu en direct.
+- **Panneau ACTIONS** (comme Photoshop) : enregistrer une suite de réglages, filtres, changements de taille et
+  rotations, puis la rejouer d'un clic (une seule étape d'Annuler) ; exporter / importer en .json ; une action peut
+  aussi traiter tout un dossier dans **Fichier > Traitement par lot**.
+- **Fichier > Imprimer** (Ctrl+P) : imprimante, papier (A4, A5, A3, Letter, 10 × 15, 13 × 18, 20 × 30 cm),
+  orientation automatique, remplir la page / taille réelle / largeur choisie, marges, copies, aperçu de la page,
+  avertissement si l'image sera floue.
+- **Fichiers RAW** des appareils photo (Canon .CR2 / .CR3, Nikon .NEF, Sony .ARW, .DNG, Fujifilm .RAF, Olympus
+  .ORF, Panasonic .RW2…) : ouverts directement (développés avec la balance des blancs de l'appareil), aussi dans le
+  Traitement par lot ; Enregistrer ne remplace jamais le RAW. Bibliothèque rawpy (MIT) avec LibRaw (LGPL-2.1).
 
 ## Corrections
 

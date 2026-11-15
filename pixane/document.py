@@ -26,7 +26,8 @@ from .composition import (FORMAT_MASQUE, MODE_ORA, MODES, arbre, masque_depuis, 
 from .langue import tr
 from .styles import Style
 from .texte import Texte, nom_calque, rendre
-from . import calque_forme, calque_pinceau
+from . import calque_forme, calque_pinceau, calque_remplissage
+from .raw import filtre as filtre_raw
 from .transformation import redimensionner
 
 COULEUR_SELECTION = QColor(255, 40, 40)
@@ -34,7 +35,7 @@ FORMAT_IMAGE = QImage.Format_RGBA8888
 FORMAT_SELECTION = QImage.Format_ARGB32_Premultiplied
 FORMAT_CALQUE = QImage.Format_ARGB32_Premultiplied
 
-EXTENSIONS_LECTURE = "*.pixane *.jpg *.jpeg *.png *.tif *.tiff *.webp *.bmp *.ora *.psd"
+EXTENSIONS_LECTURE = "*.pixane *.jpg *.jpeg *.png *.tif *.tiff *.webp *.bmp *.ora *.psd " + filtre_raw()
 EXTENSIONS_CALQUES = (".pixane", ".ora", ".psd")    # formats qui gardent les calques
 
 
@@ -118,6 +119,9 @@ class Calque:
     pinceau: object = None
     # calque de forme modifiable (calque_forme.Forme) : valable tant que `image` est son dessin
     forme: object = None
+    # calque de remplissage (calque_remplissage.Remplissage : couleur, dégradé, motif) : valable tant que `image`
+    # est son dessin
+    remplissage: object = None
     # masque d'écrêtage (comme Photoshop, Ctrl+Alt+G) : le calque ne se voit que là où le calque juste en dessous
     # (sa base) a des pixels, par exemple une photo dans les lettres d'un texte
     ecretage: bool = False
@@ -134,7 +138,11 @@ class Calque:
 
 def _pinceau_par(c: Calque, t: QTransform, W: int, H: int) -> Calque | None:
     """Calque de pinceau (ou de forme) passé par t (déplacé, redimensionné, tourné…) : ses traits sont redessinés,
-    il reste modifiable. None si ce n'est ni un calque de pinceau ni un calque de forme."""
+    il reste modifiable. None si ce n'est ni un calque de pinceau ni un calque de forme. Un calque de remplissage
+    couvre toute la feuille : il est redessiné à la nouvelle taille (son masque, lui, suit la transformation)."""
+    r = calque_remplissage.valide(c)
+    if r is not None:
+        return calque_remplissage.calque(c, r, W, H)
     f = calque_forme.valide(c)
     if f is not None:
         return calque_forme.calque(c, f.transforme(t), W, H)
@@ -144,7 +152,8 @@ def _pinceau_par(c: Calque, t: QTransform, W: int, H: int) -> Calque | None:
 
 def vectoriel(c) -> bool:
     """Calque de pinceau ou de forme encore modifiable (ses pixels sont redessinés d'après son tracé)."""
-    return calque_pinceau.valide(c) is not None or calque_forme.valide(c) is not None
+    return (calque_pinceau.valide(c) is not None or calque_forme.valide(c) is not None
+            or calque_remplissage.valide(c) is not None)
 
 
 def rect_entier(c: Calque) -> QRect:
@@ -604,6 +613,12 @@ class Document(QObject):
             from .psd import lire_resolution_psd
             doc.dpi = lire_resolution_psd(chemin) or 72.0
             return doc
+        from .raw import developper, est_raw
+        if est_raw(chemin):                       # RAW d'appareil photo : développé par LibRaw
+            rgb, exif = developper(chemin)
+            doc = cls(qimage_rgb(rgb), chemin, exif, None)
+            doc.dpi = 300.0
+            return doc
         if chemin.suffix.lower() in EXTENSIONS_CALQUES:
             doc = cls(chemin=chemin, calques=lire_ora(chemin))
             infos = lire_infos_ora(chemin)
@@ -1053,6 +1068,45 @@ class Document(QObject):
         sel = self.selection.scaled(W, H, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
         return self.etat_avec(tuple(nouveaux), self.actif, sel.convertToFormat(FORMAT_SELECTION))
 
+    def cartes_echelle_contenu(self, W: int, H: int, proteger: bool = False, force: float = 1.0):
+        """Cartes de la mise à l'échelle d'après le contenu (voir echelle_contenu) ; proteger : la sélection ne doit
+        pas être déformée."""
+        from . import echelle_contenu
+        rgb = tableau(self.image)[..., :3]
+        prot = masque(self.selection).astype(np.float32) / 255 if proteger else None
+        return echelle_contenu.cartes(rgb, W, H, prot, force)
+
+    def etat_echelle_contenu(self, W: int, H: int, proteger: bool = False, force: float = 1.0, cartes=None):
+        """Image > Mise à l'échelle d'après le contenu : nouvelles proportions, le sujet garde les siennes. Tous les
+        calques suivent la même déformation (masques et sélection aussi) ; textes, formes et traits de pinceau
+        deviennent des pixels ; un calque de remplissage est redessiné."""
+        from .echelle_contenu import deformer
+        cx, cy = cartes if cartes is not None else self.cartes_echelle_contenu(W, H, proteger, force)
+        w, h = self.taille()
+
+        def pixels(img: QImage) -> QImage:
+            if img.width() != w or img.height() != h:
+                img = img.scaled(w, h, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+            fmt = img.format()
+            a = tableau(img.convertToFormat(FORMAT_IMAGE))
+            return qimage_rgba(deformer(a, cx, cy)).convertToFormat(fmt)
+
+        nouveaux = []
+        for c in self.calques:
+            r = calque_remplissage.valide(c)
+            base = replace(c, texte=None, pinceau=None, forme=None, remplissage=None, hors=None, hors_x=0, hors_y=0,
+                           origine=None)
+            if r is not None:
+                n = calque_remplissage.calque(base, r, W, H)
+            else:
+                n = replace(base, image=pixels(c.image))
+            if c.masque is not None:
+                n = replace(n, masque=masque_depuis(deformer(masque_tableau(c.masque), cx, cy)))
+            nouveaux.append(n)
+        nouveaux = _styles_a_l_echelle(nouveaux, ((W / w) * (H / h)) ** 0.5)
+        sel = _masque_vers_selection(deformer(masque(self.selection), cx, cy))
+        return self.etat_avec(tuple(nouveaux), self.actif, sel.convertToFormat(FORMAT_SELECTION))
+
     # ---------------------------------------------------------- sélection : agrandir, réduire, adoucir
     def selection_modifiee(self, mode: str, px: float) -> QImage:
         """Nouvelle sélection : « agrandir » / « reduire » de px pixels (bord arrondi), ou « adoucir » (flou de px)."""
@@ -1171,6 +1225,19 @@ class Document(QObject):
         calques[index] = calque_forme.calque(calques[index], f, *self.taille())
         return self.etat_avec(calques, index)
 
+    def etat_remplissage(self, index: int, r) -> tuple:
+        """Le calque `index` devient (ou reste) le calque de remplissage r, redessiné."""
+        calques = list(self.calques)
+        calques[index] = calque_remplissage.calque(calques[index], r, *self.taille())
+        return self.etat_avec(calques, index)
+
+    def etat_nouveau_remplissage(self, r, nom: str):
+        """Nouveau calque de remplissage au-dessus du calque choisi ; avec une sélection, elle devient son masque
+        (comme Photoshop et comme les calques de réglage)."""
+        w, h = self.taille()
+        m = None if self.selection_vide() else masque_depuis(masque(self.selection))
+        return self.inserer(calque_remplissage.calque(Calque(self.nom_libre(nom), image_vide(w, h), masque=m), r, w, h))
+
     def etat_nouvelle_forme(self, f, nom: str):
         """Nouveau calque de forme au-dessus du calque choisi."""
         w, h = self.taille()
@@ -1206,7 +1273,7 @@ class Document(QObject):
 
     def etat_en_pixels(self, index: int):
         """Le calque de texte (de pinceau, de forme) devient un calque d'image ordinaire (plus modifiable)."""
-        return self.etat_calque_modifie(index, texte=None, pinceau=None, forme=None)
+        return self.etat_calque_modifie(index, texte=None, pinceau=None, forme=None, remplissage=None)
 
     def place_nouveau(self) -> tuple[int, str | None]:
         """Où poser un nouveau calque : au-dessus du calque choisi, dans son groupe (ou en haut du groupe choisi
@@ -1698,6 +1765,8 @@ def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False, reper
                     a["pixane-pinceau"] = json.dumps(c.pinceau.vers_dict(), ensure_ascii=False)
                 if calque_forme.valide(c) is not None:
                     a["pixane-forme"] = json.dumps(c.forme.vers_dict(), ensure_ascii=False)
+                if calque_remplissage.valide(c) is not None:
+                    a["pixane-remplissage"] = json.dumps(c.remplissage.vers_dict(), ensure_ascii=False)
                 if c.style is not None and (c.style.effets or c.style.remplissage < 1):
                     a["pixane-style"] = c.style.vers_json()
                 if c.reglage is not None:
@@ -1806,6 +1875,10 @@ def lire_ora(chemin: Path) -> list[Calque]:
                     forme = json_ou_rien(_attr(e, "forme"), lambda t: calque_forme.Forme.depuis_dict(json.loads(t)))
                     if forme is not None and texte is None and pinceau is None:   # calque de forme : modifiable
                         c = replace(c, forme=replace(forme, rendu=c.image))
+                    rempl = json_ou_rien(_attr(e, "remplissage"),
+                                         lambda t: calque_remplissage.Remplissage.depuis_dict(json.loads(t)))
+                    if rempl is not None and texte is None and pinceau is None and forme is None:
+                        c = replace(c, remplissage=replace(rempl, rendu=c.image))
                     src, pose = _attr(e, "origine"), json_ou_rien(_attr(e, "origine-pose"), json.loads)
                     if src and isinstance(pose, list) and len(pose) == 5:
                         try:

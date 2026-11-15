@@ -264,6 +264,8 @@ LIVRES = [
     Composant("Pillow", "https://python-pillow.github.io", "Lecture et écriture des images", "MIT-CMU"),
     Composant("websocket-client", "https://github.com/websocket-client/websocket-client",
               "Dialogue avec le moteur IA", "Apache-2.0"),
+    Composant("rawpy / LibRaw", "https://github.com/letmaik/rawpy", "Ouvrir les fichiers RAW des appareils photo",
+              "MIT (LibRaw : LGPL-2.1 ou CDDL-1.0)"),
 ]
 TELECHARGES = [
     Composant("ComfyUI", "https://github.com/Comfy-Org/ComfyUI", "Moteur IA (programme séparé)", "GPL-3.0"),
@@ -279,7 +281,7 @@ TELECHARGES = [
     Composant("FLUX.1 Fill [dev]", "https://huggingface.co/black-forest-labs/FLUX.1-Fill-dev",
               "Effacer, remplir, agrandir", "FLUX.1 [dev] Non-Commercial"),
     Composant("FLUX.1 [schnell]", "https://huggingface.co/black-forest-labs/FLUX.1-schnell",
-              "Upscale net (facultatif)", "Apache-2.0"),
+              "Upscale net, créer une image d'après un texte (facultatif)", "Apache-2.0"),
     Composant("FLUX.1 Kontext [dev]", "https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev",
               "Restaurer une vieille photo (facultatif)", "FLUX.1 [dev] Non-Commercial"),
     Composant("T5, CLIP, VAE", "https://huggingface.co/comfyanonymous/flux_text_encoders",
@@ -288,7 +290,8 @@ TELECHARGES = [
     Composant("RealESRGAN x4plus", "https://github.com/xinntao/Real-ESRGAN", "Upscale", "BSD-3-Clause"),
     Composant("SCUNet", "https://github.com/cszn/SCUNet", "Réduire le bruit", "Apache-2.0"),
     Composant("BiRefNet", "https://github.com/ZhengPeng7/BiRefNet", "Sujet, arrière-plan", "MIT"),
-    Composant("SAM 3.1", "https://huggingface.co/facebook/sam3.1", "Sélection d'objet, sélection rapide",
+    Composant("SAM 3.1", "https://huggingface.co/facebook/sam3.1",
+              "Sélection d'objet, sélection rapide, ciel, supprimer les personnes, retouche portrait",
               "SAM License (Meta)"),
 ]
 

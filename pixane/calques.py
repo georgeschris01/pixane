@@ -15,7 +15,7 @@ from PySide6.QtGui import QColor, QCursor, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGraphicsOpacityEffect, QHBoxLayout, QInputDialog,
                                QLabel, QListWidget, QListWidgetItem, QMenu, QSlider, QToolButton, QVBoxLayout, QWidget)
 
-from . import ajustements, calque_forme, calque_pinceau
+from . import ajustements, calque_forme, calque_pinceau, calque_remplissage
 from .composition import GROUPES_MODES, MODES, noms_modes, parents
 from .document import Document
 from .langue import tr
@@ -144,6 +144,8 @@ class LigneCalque(QWidget):
             details.append(tr("pinceau modifiable"))
         elif calque_forme.valide(c) is not None:
             details.append(tr("forme modifiable"))
+        elif calque_remplissage.valide(c) is not None:
+            details.append(tr("remplissage"))
         if ecrete:
             details.append(tr("écrêté"))
         if c.style is not None and not c.style.vide():
@@ -242,7 +244,7 @@ class PanneauCalques(QWidget):
                                    self.nouveau_groupe),
                                   ("masque", tr("Ajouter un masque (d'après la sélection s'il y en a une)"),
                                    self.ajouter_masque),
-                                  ("reglage", tr("Nouveau calque de réglage"), self._menu_reglage),
+                                  ("reglage", tr("Nouveau calque de remplissage ou de réglage"), self._menu_reglage),
                                   ("dupliquer", tr("Dupliquer le calque"), self.dupliquer),
                                   ("style", tr("Style du calque (ombre, contour, lueur…)"), self.style_demande.emit),
                                   ("monter", tr("Monter le calque"), lambda: self.deplacer(+1)),
@@ -563,7 +565,8 @@ class PanneauCalques(QWidget):
                     menu.addAction(tr("Ajouter un masque (d'après la sélection s'il y en a une)"),
                                    lambda: self.ajouter_masque())
                 if (c.texte is not None or calque_pinceau.valide(c) is not None
-                        or calque_forme.valide(c) is not None) and not c.verrou:
+                        or calque_forme.valide(c) is not None or calque_remplissage.valide(c) is not None) \
+                        and not c.verrou:
                     menu.addAction(tr("Convertir en image"), lambda: self.demande.emit(
                         doc.etat_en_pixels(doc.actif), tr("Convertir en image")))
                 menu.addSeparator()
@@ -707,6 +710,10 @@ class PanneauCalques(QWidget):
 
     def _menu_reglage(self):
         menu = QMenu(self)
+        # comme Photoshop : les calques de remplissage d'abord, puis les calques de réglage
+        for g, nom in calque_remplissage.noms_genres().items():
+            menu.addAction(nom + "…", lambda *_, g=g: self.reglage_demande.emit("remplissage:" + g))
+        menu.addSeparator()
         for t in ajustements.TYPES:
             menu.addAction(ajustements.nom(t), lambda *_, t=t: self.reglage_demande.emit(t))
         b = self.boutons["reglage"]
@@ -749,8 +756,9 @@ class PanneauCalques(QWidget):
         largeur = ligne.nom.fontMetrics().horizontalAdvance(ligne.nom.text()) + 10 if ligne is not None else 0
         if p is not None and 0 <= p.y() < ligne.nom.height() and p.x() < largeur:
             self.renommer()
-        elif self.doc and self.doc.calque_actif.reglage is not None:
-            self.reglage_demande.emit("")
+        elif self.doc and (self.doc.calque_actif.reglage is not None
+                           or calque_remplissage.valide(self.doc.calque_actif) is not None):
+            self.reglage_demande.emit("")             # calque de réglage ou de remplissage : sa fenêtre
         elif self.doc and not self.doc.calque_actif.groupe:
             self.style_demande.emit()
 

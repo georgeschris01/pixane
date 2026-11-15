@@ -187,15 +187,27 @@ def traiter_une(chemin: Path, sortie: Path, opts: dict, moteur=None, annuler=Non
     """Une photo du lot : ouvrir, (IA), réglage auto, taille, format. -> chemin écrit."""
     from .document import FORMAT_CALQUE, pil_vers_qimage, qimage_vers_pil
     from .reglages_image import ajuster, auto
-    with Image.open(chemin) as im:
-        exif = im.info.get("exif")
-        icc = im.info.get("icc_profile")
-        im = ImageOps.exif_transpose(im)
-        im = im.convert("RGBA")
+    from .raw import developper, est_raw
+    if est_raw(chemin):                                # RAW d'appareil photo : développé par LibRaw
+        rgb, exif = developper(chemin)
+        icc = None
+        im = Image.fromarray(rgb, "RGB").convert("RGBA")
+    else:
+        with Image.open(chemin) as im:
+            exif = im.info.get("exif")
+            icc = im.info.get("icc_profile")
+            im = ImageOps.exif_transpose(im)
+            im = im.convert("RGBA")
     if opts.get("upscale") and moteur is not None:
         im = _ia(moteur, im, "upscale", opts, annuler)
     if opts.get("arriere_plan") and moteur is not None:
         im = _ia(moteur, im, "arriere_plan", opts, annuler)
+    if opts.get("action"):                             # action enregistrée (panneau Actions)
+        from .actions_auto import appliquer_tableau
+        a = np.asarray(im.convert("RGBA"))
+        for e in opts["action"]["etapes"]:
+            a = appliquer_tableau(a, e)
+        im = Image.fromarray(np.ascontiguousarray(a), "RGBA")
     if opts.get("auto"):
         q = pil_vers_qimage(im).convertToFormat(FORMAT_CALQUE)
         q = ajuster(q, auto(q), None)
@@ -273,6 +285,15 @@ class DialogueLot(QDialog):
         self.auto = QCheckBox(tr("Réglage automatique (luminosité, contraste, température)"))
         self.auto.setChecked(r.value("lot_auto", "false") == "true")
         form.addRow("", self.auto)
+        from .actions_auto import charger
+        self.action = QComboBox()
+        self.action.addItem(tr("(aucune)"), None)
+        for a in charger():
+            self.action.addItem(a["nom"], a)
+        i = self.action.findText(r.value("lot_action", "") or "")
+        self.action.setCurrentIndex(max(0, i))
+        self.action.setToolTip(tr("Action enregistrée dans le panneau Actions, jouée sur chaque photo"))
+        form.addRow(tr("Action"), self.action)
         self.upscale = QCheckBox(tr("Upscale IA rapide ×2 (RealESRGAN)"))
         self.upscale.setChecked(r.value("lot_upscale", "false") == "true")
         form.addRow(tr("IA"), self.upscale)
@@ -328,11 +349,12 @@ class DialogueLot(QDialog):
         return {"cote": self.cote.value() if self.cote_case.isChecked() else None, "auto": self.auto.isChecked(),
                 "upscale": self.upscale.isChecked(), "facteur": 2, "arriere_plan": self.fond.isChecked(),
                 "format": self.format.currentData(), "qualite": self.qualite.value(),
-                "suffixe": self.suffixe.text().strip()}
+                "suffixe": self.suffixe.text().strip(), "action": self.action.currentData()}
 
     def photos(self) -> list[Path]:
         src = Path(self.source.text())
-        return sorted(p for p in src.iterdir() if p.is_file() and p.suffix.lower() in EXTENSIONS) \
+        from .raw import EXTENSIONS_RAW
+        return sorted(p for p in src.iterdir() if p.is_file() and p.suffix.lower() in EXTENSIONS + EXTENSIONS_RAW) \
             if src.is_dir() else []
 
     def lancer(self):
@@ -356,8 +378,8 @@ class DialogueLot(QDialog):
             return
         photos = self.photos()
         if not photos:
-            QMessageBox.information(self, self.windowTitle(), tr("Aucune photo (JPG, PNG, TIFF, WebP, BMP) dans "
-                                                                 "ce dossier."))
+            QMessageBox.information(self, self.windowTitle(), tr("Aucune photo (JPG, PNG, TIFF, WebP, BMP, RAW) "
+                                                                 "dans ce dossier."))
             return
         r = self.f.reglages
         for cle, v in (("lot_source", str(src)), ("lot_sortie", str(dst)),
@@ -365,7 +387,8 @@ class DialogueLot(QDialog):
                        ("lot_cote", self.cote.value()), ("lot_auto", "true" if opts["auto"] else "false"),
                        ("lot_upscale", "true" if opts["upscale"] else "false"),
                        ("lot_fond", "true" if opts["arriere_plan"] else "false"), ("lot_format", opts["format"]),
-                       ("lot_qualite", opts["qualite"]), ("lot_suffixe", opts["suffixe"])):
+                       ("lot_qualite", opts["qualite"]), ("lot_suffixe", opts["suffixe"]),
+                       ("lot_action", self.action.currentText() if opts["action"] else "")):
             r.setValue(cle, v)
         dst.mkdir(parents=True, exist_ok=True)
         self.barre.setRange(0, len(photos))

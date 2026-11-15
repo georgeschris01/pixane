@@ -45,9 +45,13 @@ def textes_du_code() -> set[str]:
                             cles.add(c.elts[1].value)
             # consignes de l'IA : exemples (nom, modèle)
             if f.name == "consigne.py" and isinstance(n, ast.Assign) and any(
-                    getattr(t, "id", "") == "EXEMPLES" for t in n.targets):
+                    getattr(t, "id", "") in ("EXEMPLES", "EXEMPLES_CREER") for t in n.targets):
                 for c in n.value.elts:
                     cles.update(e.value for e in c.elts)
+            # formats de « Créer une image » : (nom, largeur, hauteur)
+            if f.name == "consigne.py" and isinstance(n, ast.Assign) and any(
+                    getattr(t, "id", "") == "FORMATS_CREER" for t in n.targets):
+                cles.update(c.elts[0].value for c in n.value.elts)
             # bibliothèque : noms des groupes de base (familles), des styles prêts et des pinceaux simples
             if f.name == "bibliotheque.py":
                 if isinstance(n, ast.Assign):

@@ -83,6 +83,10 @@ Layer names that already exist keep their original language.
 - **File > Open** (Ctrl+O): JPG, PNG, TIFF, WebP, BMP, and the **.pixane**, **.ora** and **.psd** (Photoshop)
   layered files.
   The photo is rotated according to the camera orientation.
+- Camera **RAW files** (Canon .CR2 / .CR3, Nikon .NEF, Sony .ARW, .DNG, Fujifilm .RAF, Olympus .ORF, Panasonic
+  .RW2, Pentax .PEF…): they open like a photo, developed with the camera's white balance (LibRaw library); then
+  retouch with the adjustments (Levels, Curves, Balance…). The RAW file is never replaced: **Save** suggests
+  another file (JPG, or .pixane if there are layers).
 - **Save** (Ctrl+S), **Save as** (Ctrl+Shift+S):
   - **.pixane** (Pixane project): Pixane's own format. Keeps **everything**: layers (names, order, visibility,
     opacity, lock), **editable texts** and **editable layer styles**. Suggested automatically when the image has several layers or a text.
@@ -137,8 +141,17 @@ Layer names that already exist keep their original language.
     WebP, PNG) and quality, **Add to name** (e.g. `_web`).
   - A bar shows progress; **Stop** finishes the current photo then stops. A photo that causes a problem is listed
     at the end; the others are done.
+  - **Action**: an action recorded in the **Actions** panel (see chapter 9) is played on each photo.
+  - RAW files in the folder are processed too.
   - Safety: if the results would go into the same folder under the same name, Pixane refuses (the originals
     would be replaced).
+- **File > Print…** (Ctrl+P): the visible image (all layers), with a **page preview**.
+  - **Printer**, **Paper** (A4, A5, A3, Letter, 10 × 15, 13 × 18, 20 × 30 cm), **Orientation** (automatic: like
+    the image), **Margins**, **Copies**.
+  - **Size**: *Fill the page* (within the margins), *Actual size* (from the image resolution) or *Chosen width* in
+    cm.
+  - Pixane shows the size on the sheet and the dots per inch; under 150 it warns that the print may be blurry
+    (AI > Upscale can help).
 - **File > New image…** (Ctrl+N): an empty image, as in Photoshop. A **preview** shows the shape of the sheet,
   its background and the guides (bleed, safe area).
   - **Ready-made formats** (on the left): **album covers** (CD, 12-inch and 7-inch vinyl, 3000 × 3000 px for
@@ -562,6 +575,36 @@ adds it). A few seconds.
 - **Select subject** (Ctrl+Alt+S, Select menu): selects the subject without erasing anything, for example to
   adjust it (Ctrl+U), or *Invert* (Ctrl+Shift+I) to work on the background.
 
+### Create an image from text (AI menu)
+Describe the image (subject, colours, light, style): **Flux Schnell** creates it, about **30 seconds** per
+proposal. Example prompts in the list (abstract background, landscape, texture, illustration, portrait); as with
+*Edit with an instruction*, a prompt in another language can be translated into English on your PC.
+- **Result**: *New image* (square for an album cover or social media, 4:3, 3:4, 16:9, 9:16) or *New layer in the
+  open image*, at its size (for example a background behind a cut-out).
+- Also works **with no image open**: a new image is created.
+- In the result window, **Start from this one** gives variants of the chosen proposal.
+- The AI is bad at writing text: add text afterwards with the Text tool.
+- Flux Schnell model (Apache-2.0), installed with the AI engine (*Flux Schnell* box).
+
+### Remove people (AI menu)
+The AI (**SAM 3.1**) finds **each person** in the photo. A window shows them: **ticked** people (in red) will be
+erased; **click a person** in the image (or their box) to tick or untick them. At first everyone is ticked except
+the **main subject** (the person clearly larger than the others).
+- **Erase the ticked people**: they are selected (with a small margin for shadows and hair), then **Erase**
+  rebuilds the background behind them (the usual result window).
+- **Only select**: to complete the selection, for example a person the AI missed (**Object selection** tool,
+  Shift + click), before running **AI > Erase**.
+
+### Portrait retouch (AI menu)
+The AI (**SAM 3.1**) finds the face, neck, eyes, eyebrows, lips and teeth (a few seconds), then an adjustment
+window opens, with a **live preview** on the photo:
+- **Smooth skin**: softens spots, redness and fine lines; outlines (nose, eyes), eyelashes and strands of hair stay
+  sharp.
+- **Keep skin texture**: puts the fine grain back, to avoid a "plastic" look.
+- **Brighten eyes**: more sparkle and sharpness in the eyes.
+- **Whiten teeth**: less yellow, a little brighter.
+Applies to the chosen layer (inside the selection if there is one); every face found is retouched.
+
 ### Reduce noise, Sharpen, Restore an old photo (AI menu)
 These three actions work on the visible image; if there is a **selection**, only its inside changes. Like the other
 AI actions, the result goes into the chosen layer (Ctrl+Z undoes it).
@@ -714,6 +757,26 @@ Image adjustments) to **everything below it**, without touching the pixels: you 
   adjustment layer's mask (the adjustment only applies there).
 - Inside a group, it only adjusts the group's layers below it.
 - Kept as is in .pixane; in .ora and .psd it becomes an image layer (the result).
+
+### Fill layers
+**Layer > New fill layer** (or the Layers panel's **Adjustment** button, at the top of the list): a layer that
+covers the whole sheet with a **solid colour**, a **gradient** or a **pattern**, and stays **editable**
+(double-click it).
+- **Gradient**: linear, radial, angle, reflected or diamond style; **Angle**, **Scale**, **Invert**. At first: from
+  the paint colour to white.
+- **Pattern**: a pattern from the library, at the scale you want.
+- If there is a selection, it becomes the layer's **mask** (the fill only shows there).
+- It is redrawn when the sheet changes size (image size, canvas size, crop…); kept in .pixane; in .ora and .psd it
+  becomes an image layer. *Convert to image* (right-click) freezes it.
+
+### Harmonize a composite (Layer > Harmonize with the background…)
+An object pasted from another photo often clashes: colder light, weaker blacks… Choose its layer (the cut-out
+object, with transparency around it, above the photo): it takes on the light of the photo around it.
+- **Light (blacks and whites)**: the same blacks and whites as the surrounding photo.
+- **Light colour**: the same light tint (measured on the bright parts: a red shirt placed on grass does not turn
+  green).
+- **Soften the edge**: a softer edge, towards the inside of the object.
+Live preview, one step in Undo.
 
 ### Layer style: shadows, outline, glow, bevel… (Ctrl+Alt+F)
 **Effects added to the layer**, always editable: the layer's pixels are not touched. To open it: **double-click** a
@@ -884,6 +947,10 @@ touching the photo).
 - **Colour**: swatch in the top bar. **Alt+click** on the photo picks the colour at that spot (eyedropper).
 - **Size** (or `[` and `]`), **Opacity** (100% fully covers, less lets what is below show through) and **Hardness**
   (100% sharp edge, 0% very soft edge).
+- **Swatches**: the **SWATCHES** panel (tab next to History) keeps your colours: **one click** on a colour makes it
+  the paint colour. **+** adds the paint colour, **−** removes the chosen one, right-click: *Rename*, *Remove*;
+  **…**: **Import** Photoshop (.aco) or GIMP (.gpl) swatches, **Export** as .aco, **Restore the starting colours**.
+  The swatches also appear under "Custom colors" in the colour windows.
 - Going over the same spot during one stroke does not darken the colour; a new stroke does.
 
 #### Editable brush layer
@@ -1145,6 +1212,16 @@ small disc; very bright points become **round highlights**: set their strength a
 strength, centre size, softness, round). Same behaviour as adjustments: live preview, selected layer, inside the
 selection if there is one, one step in Undo. They also work on a mask.
 
+### Actions (ACTIONS panel)
+As in Photoshop: **record** a series of operations, then **replay** it in one click on other photos.
+- **● Record**: give a name, then do your work: **adjustments** (Image > Adjustments), **filters**, **image size**
+  (kept as a percentage when the proportions do not change: it works on photos of any size), **rotations** and
+  **flips** are added to the action. **■ Stop** ends it.
+- **▶ Play** (or double-click): the action replays on the open photo, with no window, with the same settings;
+  **a single step** in Undo.
+- **…**: *Rename*, *Delete the action or step*, *Export* / *Import* actions (.json, to keep or share them).
+- **File > Batch processing**: choose an action to play it on **a whole folder**.
+
 ---
 
 ## 10. Image menu: size, rotation, transform
@@ -1165,6 +1242,13 @@ selection if there is one, one step in Undo. They also work on a mask.
 - **Image size…** (Ctrl+Alt+I): in pixels or %, proportions kept (tick box), quick buttons (for example 1920 px
   for screen and Internet). No AI: to enlarge with more detail, prefer Upscale. **Preview**: the centre of the
   image at 100%, before (left) and after (right), to judge sharpness.
+- **Content-aware scale…**: change the **proportions** (a square to 16:9, a landscape to 4:5…) **without squashing
+  the subject**: mostly the areas without detail (sky, wall, plain background) are stretched or compressed.
+  - **Width**, **Height**, or a quick **format** (1:1, 4:3, 3:2, 16:9, 3:4, 4:5, 9:16: the longest side is kept).
+  - **Protect the selection**: first select the subject (Select > Select subject): it is not distorted at all.
+  - **Content protection**: 0% = ordinary stretch, 100% = only areas without detail change.
+  - **Preview** of the result. All layers follow, masks and selection too; texts, shapes and brush strokes become
+    images (Ctrl+Z to undo).
 - **Rotate** 90° right, left or 180°, **Flip** horizontally or vertically: the whole image, all layers, lossless.
   Flipped texts become images; rotated ones stay editable.
 - **Rotate by an angle…**: the whole image rotates by the typed angle, **to the degree** (or tenth of a degree),
@@ -1228,6 +1312,7 @@ Everything can be undone with Ctrl+Z.
 | Ctrl+R, Ctrl+', Ctrl+;, Ctrl+Shift+; | Rulers, Grid, Guides, Snap |
 | Ctrl+W, Ctrl+Tab, Ctrl+Shift+Tab | Close photo, Next photo, Previous photo |
 | Ctrl+Alt+Shift+S, Ctrl+Alt+Shift+W | Export for web, Export as |
+| Ctrl+P | Print |
 | Arrows (Shift: x10) | Move the selection (selection tools) |
 | Ctrl+N, Ctrl+Alt+V | New image, New image from clipboard |
 | Ctrl+Alt+I, Ctrl+Alt+C | Image size, Canvas size |

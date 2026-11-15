@@ -42,6 +42,9 @@ class ActionsCalques:
         for t in ajustements.TYPES:
             self._action(sous, ajustements.nom(t) + "…", None, lambda *_, t=t: self.nouveau_calque_reglage(t),
                          f"a_cr_{t}")
+        sous = m_calque.addMenu(tr("Nouveau calque de remplissage"))
+        for g, texte in (("couleur", tr("Couleur unie…")), ("degrade", tr("Dégradé…")), ("motif", tr("Motif…"))):
+            self._action(sous, texte, None, lambda *_, g=g: self.nouveau_calque_remplissage(g), f"a_remplissage_{g}")
         self._action(m_calque, tr("Modifier le réglage…"), None, self.modifier_reglage, "a_modifier_reglage")
         m_calque.addSeparator()
         self._action(m_calque, tr("Nouveau groupe"), None, lambda: self.calques.nouveau_groupe(), "a_nouveau_groupe")
@@ -93,7 +96,7 @@ class ActionsCalques:
     def _actions_calques_doc(self) -> list:
         noms = [f"a_regl_{t}" for t in REGLAGES_PIXELS] + ["a_remplacer_couleur"]
         noms += [f"a_cr_{t}" for t in ajustements.TYPES] + [f"a_filtre_{t}" for t in filtres.FILTRES]
-        noms += ["a_fluidite"]
+        noms += ["a_fluidite", "a_harmoniser"]
         noms += ["a_taille_grille", "a_nouveau_repere", "a_effacer_reperes", "a_exporter_web"]
         noms += ["a_modifier_reglage", "a_nouveau_groupe", "a_grouper", "a_degrouper", "a_ecretage", "a_masque_blanc",
                  "a_masque_sel", "a_masque_cacher", "a_masque_cible", "a_masque_actif", "a_masque_inverser",
@@ -433,7 +436,7 @@ class ActionsCalques:
         return True
 
     def _dialogue_pixels(self, titre: str, panneau, neutres: dict, calcul, auto: bool = False,
-                         toujours: bool = False):
+                         toujours: bool = False, etape=None):
         """Réglage ou filtre appliqué dans les pixels du calque choisi (dans la sélection s'il y en a une), avec un
         aperçu en direct calculé en arrière-plan."""
         from .fenetre import CommandeEtat, Tache
@@ -494,7 +497,39 @@ class ActionsCalques:
                 QApplication.restoreOverrideCursor()
             apres = doc.etat_calque_modifie(index, image=img, texte=None)
             self.historique.push(CommandeEtat(doc, avant, apres, titre))
+            if etape is not None:                       # enregistrable dans une action (panneau Actions)
+                self.noter_action(etape(p))
         return ok
+
+    # ---------------------------------------------------------------- harmoniser un collage
+    def harmoniser(self):
+        """Calque > Harmoniser avec l'arrière-plan : l'objet du calque choisi (collé, détouré) prend la lumière de
+        la photo en dessous."""
+        from . import harmoniser as hm
+        from .document import fusionner
+        titre = tr("Harmoniser avec l'arrière-plan")
+        if not self._verifier_pixels(titre):
+            return
+        doc = self.doc
+        index = doc.actif
+        calque = tableau(doc.calque_actif.image.convertToFormat(FORMAT_IMAGE))
+        w, h = doc.taille()
+        dessous = [c for c in doc.calques[:index]]
+        fond = tableau(fusionner(dessous, w, h).convertToFormat(FORMAT_IMAGE)) if dessous else None
+        if fond is None or fond[..., 3].max() < 128 or calque[..., 3].min() > 250:
+            QMessageBox.information(self, titre, tr(
+                "Choisis le calque de l'objet collé (détouré, avec de la transparence autour), posé au-dessus de la "
+                "photo : il prendra la lumière de la photo qui l'entoure."))
+            return
+        ref = hm.mesures(hm.lab(fond[..., :3])[hm.reference(fond, calque[..., 3])])
+        depart = {k: int(self.reglages.value("harmoniser_" + k, v)) for k, v in hm.DEPART.items()}
+        panneau = hm.panneau_harmoniser()(depart, {})
+
+        def calcul(a, p):
+            for k, v in p.items():
+                self.reglages.setValue("harmoniser_" + k, v)
+            return hm.harmoniser(a, ref, p)
+        self._dialogue_pixels(titre, panneau, dict(hm.NEUTRES), calcul)
 
     # ---------------------------------------------------------------- réglages de couleur
     def reglage(self, type_: str):
@@ -507,7 +542,8 @@ class ActionsCalques:
         # Négatif, Seuil, Postérisation, Noir et blanc… changent l'image dès l'ouverture, sans toucher aux curseurs
         self._dialogue_pixels(titre, panneau, neutres,
                               lambda a, p: ajustements.appliquer_rgba(a, type_, p), auto=type_ == "niveaux",
-                              toujours=not ajustements.neutre(type_, neutres))
+                              toujours=not ajustements.neutre(type_, neutres),
+                              etape=lambda p: {"genre": "reglage", "type": type_, "params": p})
 
     def nouveau_calque_reglage(self, type_: str):
         """Calque de réglage : modifiable à tout moment (double-clic), sans toucher aux pixels."""
@@ -519,10 +555,63 @@ class ActionsCalques:
         if not self._editer_reglage(avant, ajustements.nom(type_), nouveau=True):
             self.doc.appliquer_etat(avant)
 
+    # ---------------------------------------------------------------- calques de remplissage
+    def nouveau_calque_remplissage(self, genre: str):
+        """Calque > Nouveau calque de remplissage : couleur unie, dégradé ou motif, modifiable (double-clic)."""
+        from . import calque_remplissage as cr
+        if not self.doc:
+            return
+        avant = self.doc.etat()
+        couleur = self.canevas.couleur_peinture
+        hexa = f"#{couleur.red():02x}{couleur.green():02x}{couleur.blue():02x}"
+        # comme Photoshop : la couleur de peinture ; dégradé de la couleur de peinture vers le blanc
+        from .degrades import deux_couleurs
+        r = cr.Remplissage(genre=genre, couleur="#ff" + hexa[1:],
+                           degrade=deux_couleurs(hexa, "#ffffff" if couleur.lightnessF() < 0.9 else "#000000"))
+        self.doc.appliquer_etat(self.doc.etat_nouveau_remplissage(r, cr.noms_genres()[genre]))
+        if not self._editer_remplissage(avant, nouveau=True):
+            self.doc.appliquer_etat(avant)
+
+    def _editer_remplissage(self, avant, nouveau: bool = False) -> bool:
+        from . import calque_remplissage as cr
+        from .dialogue_remplissage import DialogueRemplissage
+        from .fenetre import CommandeEtat
+        doc = self.doc
+        index = doc.actif
+        depart = cr.valide(doc.calque_actif)
+        if depart is None:
+            return False
+        modifie = doc.modifie
+        d = DialogueRemplissage(depart, self, tr("Calque de remplissage « {nom} » : double-clic dessus pour y "
+                                                 "revenir.", nom=doc.calque_actif.nom))
+        d.adjustSize()
+        coin = self.mapToGlobal(self.rect().topRight())
+        d.move(coin.x() - d.width() - 20, coin.y() + 110)
+        etat_depart = doc.etat()
+
+        def montrer(r):
+            doc.appliquer_etat(doc.etat_remplissage(index, r))
+        d.change.connect(montrer)
+        ok = d.exec() == QDialog.Accepted
+        r = d.r
+        d.deleteLater()
+        doc.appliquer_etat(etat_depart)
+        doc.modifie = modifie
+        if not ok:
+            return False
+        apres = doc.etat_remplissage(index, r)
+        titre = tr("Nouveau calque de remplissage") if nouveau else tr("Modifier le remplissage")
+        self.historique.push(CommandeEtat(doc, avant, apres, titre))
+        return True
+
     def modifier_reglage(self):
         if not self.doc:
             return
         c = self.doc.calque_actif
+        from . import calque_remplissage
+        if calque_remplissage.valide(c) is not None:
+            self._editer_remplissage(self.doc.etat())
+            return
         if c.reglage is None:
             QMessageBox.information(self, tr("Modifier le réglage"), tr("Choisis d'abord un calque de réglage dans "
                                                                          "le panneau Calques."))
@@ -653,4 +742,5 @@ class ActionsCalques:
         neutres = filtres.defauts(type_)
         panneau = PanneauFiltre(type_, neutres, {})
         fonction = filtres.FONCTIONS[type_]
-        self._dialogue_pixels(titre, panneau, neutres, lambda a, p: fonction(a, p), toujours=True)
+        self._dialogue_pixels(titre, panneau, neutres, lambda a, p: fonction(a, p), toujours=True,
+                              etape=lambda p: {"genre": "filtre", "type": type_, "params": p})

@@ -984,7 +984,10 @@ class Canevas(PlumeMixin, QWidget):
 
     @staticmethod
     def texte_devient_image(c) -> str:
-        from . import calque_forme
+        from . import calque_forme, calque_remplissage
+        if calque_remplissage.valide(c) is not None:
+            return tr("Le calque de remplissage « {nom} » devient une image : il n'est plus modifiable "
+                      "(Ctrl+Z pour revenir).", nom=c.nom)
         if calque_forme.valide(c) is not None:
             return tr("Le calque de forme « {nom} » devient une image : sa forme n'est plus modifiable "
                       "(Ctrl+Z pour revenir).", nom=c.nom)

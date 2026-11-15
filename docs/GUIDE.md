@@ -85,6 +85,10 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 - **Fichier > Ouvrir** (Ctrl+O) : JPG, PNG, TIFF, WebP, BMP, et les fichiers à calques **.pixane**, **.ora** et
   **.psd** (Photoshop).
   La photo est redressée selon son orientation d'appareil.
+- **Fichiers RAW** des appareils photo (Canon .CR2 / .CR3, Nikon .NEF, Sony .ARW, .DNG, Fujifilm .RAF, Olympus
+  .ORF, Panasonic .RW2, Pentax .PEF…) : ils s'ouvrent comme une photo, développés avec la balance des blancs de
+  l'appareil (bibliothèque LibRaw) ; retouchez ensuite avec les réglages (Niveaux, Courbes, Balance…). Le RAW
+  n'est jamais remplacé : **Enregistrer** propose un autre fichier (JPG, ou .pixane s'il y a des calques).
 - **Enregistrer** (Ctrl+S), **Enregistrer sous** (Ctrl+Maj+S) :
   - **.pixane** (projet Pixane) : le format de Pixane. Garde **tout** : calques (noms, ordre, visibilité, opacité,
     verrou), **textes modifiables** et **styles de calque modifiables**. Proposé d'office quand l'image a plusieurs calques ou un texte.
@@ -142,8 +146,17 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
     **Format** (garder, JPEG, WebP, PNG) et qualité, **Ajouter au nom** (ex. `_web`).
   - Une barre montre l'avancement ; **Arrêter** termine la photo en cours puis s'arrête. Une photo qui pose
     problème est signalée à la fin, les autres sont faites.
+  - **Action** : une action enregistrée dans le panneau **Actions** (voir chapitre 9) est jouée sur chaque photo.
+  - Les fichiers RAW du dossier sont traités aussi.
   - Sécurité : si les résultats iraient dans le même dossier sous le même nom, Pixane refuse (les originaux
     seraient remplacés).
+- **Fichier > Imprimer…** (Ctrl+P) : l'image visible (tous les calques), avec un **aperçu de la page**.
+  - **Imprimante**, **Papier** (A4, A5, A3, Letter, 10 × 15, 13 × 18, 20 × 30 cm), **Orientation** (automatique :
+    comme l'image), **Marges**, **Copies**.
+  - **Taille** : *Remplir la page* (dans les marges), *Taille réelle* (d'après la résolution de l'image) ou
+    *Largeur choisie* en cm.
+  - Pixane indique la taille sur la feuille et le nombre de points par pouce ; en dessous de 150, il prévient que
+    l'impression risque d'être floue (IA > Upscale peut aider).
 - **Fichier > Nouvelle image…** (Ctrl+N) : une image vide, comme dans Photoshop. Un **aperçu** montre la forme de
   la feuille, son fond et les repères (fond perdu, zone de sécurité).
   - **Formats tout prêts** (à gauche) : **pochettes** (CD, vinyle 33 et 45 tours, 3000 × 3000 px pour Spotify,
@@ -584,6 +597,36 @@ l'ajoute). Quelques secondes.
 - **Sélectionner le sujet** (Ctrl+Alt+S, menu Sélection) : sélectionne le sujet sans rien effacer, par exemple
   pour le régler (Ctrl+U), ou *Inverser* (Ctrl+Maj+I) pour travailler le fond.
 
+### Créer une image d'après un texte (menu IA)
+Décrivez l'image (sujet, couleurs, lumière, style) : **Flux Schnell** la crée, environ **30 secondes** par
+proposition. Exemples de consignes dans la liste (fond abstrait, paysage, texture, illustration, portrait) ; comme
+pour *Modifier avec une consigne*, une consigne en français peut être traduite en anglais sur votre PC.
+- **Résultat** : *Nouvelle image* (formats carré pour une pochette ou les réseaux sociaux, 4:3, 3:4, 16:9, 9:16) ou
+  *Nouveau calque dans l'image ouverte*, à sa taille (par exemple un fond derrière un détourage).
+- Marche aussi **sans image ouverte** : une nouvelle image est créée.
+- Dans la fenêtre de choix, **Partir de celle-ci** donne des variantes de la proposition choisie.
+- L'IA écrit mal les textes : ajoutez-les ensuite avec l'outil Texte.
+- Modèle Flux Schnell (Apache-2.0), installé avec le moteur IA (case *Flux Schnell*).
+
+### Supprimer les personnes (menu IA)
+L'IA (**SAM 3.1**) trouve **chaque personne** de la photo. Une fenêtre les montre : les personnes **cochées** (en
+rouge) seront effacées ; **cliquez sur une personne** dans l'image (ou sur sa case) pour la cocher ou la décocher.
+Au départ, tout est coché sauf le **sujet principal** (la personne nettement plus grande que les autres).
+- **Effacer les personnes cochées** : elles sont sélectionnées (avec une petite marge pour les ombres et les
+  cheveux), puis **Effacer** reconstruit le fond derrière elles (fenêtre de choix du résultat habituelle).
+- **Seulement sélectionner** : pour compléter la sélection, par exemple une personne oubliée par l'IA (outil
+  **Sélection d'objet**, Maj + clic), avant de lancer **IA > Effacer**.
+
+### Retouche portrait (menu IA)
+L'IA (**SAM 3.1**) trouve le visage, le cou, les yeux, les sourcils, les lèvres et les dents (quelques secondes),
+puis une fenêtre de réglage s'ouvre, avec **aperçu en direct** sur la photo :
+- **Lisser la peau** : atténue boutons, rougeurs et petites rides ; les contours (nez, yeux), les cils et les mèches
+  de cheveux restent nets.
+- **Garder le grain de la peau** : remet le grain fin, pour éviter l'effet « plastique ».
+- **Éclaircir les yeux** : plus d'éclat et de netteté dans les yeux.
+- **Blanchir les dents** : moins jaunes, un peu plus claires.
+S'applique au calque choisi (dans la sélection s'il y en a une) ; tous les visages trouvés sont retouchés.
+
 ### Réduire le bruit, Netteté, Restaurer une vieille photo (menu IA)
 Ces trois actions travaillent sur l'image visible ; s'il y a une **sélection**, le résultat ne change que
 l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi (Ctrl+Z annule).
@@ -747,6 +790,27 @@ dessus, ou **Calque > Modifier le réglage…**), le masquer (œil), baisser son
   le masque du calque de réglage (le réglage ne s'applique que là).
 - Dans un groupe, il ne règle que les calques du groupe placés dessous.
 - Gardé tel quel en .pixane ; en .ora et .psd, il devient un calque d'image (le résultat).
+
+### Calques de remplissage
+**Calque > Nouveau calque de remplissage** (ou le bouton **Réglage** du panneau Calques, en haut de la liste) : un
+calque qui couvre toute la feuille d'une **couleur unie**, d'un **dégradé** ou d'un **motif**, et qui reste
+**modifiable** (double-clic dessus).
+- **Dégradé** : style linéaire, radial, angulaire, réfléchi ou losange ; **Angle**, **Échelle**, **Inverser**. Au
+  départ : de la couleur de peinture au blanc.
+- **Motif** : un motif de la bibliothèque, à l'échelle voulue.
+- S'il y a une sélection, elle devient le **masque** du calque (le remplissage ne se voit que là).
+- Il est redessiné quand la feuille change de taille (taille de l'image, zone de travail, recadrer…) ; gardé en
+  .pixane ; en .ora et .psd, il devient un calque d'image. *Convertir en image* (clic droit) le fige.
+
+### Harmoniser un collage (Calque > Harmoniser avec l'arrière-plan…)
+Un objet collé d'une autre photo jure souvent : lumière plus froide, noirs moins profonds… Choisissez son calque
+(l'objet détouré, avec de la transparence autour, posé au-dessus de la photo) : il prend la lumière de la photo
+qui l'entoure.
+- **Lumière (noirs et blancs)** : mêmes noirs et mêmes blancs que la photo autour.
+- **Couleur de la lumière** : même teinte de lumière (mesurée sur les parties claires : une chemise rouge posée
+  sur de l'herbe ne devient pas verte).
+- **Adoucir le bord** : bord plus doux, vers l'intérieur de l'objet.
+Aperçu en direct, une étape dans Annuler.
 
 ### Style du calque : ombres, contour, lueur, relief… (Ctrl+Alt+F)
 Des **effets ajoutés au calque**, toujours modifiables : les pixels du calque ne sont pas touchés. Pour l'ouvrir :
@@ -920,6 +984,14 @@ corriger sans toucher à la photo).
 - **Taille** (ou `[` et `]`), **Opacité** (100 % couvre tout, moins laisse voir dessous) et **Dureté** (100 % bord
   net, 0 % bord très doux).
 - Repasser au même endroit pendant un même coup ne fonce pas la couleur ; un nouveau coup, si.
+
+#### Nuancier
+Le panneau **NUANCIER** (onglet à côté de l'Historique) garde vos couleurs : **un clic** sur une couleur en fait la
+couleur de peinture.
+- **+** ajoute la couleur de peinture ; **−** retire la couleur choisie ; clic droit : *Renommer*, *Retirer*.
+- **…** : **Importer** un nuancier Photoshop (.aco) ou GIMP (.gpl), **Exporter** en .aco (pour Photoshop),
+  **Remettre les couleurs de départ**.
+- Les couleurs du nuancier se retrouvent aussi dans « Couleurs personnalisées » des fenêtres de choix de couleur.
 
 #### Calque de pinceau modifiable
 Case **Calque modifiable** dans la barre du haut (décochée au départ). Cochée, le premier coup de pinceau crée un
@@ -1188,6 +1260,18 @@ de couleur), **Netteté** (quantité, rayon, seuil : le masque flou de Photoshop
 éclaircir les bords : force, taille du centre, douceur, rond). Même fonctionnement que les réglages : aperçu en
 direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annuler. Ils marchent aussi sur un masque.
 
+### Actions (panneau ACTIONS)
+Comme dans Photoshop : **enregistrer** une suite d'opérations, puis la **rejouer** d'un clic sur d'autres photos.
+- **● Enregistrer** : donnez un nom, puis faites votre travail : les **réglages** (Image > Réglages), les
+  **filtres**, la **taille de l'image** (gardée en pourcentage si les proportions ne changent pas : elle marche sur
+  des photos de toutes tailles), les **rotations** et les **retournements** s'ajoutent à l'action. **■ Arrêter**
+  termine.
+- **▶ Jouer** (ou double-clic) : l'action se rejoue sur la photo ouverte, sans fenêtre, avec les mêmes réglages ;
+  **une seule étape** dans Annuler.
+- **…** : *Renommer*, *Supprimer l'action ou l'étape*, *Exporter* / *Importer* les actions (.json, pour les
+  garder ou les partager).
+- **Fichier > Traitement par lot** : choisissez une action pour la jouer sur **tout un dossier**.
+
 ---
 
 ## 10. Menu Image : taille, rotation, transformer
@@ -1208,6 +1292,16 @@ direct, calque choisi, dans la sélection s'il y en a une, une étape dans Annul
 - **Taille de l'image…** (Ctrl+Alt+I) : en pixels ou en %, proportions gardées (case à décocher), boutons rapides
   (par exemple 1920 px pour l'écran et Internet). Sans IA : pour agrandir avec plus de détails, préférez Upscale.
   **Aperçu** : le centre de l'image à 100 %, avant (à gauche) et après (à droite), pour juger la netteté.
+- **Mise à l'échelle d'après le contenu…** : changer les **proportions** (un carré en 16:9, un paysage en 4:5…)
+  **sans écraser le sujet** : ce sont surtout les zones sans détails (ciel, mur, fond uni) qui s'étirent ou se
+  tassent.
+  - **Largeur**, **Hauteur**, ou un **format** rapide (1:1, 4:3, 3:2, 16:9, 3:4, 4:5, 9:16 : le plus grand côté
+    est gardé).
+  - **Protéger la sélection** : sélectionnez d'abord le sujet (Sélection > Sélectionner le sujet) : il n'est pas
+    déformé du tout.
+  - **Protection du contenu** : 0 % = étirement ordinaire, 100 % = seules les zones sans détails changent.
+  - **Aperçu** du résultat. Tous les calques suivent, masques et sélection aussi ; les textes, formes et traits de
+    pinceau deviennent des images (Ctrl+Z pour revenir).
 - **Pivoter** de 90° à droite, à gauche ou de 180°, **Retourner** horizontalement ou verticalement : toute l'image,
   tous les calques, sans perte. Les textes retournés deviennent des images ; pivotés, ils restent modifiables.
 - **Pivoter selon un angle…** : toute l'image tourne de l'angle tapé, **au degré près** (ou au dixième),
@@ -1273,6 +1367,7 @@ Tout s'annule par Ctrl+Z.
 | Ctrl+R, Ctrl+', Ctrl+;, Ctrl+Maj+; | Règles, Grille, Repères, Magnétisme |
 | Ctrl+W, Ctrl+Tab, Ctrl+Maj+Tab | Fermer la photo, Photo suivante, Photo précédente |
 | Ctrl+Alt+Maj+S, Ctrl+Alt+Maj+W | Exporter pour le web, Exporter sous |
+| Ctrl+P | Imprimer |
 | Flèches (Maj : x10) | Bouger la sélection (outils de sélection) |
 | Ctrl+N, Ctrl+Alt+V | Nouvelle image, Nouvelle image depuis le presse-papiers |
 | Ctrl+Alt+I, Ctrl+Alt+C | Taille de l'image, Taille de la zone de travail |

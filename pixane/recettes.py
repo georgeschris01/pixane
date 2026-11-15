@@ -182,6 +182,39 @@ def ciel(image: str):
     return p, {"14": tr("Ciel")}
 
 
+def personnes(image: str):
+    """Masques des personnes (blanc = personne), un par personne trouvée : SAM 3.1 cherche « person »."""
+    p = {"10": _n("LoadImage", image=image),
+         "11": _n("CheckpointLoaderSimple", ckpt_name=_sam["fichier"] or SAM),
+         "15": _n("CLIPTextEncode", text="person:40", clip=["11", 1]),
+         "12": _n("SAM3_Detect", model=["11", 0], image=["10", 0], conditioning=["15", 0], threshold=0.25,
+                  refine_iterations=2, individual_masks=True),
+         "13": _n("MaskToImage", mask=["12", 0]),
+         "14": _n("PreviewImage", images=["13", 0])}
+    return p, {"14": tr("Personne")}
+
+
+PARTIES_VISAGE = (("visage", "face:10"), ("cou", "neck:10"), ("yeux", "eye:20"), ("sourcils", "eyebrow:20"),
+                  ("levres", "lips:10"), ("dents", "teeth:10"))
+
+
+def visage(image: str):
+    """Masques des parties du visage pour la retouche portrait (un par partie, toutes personnes ensemble), dans
+    l'ordre de PARTIES_VISAGE : SAM 3.1 les cherche une à une (le modèle n'est chargé qu'une fois)."""
+    p = {"10": _n("LoadImage", image=image),
+         "11": _n("CheckpointLoaderSimple", ckpt_name=_sam["fichier"] or SAM)}
+    sorties = {}
+    for k, (nom, texte) in enumerate(PARTIES_VISAGE):
+        b = 20 + 10 * k
+        p[str(b)] = _n("CLIPTextEncode", text=texte, clip=["11", 1])
+        p[str(b + 1)] = _n("SAM3_Detect", model=["11", 0], image=["10", 0], conditioning=[str(b), 0], threshold=0.3,
+                           refine_iterations=2, individual_masks=False)
+        p[str(b + 2)] = _n("MaskToImage", mask=[str(b + 1), 0])
+        p[str(b + 3)] = _n("PreviewImage", images=[str(b + 2), 0])
+        sorties[str(b + 3)] = nom
+    return p, sorties
+
+
 def sam_disponible() -> bool:
     return _sam["fichier"] is not None
 
@@ -355,6 +388,48 @@ def affiner(image: str, force: float = 0.4, steps: int = 20, graine: int | None 
     p = {"10": _n("LoadImage", image=image)}
     _flux_fill(p, ["10", 0], ["10", 1], None, 1, denoise=force, steps=steps, graine=graine, chargeur=chargeur)
     return p, {"32": tr("Pleine définition")}
+
+
+NB_CREER = 4         # propositions de « Créer une image » (Flux Schnell : ~30 s chacune)
+
+
+def taille_creation(taille: tuple[int, int], pixels: int = 1024 * 1024) -> tuple[int, int]:
+    """Taille de calcul de Flux Schnell : les proportions voulues, environ 1 mégapixel, multiples de 16."""
+    w, h = taille
+    k = (pixels / max(1, w * h)) ** 0.5
+    return max(256, round(w * k / 16) * 16), max(256, round(h * k / 16) * 16)
+
+
+def creer(texte: str, taille: tuple[int, int], nb: int = NB_CREER, graine: int | None = None,
+          image: str | None = None, force: float = 1.0):
+    """Flux Schnell : une image d'après un texte (en anglais), aux proportions de `taille`, remise à cette taille.
+    image + force < 1 : « Partir de celle-ci » (la proposition choisie, redessinée en partie)."""
+    cw, ch = taille_creation(taille)
+    p = {"20": chargeur_schnell(),
+         "21": _n("DualCLIPLoader", clip_name1="clip_l.safetensors",
+                  clip_name2="t5xxl_fp8_e4m3fn_scaled.safetensors", type="flux", device="default"),
+         "22": _n("VAELoader", vae_name="ae.safetensors"),
+         "24": _n("CLIPTextEncode", text=texte, clip=["21", 0]),
+         "27": _n("ConditioningZeroOut", conditioning=["24", 0])}
+    if image is not None:
+        p["10"] = _n("LoadImage", image=image)
+        p["11"] = _n("ImageScale", image=["10", 0], upscale_method="lanczos", width=cw, height=ch, crop="disabled")
+        p["23"] = _n("VAEEncode", pixels=["11", 0], vae=["22", 0])
+    else:
+        p["23"] = _n("EmptySD3LatentImage", width=cw, height=ch, batch_size=1)
+    graine = graine or _graine()
+    sorties = {}
+    for k in range(nb):
+        b = 40 + 10 * k
+        p[str(b)] = _n("KSampler", model=["20", 0], seed=graine + k, steps=4, cfg=1.0, sampler_name="euler",
+                       scheduler="simple", positive=["24", 0], negative=["27", 0], latent_image=["23", 0],
+                       denoise=force if image is not None else 1.0)
+        p[str(b + 1)] = _n("VAEDecode", samples=[str(b), 0], vae=["22", 0])
+        p[str(b + 2)] = _n("ImageScale", image=[str(b + 1), 0], upscale_method="lanczos", width=taille[0],
+                           height=taille[1], crop="disabled")
+        p[str(b + 3)] = _n("PreviewImage", images=[str(b + 2), 0])
+        sorties[str(b + 3)] = tr("Proposition")
+    return p, sorties
 
 
 def upscale_rapide(image: str, facteur: float = 2.0):
