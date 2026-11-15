@@ -14,6 +14,9 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.23.0 (non publ
 - **Édition > Remplir avec un motif…** affichait une erreur au lieu d'ouvrir sa fenêtre (signalé par Christophe le
   15/11/2026).
 - Panneau Actions : le bouton **● Enregistrer** aurait affiché la même erreur (même cause, trouvé en cherchant).
+- **Arrêter un travail IA** (Modifier avec une consigne, Effacer, Remplir…) affichait « JSONDecodeError », et le
+  moteur continuait le calcul en arrière-plan : maintenant l'arrêt est propre et la carte graphique s'arrête
+  vraiment (signalé par Christophe le 15/11/2026).
 
 ## À mettre à jour le jour de la publication
 

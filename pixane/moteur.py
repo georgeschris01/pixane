@@ -255,10 +255,10 @@ class Moteur:
                 derniere_verif = 0.0
                 while True:
                     if annuler.is_set():
-                        try:
-                            self._json("/queue", {"delete": [pid]})
+                        try:                              # (ComfyUI répond ici par un corps vide : pas de json)
+                            self._requete("/queue", json.dumps({"delete": [pid]}).encode())
                             self._requete("/interrupt", b"{}")
-                        except OSError:
+                        except (OSError, ValueError):
                             pass
                         raise Annule()
                     fini = False
