@@ -133,7 +133,7 @@ if len(sys.argv) <= 2:
     # ------------------------------------------------------------ formes
     f._choisir_outil(FORMES)
     c.forme, c.forme_remplie = "ellipse", True
-    c.couleur_peinture = QColor(255, 0, 255)
+    c.forme_couleur = QColor(255, 0, 255)          # couleur de remplissage des formes
     nb = len(doc.calques)
     glisser([(100, 100), (200, 150)], Qt.ShiftModifier)
     t = rgba(doc.calque_actif.image)

@@ -15,7 +15,7 @@ from PySide6.QtGui import QColor, QCursor, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGraphicsOpacityEffect, QHBoxLayout, QInputDialog,
                                QLabel, QListWidget, QListWidgetItem, QMenu, QSlider, QToolButton, QVBoxLayout, QWidget)
 
-from . import ajustements, calque_pinceau
+from . import ajustements, calque_forme, calque_pinceau
 from .composition import GROUPES_MODES, MODES, noms_modes, parents
 from .document import Document
 from .langue import tr
@@ -142,6 +142,8 @@ class LigneCalque(QWidget):
             details.append(tr("texte"))
         elif calque_pinceau.valide(c) is not None:
             details.append(tr("pinceau modifiable"))
+        elif calque_forme.valide(c) is not None:
+            details.append(tr("forme modifiable"))
         if ecrete:
             details.append(tr("écrêté"))
         if c.style is not None and not c.style.vide():
@@ -557,7 +559,8 @@ class PanneauCalques(QWidget):
                 if c.masque is None and not c.verrou:
                     menu.addAction(tr("Ajouter un masque (d'après la sélection s'il y en a une)"),
                                    lambda: self.ajouter_masque())
-                if (c.texte is not None or calque_pinceau.valide(c) is not None) and not c.verrou:
+                if (c.texte is not None or calque_pinceau.valide(c) is not None
+                        or calque_forme.valide(c) is not None) and not c.verrou:
                     menu.addAction(tr("Convertir en image"), lambda: self.demande.emit(
                         doc.etat_en_pixels(doc.actif), tr("Convertir en image")))
                 menu.addSeparator()

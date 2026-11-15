@@ -230,7 +230,6 @@ class ActionsCalques:
     def _options_dessin(self, tout):
         from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QLabel, QSpinBox, QWidget
         from PySide6.QtGui import QColor
-        from .outils_dessin import FORMES, noms_formes
         from .panneau_texte import BoutonCouleur
         c = self.canevas
         # dégradé
@@ -355,32 +354,7 @@ class ActionsCalques:
         maj_echelle(echelle.value())
         lay.addWidget(echelle)
         tout.addWidget(self.opt_motif)
-        # formes
-        self.opt_formes = QWidget()
-        lay = QHBoxLayout(self.opt_formes)
-        lay.setContentsMargins(0, 0, 0, 0)
-        lay.setSpacing(6)
-        genre = QComboBox()
-        for k, n in noms_formes().items():
-            genre.addItem(n, k)
-        genre.setCurrentIndex(max(0, genre.findData(self.reglages.value("forme", "rectangle"))))
-        remplie = QCheckBox(tr("Remplie"))
-        remplie.setChecked(self.reglages.value("forme_remplie", "true") == "true")
-        remplie.setToolTip(tr("Décoché : seulement le contour (épaisseur = taille)"))
-
-        def maj_forme(*_):
-            c.forme = genre.currentData()
-            c.forme_remplie = remplie.isChecked()
-            remplie.setEnabled(c.forme not in ("ligne", "fleche"))
-            self.reglages.setValue("forme", c.forme)
-            self.reglages.setValue("forme_remplie", "true" if remplie.isChecked() else "false")
-        genre.currentIndexChanged.connect(maj_forme)
-        remplie.toggled.connect(maj_forme)
-        maj_forme()
-        lay.addWidget(genre)
-        lay.addWidget(remplie)
-        tout.addWidget(self.opt_formes)
-        for w in (self.opt_degrade, self.opt_seau, self.opt_motif, self.opt_formes):
+        for w in (self.opt_degrade, self.opt_seau, self.opt_motif):
             w.hide()
 
     # ---------------------------------------------------------------- masques

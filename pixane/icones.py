@@ -104,6 +104,8 @@ DESSINS = {
     "seau": '<path d="M5 12 11 6l6.5 6.5-5.8 5.8a1.5 1.5 0 0 1-2.1 0L5 13.8a1.3 1.3 0 0 1 0-1.8zM8.5 3.5 11 6"/>'
             '<path stroke="A" d="M20 15.5c0 1.4-.9 2.5-2 2.5s-2-1.1-2-2.5 2-4 2-4 2 2.6 2 4z"/>',
     "formes": '<rect x="3.5" y="10" width="9" height="9" rx="1"/><circle stroke="A" cx="15.5" cy="8.5" r="5"/>',
+    "plume": '<path d="M12 3 18 11l-3.5 8h-5L6 11z"/><path d="M12 3v8"/><circle stroke="A" cx="12" cy="12.5" r="1.6"/>'
+             '<path stroke="A" d="M9 21h6"/>',
     "correcteur": '<path d="M7.5 16.5 16.5 7.5a2.6 2.6 0 0 0-3.7-3.7L3.8 12.8a2.6 2.6 0 0 0 3.7 3.7z"/>'
                   '<path stroke="A" d="M17 14.5l3 3-3 3-3-3zM9 8.5l.01 0M11 10.5l.01 0M8.5 11l.01 0M10.5 6.5l.01 0"/>',
     "regles": '<path d="M3.5 3.5h17v5h-12v12h-5z"/><path stroke="A" d="M7 3.5v2.5M10.5 3.5v2.5M14 3.5v2.5M17.5 3.5v2.5'

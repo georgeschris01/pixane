@@ -1076,9 +1076,28 @@ résultat est calculé en pleine définition à la fin, sans flou. Avec une sél
 Toute la Fluidité est une seule étape d'Annuler.
 
 ### Formes (U)
-Glissez pour dessiner un **rectangle**, un **rectangle arrondi**, une **ellipse**, une **ligne** ou une **flèche**
-(**Maj** : carré, cercle, ligne droite). Chaque forme va dans un **nouveau calque**, dans la couleur du pinceau.
-**Remplie** (case) ou seulement le contour ; la **taille** règle l'épaisseur du trait.
+Glissez pour dessiner un **rectangle**, un **rectangle arrondi**, une **ellipse**, une **étoile**, un **polygone**,
+une **ligne** ou une **flèche** (**Maj** : carré, cercle, ligne droite). **Côtés** : nombre de branches de l'étoile ou
+de côtés du polygone. Barre du haut : **Remplissage** et **Contour** (cases, chacun avec sa couleur : clic sur la
+couleur pour la changer) et l'**épaisseur** du contour.
+
+Chaque forme va dans un **calque de forme** (« forme modifiable » dans Calques), comme dans Photoshop : choisissez ce
+calque avec l'outil Formes ou la Plume, et la barre du haut montre ses réglages ; les changer redessine la forme (une
+étape d'Annuler). Déplacée, redimensionnée, tournée (Ctrl+T), ou l'image agrandie : la forme est redessinée nette et
+reste modifiable ; elle est gardée dans le fichier .pixane. La gomme, un filtre ou l'IA en font une image ordinaire
+(un message le dit ; Ctrl+Z pour revenir) ; Calque > clic droit > **Convertir en image** aussi.
+
+### Plume (A)
+Pour dessiner des formes libres, en lignes droites et en courbes, point par point (comme la Plume de Photoshop) :
+- **clic** : un point d'angle ; **cliquer-glisser** : un point en courbe (on tire ses poignées) ; **Maj** : à 45° ;
+- **clic sur le premier point** : le tracé se ferme ; **Entrée** ou **double-clic** : il reste ouvert (un trait) ;
+- **Retour arrière** retire le dernier point, **Échap** abandonne le tracé.
+
+**Mode** (barre du haut) : **Forme** (le tracé devient un calque de forme, avec le remplissage et le contour de la
+barre) ou **Sélection** (le tracé fermé devient la sélection ; Maj en finissant : ajoutée, Alt : retirée).
+
+Avec un calque de forme choisi, la Plume montre ses points : tirez un **point** pour le déplacer, ou une **poignée**
+pour changer la courbe (l'autre poignée suit ; **Alt** : la poignée bouge seule et fait un angle).
 
 Un **texte** retouché au pinceau ou au tampon devient une image (un message le rappelle ; Ctrl+Z pour revenir).
 Les groupes et calques de réglage n'ont pas de pixels : un message invite à choisir un calque d'image ou un masque.

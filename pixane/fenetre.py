@@ -20,15 +20,17 @@ from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QComboBox,
                                QLineEdit, QMainWindow, QMenu, QMessageBox, QPushButton, QSizePolicy, QSlider,
                                QSpinBox, QToolBar, QToolButton, QUndoView, QVBoxLayout, QWidget, QInputDialog, QDoubleSpinBox)
 
-from . import affinage, calque_pinceau, langue, recettes, theme
+from . import affinage, calque_forme, calque_pinceau, langue, recettes, theme
+from .document import vectoriel
 from .icones import icone
 from .langue import tr
 from .actions_calques import ActionsCalques
 from .contour import ActionContour
 from .onglets import Onglets
+from .options_forme import OptionsForme
 from .options_pinceau import OptionsPinceau
 from .calques import PanneauCalques
-from .canevas import (DENSITE_MOINS, DENSITE_PLUS, DOIGT, EPONGE, GOUTTE, HISTORIQUE, NETTETE_PINCEAU,
+from .canevas import (DENSITE_MOINS, DENSITE_PLUS, DOIGT, EPONGE, GOUTTE, HISTORIQUE, NETTETE_PINCEAU, PLUME,
                       OUTILS_FILTRE, BAGUETTE, CORRECTEUR, DEGRADE, DEPLACER, FORMES, GOMME, GOMME_CALQUE, LASSO, MAIN, OBJET,
                       SEL_TEXTE,
                       OUTILS_AUTO, OUTILS_ROND, PEINTURE, PINCEAU, RAPIDE, RECADRER, RECTANGLE, SEAU, SUPPRIMER,
@@ -213,7 +215,7 @@ class Carte(QPushButton):
         self.image.setPixmap(ic.pixmap(28, 28))
 
 
-class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindow):
+class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsForme, QMainWindow):
     etat_moteur = Signal(str)
 
     def __init__(self):
@@ -818,6 +820,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self._options_retouche(tout)
         self._options_pinceau(tout)
         self._options_dessin(tout)
+        self._options_forme(tout)
         self._options_recadrer(tout)
         b.addWidget(self.options)
 
@@ -1148,8 +1151,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                                            "degrade"),
                                           (SEAU, tr("Pot de peinture : remplit une zone de couleur proche"), "K",
                                            "seau"),
-                                          (FORMES, tr("Formes : rectangle, ellipse, ligne, flèche (nouveau calque)"),
-                                           "U", "formes"),
+                                          (FORMES, tr("Formes : rectangle, ellipse, étoile, flèche… (calque de "
+                                                      "forme modifiable)"), "U", "formes"),
+                                          (PLUME, tr("Plume : tracés en lignes et en courbes, point par point "
+                                                     "(calque de forme ou sélection)"), "A", "plume"),
                                           (DENSITE_MOINS, tr("Densité − : éclaircit là où l'on peint"), "",
                                            "densite_moins"),
                                           (DENSITE_PLUS, tr("Densité + : assombrit là où l'on peint"), "",
@@ -1180,7 +1185,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         for famille in ((MAIN,), (DEPLACER,), (RECTANGLE, LASSO, PINCEAU, GOMME), (OBJET, RAPIDE, BAGUETTE, SEL_TEXTE),
                         (SUPPRIMER, CORRECTEUR, TAMPON, TAMPON_MOTIF, HISTORIQUE),
                         (PEINTURE, GOMME_CALQUE, DEGRADE, SEAU), (DENSITE_MOINS, DENSITE_PLUS, EPONGE),
-                        (GOUTTE, NETTETE_PINCEAU, DOIGT), (FORMES,),
+                        (GOUTTE, NETTETE_PINCEAU, DOIGT), (FORMES,), (PLUME,),
                         (RECADRER,), (TEXTE,)):
             if len(famille) == 1:
                 barre.addAction(self._actions_outils[famille[0]])
@@ -1212,6 +1217,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
     def _choisir_outil(self, outil: str):
         if getattr(self.canevas, "transfo", None) is not None:
             self._valider_transfo()
+        if outil != PLUME and self.canevas.plume_points is not None:
+            self.canevas.finir_plume(fermer=False)          # tracé en cours : gardé tel quel
         if self.canevas.outil != outil and hasattr(self, "selection_auto"):
             self.selection_auto.fin_session()
         if outil != TEXTE and hasattr(self, "panneau_texte"):
@@ -1231,14 +1238,13 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             (self.p_retirer if self.canevas.mode_retirer else self.p_ajouter).setChecked(True)
         self.p_nouvelle.setVisible(outil in (RECTANGLE, LASSO) + OUTILS_AUTO)
         self.options.setEnabled(outil not in (MAIN, TEXTE))
-        self.opt_taille.setVisible(outil in OUTILS_ROND or outil in (MAIN, TEXTE, RECTANGLE, LASSO,
-                                                                     FORMES))
+        self.opt_taille.setVisible(outil in OUTILS_ROND or outil in (MAIN, TEXTE, RECTANGLE, LASSO))
         if outil in (BAGUETTE, OBJET, SEL_TEXTE):
             self.opt_taille.setVisible(False)
         self.opt_selection.setVisible(outil in (RECTANGLE, LASSO, PINCEAU) + OUTILS_AUTO)
         self.opt_baguette.setVisible(outil == BAGUETTE)
         self.opt_sel_texte.setVisible(outil == SEL_TEXTE)
-        self.opt_couleur.setVisible(outil in (PEINTURE, DEGRADE, SEAU, FORMES))
+        self.opt_couleur.setVisible(outil in (PEINTURE, DEGRADE, SEAU))
         self.opt_retouche.setVisible(outil in (PEINTURE, TAMPON, TAMPON_MOTIF, CORRECTEUR, DEGRADE, SEAU, HISTORIQUE)
                                      + OUTILS_FILTRE)
         self.opt_densite.setVisible(outil in (DENSITE_MOINS, DENSITE_PLUS))
@@ -1248,7 +1254,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.opt_degrade.setVisible(outil == DEGRADE)
         self.opt_seau.setVisible(outil == SEAU)
         self.opt_motif.setVisible(outil == TAMPON_MOTIF or (outil == SEAU and self.canevas.seau_motif))
-        self.opt_formes.setVisible(outil == FORMES)
+        self.montrer_options_forme(outil)
         self.opt_recadrer.setVisible(outil == RECADRER)
         self.opt_deplacer.setVisible(outil == DEPLACER)
         self.maj_bouton_pinceau()
@@ -1281,7 +1287,11 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
                           "calque choisi, ou l'image visible avec « Tous les calques »). Alt+clic : prendre une "
                           "couleur."),
                  FORMES: tr("Formes : glisse pour dessiner (Maj : carré, cercle, ligne droite). Chaque forme va dans "
-                            "un nouveau calque ; la taille règle l'épaisseur du trait."),
+                            "un calque de forme, qui reste modifiable : choisis-le et change en haut son remplissage, "
+                            "son contour, son épaisseur."),
+                 PLUME: tr("Plume : clic = point d'angle, cliquer-glisser = courbe ; clic sur le premier point pour "
+                           "fermer, Entrée ou double-clic pour finir ouvert, Échap pour abandonner. Sur un calque de "
+                           "forme : tire ses points ou leurs poignées (Alt : une poignée seule)."),
                  DENSITE_MOINS: tr("Densité − : peins pour éclaircir ; choisis en haut les tons touchés (ombres, tons "
                                    "moyens, hautes lumières) et la force."),
                  DENSITE_PLUS: tr("Densité + : peins pour assombrir ; choisis en haut les tons touchés et la force."),
@@ -1400,6 +1410,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         choisi)."""
         if hasattr(self, "case_calque_pinceau"):
             self.sync_calque_pinceau()
+        if hasattr(self, "opt_genre"):
+            self.sync_calque_forme()
         if not hasattr(self, "panneau_texte"):
             return
         c = self.doc.calque_actif if self.doc else None
@@ -2017,7 +2029,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         if self.doc.calque_actif.texte is not None:
             self.statusBar().showMessage(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme "
                                             "texte (Ctrl+Z pour revenir).", nom=self.doc.calque_actif.nom), 6000)
-        if calque_pinceau.valide(self.doc.calque_actif) is not None:
+        if vectoriel(self.doc.calque_actif):
             self.statusBar().showMessage(self.canevas.texte_devient_image(self.doc.calque_actif), 6000)
         avant = self.doc.etat()
         apres = self.doc.etat_effacer_selection()
@@ -2080,7 +2092,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             if calque.texte is not None:
                 self.statusBar().showMessage(tr("Le texte « {nom} » devient une image : il n'est plus modifiable "
                                                 "comme texte (Ctrl+Z pour revenir).", nom=calque.nom), 6000)
-            if calque_pinceau.valide(calque) is not None:
+            if vectoriel(calque):
                 self.statusBar().showMessage(self.canevas.texte_devient_image(calque), 6000)
             QApplication.setOverrideCursor(Qt.WaitCursor)
             try:
@@ -2474,8 +2486,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
             self.statusBar().showMessage(tr("Le texte « {nom} » devient une image (pour garder un texte modifiable, "
                                             "change sa taille et tourne-le avec l'outil Texte).", nom=c.nom), 8000)
         t = Transformation(source, rect, fond, QPoint(ox, oy))
-        if calque_pinceau.valide(c) is not None:
-            if fond is None:                          # calque de pinceau entier : ses traits suivront (modifiable)
+        if vectoriel(c):
+            if fond is None:                # calque de pinceau (de forme) entier : ses traits suivront (modifiable)
                 t.depart_pinceau = QPointF(ox + rect.x(), oy + rect.y())
             else:
                 self.statusBar().showMessage(self.canevas.texte_devient_image(c), 8000)
@@ -2649,11 +2661,13 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, QMainWindo
         self.doc.appliquer_etat(avant)
         self.doc.modifie = _modifie
         c = self.doc.calques[index]
-        p = calque_pinceau.valide(c)
+        p = calque_pinceau.valide(c) or calque_forme.valide(c)
         if p is not None and t.fond is None and getattr(t, "depart_pinceau", None) is not None and not t.libre():
-            # calque de pinceau : ses traits passent par la même transformation et sont redessinés (modifiable)
+            # calque de pinceau (de forme) : ses traits passent par la même transformation et sont redessinés
             d = t.depart_pinceau
-            apres = self.doc.etat_pinceau(index, p.transforme(QTransform.fromTranslate(-d.x(), -d.y()) * t.transfo()))
+            tr_ = QTransform.fromTranslate(-d.x(), -d.y()) * t.transfo()
+            apres = (self.doc.etat_forme(index, p.transforme(tr_)) if calque_forme.valide(c) is not None
+                     else self.doc.etat_pinceau(index, p.transforme(tr_)))
             self.historique.push(CommandeEtat(self.doc, avant, apres, titre or tr("Transformer le calque")))
             return
         if t.libre():                                     # surface de la forme / surface de départ

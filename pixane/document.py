@@ -26,7 +26,7 @@ from .composition import (FORMAT_MASQUE, MODE_ORA, MODES, arbre, masque_depuis, 
 from .langue import tr
 from .styles import Style
 from .texte import Texte, nom_calque, rendre
-from . import calque_pinceau
+from . import calque_forme, calque_pinceau
 from .transformation import redimensionner
 
 COULEUR_SELECTION = QColor(255, 40, 40)
@@ -116,6 +116,8 @@ class Calque:
     origine: "Origine | None" = None
     # calque de pinceau modifiable (calque_pinceau.Pinceau) : valable tant que `image` est son dessin
     pinceau: object = None
+    # calque de forme modifiable (calque_forme.Forme) : valable tant que `image` est son dessin
+    forme: object = None
     # masque d'écrêtage (comme Photoshop, Ctrl+Alt+G) : le calque ne se voit que là où le calque juste en dessous
     # (sa base) a des pixels, par exemple une photo dans les lettres d'un texte
     ecretage: bool = False
@@ -131,10 +133,18 @@ class Calque:
 
 
 def _pinceau_par(c: Calque, t: QTransform, W: int, H: int) -> Calque | None:
-    """Calque de pinceau passé par t (déplacé, redimensionné, tourné…) : ses traits sont redessinés, il reste
-    modifiable. None si ce n'est pas un calque de pinceau."""
+    """Calque de pinceau (ou de forme) passé par t (déplacé, redimensionné, tourné…) : ses traits sont redessinés,
+    il reste modifiable. None si ce n'est ni un calque de pinceau ni un calque de forme."""
+    f = calque_forme.valide(c)
+    if f is not None:
+        return calque_forme.calque(c, f.transforme(t), W, H)
     p = calque_pinceau.valide(c)
     return None if p is None else calque_pinceau.calque(c, p.transforme(t), W, H)
+
+
+def vectoriel(c) -> bool:
+    """Calque de pinceau ou de forme encore modifiable (ses pixels sont redessinés d'après son tracé)."""
+    return calque_pinceau.valide(c) is not None or calque_forme.valide(c) is not None
 
 
 def rect_entier(c: Calque) -> QRect:
@@ -208,7 +218,7 @@ def _cles(c: Calque) -> tuple:
 def origine_valide(c: Calque) -> Origine | None:
     """La meilleure version du calque, si ses pixels n'ont pas été modifiés depuis (pinceau, IA, filtre…)."""
     o = c.origine
-    if o is None or c.texte is not None or c.special or o.cles != _cles(c) or calque_pinceau.valide(c):
+    if o is None or c.texte is not None or c.special or o.cles != _cles(c) or vectoriel(c):
         return None
     return o
 
@@ -223,7 +233,7 @@ def origine_ou_actuelle(c: Calque) -> Origine | None:
     o = origine_valide(c)
     if o is not None:
         return o
-    if c.texte is not None or c.special or calque_pinceau.valide(c):
+    if c.texte is not None or c.special or vectoriel(c):
         return None
     img, x, y = image_entiere(c)
     a = tableau(img.convertToFormat(FORMAT_CALQUE))[:, :, 3]
@@ -499,7 +509,7 @@ def _image_ia(resultat: QImage, base: QImage, poids: np.ndarray, opacite: np.nda
 
 def peut_recevoir_ia(c) -> bool:
     """Calque où l'on peut poser directement le résultat de l'IA (calque d'image visible, modifiable)."""
-    return c.visible and not c.verrou and not c.special and c.texte is None and calque_pinceau.valide(c) is None
+    return c.visible and not c.verrou and not c.special and c.texte is None and not vectoriel(c)
 
 
 def calque_des_changements(nom: str, resultat: QImage, base: QImage) -> Calque:
@@ -1155,6 +1165,17 @@ class Document(QObject):
         calques[index] = calque_pinceau.calque(calques[index], p, *self.taille())
         return self.etat_avec(calques, index)
 
+    def etat_forme(self, index: int, f) -> tuple:
+        """Le calque `index` devient (ou reste) le calque de forme f, redessiné."""
+        calques = list(self.calques)
+        calques[index] = calque_forme.calque(calques[index], f, *self.taille())
+        return self.etat_avec(calques, index)
+
+    def etat_nouvelle_forme(self, f, nom: str):
+        """Nouveau calque de forme au-dessus du calque choisi."""
+        w, h = self.taille()
+        return self.inserer(calque_forme.calque(Calque(self.nom_libre(nom), image_vide(w, h)), f, w, h))
+
     def etat_nouveau_pinceau(self, p, nom: str):
         """Nouveau calque de pinceau (vide ou avec ses premiers traits) au-dessus du calque choisi."""
         w, h = self.taille()
@@ -1184,8 +1205,8 @@ class Document(QObject):
         return self.etat_avec(calques)
 
     def etat_en_pixels(self, index: int):
-        """Le calque de texte (ou de pinceau) devient un calque d'image ordinaire (plus modifiable)."""
-        return self.etat_calque_modifie(index, texte=None, pinceau=None)
+        """Le calque de texte (de pinceau, de forme) devient un calque d'image ordinaire (plus modifiable)."""
+        return self.etat_calque_modifie(index, texte=None, pinceau=None, forme=None)
 
     def place_nouveau(self) -> tuple[int, str | None]:
         """Où poser un nouveau calque : au-dessus du calque choisi, dans son groupe (ou en haut du groupe choisi
@@ -1675,6 +1696,8 @@ def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False, reper
                     a["pixane-texte"] = json.dumps(c.texte.vers_dict(), ensure_ascii=False)
                 if calque_pinceau.valide(c) is not None:
                     a["pixane-pinceau"] = json.dumps(c.pinceau.vers_dict(), ensure_ascii=False)
+                if calque_forme.valide(c) is not None:
+                    a["pixane-forme"] = json.dumps(c.forme.vers_dict(), ensure_ascii=False)
                 if c.style is not None and (c.style.effets or c.style.remplissage < 1):
                     a["pixane-style"] = c.style.vers_json()
                 if c.reglage is not None:
@@ -1780,6 +1803,9 @@ def lire_ora(chemin: Path) -> list[Calque]:
                                            lambda t: calque_pinceau.Pinceau.depuis_dict(json.loads(t)))
                     if pinceau is not None and texte is None:  # calque de pinceau : reste modifiable
                         c = replace(c, pinceau=replace(pinceau, rendu=c.image))
+                    forme = json_ou_rien(_attr(e, "forme"), lambda t: calque_forme.Forme.depuis_dict(json.loads(t)))
+                    if forme is not None and texte is None and pinceau is None:   # calque de forme : modifiable
+                        c = replace(c, forme=replace(forme, rendu=c.image))
                     src, pose = _attr(e, "origine"), json_ou_rien(_attr(e, "origine-pose"), json.loads)
                     if src and isinstance(pose, list) and len(pose) == 5:
                         try:

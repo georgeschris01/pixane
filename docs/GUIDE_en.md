@@ -1038,9 +1038,27 @@ you go back before applying. The preview is reduced to stay fast, but the result
 end, without blur. With a selection, only the selected area changes. The whole Liquify is one Undo step.
 
 ### Shapes (U)
-Drag to draw a **rectangle**, **rounded rectangle**, **ellipse**, **line** or **arrow** (**Shift**: square, circle,
-straight line). Each shape goes on a **new layer**, in the brush colour. **Filled** (box) or outline only; the
-**size** sets the stroke thickness.
+Drag to draw a **rectangle**, **rounded rectangle**, **ellipse**, **star**, **polygon**, **line** or **arrow**
+(**Shift**: square, circle, straight line). **Sides**: number of points of the star or sides of the polygon. Top bar:
+**Fill** and **Outline** (boxes, each with its colour: click the colour to change it) and the outline **thickness**.
+
+Each shape goes on a **shape layer** ("editable shape" in Layers), as in Photoshop: choose that layer with the Shapes
+tool or the Pen, and the top bar shows its settings; changing them redraws the shape (one Undo step). Moved, resized,
+rotated (Ctrl+T), or the image enlarged: the shape is redrawn sharp and stays editable; it is kept in the .pixane
+file. The eraser, a filter or the AI turn it into an ordinary image (a message says so; Ctrl+Z to go back); Layer >
+right-click > **Convert to image** too.
+
+### Pen (A)
+To draw free shapes, with straight lines and curves, point by point (like Photoshop's Pen):
+- **click**: a corner point; **click and drag**: a curve point (you pull its handles); **Shift**: at 45°;
+- **click the first point**: the path closes; **Enter** or **double-click**: it stays open (a stroke);
+- **Backspace** removes the last point, **Esc** drops the path.
+
+**Mode** (top bar): **Shape** (the path becomes a shape layer, with the fill and stroke of the bar) or **Selection**
+(the closed path becomes the selection; Shift when finishing: added, Alt: removed).
+
+With a shape layer chosen, the Pen shows its points: drag a **point** to move it, or a **handle** to change the curve
+(the other handle follows; **Alt**: the handle moves alone and makes a corner).
 
 A **text** retouched with the brush or the stamp becomes an image (a message reminds you; Ctrl+Z to go back).
 Groups and adjustment layers have no pixels: a message asks you to choose an image layer or a mask.

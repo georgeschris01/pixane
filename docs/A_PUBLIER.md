@@ -60,6 +60,10 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
   Pinceau d'historique (repeint la photo d'ouverture, ou l'instantané pris).
 - **Fluidité** (Filtres > Fluidité…, Ctrl+Maj+X) : pousser, gonfler, contracter, tourbillon, reconstruire au
   pinceau ; résultat en pleine définition.
+- **Formes modifiables** : chaque forme est un calque de forme (remplissage, contour et épaisseur modifiables
+  après coup, reste nette si on la déplace ou la redimensionne) ; nouvelles formes Étoile et Polygone.
+- **Plume** (A) : tracés en lignes et en courbes, point par point, vers un calque de forme ou une sélection ; les
+  points d'une forme se déplacent à la souris.
 
 ## Corrections
 

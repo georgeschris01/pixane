@@ -14,7 +14,8 @@ from PySide6.QtWidgets import QWidget
 
 from . import calque_pinceau, regles
 from .composition import argb_vers_masque, masque_vers_argb
-from .document import COULEUR_SELECTION, Document, image_entiere, tableau
+from .document import COULEUR_SELECTION, Document, image_entiere, tableau, vectoriel
+from .plume import PlumeMixin
 from .langue import tr
 from .pointe import Pointe, Reglages
 from .retouche import GOMME as EFFACER
@@ -39,7 +40,8 @@ SUPPRIMER = "supprimer"                        # pinceau Supprimer (IA, LaMa) : 
 CORRECTEUR = "correcteur"                      # pinceau correcteur : comme le tampon, raccordé à la lumière autour
 DEGRADE = "degrade"                            # dégradé : glisser du début à la fin
 SEAU = "seau"                                  # pot de peinture : remplit une zone de couleur proche
-FORMES = "formes"                              # rectangle, ellipse, ligne, flèche (nouveau calque)
+FORMES = "formes"                              # rectangle, ellipse, ligne, flèche (nouveau calque de forme)
+PLUME = "plume"                                # tracés en courbes -> calque de forme ou sélection
 DENSITE_MOINS = "densite_moins"                # éclaircir au pinceau (ombres, tons moyens ou hautes lumières)
 DENSITE_PLUS = "densite_plus"                  # assombrir au pinceau
 EPONGE = "eponge"                              # saturer ou désaturer au pinceau
@@ -64,7 +66,7 @@ OUTILS_SELECTION = (RECTANGLE, LASSO, PINCEAU, BAGUETTE, RAPIDE, OBJET, SEL_TEXT
 FLECHES = {Qt.Key_Left: (-1, 0), Qt.Key_Right: (1, 0), Qt.Key_Up: (0, -1), Qt.Key_Down: (0, 1)}
 
 
-class Canevas(QWidget):
+class Canevas(PlumeMixin, QWidget):
     selection_modifiee = Signal(object, str)   # (état avant, nom de l'action) -> pour annuler (sélection ou calque)
     infos = Signal(int, int, float)             # largeur, hauteur, zoom
     refus = Signal(str)                         # action impossible (ex. calque verrouillé) : message
@@ -101,6 +103,7 @@ class Canevas(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._init_plume()
         self._sur_masque = False             # coup de pinceau / gomme en cours sur le masque du calque
         self.doc: Document | None = None
         self.zoom = 1.0
@@ -159,6 +162,11 @@ class Canevas(QWidget):
         self._pression_evt = 1.0         # pression du geste en cours
         self.forme = "rectangle"
         self.forme_remplie = True
+        self.forme_contour = False
+        self.forme_couleur = QColor(224, 64, 48)
+        self.forme_couleur_contour = QColor(0, 0, 0)
+        self.forme_epaisseur = 6
+        self.forme_cotes = 5
         self._glisse_dessin = None   # dégradé / forme en cours : [début, fin, Maj]
         self.grille_visible = False
         self.pas_grille = 100
@@ -352,6 +360,8 @@ class Canevas(QWidget):
             self._dessiner_persp(p)
             return
         self._dessiner_cadre_deplacer(p)
+        if self.outil == PLUME:
+            self._dessiner_plume(p)
         if self.outil == RECADRER and self.recadre is not None:
             self._dessiner_recadre(p)
         if self._glisse_dessin is not None:
@@ -911,7 +921,8 @@ class Canevas(QWidget):
             self._avant = self.doc.etat()
             self._trait_pinceau(p, pt)                 # un trait de plus dans le calque de pinceau
             return
-        if p is not None:
+        from .document import vectoriel
+        if p is not None or vectoriel(c):
             self.refus.emit(self.texte_devient_image(c))
         self._avant = self.doc.etat()
         if self.outil in MODES_TRAIT:
@@ -973,6 +984,10 @@ class Canevas(QWidget):
 
     @staticmethod
     def texte_devient_image(c) -> str:
+        from . import calque_forme
+        if calque_forme.valide(c) is not None:
+            return tr("Le calque de forme « {nom} » devient une image : sa forme n'est plus modifiable "
+                      "(Ctrl+Z pour revenir).", nom=c.nom)
         return tr("Le calque de pinceau « {nom} » devient une image : ses traits ne sont plus modifiables "
                   "(Ctrl+Z pour revenir).", nom=c.nom)
 
@@ -1127,7 +1142,7 @@ class Canevas(QWidget):
                 if self.doc.calque_actif.texte is not None and not sur_masque:
                     self.refus.emit(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme "
                                        "texte (Ctrl+Z pour revenir).", nom=self.doc.calque_actif.nom))
-                if calque_pinceau.valide(self.doc.calque_actif) is not None and not sur_masque:
+                if vectoriel(self.doc.calque_actif) and not sur_masque:
                     self.refus.emit(self.texte_devient_image(self.doc.calque_actif))
                 self._poser_dessin(res, sur_masque, tr("Pot de peinture"), avant)
             return
@@ -1209,11 +1224,15 @@ class Canevas(QWidget):
         if (b - a).manhattanLength() < 2:
             return
         avant = self.doc.etat()
-        from .outils_dessin import forme, noms_formes
-        w, h = self.doc.taille()
-        img = forme(w, h, self.forme, a, b, QColor(self.couleur_peinture), self.forme_remplie,
-                    self.taille_pinceau)
-        etat = self.doc.etat_nouveau_calque(img, noms_formes()[self.forme])
+        from . import calque_forme as cf
+        ouvert = self.forme in cf.OUVERTS
+        remplir = self.forme_remplie and not ouvert
+        contour = ouvert or self.forme_contour or not remplir
+        f = cf.Forme(cf.traces_depuis_chemin(cf.chemin_genre(self.forme, a, b, self.forme_cotes)),
+                     self.forme_couleur.name(QColor.HexArgb) if remplir else "",
+                     self.forme_couleur_contour.name(QColor.HexArgb) if contour else "",
+                     float(self.forme_epaisseur), self.forme == "fleche", self.forme)
+        etat = self.doc.etat_nouvelle_forme(f, cf.noms_genres()[self.forme])
         self.doc.appliquer_etat(etat)
         self.selection_modifiee.emit(avant, tr("Forme"))
 
@@ -1231,10 +1250,10 @@ class Canevas(QWidget):
                     r = QLineF(A, B).length()
                     p.drawEllipse(A, r, r)
             else:
-                from .outils_dessin import chemin_forme, pointe
-                p.drawPath(chemin_forme(self.forme, A, B, self.taille_pinceau * self.zoom))
+                from .calque_forme import _pointe, chemin_genre
+                p.drawPath(chemin_genre(self.forme, A, B, self.forme_cotes))
                 if self.forme == "fleche":
-                    p.drawPolygon(pointe(A, B, self.taille_pinceau * self.zoom))
+                    p.drawPolygon(_pointe(A, B, self.forme_epaisseur * self.zoom))
 
     # ---------------------------------------------------------- recadrer
     def definir_proportion(self, proportion: float | None):
@@ -1916,6 +1935,9 @@ class Canevas(QWidget):
             self._presser_retouche(pos, bool(e.modifiers() & Qt.AltModifier))
             self.update()
             return
+        if self.outil == PLUME:
+            self._presser_plume(pos, e.modifiers())
+            return
         if self.outil in (DEGRADE, SEAU, FORMES):
             self._presser_dessin(pos, e.modifiers())
             self.update()
@@ -1951,7 +1973,7 @@ class Canevas(QWidget):
                 if self.doc.calque_actif.texte is not None:
                     self.refus.emit(tr("Le texte « {nom} » devient une image : il n'est plus modifiable comme "
                                        "texte (Ctrl+Z pour revenir).", nom=self.doc.calque_actif.nom))
-                if calque_pinceau.valide(self.doc.calque_actif) is not None:
+                if vectoriel(self.doc.calque_actif):
                     self.refus.emit(self.texte_devient_image(self.doc.calque_actif))
                 self._img_calque = self.doc.calque_actif.image.copy()   # copie : l'état d'avant reste intact
             kw = self.parametres_pinceau(GOMME_CALQUE)
@@ -2019,6 +2041,8 @@ class Canevas(QWidget):
             if QLineF(pt, self._trace_points[-1]).length() * self.zoom >= 2:
                 self._trace_points.append(pt)
                 self.update()
+            return
+        if self.outil == PLUME and self.doc is not None and self._glisser_plume(pos, e.modifiers()):
             return
         if self._texte_glisse is not None:
             self._glisser_texte(pos, bool(e.modifiers() & Qt.ShiftModifier))
@@ -2113,6 +2137,9 @@ class Canevas(QWidget):
             if len(points) >= 2:
                 self.trace_dessine.emit(points)
             return
+        if self._plume_prise is not None:
+            self._lacher_plume()
+            return
         if self._texte_glisse is not None:
             self._lacher_texte()
             return
@@ -2164,6 +2191,10 @@ class Canevas(QWidget):
             if self._sous_persp(e.position()) == -1:
                 self.persp_valide.emit()
             return
+        if self.outil == PLUME and self.plume_points is not None and e.button() == Qt.LeftButton:
+            self._plume_prise = None
+            self.finir_plume(fermer=False)            # double-clic : le tracé reste ouvert
+            return
         if (self.outil == RECADRER and self.recadre is not None and e.button() == Qt.LeftButton
                 and self.recadre.contains(self.vers_image(e.position()))):
             self.recadre_valide.emit()
@@ -2182,6 +2213,8 @@ class Canevas(QWidget):
 
     # ---------------------------------------------------------- clavier
     def keyPressEvent(self, e):
+        if self.outil == PLUME and self.touche_plume(e):
+            return
         if self.persp is not None and e.key() in (Qt.Key_Return, Qt.Key_Enter):
             self.persp_valide.emit()
             return
