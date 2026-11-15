@@ -34,33 +34,49 @@ def noms_lumieres() -> dict:
 
 
 # ------------------------------------------------------------------ flou selon la profondeur (calcul)
-def flou_profondeur(rgba: np.ndarray, prof: np.ndarray, p: dict) -> np.ndarray:
+def _a_la_taille(carte: np.ndarray, w: int, h: int) -> np.ndarray:
+    if carte.shape == (h, w):
+        return carte
+    return np.asarray(Image.fromarray((carte * 255).astype(np.uint8)).resize((w, h), Image.BILINEAR),
+                      np.float32) / 255
+
+
+def flou_profondeur(rgba: np.ndarray, prof: np.ndarray, p: dict, sujet: np.ndarray | None = None) -> np.ndarray:
     """rgba (h, w, 4) ; prof (h, w) 0..1 (proche = 1). p : x, y (point net), flou (rayon max, px), zone (0..100 :
-    profondeur gardée nette autour du point), arriere (seulement ce qui est plus loin que le point)."""
+    profondeur gardée nette autour du point), arriere (seulement ce qui est plus loin que le point), sujet (garder
+    net tout le sujet : masque `sujet` 0..1, 1 = sujet, donné par le détourage)."""
     h, w = rgba.shape[:2]
-    if prof.shape != (h, w):
-        prof = np.asarray(Image.fromarray((prof * 255).astype(np.uint8)).resize((w, h), Image.BILINEAR),
-                          np.float32) / 255
+    prof = _a_la_taille(prof, w, h)
     x = int(min(w - 1, max(0, p.get("x", w // 2))))
     y = int(min(h - 1, max(0, p.get("y", h // 2))))
     net = float(np.median(prof[max(0, y - 2):y + 3, max(0, x - 2):x + 3]))
     zone = p.get("zone", 15) / 100 * 0.5
     ecart = net - prof if p.get("arriere", False) else np.abs(prof - net)
     quantite = np.clip((ecart - zone) / max(1e-3, 1 - zone) * 2.0, 0, 1)        # 0 = net, 1 = flou maximal
+    if sujet is not None and p.get("sujet", True):
+        # la carte de profondeur se trompe parfois sur une partie du sujet (veste grise devant un mur gris) :
+        # le détourage la rattrape
+        quantite = quantite * (1 - _a_la_taille(sujet, w, h))
     rmax = float(p.get("flou", 20))
     if rmax <= 0.3 or not quantite.any():
         return rgba.copy()
     f = rgba.astype(np.float32)
     f[..., :3] *= f[..., 3:4] / 255                                            # prémultiplié : pas de halo
     niveaux = [0.0, 0.15, 0.35, 0.6, 1.0]
+    # le flou ne prend que ce qui est lui-même flou : les parties nettes (le sujet) ne bavent pas en halo clair
+    # autour d'elles
+    poids = np.clip(quantite / niveaux[1], 0, 1)[..., None]
+    fp = Image.fromarray(np.clip(np.round(f * poids), 0, 255).astype(np.uint8), "RGBA")
+    pp = Image.fromarray(np.round(poids[..., 0] * 255).astype(np.uint8), "L")
     flous = []
     for k in niveaux:
         r = rmax * k
         if r < 0.3:
             flous.append(f)
             continue
-        octets = Image.fromarray(np.clip(np.round(f), 0, 255).astype(np.uint8), "RGBA")   # canaux flous un à un
-        flous.append(np.asarray(octets.filter(ImageFilter.GaussianBlur(r)), np.float32))
+        bf = np.asarray(fp.filter(ImageFilter.GaussianBlur(r)), np.float32)       # canaux flous un à un
+        bp = np.asarray(pp.filter(ImageFilter.GaussianBlur(r)), np.float32)[..., None] / 255
+        flous.append(np.where(bp > 0.01, bf / np.maximum(bp, 0.01), f))
     # entre deux niveaux : mélange selon la quantité de flou du point
     pos = quantite * (len(niveaux) - 1)
     i0 = np.clip(pos.astype(np.int32), 0, len(niveaux) - 2)
@@ -75,7 +91,7 @@ def flou_profondeur(rgba: np.ndarray, prof: np.ndarray, p: dict) -> np.ndarray:
     return np.clip(np.round(res), 0, 255).astype(np.uint8)
 
 
-def panneau_profondeur(rgba: np.ndarray, prof: np.ndarray):
+def panneau_profondeur(rgba: np.ndarray, prof: np.ndarray, avec_sujet: bool = False):
     """Panneau de la fenêtre de réglage : clic = point qui reste net ; flou ; zone nette ; arrière seulement."""
     from PySide6.QtWidgets import QCheckBox
     from .dialogues_reglage import Curseur, _Panneau
@@ -95,13 +111,22 @@ def panneau_profondeur(rgba: np.ndarray, prof: np.ndarray):
             lay.addWidget(self.apercu, 0, Qt.AlignHCenter)
             self.c_flou = Curseur(tr("Flou"), 0, 80, self.p.get("flou", 20), " px")
             self.c_zone = Curseur(tr("Zone nette"), 0, 100, self.p.get("zone", 15), " %")
-            self.arriere = QCheckBox(tr("Flouter seulement l'arrière-plan (pas le premier plan)"))
+            self.sujet = QCheckBox(tr("Garder net tout le sujet (personnes, objet principal)"))
+            self.sujet.setToolTip(tr("Le détourage rattrape ce que la carte de profondeur met à tort au loin (par "
+                                     "exemple une veste grise devant un mur gris)."))
+            self.sujet.setChecked(bool(self.p.get("sujet", True)))
+            self.sujet.setVisible(avec_sujet)
+            self.arriere = QCheckBox(tr("Ne pas flouter ce qui est plus proche que le point net"))
+            self.arriere_info = QLabel()
+            self.arriere_info.setWordWrap(True)
             self.arriere.setChecked(bool(self.p.get("arriere", False)))
             for c in (self.c_flou, self.c_zone):
                 c.change.connect(self._lire)
                 lay.addWidget(c)
-            self.arriere.toggled.connect(self._lire)
-            lay.addWidget(self.arriere)
+            for c in (self.sujet, self.arriere):
+                c.toggled.connect(self._lire)
+                lay.addWidget(c)
+            lay.addWidget(self.arriere_info)
             self._montrer_point()
 
         def _clic(self, x, y, _mods):
@@ -115,9 +140,20 @@ def panneau_profondeur(rgba: np.ndarray, prof: np.ndarray):
             self.p["flou"] = int(self.c_flou.valeur())
             self.p["zone"] = int(self.c_zone.valeur())
             self.p["arriere"] = self.arriere.isChecked()
+            self.p["sujet"] = self.sujet.isChecked()
             self.change.emit()
 
         def _montrer_point(self):
+            # la case « plus proche » ne change rien si le point net est déjà ce qu'il y a de plus proche
+            ph, pw = prof.shape
+            h, w = rgba.shape[:2]
+            px = min(pw - 1, int(self.p.get("x", w // 2) * pw / w))
+            py = min(ph - 1, int(self.p.get("y", h // 2) * ph / h))
+            rien_devant = prof[py, px] >= np.percentile(prof, 97) - 0.02
+            self.arriere_info.setText(
+                tr("Rien n'est plus proche que ce point : cette case ne change rien ici. Elle sert quand vous "
+                   "cliquez sur quelque chose au loin.") if rien_devant else
+                tr("Cochée : ce qui est devant le point net reste net aussi."))
             self.apercu.montrer_image()
             pm = QPixmap(self.apercu.pixmap())
             ph, pw = prof.shape
@@ -141,8 +177,9 @@ def panneau_profondeur(rgba: np.ndarray, prof: np.ndarray):
 # ------------------------------------------------------------------ actions
 class ActionsPhotoIA:
     # ---------------------------------------------------------- calcul d'une carte (masque, profondeur)
-    def _carte_ia(self, titre: str, fabriquer, suite):
-        """Le moteur calcule une image grise (sur l'image visible) ; suite(tableau 0..255 à la taille de l'image)."""
+    def _carte_ia(self, titre: str, fabriquer, suite, toutes: bool = False):
+        """Le moteur calcule une image grise (sur l'image visible) ; suite(tableau 0..255 à la taille de l'image).
+        toutes : la recette a plusieurs sorties, suite reçoit la liste des tableaux."""
         from .dialogues import Attente
         doc = self.doc
         png = doc.png_pour_ia(False)
@@ -154,13 +191,16 @@ class ActionsPhotoIA:
             res = self.moteur.executer(prompt, sorties, annuler, progres)
             if not res:
                 raise ErreurMoteur(tr("Le calcul s'est arrêté sans résultat."))
-            img = QImage.fromData(res[0][1])
-            if img.isNull():
-                raise ErreurMoteur(tr("Résultat illisible."))
-            w, h = doc.taille()
-            if (img.width(), img.height()) != (w, h):
-                img = img.scaled(w, h, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
-            return tableau(img.convertToFormat(FORMAT_IMAGE))[:, :, 0].copy()
+            cartes = []
+            for _nom, octets in (res if toutes else res[:1]):
+                img = QImage.fromData(octets)
+                if img.isNull():
+                    raise ErreurMoteur(tr("Résultat illisible."))
+                w, h = doc.taille()
+                if (img.width(), img.height()) != (w, h):
+                    img = img.scaled(w, h, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+                cartes.append(tableau(img.convertToFormat(FORMAT_IMAGE))[:, :, 0].copy())
+            return cartes if toutes else cartes[0]
 
         attente = Attente(titre, self)
         attente.annuler.connect(annuler.set)
@@ -309,24 +349,29 @@ class ActionsPhotoIA:
                 "Installer le moteur IA permet de l'ajouter (case « Flou selon la profondeur »)."))
             return
 
-        def suite(carte):
+        avec_sujet = recettes.detourage_disponible()
+
+        def suite(cartes):
+            carte = cartes[0]
+            sujet = cartes[1].astype(np.float32) / 255 if len(cartes) > 1 else None
             prof = carte.astype(np.float32) / 255
             rgba = tableau(self.doc.calque_actif.image.convertToFormat(FORMAT_IMAGE))
             w, h = self.doc.taille()
             # point net de départ : le plus proche (le sujet, en général)
             ys, xs = np.nonzero(prof >= np.percentile(prof, 97))
             neutres = {"x": int(np.median(xs)) if len(xs) else w // 2, "y": int(np.median(ys)) if len(ys) else h // 2,
-                       "flou": 0, "zone": 15, "arriere": False}
+                       "flou": 0, "zone": 15, "arriere": False, "sujet": True}
             depart = dict(neutres, flou=int(self.reglages.value("profondeur_flou", 20)))
             petite = prof
             if max(w, h) > 700:                       # la carte montrée dans le panneau : réduite
                 k = 700 / max(w, h)
                 petite = np.asarray(Image.fromarray(carte).resize((max(1, round(w * k)), max(1, round(h * k))),
                                                                   Image.BILINEAR), np.float32) / 255
-            panneau = panneau_profondeur(rgba, petite)(depart, {})
+            panneau = panneau_profondeur(rgba, petite, sujet is not None)(depart, {})
 
             def calcul(a, p):
                 self.reglages.setValue("profondeur_flou", p.get("flou", 20))
-                return flou_profondeur(a, prof, p)
+                return flou_profondeur(a, prof, p, sujet)
             self._dialogue_pixels(titre, panneau, neutres, calcul)
-        self._carte_ia(tr("Calcul de la profondeur"), recettes.profondeur, suite)
+        self._carte_ia(tr("Calcul de la profondeur"), lambda nom: recettes.profondeur(nom, sujet=avec_sujet), suite,
+                       toutes=True)

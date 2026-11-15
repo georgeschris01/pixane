@@ -70,6 +70,11 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
 
 ## Corrections
 
+- **Flou selon la profondeur** : plus de halo clair autour du sujet ; nouvelle case *Garder net tout le sujet*
+  (détourage BiRefNet, calculé en même temps) pour les parties que la carte de profondeur met à tort au loin ; la
+  case « arrière-plan seulement » devient *Ne pas flouter ce qui est plus proche que le point net*, avec une phrase
+  qui dit quand elle ne change rien.
+
 - **Négatif, Postérisation, Seuil** (Image > Réglages) : la fenêtre s'ouvrait sans rien changer à la photo, même
   après OK ; l'effet est maintenant visible dès l'ouverture et appliqué.
 - **Panneau Calques** : les boutons du bas sont sur deux rangées, icônes plus grandes (ils étaient tassés).

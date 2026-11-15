@@ -1582,7 +1582,6 @@
  "Depth Anything 3 Small (flou selon la profondeur, facultatif)": "Depth Anything 3 Small (depth blur, optional)",
  "Flou selon la profondeur": "Depth blur",
  "Flou selon la profondeur (IA)…": "Depth blur (AI)…",
- "Flouter seulement l'arrière-plan (pas le premier plan)": "Blur the background only (not the foreground)",
  "Grands nuages": "Big clouds",
  "Nuit étoilée": "Starry night",
  "Lumière dorée de fin de journée": "Golden late-day light",
@@ -1603,5 +1602,10 @@
  "Zone nette": "Sharp zone",
  "_ciel": "_sky",
  "_colorise": "_colorized",
- "_lumiere": "_lighting"
+ "_lumiere": "_lighting",
+ "Garder net tout le sujet (personnes, objet principal)": "Keep the whole subject sharp (people, main object)",
+ "Le détourage rattrape ce que la carte de profondeur met à tort au loin (par exemple une veste grise devant un mur gris).": "Subject detection fixes what the depth map wrongly puts far away (for example a grey jacket in front of a grey wall).",
+ "Ne pas flouter ce qui est plus proche que le point net": "Do not blur what is nearer than the sharp point",
+ "Rien n'est plus proche que ce point : cette case ne change rien ici. Elle sert quand vous cliquez sur quelque chose au loin.": "Nothing is nearer than this point: this box changes nothing here. It is useful when you click something far away.",
+ "Cochée : ce qui est devant le point net reste net aussi.": "Ticked: what is in front of the sharp point stays sharp too."
 }

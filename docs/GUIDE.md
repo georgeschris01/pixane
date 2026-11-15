@@ -626,8 +626,10 @@ l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi
 - **Filtres > Flou selon la profondeur (IA)…** : comme le flou d'arrière-plan d'un appareil photo. L'IA calcule la
   distance de chaque point (quelques secondes) ; une fenêtre montre cette carte (clair = proche, foncé = loin) :
   **cliquez sur ce qui doit rester net** (au départ : ce qui est le plus proche). **Flou** règle la force, **Zone
-  nette** la profondeur gardée nette autour du point ; **Flouter seulement l'arrière-plan** laisse le premier plan
-  net. Aperçu en direct sur la photo ; s'applique au calque choisi (dans la sélection s'il y en a une). Modèle
+  nette** la profondeur gardée nette autour du point. **Garder net tout le sujet** (cochée au départ) : le
+  détourage rattrape ce que la carte met à tort au loin, par exemple une veste grise devant un mur gris. **Ne pas
+  flouter ce qui est plus proche que le point net** : utile seulement quand vous cliquez sur quelque chose au loin
+  (sinon rien n'est devant, la case ne change rien). Aperçu en direct sur la photo ; s'applique au calque choisi (dans la sélection s'il y en a une). Modèle
   **Depth Anything 3 Small** (137 Mo, Apache-2.0), facultatif : case *Flou selon la profondeur* à l'installation de
   Pixane, ou dans **IA > Installer le moteur IA…**.
 

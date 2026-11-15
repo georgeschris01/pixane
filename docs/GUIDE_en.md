@@ -598,8 +598,10 @@ AI actions, the result goes into the chosen layer (Ctrl+Z undoes it).
   lighting, keeping the people and objects. Compare carefully: the AI may change small details.
 - **Filters > Depth blur (AI)…**: like a camera's background blur. The AI computes the distance of each point (a few
   seconds); a window shows that map (light = near, dark = far): **click what must stay sharp** (at first: the
-  nearest thing). **Blur** sets the strength, **Sharp zone** the depth kept sharp around the point; **Blur the
-  background only** leaves the foreground sharp. Live preview on the photo; applies to the chosen layer (inside the
+  nearest thing). **Blur** sets the strength, **Sharp zone** the depth kept sharp around the point. **Keep the
+  whole subject sharp** (ticked at first): subject detection fixes what the map wrongly puts far away, for example a
+  grey jacket in front of a grey wall. **Do not blur what is nearer than the sharp point**: only useful when you
+  click something far away (otherwise nothing is in front, the box changes nothing). Live preview on the photo; applies to the chosen layer (inside the
   selection if there is one). **Depth Anything 3 Small** model (137 MB, Apache-2.0), optional: *Depth blur* box when
   installing Pixane, or in **AI > Install the AI engine…**.
 

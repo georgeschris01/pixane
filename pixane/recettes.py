@@ -146,8 +146,9 @@ def profondeur_disponible() -> bool:
     return _profondeur["fichier"] is not None
 
 
-def profondeur(image: str, cote: int = 1008):
-    """Carte de profondeur (gris, proche = clair) de l'image envoyée, à sa taille."""
+def profondeur(image: str, cote: int = 1008, sujet: bool = False):
+    """Carte de profondeur (gris, proche = clair) de l'image envoyée, à sa taille ; avec sujet : en plus, le masque
+    du sujet (détourage BiRefNet), dans le même calcul."""
     p = {"10": _n("LoadImage", image=image),
          "11": _n("LoadDA3Model", model_name=_profondeur["fichier"] or PROFONDEUR, weight_dtype="default"),
          "12": _n("DA3Inference", da3_model=["11", 0], image=["10", 0], resolution=cote,
@@ -155,7 +156,13 @@ def profondeur(image: str, cote: int = 1008):
          "13": _n("DA3Render", da3_geometry=["12", 0], output="depth", **{"output.normalization": "min_max",
                                                                           "output.apply_sky_clip": False}),
          "14": _n("PreviewImage", images=["13", 0])}
-    return p, {"14": tr("Profondeur")}
+    if not sujet:
+        return p, {"14": tr("Profondeur")}
+    p.update({"21": _n("LoadBackgroundRemovalModel", bg_removal_name=BIREFNET),
+              "22": _n("RemoveBackground", bg_removal_model=["21", 0], image=["10", 0]),
+              "23": _n("MaskToImage", mask=["22", 0]),
+              "24": _n("PreviewImage", images=["23", 0])})
+    return p, {"14": tr("Profondeur"), "24": tr("Sujet")}
 
 
 def ciel(image: str):

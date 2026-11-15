@@ -51,6 +51,24 @@ r2 = ia_photo.flou_profondeur(rgba, prof, {"x": 200, "y": 40, "flou": 12, "zone"
 verifier(grain(r2, slice(20, 120), slice(20, 380)) > grain(rgba, slice(20, 120), slice(20, 380)) * 0.9
          and grain(r2, slice(190, 250), slice(180, 220)) < grain(rgba, slice(190, 250), slice(180, 220)) + 1,
          "net sur le ciel, « arrière-plan seulement » : rien de plus loin à flouter")
+# pas de halo : un sujet clair net ne bave pas sur le fond flou autour de lui
+fond = np.zeros((200, 200, 4), np.uint8)
+fond[..., 3] = 255
+fond[..., :3] = 40
+fond[60:140, 60:140, :3] = 250
+pf = np.full((200, 200), 0.1, np.float32)
+pf[60:140, 60:140] = 1.0
+r3 = ia_photo.flou_profondeur(fond, pf, {"x": 100, "y": 100, "flou": 20, "zone": 10})
+verifier(r3[100, 52, 0] <= 42 and r3[100, 100, 0] == 250, f"pas de halo clair autour du sujet net (fond : {r3[100, 52, 0]})")
+# une partie du sujet que la carte met au loin (veste grise devant un mur gris) : le détourage la garde nette
+suj = np.zeros((200, 200), np.float32)
+suj[60:140, 60:140] = 1
+pf2 = pf.copy()
+pf2[60:140, 60:100] = 0.1
+r4 = ia_photo.flou_profondeur(fond, pf2, {"x": 120, "y": 100, "flou": 20, "zone": 10}, suj)
+r5 = ia_photo.flou_profondeur(fond, pf2, {"x": 120, "y": 100, "flou": 20, "zone": 10, "sujet": False}, suj)
+verifier(np.array_equal(r4[60:140, 60:140], fond[60:140, 60:140]) and not np.array_equal(r5, r4),
+         "« Garder net tout le sujet » : la partie mal classée reste nette (case décochée : floutée)")
 
 # 2. dans Pixane (réponses du moteur fabriquées)
 app = QApplication(sys.argv)
@@ -66,15 +84,21 @@ for nom in ("a_sel_ciel", "a_ia_ciel", "a_ia_coloriser", "a_ia_lumiere", "a_ia_p
 recettes._sam["fichier"] = "sam3.1_multiplex_fp16.safetensors"
 recettes._kontext.update(type="complet", fichier=recettes.KONTEXT)
 recettes._profondeur["fichier"] = recettes.PROFONDEUR
+recettes._detourage["ok"] = True
 carte_ciel = np.zeros((h, w), np.uint8)
 carte_ciel[:150] = 255
 carte_ciel[40:60, 50:90] = 0                                # un nuage, laissé de côté par SAM
 reponses = {}
 
 
-def faux_carte(titre, fabriquer, suite):
+def faux_carte(titre, fabriquer, suite, toutes=False):
     reponses["recette"] = fabriquer("image.png")
-    suite(carte_ciel if fabriquer is recettes.ciel else (np.dstack([prof])[..., 0] * 255).astype(np.uint8))
+    if fabriquer is recettes.ciel:
+        suite(carte_ciel)
+        return
+    sujet_rouge = np.zeros((h, w), np.uint8)
+    sujet_rouge[180:260, 170:230] = 255
+    suite([(prof * 255).astype(np.uint8), sujet_rouge] if toutes else (prof * 255).astype(np.uint8))
 
 
 f._carte_ia = faux_carte
@@ -132,8 +156,9 @@ verifier(vu.get("ok") and grain(apres, slice(20, 120), slice(20, 380)) < grain(a
          "Flou selon la profondeur : le loin est flou, le sujet (le plus proche, choisi d'office) reste net")
 verifier(f.historique.undoText() == "Flou selon la profondeur", "une étape « Flou selon la profondeur »")
 p, _s = reponses["recette"]
-verifier(p["11"]["class_type"] == "LoadDA3Model" and p["13"]["inputs"]["output"] == "depth",
-         "recette : Depth Anything 3, sortie profondeur")
+verifier(p["11"]["class_type"] == "LoadDA3Model" and p["13"]["inputs"]["output"] == "depth"
+         and p["22"]["class_type"] == "RemoveBackground" and len(_s) == 2,
+         "recette : Depth Anything 3, sortie profondeur, et détourage du sujet dans le même calcul")
 # modèle absent : message clair
 recettes._profondeur["fichier"] = None
 from PySide6.QtWidgets import QMessageBox
