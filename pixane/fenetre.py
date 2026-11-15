@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QComboBox,
                                QLineEdit, QMainWindow, QMenu, QMessageBox, QPushButton, QSizePolicy, QSlider,
                                QSpinBox, QToolBar, QToolButton, QUndoView, QVBoxLayout, QWidget, QInputDialog, QDoubleSpinBox)
 
-from . import affinage, calque_forme, calque_pinceau, langue, recettes, theme
+from . import affinage, calque_forme, calque_pinceau, durees, langue, recettes, theme, traduction
 from .document import vectoriel
 from .icones import icone
 from .langue import tr
@@ -2060,6 +2060,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
             e.ignore()
             return
         self.moteur.arreter()
+        traduction.arreter()
         self._recuperation.tout_effacer()
         self.reglages.setValue("texte_defaut", json.dumps(self.panneau_texte.defaut.vers_dict(), ensure_ascii=False))
         QApplication.instance().removeEventFilter(self)     # boutons de la souris : plus après la fermeture
@@ -3292,7 +3293,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
                      png=prep.png, apres=lambda img: modifier_ia.image_complete(prep, img),
                      placer=lambda image: modifier_ia.etat(doc, prep, image, tr("Modifié")),
                      vue=lambda img: modifier_ia.vue(prep, img, visible), nom_calque=tr("Modifié"),
-                     suffixe=tr("_modifie"))
+                     suffixe=tr("_modifie"), duree="kontext")
 
     def ia_restaurer(self):
         titre = tr("Restaurer une vieille photo")
@@ -3305,8 +3306,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
             return
         boite = QMessageBox(QMessageBox.Question, titre, tr(
             "L'IA redessine toute la photo : rayures, taches, poussières et grain enlevés, contraste et visages "
-            "rendus plus nets. Elle peut changer de petits détails : compare bien les propositions.\n\nCompte "
-            "environ deux minutes par proposition."), parent=self)
+            "rendus plus nets. Elle peut changer de petits détails : compare bien les propositions.") + "\n\n" +
+            durees.phrase("kontext"), parent=self)
         b_ok = boite.addButton(tr("Restaurer"), QMessageBox.AcceptRole)
         b_couleur = boite.addButton(tr("Restaurer et coloriser"), QMessageBox.AcceptRole)
         boite.addButton(tr("Annuler"), QMessageBox.RejectRole)
@@ -3332,11 +3333,11 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         else:
             nom_calque, suffixe = tr("Restaurée"), tr("_restauree")
         self._lancer(titre, False, lambda nom: recettes.restaurer(nom, taille, coloriser), apres=apres,
-                     nom_calque=nom_calque, suffixe=suffixe)
+                     nom_calque=nom_calque, suffixe=suffixe, duree="kontext")
 
     def _lancer(self, titre: str, avec_selection: bool, fabriquer, apres=None, png: bytes | None = None,
                 placer=None, nom_calque: str | None = None, suffixe: str | None = None, affiner=None,
-                remplir_trous: bool = False, vue=None, variante=None, sans_ia=None):
+                remplir_trous: bool = False, vue=None, variante=None, sans_ia=None, duree: str | None = None):
         """Envoie l'image au moteur, attend, puis propose les résultats. remplir_trous (Effacer, Remplir) : les trous
         transparents de la sélection (lettres d'un texte coupé…) sont remplis, opaques. nom_calque : nom du calque du résultat
         (le titre sinon) ; suffixe : ajouté au nom proposé à l'enregistrement (ex. « _restauree »).
@@ -3344,7 +3345,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         variante(nom, force) : recette des variantes d'une proposition (bouton « Partir de celle-ci ») ; l'image
         envoyée est alors la proposition brute choisie, avec la même zone à refaire que la première fois.
         sans_ia() : propositions de plus, faites par Pixane sans IA ([(libellé, image finale)], calculées avec les
-        premières) : ni variantes, ni pleine définition (déjà à la vraie taille)."""
+        premières) : ni variantes, ni pleine définition (déjà à la vraie taille). duree : clé de durees (la durée
+        par proposition est mesurée et retenue : elle s'affiche ensuite dans la fenêtre de consigne)."""
         doc = self.doc
         if png is None:
             png = doc.png_pour_ia(avec_selection)
@@ -3369,12 +3371,15 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
                 prompt, sorties = recette[0], recette[1]
                 morceaux = recette[2] if len(recette) > 2 else 1
                 res = []
+                debut = time.monotonic()
                 for libelle, donnees_res in self.moteur.executer(prompt, sorties, annuler, progres, morceaux):
                     img = QImage.fromData(donnees_res)
                     if img.isNull():
                         raise ErreurMoteur(tr("Résultat illisible."))
                     img = img.convertToFormat(FORMAT_IMAGE)
                     res.append((libelle, apres(img) if apres else img, img))
+                if duree and res and not annuler.is_set():
+                    durees.noter(duree, (time.monotonic() - debut) / len(res))
                 return res
             return calcul
         calcul_ia = calcul_avec(fabriquer, "original", png)

@@ -103,6 +103,11 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
 - **Fichiers RAW** des appareils photo (Canon .CR2 / .CR3, Nikon .NEF, Sony .ARW, .DNG, Fujifilm .RAF, Olympus
   .ORF, Panasonic .RW2…) : ouverts directement (développés avec la balance des blancs de l'appareil), aussi dans le
   Traitement par lot ; Enregistrer ne remplace jamais le RAW. Bibliothèque rawpy (MIT) avec LibRaw (LGPL-2.1).
+- **Traduction des consignes beaucoup plus rapide** : le traducteur démarre en arrière-plan dès l'ouverture de la
+  fenêtre de consigne, puis reste prêt jusqu'à la fermeture de Pixane ; une traduction prend moins d'une seconde
+  (avant : 10 à 15 secondes à chaque fois).
+- **Durées mesurées sur ton PC** : *Créer une image*, *Modifier avec une consigne* et *Restaurer* affichent la durée
+  par proposition mesurée sur ce PC (avant : une durée fixe, celle d'une RTX 3060 Ti).
 
 ## Corrections
 

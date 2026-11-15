@@ -633,7 +633,7 @@ class ActionsPhotoIA:
             placer = lambda image: doc.etat_nouveau_calque(image, tr("Image créée"))
         taille = doc.taille()
         self._lancer(titre, False, lambda nom: recettes.creer(texte, taille, nb=nb), placer=placer,
-                     vue=lambda img: img, nom_calque=tr("Image créée"), suffixe=tr("_creee"),
+                     vue=lambda img: img, nom_calque=tr("Image créée"), suffixe=tr("_creee"), duree="creer",
                      variante=lambda nom, force: recettes.creer(texte, taille, nb=nb, image=nom,
                                                                 force=min(0.9, max(0.3, force))))
 

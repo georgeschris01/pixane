@@ -11,8 +11,11 @@ from __future__ import annotations
 import json
 import os
 import re
+import queue
 import subprocess
 import sys
+import threading
+import time
 from pathlib import Path
 
 MODELE = "Helsinki-NLP/opus-mt-fr-en"
@@ -160,20 +163,132 @@ def python_traducteur() -> Path | None:
     return Path(p) if p and Path(p).is_file() else None
 
 
+_DRAPEAUX = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+
+# Traducteur gardé ouvert : lancer Python et charger le modèle prend environ 10 s, la traduction elle-même un quart
+# de seconde. Le traducteur est donc lancé une fois (en avance, à l'ouverture de la fenêtre de consigne), puis
+# réutilisé jusqu'à la fermeture de Pixane.
+_verrou = threading.Lock()
+_serveur: dict | None = None
+
+
+def _lire(proc, file):
+    try:
+        for ligne in proc.stdout:
+            file.put(ligne.rstrip("\r\n"))
+    except (OSError, ValueError):
+        pass
+    file.put(None)                                  # fin : le traducteur s'est arrêté
+
+
+def _fermer(s: dict):
+    p = s["proc"]
+    try:
+        p.stdin.close()                             # le traducteur s'arrête de lui-même
+        p.wait(timeout=3)
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        try:
+            p.kill()
+        except OSError:
+            pass
+
+
+def _lancer_serveur() -> dict | None:
+    """Lance le traducteur gardé ouvert (sans attendre qu'il soit prêt). À appeler avec _verrou."""
+    global _serveur
+    d = str(dossier())
+    if _serveur is not None:
+        if _serveur["proc"].poll() is None and _serveur["dossier"] == d:
+            return _serveur
+        _fermer(_serveur)
+        _serveur = None
+    python = python_traducteur()
+    if python is None or not installe():
+        return None
+    try:
+        proc = subprocess.Popen([str(python), "-I", str(SCRIPT), "--serveur", d], stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, encoding="utf-8",
+                                creationflags=_DRAPEAUX)
+    except OSError:
+        return None
+    file: queue.Queue = queue.Queue()
+    threading.Thread(target=_lire, args=(proc, file), daemon=True).start()
+    _serveur = {"proc": proc, "file": file, "dossier": d, "pret": False}
+    return _serveur
+
+
+def prechauffer():
+    """Lance le traducteur en arrière-plan s'il est installé (rend la main tout de suite)."""
+    with _verrou:
+        _lancer_serveur()
+
+
+def arreter():
+    """Arrête le traducteur gardé ouvert (fermeture de Pixane)."""
+    global _serveur
+    with _verrou:
+        if _serveur is not None:
+            _fermer(_serveur)
+            _serveur = None
+
+
+def _ligne(s: dict, fin: float) -> str:
+    try:
+        ligne = s["file"].get(timeout=max(0.1, fin - time.monotonic()))
+    except queue.Empty:
+        raise TimeoutError("traducteur trop lent")
+    if ligne is None:
+        raise RuntimeError("traducteur arrêté")
+    return ligne
+
+
+def _par_serveur(lignes: list[str], delai: float) -> list[str] | None:
+    """Traduction par le traducteur gardé ouvert ; None s'il ne marche pas (on essaie alors l'ancienne façon)."""
+    global _serveur
+    with _verrou:
+        s = _lancer_serveur()
+        if s is None:
+            return None
+        fin = time.monotonic() + delai
+        try:
+            while not s["pret"]:
+                if _ligne(s, fin) == "PRET":
+                    s["pret"] = True
+            s["proc"].stdin.write(json.dumps({"textes": lignes}, ensure_ascii=False) + "\n")
+            s["proc"].stdin.flush()
+            ligne = _ligne(s, fin)
+            while not ligne.startswith(("[", "{")):
+                ligne = _ligne(s, fin)
+            rep = json.loads(ligne)
+        except (OSError, ValueError, RuntimeError, TimeoutError):
+            _fermer(s)
+            _serveur = None
+            return None
+    if isinstance(rep, dict):
+        raise RuntimeError(rep.get("erreur") or "erreur")
+    return rep
+
+
+def _une_fois(lignes: list[str], delai: float) -> list[str]:
+    """Ancienne façon : un Python lancé pour une seule traduction."""
+    python = python_traducteur()
+    if python is None:
+        raise RuntimeError("Python de ComfyUI introuvable")
+    entree = json.dumps({"dossier": str(dossier()), "textes": lignes})
+    r = subprocess.run([str(python), "-I", str(SCRIPT)], input=entree, capture_output=True, text=True,
+                       encoding="utf-8", timeout=delai, creationflags=_DRAPEAUX)
+    if r.returncode != 0:
+        raise RuntimeError((r.stderr or "").strip().splitlines()[-1] if r.stderr.strip() else "erreur")
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
 def traduire(texte: str, delai: float = 120) -> str:
     """Traduit en anglais (les textes entre guillemets restent tels quels). Lève RuntimeError si impossible."""
     protege, morceaux = proteger(texte)
     if not re.search(r"[A-Za-zÀ-ÿ]{2,}", re.sub(r"Q\d+Q", "", protege)):
         return remettre(protege, morceaux)          # rien à traduire (seulement des guillemets)
-    python = python_traducteur()
-    if python is None:
-        raise RuntimeError("Python de ComfyUI introuvable")
     lignes = [l for l in protege.splitlines()]
-    entree = json.dumps({"dossier": str(dossier()), "textes": lignes})
-    drapeaux = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
-    r = subprocess.run([str(python), "-I", str(SCRIPT)], input=entree, capture_output=True, text=True,
-                       encoding="utf-8", timeout=delai, creationflags=drapeaux)
-    if r.returncode != 0:
-        raise RuntimeError((r.stderr or "").strip().splitlines()[-1] if r.stderr.strip() else "erreur")
-    sortie = json.loads(r.stdout.strip().splitlines()[-1])
+    sortie = _par_serveur(lignes, delai)
+    if sortie is None:
+        sortie = _une_fois(lignes, delai)
     return remettre("\n".join(sortie), morceaux)

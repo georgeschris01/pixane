@@ -6,7 +6,7 @@ from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import (QComboBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QMessageBox,
                                QPlainTextEdit, QPushButton, QSpinBox, QVBoxLayout)
 
-from . import traduction
+from . import durees, traduction
 from .langue import tr
 
 # (texte montré, modèle inséré : « … » à remplacer par l'utilisateur)
@@ -128,8 +128,7 @@ class DialogueConsigne(QDialog):
         self.nb.setRange(1, 4)
         self.nb.setValue(nb)
         ligne.addWidget(self.nb)
-        ligne.addWidget(QLabel(tr("(environ 30 secondes chacune)") if creer else
-                               tr("(environ 2 à 3 minutes chacune)")))
+        ligne.addWidget(QLabel(durees.texte("creer" if creer else "kontext")))
         ligne.addStretch(1)
         lay.addLayout(ligne)
         boutons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -139,6 +138,7 @@ class DialogueConsigne(QDialog):
         lay.addWidget(boutons)
         self._traduit_de = None
         self._maj_etat()
+        traduction.prechauffer()          # lancé en avance : la traduction est prête quand la consigne est écrite
 
     def _maj_etat(self):
         if traduction.installe():
@@ -156,6 +156,7 @@ class DialogueConsigne(QDialog):
         from .installation_traducteur import FenetreTraducteur
         FenetreTraducteur(self).exec()
         self._maj_etat()
+        traduction.prechauffer()
 
     def _exemple(self, i: int):
         modele = self.exemples.itemData(i)

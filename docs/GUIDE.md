@@ -34,6 +34,8 @@ Ce guide explique chaque outil et chaque réglage : **à quoi il sert** et **com
 
 La première utilisation d'un modèle après le démarrage est un peu plus longue (il se charge en mémoire).
 
+Pour **Créer une image**, **Modifier avec une consigne** et **Restaurer**, Pixane mesure la durée sur ton PC : ensuite, la fenêtre affiche « environ … chacune, mesuré sur ce PC ». Avant la première mesure, elle donne la durée sur une RTX 3060 Ti, en prévenant que ça dépend du PC.
+
 ### Configuration
 
 | | Minimum | Conseillé |
@@ -474,18 +476,19 @@ lunettes »… (modèle **Flux Kontext**, à ajouter dans Installer le moteur IA
   tu choisis : **Installer le traducteur…**, **Corriger**, ou **Envoyer quand même**.
 - Écris dans les guillemets le texte **exactement comme sur l'image** (accents, majuscules) : « Brûler le Feu »,
   pas « bruler le feu ».
-- Le traducteur Il s'installe par le
+- Le traducteur s'installe par le
   **programme d'installation de Pixane** (page « Traducteur des consignes »), par le bouton « Installer le
   traducteur… », ou par sa case dans **IA > Installer le moteur IA** (fenêtre « Installer »
   ou « Compléter le moteur IA » si ComfyUI était déjà là) : cochée tant qu'il n'est pas installé, grisée ensuite.
   **Dossier du traducteur… Changer…** : tu choisis où le ranger (par défaut,
   `%LOCALAPPDATA%\Pixane\traducteur`). Pas dans le dossier où Pixane est
   installé (D:\Programmes\Pixane…) : il est remplacé à chaque mise à jour, Pixane le refuse.
+- Le traducteur démarre en arrière-plan dès l'ouverture de la fenêtre (une dizaine de secondes, le temps que tu écrives), puis il reste prêt jusqu'à la fermeture de Pixane : chaque traduction est alors presque immédiate.
 - L'IA travaille sur un morceau autour de la sélection (plus de détail qu'avec toute l'image) ; le résultat n'est
   gardé que dans la sélection et là où il change vraiment : le reste garde ses pixels d'origine.
 - **Calque avec de la transparence** (texte, logo sans fond) : l'IA voit ce calque seul, et le résultat garde un
   fond transparent. Sinon, elle voit l'image visible et le résultat est opaque.
-- Propositions : 1 à 4, environ 2 à 3 minutes chacune. Les écritures très travaillées sont bien imitées, mais un
+- Propositions : 1 à 4, environ 2 à 3 minutes chacune sur une RTX 3060 Ti (la fenêtre affiche la durée mesurée sur ton PC). Les écritures très travaillées sont bien imitées, mais un
   peu moins fines que l'original ; les accents et les longs textes sont parfois mal écrits : demande d'autres
   propositions.
 

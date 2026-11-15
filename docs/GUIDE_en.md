@@ -33,6 +33,8 @@ each new feature.
 
 The first use of a model after start-up takes a little longer (it is loaded into memory).
 
+For **Create an image**, **Edit with an instruction** and **Restore**, Pixane measures the time on your PC: the window then shows “about … each, measured on this PC”. Before the first measurement, it gives the time on an RTX 3060 Ti, warning that it depends on the PC.
+
 ### System requirements
 
 | | Minimum | Recommended |
@@ -464,11 +466,12 @@ model, to be added in Install the AI engine).
   greyed out afterwards. **Translator folder… Change…**: you choose where to store it (by default,
   `%LOCALAPPDATA%\Pixane\traducteur`). Not inside the folder where
   Pixane is installed (D:\Programmes\Pixane…): it is replaced at each update, Pixane refuses it.
+- The translator starts in the background as soon as the window opens (about ten seconds, while you write), then stays ready until Pixane is closed: each translation is then almost instant.
 - The AI works on a piece around the selection (more detail than with the whole image); the result is only kept
   inside the selection and where it really changes: the rest keeps its original pixels.
 - **Layer with transparency** (text, logo without background): the AI sees this layer alone, and the result keeps
   a transparent background. Otherwise it sees the visible image and the result is opaque.
-- Proposals: 1 to 4, about 2 to 3 minutes each. Elaborate handwriting is well imitated but slightly less fine
+- Proposals: 1 to 4, about 2 to 3 minutes each on an RTX 3060 Ti (the window shows the time measured on your PC). Elaborate handwriting is well imitated but slightly less fine
   than the original; accents and long texts are sometimes misspelled: ask for more proposals.
 
 ### Expand image (Shift+A)
