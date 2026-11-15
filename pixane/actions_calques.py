@@ -164,7 +164,7 @@ class ActionsCalques:
             return
         nom = self.doc.chemin.stem if self.doc.chemin else (self.doc.nom or tr("sans titre"))
         nom += getattr(self.doc, "suffixe_nom", None) or ""      # ex. « photo_restauree » → photo_restauree_web
-        d = DialogueExport(self, qimage_vers_pil(self.doc.image), nom, self.doc.exif, self.doc.icc)
+        d = DialogueExport(self, qimage_vers_pil(self.doc.image_tramee()), nom, self.doc.exif, self.doc.icc)
         if d.exec() == QDialog.Accepted:
             self.statusBar().showMessage(tr("Exporté : {chemin}", chemin=d.chemin), 8000)
         d.deleteLater()
@@ -436,7 +436,7 @@ class ActionsCalques:
         return True
 
     def _dialogue_pixels(self, titre: str, panneau, neutres: dict, calcul, auto: bool = False,
-                         toujours: bool = False, etape=None):
+                         toujours: bool = False, etape=None, seize: str | None = None):
         """Réglage ou filtre appliqué dans les pixels du calque choisi (dans la sélection s'il y en a une), avec un
         aperçu en direct calculé en arrière-plan."""
         from .fenetre import CommandeEtat, Tache
@@ -468,7 +468,8 @@ class ActionsCalques:
                 montrer(p, None)
                 return
             suivi["occupe"] = True
-            t = Tache(lambda _progres: filtres.appliquer_calque(calque.image, lambda a: calcul(a, p), selection))
+            t = Tache(lambda _progres: filtres.appliquer_calque(calque.image, lambda a: calcul(a, p), selection,
+                                                                             seize))
             t.fini.connect(lambda img: fini(p, img))
             t.echec.connect(lambda _m: fini(p, None))
             suivi["tache"] = t
@@ -492,7 +493,7 @@ class ActionsCalques:
         if ok and (p != neutres or toujours):
             QApplication.setOverrideCursor(Qt.WaitCursor)
             try:
-                img = filtres.appliquer_calque(calque.image, lambda a: calcul(a, p), selection)
+                img = filtres.appliquer_calque(calque.image, lambda a: calcul(a, p), selection, seize)
             finally:
                 QApplication.restoreOverrideCursor()
             apres = doc.etat_calque_modifie(index, image=img, texte=None)
@@ -543,7 +544,7 @@ class ActionsCalques:
         self._dialogue_pixels(titre, panneau, neutres,
                               lambda a, p: ajustements.appliquer_rgba(a, type_, p), auto=type_ == "niveaux",
                               toujours=not ajustements.neutre(type_, neutres),
-                              etape=lambda p: {"genre": "reglage", "type": type_, "params": p})
+                              etape=lambda p: {"genre": "reglage", "type": type_, "params": p}, seize="entier")
 
     def nouveau_calque_reglage(self, type_: str):
         """Calque de réglage : modifiable à tout moment (double-clic), sans toucher aux pixels."""
@@ -743,4 +744,5 @@ class ActionsCalques:
         panneau = PanneauFiltre(type_, neutres, {})
         fonction = filtres.FONCTIONS[type_]
         self._dialogue_pixels(titre, panneau, neutres, lambda a, p: fonction(a, p), toujours=True,
-                              etape=lambda p: {"genre": "filtre", "type": type_, "params": p})
+                              etape=lambda p: {"genre": "filtre", "type": type_, "params": p},
+                              seize="flottant")

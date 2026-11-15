@@ -93,7 +93,8 @@ def _position(style: str, w: int, h: int, angle: float, echelle: float) -> np.nd
     return ((np.arctan2(-y, x) - a) / (2 * math.pi)) % 1.0      # angulaire : un tour complet
 
 
-def rendre(r: Remplissage, w: int, h: int) -> QImage:
+def rendre(r: Remplissage, w: int, h: int, seize: bool = False) -> QImage:
+    """seize : dégradé calculé en 16 bits (document 16 bits)."""
     if r.genre == "motif":
         img = motifs.image_pavee(r.motif or motifs.DEFAUT, w, h, r.motif_echelle / 100)
         if img is not None:
@@ -106,6 +107,13 @@ def rendre(r: Remplissage, w: int, h: int) -> QImage:
         n = 1024
         tab = degrades.table(d, None, n)                   # (n, 4) RGBA 0..1, non prémultiplié
         pos = np.clip(_position(r.style, w, h, r.angle, r.echelle), 0, 1)
+        if seize:                                          # 16 bits : couleurs interpolées, sans marches
+            from .profondeur import qimage16
+            x = pos * (n - 1)
+            c = np.stack([np.interp(x, np.arange(n), tab[:, k]) for k in range(4)], axis=-1)
+            a = c[..., 3:4]
+            rgba = np.round(np.concatenate([c[..., :3] * a, a], axis=2) * 65535).astype(np.uint16)
+            return qimage16(rgba, premul=True)
         i = np.round(pos * (n - 1)).astype(np.int32)
         c = tab[i]
         a = c[..., 3:4]
@@ -119,7 +127,8 @@ def rendre(r: Remplissage, w: int, h: int) -> QImage:
 
 def calque(c, r: Remplissage, w: int, h: int):
     """Le calque c devient (ou reste) le calque de remplissage r, redessiné à la taille de la feuille."""
-    img = rendre(r, w, h)
+    from .profondeur import est_16
+    img = rendre(r, w, h, est_16(c.image))
     return replace(c, image=img, remplissage=replace(r, rendu=img), texte=None, pinceau=None, forme=None,
                    hors=None, hors_x=0, hors_y=0, origine=None)
 

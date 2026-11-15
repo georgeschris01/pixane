@@ -62,7 +62,7 @@ class _Lecteur:
 
 
 def _canal(lec: _Lecteur, fin: int, w: int, h: int, prof: int) -> np.ndarray | None:
-    """Un canal d'un calque (compression, puis données) -> tableau (h, w) uint8."""
+    """Un canal d'un calque (compression, puis données) -> tableau (h, w) uint8, ou uint16 pour un PSD 16 bits."""
     comp = lec.u16()
     octets = prof // 8
     if w <= 0 or h <= 0:
@@ -88,7 +88,7 @@ def _canal(lec: _Lecteur, fin: int, w: int, h: int, prof: int) -> np.ndarray | N
     lec.p = fin
     if octets == 1:
         return np.frombuffer(brut, np.uint8)[:w * h].reshape(h, w)
-    return (np.frombuffer(brut, ">u2")[:w * h].reshape(h, w) >> 8).astype(np.uint8)
+    return np.frombuffer(brut, ">u2")[:w * h].reshape(h, w).astype(np.uint16)
 
 
 def _aplati(chemin: Path, raison: str):
@@ -249,8 +249,13 @@ def _vers_calque(f, W: int, H: int, mode: int) -> Calque:
         else:
             r = g = b = px[0]
         a = px.get(-1)
-        a = np.full((h, w), 255, np.uint8) if a is None else a.copy()
-        morceau = qimage_rgba(np.dstack([r, g, b, a]))
+        seize = r.dtype == np.uint16
+        a = np.full((h, w), 65535 if seize else 255, r.dtype) if a is None else a.copy()
+        if seize:                              # PSD 16 bits : le calque reste en 16 bits
+            from .profondeur import qimage16
+            morceau = qimage16(np.dstack([r, g, b, a]))
+        else:
+            morceau = qimage_rgba(np.dstack([r, g, b, a]))
     else:
         morceau = None
     m = _masque(f, W, H)
@@ -271,7 +276,8 @@ def _masque(f, W: int, H: int):
     m = np.full((H, W), defaut, np.uint8)
     y0, x0, y1, x1 = max(mh, 0), max(mg, 0), min(mb, H), min(md, W)
     if y1 > y0 and x1 > x0:
-        m[y0:y1, x0:x1] = px[-2][y0 - mh:y1 - mh, x0 - mg:x1 - mg]
+        bout = px[-2][y0 - mh:y1 - mh, x0 - mg:x1 - mg]
+        m[y0:y1, x0:x1] = (bout >> 8).astype(np.uint8) if bout.dtype == np.uint16 else bout
     return masque_depuis(m)
 
 
@@ -376,7 +382,16 @@ def lire_resolution_psd(chemin: str | Path) -> float | None:
     return None
 
 
-def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = None, dpi: float = 72.0) -> None:
+def _plan16(plan: np.ndarray) -> np.ndarray:
+    """Plan (h, w) uint16 -> octets gros-boutistes (h, 2w) : la compression RLE travaille octet par octet."""
+    return np.ascontiguousarray(plan.astype(">u2")).view(np.uint8).reshape(plan.shape[0], -1)
+
+
+def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = None, dpi: float = 72.0,
+               profondeur: int = 8) -> None:
+    """profondeur 16 : PSD 16 bits (calques, masques et image fusionnée) ; `fusion` est alors l'image 16 bits."""
+    from .profondeur import tab16
+    seize = profondeur == 16
     chemin = Path(chemin)
     W, H = fusion.width(), fusion.height()
     if W > 30000 or H > 30000:
@@ -401,7 +416,7 @@ def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = 
             donnees.append(bloc)
             continue
         entiere, ox, oy = image_entiere(c)              # ce qui dépasse de la feuille est gardé
-        t = tableau(entiere.convertToFormat(FORMAT_IMAGE))
+        t = tab16(entiere) if seize else tableau(entiere.convertToFormat(FORMAT_IMAGE))
         alpha = t[:, :, 3]
         ys, xs = np.nonzero(alpha)
         if len(ys):
@@ -414,7 +429,8 @@ def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = 
         canaux = []
         for ident, k in ((-1, 3), (0, 0), (1, 1), (2, 2)):
             if bas > haut:
-                longueurs, octets = _canal_rle(np.ascontiguousarray(morceau[:, :, k]))
+                plan = morceau[:, :, k]
+                longueurs, octets = _canal_rle(_plan16(plan) if seize else np.ascontiguousarray(plan))
                 bloc = struct.pack(">H", 1) + longueurs + octets
             else:
                 bloc = struct.pack(">H", 0)
@@ -422,7 +438,7 @@ def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = 
         donnees_masque = struct.pack(">I", 0)
         if c.masque is not None:
             m = masque_tableau(c.masque)
-            longueurs, octets = _canal_rle(np.ascontiguousarray(m))
+            longueurs, octets = _canal_rle(_plan16(m.astype(np.uint16) * 257) if seize else np.ascontiguousarray(m))
             canaux.append((-2, struct.pack(">H", 1) + longueurs + octets))
             donnees_masque = struct.pack(">IiiiiBBH", 20, 0, 0, H, W, 255, 0 if c.masque_actif else 2, 0)
         nom = c.nom or "Calque"
@@ -453,18 +469,23 @@ def ecrire_psd(chemin: str | Path, calques, fusion: QImage, icc: bytes | None = 
         ressources += r + (b"\x00" if len(icc) % 2 else b"")
 
     # image fusionnée (sur fond blanc), pour les visionneuses et les logiciels sans calques
-    f = tableau(fusion.convertToFormat(FORMAT_IMAGE)).astype(np.uint16)
-    a = f[:, :, 3:4]
-    rgb = ((f[:, :, :3] * a + 255 * (255 - a)) // 255).astype(np.uint8)
+    if seize:
+        f = tab16(fusion).astype(np.uint64)
+        a = f[:, :, 3:4]
+        rgb = ((f[:, :, :3] * a + 65535 * (65535 - a)) // 65535).astype(np.uint16)
+    else:
+        f = tableau(fusion.convertToFormat(FORMAT_IMAGE)).astype(np.uint16)
+        a = f[:, :, 3:4]
+        rgb = ((f[:, :, :3] * a + 255 * (255 - a)) // 255).astype(np.uint8)
     longueurs, octets = [], []
     for k in range(3):
-        l, o = _canal_rle(np.ascontiguousarray(rgb[:, :, k]))
+        l, o = _canal_rle(_plan16(rgb[:, :, k]) if seize else np.ascontiguousarray(rgb[:, :, k]))
         longueurs.append(l)
         octets.append(o)
 
     temporaire = chemin.with_name(chemin.name + ".tmp")
     with open(temporaire, "wb") as fic:
-        fic.write(b"8BPS" + struct.pack(">H", 1) + b"\x00" * 6 + struct.pack(">HIIHH", 3, H, W, 8, 3))
+        fic.write(b"8BPS" + struct.pack(">H", 1) + b"\x00" * 6 + struct.pack(">HIIHH", 3, H, W, 16 if seize else 8, 3))
         fic.write(struct.pack(">I", 0))
         fic.write(struct.pack(">I", len(ressources)) + ressources)
         fic.write(struct.pack(">I", len(calques_masques)) + calques_masques)

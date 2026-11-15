@@ -43,11 +43,12 @@ def _exif_vignette(r) -> bytes | None:
         return None
 
 
-def developper(chemin, demi: bool = False) -> tuple[np.ndarray, bytes | None]:
-    """-> (tableau RGB uint8, EXIF ou None). demi : moitié de la taille (beaucoup plus rapide : aperçus, essais)."""
+def developper(chemin, demi: bool = False, seize: bool = False) -> tuple[np.ndarray, bytes | None]:
+    """-> (tableau RGB uint8, ou uint16 si seize ; EXIF ou None). demi : moitié de la taille (beaucoup plus rapide :
+    aperçus, essais)."""
     import rawpy
     with rawpy.imread(str(chemin)) as r:
-        rgb = r.postprocess(use_camera_wb=True, half_size=demi, output_bps=8, bright=1.0,
+        rgb = r.postprocess(use_camera_wb=True, half_size=demi, output_bps=16 if seize else 8, bright=1.0,
                             auto_bright_thr=0.001)
         exif = _exif_vignette(r)
     return np.ascontiguousarray(rgb), exif

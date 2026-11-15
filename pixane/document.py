@@ -27,6 +27,7 @@ from .langue import tr
 from .styles import Style
 from .texte import Texte, nom_calque, rendre
 from . import calque_forme, calque_pinceau, calque_remplissage
+from . import profondeur as prof
 from .raw import filtre as filtre_raw
 from .transformation import redimensionner
 
@@ -47,7 +48,10 @@ def pil_vers_qimage(im: Image.Image) -> QImage:
 
 
 def tableau(img: QImage) -> np.ndarray:
-    """Vue numpy (h, w, 4) d'une QImage 32 bits (copie)."""
+    """Vue numpy (h, w, 4) uint8 d'une QImage 32 bits (copie). Une image 16 bits est d'abord ramenée à son
+    équivalent 8 bits (pont : voir profondeur.py)."""
+    if prof.est_16(img):
+        img = prof.vers_8(img)
     h, w, ligne = img.height(), img.width(), img.bytesPerLine()
     brut = np.frombuffer(img.constBits(), np.uint8, count=h * ligne).reshape(h, ligne)
     return brut[:, : w * 4].reshape(h, w, 4).copy()
@@ -82,8 +86,8 @@ def masque(selection: QImage) -> np.ndarray:
     return tableau(selection)[:, :, 3]
 
 
-def image_vide(largeur: int, hauteur: int) -> QImage:
-    img = QImage(largeur, hauteur, FORMAT_CALQUE)
+def image_vide(largeur: int, hauteur: int, seize: bool = False) -> QImage:
+    img = QImage(largeur, hauteur, prof.FORMAT_16 if seize else FORMAT_CALQUE)
     img.fill(Qt.transparent)
     return img
 
@@ -169,7 +173,7 @@ def image_entiere(c: Calque) -> tuple[QImage, int, int]:
     if c.hors is None:
         return c.image, 0, 0
     r = rect_entier(c)
-    img = image_vide(r.width(), r.height())
+    img = image_vide(r.width(), r.height(), prof.est_16(c.image))
     p = QPainter(img)
     p.drawImage(c.hors_x - r.x(), c.hors_y - r.y(), c.hors)
     p.setCompositionMode(QPainter.CompositionMode_Source)      # dans la feuille : `image` fait foi
@@ -181,8 +185,9 @@ def image_entiere(c: Calque) -> tuple[QImage, int, int]:
 def avec_image_entiere(c: Calque, img: QImage, x: int, y: int, W: int, H: int, **changements) -> Calque:
     """Le calque dont l'image entière est `img`, posée en (x, y) : la partie dans la feuille W × H va dans `image`,
     ce qui dépasse est gardé dans `hors` (réduit aux pixels non transparents)."""
-    img = img.convertToFormat(FORMAT_CALQUE)
-    dedans = image_vide(W, H)
+    seize = prof.est_16(img)
+    img = img.convertToFormat(prof.FORMAT_16 if seize else FORMAT_CALQUE)
+    dedans = image_vide(W, H, seize)
     p = QPainter(dedans)
     p.drawImage(x, y, img)
     p.end()
@@ -302,7 +307,7 @@ def _transforme_entier(c: Calque, transfo: QTransform, W: int, H: int, lisse: bo
     img, x, y = image_entiere(c)
     t = QTransform().translate(x, y) * transfo
     r = t.mapRect(QRectF(0, 0, img.width(), img.height())).toAlignedRect()
-    res = image_vide(max(1, r.width()), max(1, r.height()))
+    res = image_vide(max(1, r.width()), max(1, r.height()), prof.est_16(img))
     p = QPainter(res)
     p.setRenderHint(QPainter.SmoothPixmapTransform, lisse)
     p.setRenderHint(QPainter.Antialiasing, lisse)
@@ -560,6 +565,11 @@ class Document(QObject):
         self.nom: str | None = None          # nom d'une image nouvelle, pas encore enregistrée
         self.epreuve: tuple | None = None    # (profil CMJN, intention) : aperçu « comme à l'impression » à l'écran
         self._apercu: tuple | None = None    # (clé, image) de l'aperçu d'impression
+        self.profondeur: int = 8             # 8 ou 16 bits par couche (Image > Mode)
+        self._ref16: list = []               # dernières images 16 bits des calques (voir _normaliser)
+        self._fusion16: QImage | None = None
+        self._tramee: tuple | None = None
+        self._minuterie = None                # tramage de l'écran, un peu après le dernier changement
 
     # ---------------------------------------------------------- image fusionnée
     def taille(self) -> tuple[int, int]:
@@ -569,15 +579,110 @@ class Document(QObject):
     @property
     def image(self) -> QImage:
         if self._fusion is None:
-            w, h = self.taille()
-            self._fusion = fusionner(self.calques, w, h).convertToFormat(FORMAT_IMAGE)
+            if self.profondeur == 16:          # (sans tramage : sert aussi de référence au pont et à l'IA)
+                self._fusion = prof.vers_8(self.image16()).convertToFormat(FORMAT_IMAGE)
+            else:
+                self._fusion = fusionner(self.calques, *self.taille()).convertToFormat(FORMAT_IMAGE)
             if self.mode == "gris":
                 self._fusion = en_gris(self._fusion)
         return self._fusion
 
+    def image16(self) -> QImage:
+        """Image fusionnée en 16 bits (Format_RGBA64, non prémultipliée) : pour enregistrer un document 16 bits."""
+        if self._fusion16 is None or self._fusion16[0] is not self.calques:
+            img = fusionner(self.calques, *self.taille()).convertToFormat(QImage.Format_RGBA64)
+            if self.mode == "gris":
+                img = en_gris16(img)
+            self._fusion16 = (self.calques, img)
+        return self._fusion16[1]
+
+    # ---------------------------------------------------------- profondeur (8 / 16 bits)
+    def _normaliser(self, calques) -> tuple:
+        """Calques mis à la profondeur du document. En 16 bits, une image 8 bits (rendue par une fonction du pont)
+        est remontée en gardant les pixels 16 bits inchangés (profondeur.remonter). Le calque est corrigé sur
+        place (il est immuable pour le reste du programme : l'état gardé pour Annuler en profite)."""
+        seize = self.profondeur == 16
+        for i, c in enumerate(calques):
+            ref = self._ref16[i] if i < len(self._ref16) else None
+            if all(img is None or prof.est_16(img) == seize for img in (c.image, c.hors)):
+                continue
+            # calques modifiables (pinceau, forme, remplissage) et meilleure version : restent valables
+            modifiables = {a: getattr(c, a) for a in ("pinceau", "forme", "remplissage")
+                           if getattr(c, a, None) is not None and getattr(c, a).rendu is c.image}
+            origine_ok = origine_valide(c) is not None
+            for champ in ("image", "hors"):
+                img = getattr(c, champ)
+                if img is None or prof.est_16(img) == seize:
+                    continue
+                nouv = prof.remonter(img, ref if champ == "image" else None) if seize else prof.en_8(img)
+                object.__setattr__(c, champ, nouv)
+            for a, obj in modifiables.items():
+                object.__setattr__(c, a, replace(obj, rendu=c.image))
+            if origine_ok:
+                object.__setattr__(c, "origine", replace(c.origine, cles=_cles(c)))
+            composition._cache.pop(c, None)
+        self._ref16 = [c.image for c in calques] if seize else []
+        return tuple(calques)
+
+    def definir_profondeur(self, p: int) -> None:
+        """8 ou 16 bits, sans Annuler (à l'ouverture d'un fichier)."""
+        self.profondeur = p
+        self._ref16 = []
+        self.calques = self._normaliser(self.calques)
+        self._fusion = self._fusion16 = None
+
+    def etat_profondeur(self, p: int):
+        """État avec tous les calques convertis (Image > Mode > 8 / 16 bits)."""
+        if p == 16:
+            conv = prof.en_16
+        else:                                          # vers 8 bits : avec tramage (réglage)
+            conv = lambda img: prof.en_8(prof.vers_8_trame(img)) if prof.est_16(img) else img
+        calques = []
+        for c in self.calques:
+            n = replace(c, image=conv(c.image), hors=conv(c.hors) if c.hors is not None else None)
+            for a in ("pinceau", "forme", "remplissage"):
+                obj = getattr(c, a, None)
+                if obj is not None and obj.rendu is c.image:
+                    n = replace(n, **{a: replace(obj, rendu=n.image)})
+            if origine_valide(c) is not None:
+                n = replace(n, origine=replace(c.origine, cles=_cles(n)))
+            calques.append(n)
+        return self.etat_avec(calques)
+
+    def image_tramee(self) -> QImage:
+        """Image 8 bits pour l'écran et les exports 8 bits : en 16 bits, avec tramage (s'il est allumé)."""
+        if self.profondeur != 16 or not prof.tramage:
+            return self.image
+        if self._tramee is None or self._tramee[0] is not self.calques or self._tramee[1] != self.mode:
+            img = prof.vers_8_trame(self.image16()).convertToFormat(FORMAT_IMAGE)
+            self._tramee = (self.calques, self.mode, img)
+        return self._tramee[2]
+
+    def _image_ecran(self) -> QImage:
+        """Image 8 bits pour l'écran. En 16 bits avec tramage : le tramage d'une grande image prend quelques
+        dixièmes de seconde ; pendant qu'on travaille (coup de pinceau, aperçu d'un réglage), l'image est montrée
+        sans tramage, et tramée 0,3 s après le dernier changement."""
+        if self.profondeur != 16 or not prof.tramage:
+            return self.image
+        t = self._tramee
+        if t is not None and t[0] is self.calques and t[1] == self.mode:
+            return t[2]
+        if self._minuterie is None:
+            from PySide6.QtCore import QTimer
+            self._minuterie = QTimer(self)
+            self._minuterie.setSingleShot(True)
+            self._minuterie.timeout.connect(self._tramer_ecran)
+        self._minuterie.start(300)
+        return self.image
+
+    def _tramer_ecran(self) -> None:
+        if self.profondeur == 16 and prof.tramage:
+            self.image_tramee()
+            self.change.emit()
+
     def image_affichee(self) -> QImage:
         """Image montrée à l'écran : avec l'aperçu d'impression (CMJN) s'il est allumé."""
-        img = self.image
+        img = self._image_ecran()
         if not self.epreuve:
             return img
         cle = (img.cacheKey(), self.epreuve)
@@ -593,7 +698,7 @@ class Document(QObject):
         """RVB ou niveaux de gris (les calques ne sont pas touchés : seule l'image fusionnée passe en gris)."""
         if mode != self.mode:
             self.mode = mode
-            self._fusion = None
+            self._fusion = self._fusion16 = None
             self.modifie = True
             self.change.emit()
 
@@ -610,19 +715,37 @@ class Document(QObject):
             calques, icc, remarques = lire_psd(chemin)
             doc = cls(chemin=chemin, calques=calques, icc=icc)
             doc.remarques = remarques
+            if any(prof.est_16(c.image) for c in calques):
+                doc.definir_profondeur(16)
             from .psd import lire_resolution_psd
             doc.dpi = lire_resolution_psd(chemin) or 72.0
             return doc
         from .raw import developper, est_raw
-        if est_raw(chemin):                       # RAW d'appareil photo : développé par LibRaw
-            rgb, exif = developper(chemin)
-            doc = cls(qimage_rgb(rgb), chemin, exif, None)
+        if est_raw(chemin):                       # RAW d'appareil photo : développé par LibRaw, en 16 bits
+            rgb, exif = developper(chemin, seize=True)
+            a = np.full(rgb.shape[:2], 65535, np.uint16)
+            doc = cls(chemin=chemin, exif=exif, calques=[Calque(tr("Arrière-plan"),
+                                                                prof.qimage16(np.dstack([rgb, a])))])
+            doc.definir_profondeur(16)
             doc.dpi = 300.0
+            return doc
+        q16 = _lire_16(chemin)                    # PNG / TIFF 16 bits : ouverts en 16 bits (Qt)
+        if q16 is not None:
+            with Image.open(chemin) as im:
+                exif, icc = im.info.get("exif"), im.info.get("icc_profile")
+                dpi = _dpi_pil(im.info.get("dpi"))
+            gris = q16.format() == QImage.Format_Grayscale16
+            doc = cls(chemin=chemin, exif=exif, icc=icc, calques=[Calque(tr("Arrière-plan"), prof.en_16(q16))])
+            doc.definir_profondeur(16)
+            doc.dpi = dpi
+            doc.mode = "gris" if gris else "rvb"
             return doc
         if chemin.suffix.lower() in EXTENSIONS_CALQUES:
             doc = cls(chemin=chemin, calques=lire_ora(chemin))
             infos = lire_infos_ora(chemin)
             doc.reperes, doc.dpi, doc.mode = infos["reperes"], infos["dpi"], infos["mode"]
+            if infos["profondeur"] == 16 or any(prof.est_16(c.image) for c in doc.calques):
+                doc.definir_profondeur(16)            # (un .ora 16 bits de Krita aussi)
             return doc
         with Image.open(chemin) as im:
             exif = im.info.get("exif")
@@ -643,15 +766,18 @@ class Document(QObject):
         ext = chemin.suffix.lower()
         if ext == ".psd":
             from .psd import ecrire_psd
+            seize = self.profondeur == 16
             ecrire_psd(chemin, calques_figes(self.calques, garder_groupes=True, garder_masques=True),
-                       self.image, self.icc, dpi=self.dpi)
+                       self.image16() if seize else self.image, self.icc, dpi=self.dpi,
+                       profondeur=self.profondeur)
             self.chemin = chemin
             self.modifie = False
             return
         if ext in EXTENSIONS_CALQUES:
             natif = ext == ".pixane"            # .pixane : styles modifiables ; .ora (Krita, GIMP) : effets figés
             ecrire_ora(chemin, self.calques if natif else calques_figes(self.calques, garder_groupes=True),
-                       self.image, natif=natif, reperes=self.reperes, dpi=self.dpi, mode=self.mode)
+                       self.image, natif=natif, reperes=self.reperes, dpi=self.dpi, mode=self.mode,
+                       profondeur=self.profondeur)
             self.chemin = chemin
             self.modifie = False
             return
@@ -661,10 +787,14 @@ class Document(QObject):
 
     def exporter(self, chemin: str | Path, qualite: int = 95) -> None:
         """Image à plat (JPEG, PNG, TIFF, WebP, BMP), pleine taille, avec résolution, profil de couleur et EXIF.
-        Le document ne change pas (ni son fichier, ni « modifié ») : c'est une copie (Fichier > Exporter sous)."""
+        Le document ne change pas (ni son fichier, ni « modifié ») : c'est une copie (Fichier > Exporter sous).
+        Document 16 bits : PNG et TIFF enregistrés en 16 bits (les autres formats n'en ont que 8)."""
         chemin = Path(chemin)
         ext = chemin.suffix.lower()
-        im = qimage_vers_pil(self.image)
+        if self.profondeur == 16 and ext in (".png", ".tif", ".tiff"):
+            self._exporter16(chemin, ext)
+            return
+        im = qimage_vers_pil(self.image_tramee())
         opaque = bool(np.all(np.asarray(im)[:, :, 3] == 255))
         options = {}
         if self.icc and self.mode != "gris":
@@ -704,6 +834,29 @@ class Document(QObject):
                 im = im.convert("RGBA" if im.mode == "LA" else "RGB")   # WebP n'a pas de gris
         im.save(chemin, **options)
 
+    def _exporter16(self, chemin: Path, ext: str) -> None:
+        """PNG ou TIFF 16 bits par couche (Qt), avec la résolution et le profil de couleur ; sans canal alpha si
+        l'image est opaque ; en gris 16 bits en mode niveaux de gris."""
+        from PySide6.QtGui import QColorSpace, QImageWriter
+        img = self.image16()
+        opaque = bool(np.all(prof.tab16(img)[..., 3] == 65535))
+        if self.mode == "gris":
+            img = img.convertToFormat(QImage.Format_Grayscale16)
+        elif opaque:
+            img = img.convertToFormat(QImage.Format_RGBX64)
+        dpm = round(self.dpi / 0.0254)
+        img.setDotsPerMeterX(dpm)
+        img.setDotsPerMeterY(dpm)
+        if self.icc and self.mode != "gris":
+            cs = QColorSpace.fromIccProfile(self.icc)
+            if cs.isValid():
+                img.setColorSpace(cs)
+        w = QImageWriter(str(chemin), b"png" if ext == ".png" else b"tiff")
+        if ext != ".png":
+            w.setCompression(1)                       # TIFF : compression LZW
+        if not w.write(img):
+            raise OSError(w.errorString())
+
     # ---------------------------------------------------------- état (annuler / rétablir)
     def etat(self):
         return (self.calques, self.actif, self.selection.copy())
@@ -713,7 +866,7 @@ class Document(QObject):
         ancienne = self.taille()
         if len(calques) != len(self.calques) or any(a is not b for a, b in zip(calques, self.calques)):
             self.modifie = True
-        self.calques = tuple(calques)
+        self.calques = self._normaliser(calques)
         self.actif = max(0, min(actif, len(self.calques) - 1))
         self.selection = sel.copy()
         self._fusion = None
@@ -792,7 +945,8 @@ class Document(QObject):
         if cible is None:
             calque = Calque.depuis(self.nom_libre(titre), pose)
             return self.etat_avec(self.calques + (calque,), len(self.calques))
-        img = self.calques[cible].image.convertToFormat(FORMAT_CALQUE)
+        ancien = self.calques[cible].image                 # (un calque 16 bits le reste)
+        img = ancien.copy() if prof.est_16(ancien) else ancien.convertToFormat(FORMAT_CALQUE)
         p = QPainter(img)
         p.drawImage(0, 0, pose)
         p.end()
@@ -886,7 +1040,8 @@ class Document(QObject):
         opacite[dy + y0:dy + y1, dx + x0:dx + x1] = b[dy + y0:dy + y1, dx + x0:dx + x1]
         pose = _image_ia(resultat, base, poids, opacite)
         if not nouveau_calque and peut_recevoir_ia(nouveaux[self.actif]):
-            img = nouveaux[self.actif].image.convertToFormat(FORMAT_CALQUE)
+            ancien = nouveaux[self.actif].image             # (un calque 16 bits le reste)
+            img = ancien.copy() if prof.est_16(ancien) else ancien.convertToFormat(FORMAT_CALQUE)
             p = QPainter(img)
             p.drawImage(0, 0, pose)
             p.end()
@@ -1019,7 +1174,8 @@ class Document(QObject):
         nouveaux = []
         for c in self.calques:
             img, x, y = image_entiere(c)
-            res = _transformee(img.convertToFormat(FORMAT_CALQUE), QTransform().translate(x, y) * t, W, H)
+            img = img if prof.est_16(img) else img.convertToFormat(FORMAT_CALQUE)
+            res = _transformee(img, QTransform().translate(x, y) * t, W, H)
             nouveaux.append(replace(c, image=res, hors=None, texte=None))
         nouveaux = [_avec_masque_transforme(c, lambda im: _transformee(im, t, W, H)) for c in nouveaux]
         return self.etat_avec(tuple(nouveaux), self.actif, _transformee(self.selection, t, W, H))
@@ -1236,7 +1392,8 @@ class Document(QObject):
         (comme Photoshop et comme les calques de réglage)."""
         w, h = self.taille()
         m = None if self.selection_vide() else masque_depuis(masque(self.selection))
-        return self.inserer(calque_remplissage.calque(Calque(self.nom_libre(nom), image_vide(w, h), masque=m), r, w, h))
+        return self.inserer(calque_remplissage.calque(Calque(self.nom_libre(nom), image_vide(w, h, self.profondeur == 16),
+                                                             masque=m), r, w, h))
 
     def etat_nouvelle_forme(self, f, nom: str):
         """Nouveau calque de forme au-dessus du calque choisi."""
@@ -1695,6 +1852,20 @@ class Document(QObject):
 # la liste des calques (stack.xml), l'image fusionnée et une vignette.
 # Le format de Pixane (.pixane) est le même, avec en plus les réglages des textes (attribut pixane-texte) :
 # un .pixane renommé en .ora s'ouvre donc aussi dans Krita ou GIMP (les textes y sont des images).
+def _lire_16(chemin: Path) -> QImage | None:
+    """Image PNG ou TIFF en 16 bits par couche (lue par Qt, orientation EXIF appliquée), sinon None."""
+    from PySide6.QtGui import QImageReader
+    if chemin.suffix.lower() not in (".png", ".tif", ".tiff"):
+        return None
+    lecteur = QImageReader(str(chemin))
+    if lecteur.imageFormat() not in (QImage.Format_RGBA64, QImage.Format_RGBX64, QImage.Format_RGBA64_Premultiplied,
+                                     QImage.Format_Grayscale16):
+        return None
+    lecteur.setAutoTransform(True)
+    img = lecteur.read()
+    return None if img.isNull() else img
+
+
 def taille_redressee(w: int, h: int, angle: float, recadrer: bool) -> tuple[int, int]:
     import math
     a = math.radians(abs(angle))
@@ -1729,19 +1900,42 @@ def _masque_vers_selection(a: np.ndarray) -> QImage:
 
 
 def _png(img: QImage) -> bytes:
+    if prof.est_16(img):                          # 16 bits : PNG 16 bits par couche (Qt)
+        return png16(img)
     tampon = io.BytesIO()
     qimage_vers_pil(img).save(tampon, "PNG", compress_level=6)
     return tampon.getvalue()
 
 
+def png16(img: QImage) -> bytes:
+    from PySide6.QtCore import QBuffer, QByteArray, QIODevice
+    donnees = QByteArray()
+    tampon = QBuffer(donnees)
+    tampon.open(QIODevice.WriteOnly)
+    img.convertToFormat(QImage.Format_RGBA64).save(tampon, "PNG")
+    tampon.close()
+    return bytes(donnees.data())
+
+
+def _lire_png(donnees: bytes) -> QImage:
+    """PNG d'un calque -> QImage : 16 bits (FORMAT_16) si le PNG l'est, sinon comme avant (Pillow)."""
+    q = QImage.fromData(donnees, "PNG")
+    if prof.est_16(q):
+        return prof.en_16(q)
+    with Image.open(io.BytesIO(donnees)) as im:
+        return pil_vers_qimage(im)
+
+
 def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False, reperes=None, dpi: float = 72.0,
-               mode: str = "rvb") -> None:
+               mode: str = "rvb", profondeur: int = 8) -> None:
     """Groupes = piles imbriquées, modes de fusion = composite-op (lus par Krita et GIMP). En .pixane (natif) :
     masques, calques de réglage, styles et textes gardés en attributs « pixane-… »."""
     w, h = calques[0].image.width(), calques[0].image.height()
     pile = ET.Element("image", w=str(w), h=str(h), version="0.0.5", xres=f"{dpi:g}", yres=f"{dpi:g}")
     if natif and mode == "gris":
         pile.set("pixane-mode", "gris")
+    if natif and profondeur == 16:
+        pile.set("pixane-profondeur", "16")
     if natif and reperes:
         pile.set("pixane-reperes", json.dumps([list(r) for r in reperes]))
     racine = ET.SubElement(pile, "stack")
@@ -1853,8 +2047,7 @@ def lire_ora(chemin: Path) -> list[Calque]:
                     res.append(g)
                     res.extend(enfants)
                 elif e.tag == "layer":
-                    with Image.open(io.BytesIO(z.read(e.get("src")))) as im:
-                        morceau = pil_vers_qimage(im)
+                    morceau = _lire_png(z.read(e.get("src")))
                     place = Calque("", image_vide(w, h))      # pixels hors de la feuille : gardés dans `hors`
                     place = avec_image_entiere(place, morceau, int(float(e.get("x", 0))), int(float(e.get("y", 0))),
                                                w, h)
@@ -1904,7 +2097,7 @@ def _attr(e, nom: str):
 
 def lire_infos_ora(chemin: Path) -> dict:
     """Repères, résolution (xres de la norme OpenRaster) et mode (gris / rvb) d'un .pixane ou d'un .ora."""
-    infos = {"reperes": [], "dpi": 72.0, "mode": "rvb"}
+    infos = {"reperes": [], "dpi": 72.0, "mode": "rvb", "profondeur": 8}
     try:
         with zipfile.ZipFile(chemin) as z:
             e = ET.fromstring(z.read("stack.xml"))
@@ -1921,6 +2114,8 @@ def lire_infos_ora(chemin: Path) -> dict:
         pass
     if _attr(e, "mode") == "gris":
         infos["mode"] = "gris"
+    if _attr(e, "profondeur") == "16":
+        infos["profondeur"] = 16
     return infos
 
 
@@ -1943,3 +2138,10 @@ def en_gris(img: QImage) -> QImage:
     y = (t[:, :, 0] * 0.299 + t[:, :, 1] * 0.587 + t[:, :, 2] * 0.114 + 0.5).clip(0, 255).astype(np.uint8)
     res = np.dstack([y, y, y, t[:, :, 3].astype(np.uint8)])
     return qimage_rgba(res)
+
+
+def en_gris16(img: QImage) -> QImage:
+    """Comme en_gris, en 16 bits (img Format_RGBA64 non prémultiplié -> même format)."""
+    t = prof.tab16(img).astype(np.float32)
+    y = (t[..., 0] * 0.299 + t[..., 1] * 0.587 + t[..., 2] * 0.114 + 0.5).clip(0, 65535).astype(np.uint16)
+    return prof.qimage16(np.dstack([y, y, y, t[..., 3].astype(np.uint16)])).convertToFormat(QImage.Format_RGBA64)

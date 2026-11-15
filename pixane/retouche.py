@@ -57,6 +57,9 @@ class Trait:
         self._tampon_doigt = None               # Doigt : couleur « emportée » par le doigt
         self._differer = False                  # tracer() : composer une seule fois, à la fin
         self.mode = mode
+        from .profondeur import en_8, est_16
+        if est_16(base):                        # calque 16 bits : le coup se fait en 8 bits (pont, profondeur.py)
+            base = en_8(base)
         self.base = base                        # image du calque avant le coup (jamais modifiée)
         self.image = base.copy()                # résultat en cours
         self.taille = max(1.0, float(taille))

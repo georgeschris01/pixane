@@ -146,6 +146,25 @@ def ajuster_case(case, plus_long: str) -> None:
     case.setMaximumWidth(case.fontMetrics().horizontalAdvance(plus_long) + 44)
 
 
+class CommandeProfondeur(QUndoCommand):
+    """Image > Mode > 8 / 16 bits : la profondeur du document change avec ses calques (Annuler la remet)."""
+
+    def __init__(self, doc: Document, avant, apres, bits_avant: int, bits_apres: int, texte: str):
+        super().__init__(texte)
+        self.doc, self.avant, self.apres = doc, avant, apres
+        self.bits_avant, self.bits_apres = bits_avant, bits_apres
+
+    def redo(self):
+        self.doc.profondeur = self.bits_apres
+        self.doc._ref16 = []
+        self.doc.appliquer_etat(self.apres)
+
+    def undo(self):
+        self.doc.profondeur = self.bits_avant
+        self.doc._ref16 = []
+        self.doc.appliquer_etat(self.avant)
+
+
 class CommandeEtat(QUndoCommand):
     """Passage d'un état du document à un autre. Deux commandes de même `cle` à la suite n'en font qu'une
     (ex. les lettres tapées dans un texte : un seul Ctrl+Z annule toute la saisie)."""
@@ -557,6 +576,23 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
             groupe.addAction(a)
             sous.addAction(a)
         self._actions_mode = groupe
+        sous.addSeparator()
+        groupe = QActionGroup(self)
+        for bits, texte in ((8, tr("8 bits par couche")), (16, tr("16 bits par couche"))):
+            a = QAction(texte, self, checkable=True)
+            a.setData(bits)
+            a.triggered.connect(lambda *_, b=bits: self.changer_profondeur(b))
+            groupe.addAction(a)
+            sous.addAction(a)
+        self._actions_bits = groupe
+        sous.addSeparator()
+        self.a_tramage = QAction(tr("Tramage vers 8 bits"), self, checkable=True)
+        self.a_tramage.setToolTip(tr("Image 16 bits montrée, exportée ou passée en 8 bits : un très léger grain "
+                                     "invisible évite les marches dans les dégradés (comme Photoshop)."))
+        self.a_tramage.setChecked(self.reglages.value("tramage", True, type=bool))
+        self.a_tramage.toggled.connect(self.basculer_tramage)
+        self.basculer_tramage(self.a_tramage.isChecked())
+        sous.addAction(self.a_tramage)
         self._m_mode = sous
         m.addSeparator()
         self._action(m, tr("Taille de l'image…"), "Ctrl+Alt+I", self.taille_image, "a_taille")
@@ -1739,6 +1775,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self._m_mode.setEnabled(a_doc)
         for a in self._actions_mode.actions():
             a.setChecked(a_doc and (a.text() == tr("Niveaux de gris")) == (self.doc.mode == "gris"))
+        for a in self._actions_bits.actions():
+            a.setChecked(a_doc and a.data() == self.doc.profondeur)
         self.a_epreuve.setChecked(a_doc and bool(self.doc.epreuve))
         for a in (self.a_effacer, self.a_remplir, self.a_modifier, self.a_agrandir, self.a_upscale, self.a_arriere_plan,
                   self.a_ia_bruit, self.a_ia_nettete, self.a_ia_restaurer,
@@ -1751,7 +1789,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         titre = NOM
         if self.doc:
             nom = self.doc.nom_affiche()
-            titre = f"{nom}{' •' if self.doc.modifie else ''} — {NOM}"
+            bits = tr(" (16 bits)") if self.doc.profondeur == 16 else ""
+            titre = f"{nom}{bits}{' •' if self.doc.modifie else ''} — {NOM}"
         self.setWindowTitle(titre)
 
     def guide(self, chapitre: str | None = None):
@@ -2399,6 +2438,34 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self.statusBar().showMessage(tr("Mode : niveaux de gris (l'image est vue et enregistrée en gris ; les "
                                         "calques gardent leurs couleurs)") if mode == "gris"
                                      else tr("Mode : couleurs RVB"), 8000)
+        self._actualiser()
+
+    def basculer_tramage(self, actif: bool):
+        """Image > Mode > Tramage vers 8 bits (gardé dans les réglages)."""
+        from . import profondeur
+        profondeur.tramage = bool(actif)
+        self.reglages.setValue("tramage", bool(actif))
+        if self.doc and self.doc.profondeur == 16:
+            self.doc._tramee = None
+            self.doc.change.emit()
+
+    def changer_profondeur(self, bits: int):
+        """Image > Mode > 8 / 16 bits par couche (annulable)."""
+        if not self.doc or bits == self.doc.profondeur:
+            self._actualiser()
+            return
+        doc = self.doc
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            avant, apres = doc.etat(), doc.etat_profondeur(bits)
+            self.historique.push(CommandeProfondeur(doc, avant, apres, doc.profondeur, bits,
+                                                    tr("Mode {n} bits", n=bits)))
+        finally:
+            QApplication.restoreOverrideCursor()
+        self.statusBar().showMessage(
+            tr("16 bits par couche : 65 536 nuances par couleur au lieu de 256 (dégradés et réglages sans "
+               "cassures). Enregistrez en PSD, TIFF, PNG ou .pixane pour les garder.") if bits == 16
+            else tr("8 bits par couche."), 10000)
         self._actualiser()
 
     def basculer_epreuve(self):

@@ -84,24 +84,45 @@ def neutre(type_: str, p: dict) -> bool:
     return p == defaut(type_)
 
 
+# ------------------------------------------------------------------ 8 ou 16 bits
+# Les réglages se calculent sur l'échelle 0..255 (celle des curseurs). En 16 bits (seize=True) : tables de 65 536
+# valeurs (x = v / 257, sans arrondi) et résultats en uint16 ; en 8 bits, le calcul est exactement celui d'avant.
+def _x(seize: bool, dtype=np.float32) -> np.ndarray:
+    return np.arange(65536, dtype=np.float64) / 257 if seize else np.arange(256, dtype=dtype)
+
+
+def _sortie(v, seize: bool) -> np.ndarray:
+    """Valeurs 0..255 (float) -> uint8, ou uint16 (× 257) en 16 bits."""
+    if seize:
+        return np.clip(np.round(np.asarray(v, np.float64) * 257), 0, 65535).astype(np.uint16)
+    return np.clip(np.round(v), 0, 255).astype(np.uint8)
+
+
+def _entree(rgb: np.ndarray) -> tuple[np.ndarray, bool]:
+    """Pixels -> (float32 sur l'échelle 0..255, 16 bits ?)."""
+    if rgb.dtype == np.uint16:
+        return rgb.astype(np.float32) / 257, True
+    return rgb.astype(np.float32), False
+
+
 # ------------------------------------------------------------------ tables (courbes par canal)
-def table_niveaux(n) -> np.ndarray:
+def table_niveaux(n, seize: bool = False) -> np.ndarray:
     noir, gamma, blanc, s_noir, s_blanc = n
-    x = np.arange(256, dtype=np.float32)
+    x = _x(seize)
     v = np.clip((x - noir) / max(1.0, float(blanc - noir)), 0, 1) ** (1 / max(0.05, float(gamma)))
-    return np.clip(np.round(s_noir + v * (s_blanc - s_noir)), 0, 255).astype(np.uint8)
+    return _sortie(s_noir + v * (s_blanc - s_noir), seize)
 
 
-def table_courbe(points) -> np.ndarray:
+def table_courbe(points, seize: bool = False) -> np.ndarray:
     """Courbe douce (monotone par morceaux, sans dépassement) qui passe par les points ; plate au-delà."""
     pts = sorted((float(x), float(y)) for x, y in points)
     xs = np.array([p[0] for p in pts], np.float64)
     ys = np.array([p[1] for p in pts], np.float64)
     keep = np.concatenate(([True], np.diff(xs) > 0))
     xs, ys = xs[keep], ys[keep]
-    x = np.arange(256, dtype=np.float64)
+    x = _x(seize, np.float64)
     if len(xs) == 1:
-        return np.full(256, np.clip(round(ys[0]), 0, 255), np.uint8)
+        return _sortie(np.full(len(x), ys[0]), seize)
     d = np.diff(ys) / np.diff(xs)
     m = np.empty(len(xs))
     m[0], m[-1] = d[0], d[-1]
@@ -114,7 +135,7 @@ def table_courbe(points) -> np.ndarray:
     v = ((2 * t3 - 3 * t2 + 1) * ys[k] + (t3 - 2 * t2 + t) * h * m[k] + (-2 * t3 + 3 * t2) * ys[k + 1]
          + (t3 - t2) * h * m[k + 1])
     v = np.where(x < xs[0], ys[0], np.where(x > xs[-1], ys[-1], v))
-    return np.clip(np.round(v), 0, 255).astype(np.uint8)
+    return _sortie(v, seize)
 
 
 def _par_tables(rgb: np.ndarray, maitre: np.ndarray, canaux) -> np.ndarray:
@@ -124,9 +145,9 @@ def _par_tables(rgb: np.ndarray, maitre: np.ndarray, canaux) -> np.ndarray:
     return out
 
 
-def _balance_tables(p: dict) -> list[np.ndarray]:
+def _balance_tables(p: dict, seize: bool = False) -> list[np.ndarray]:
     """Balance des couleurs (méthode de GIMP) : chaque ton a son poids selon la clarté du pixel."""
-    x = np.arange(256, dtype=np.float32) / 255
+    x = _x(seize) / 255
     a, b, k = 0.25, 0.333, 0.7
     ombres = np.clip((x - b) / -a + 0.5, 0, 1) * k
     moyens = np.clip((x - b) / a + 0.5, 0, 1) * np.clip((x + b - 1) / -a + 0.5, 0, 1) * k
@@ -134,7 +155,7 @@ def _balance_tables(p: dict) -> list[np.ndarray]:
     tables = []
     for c in range(3):
         v = x + (p["ombres"][c] * ombres + p["moyens"][c] * moyens + p["lumieres"][c] * lumieres) / 100
-        tables.append(np.clip(np.round(v * 255), 0, 255).astype(np.uint8))
+        tables.append(_sortie(v * 255, seize))
     return tables
 
 
@@ -182,17 +203,53 @@ def appliquer(rgb: np.ndarray, type_: str, p: dict) -> np.ndarray:
     raise ValueError(type_)
 
 
+def appliquer_16(rgb: np.ndarray, type_: str, p: dict) -> np.ndarray:
+    """Comme appliquer, en 16 bits : rgb (..., 3) uint16 -> uint16, calculé sans passer par 8 bits."""
+    if type_ == "base":
+        from .reglages_image import appliquer_rgb
+        return appliquer_rgb(rgb, p)
+    if type_ in ("niveaux", "courbes"):
+        fn = table_niveaux if type_ == "niveaux" else table_courbe
+        maitre = fn(p["rvb"], True)
+        return _par_tables(rgb, maitre, [fn(p[c], True) for c in ("r", "v", "b")])
+    if type_ == "balance":
+        t = _balance_tables(p, True)
+        out = np.stack([t[k][rgb[..., k]] for k in range(3)], axis=-1)
+        if p.get("luminosite", True):
+            f0 = rgb.astype(np.float32) @ LUM
+            f1 = out.astype(np.float32) @ LUM
+            out = np.clip(np.round(out + (f0 - f1)[..., None]), 0, 65535).astype(np.uint16)
+        return out
+    if type_ in ("noir_blanc", "vibrance", "mappe", "filtre_photo", "melangeur"):
+        return {"noir_blanc": _noir_blanc, "vibrance": _vibrance, "mappe": _mappe, "filtre_photo": _filtre_photo,
+                "melangeur": _melangeur}[type_](rgb, p)
+    if type_ == "seuil":
+        g = (rgb.astype(np.float32) / 257 @ LUM) >= p.get("seuil", 128) - 0.5
+        v = np.where(g, 65535, 0).astype(np.uint16)
+        return np.stack([v, v, v], axis=-1)
+    if type_ == "posterisation":
+        n = int(np.clip(p.get("niveaux", 4), 2, 255))
+        x = _x(True)
+        return _sortie(np.minimum(np.floor(x * n / 256), n - 1) * 255 / (n - 1), True)[rgb]
+    if type_ == "negatif":
+        return 65535 - rgb
+    raise ValueError(type_)
+
+
 def _mappe(rgb: np.ndarray, p: dict) -> np.ndarray:
     """Courbe de transfert de dégradé : la clarté (0 à 255) de chaque point donne sa place dans le dégradé."""
     from . import degrades
     tab = degrades.table(p.get("degrade") or defaut("mappe")["degrade"])         # (256, 4) 0..1
     if p.get("inverser"):
         tab = tab[::-1]
-    f = rgb.astype(np.float32)
-    y = np.clip(np.round(f @ LUM), 0, 255).astype(np.intp)
-    c = tab[y]
+    f, seize = _entree(rgb)
+    if seize:                                                       # clarté sans arrondi : dégradé interpolé
+        y = np.clip(f @ LUM, 0, 255)
+        c = np.stack([np.interp(y, np.arange(256), tab[:, k]) for k in range(4)], axis=-1).astype(np.float32)
+    else:
+        c = tab[np.clip(np.round(f @ LUM), 0, 255).astype(np.intp)]
     out = f + (c[..., :3] * 255 - f) * c[..., 3:4]                  # parties transparentes du dégradé : photo gardée
-    return np.clip(np.round(out), 0, 255).astype(np.uint8)
+    return _sortie(out, seize)
 
 
 def _filtre_photo(rgb: np.ndarray, p: dict) -> np.ndarray:
@@ -202,26 +259,26 @@ def _filtre_photo(rgb: np.ndarray, p: dict) -> np.ndarray:
     c = QColor(p.get("couleur", "#ec8a00"))
     coul = np.array([c.red(), c.green(), c.blue()], np.float32) / 255
     d = p.get("densite", 25) / 100
-    f = rgb.astype(np.float32)
+    f, seize = _entree(rgb)
     out = f + (f * coul - f) * d
     if p.get("luminosite", True):
         out = out + ((f @ LUM) - (out @ LUM))[..., None]
-    return np.clip(np.round(out), 0, 255).astype(np.uint8)
+    return _sortie(out, seize)
 
 
 def _melangeur(rgb: np.ndarray, p: dict) -> np.ndarray:
     """Chaque couleur de sortie = rouge × a % + vert × b % + bleu × c % + constante (en % de 255) ; monochrome :
     la même formule (ligne « gris ») pour les trois, la photo devient grise."""
-    f = rgb.astype(np.float32)
+    f, seize = _entree(rgb)
     lignes = [p.get("gris", [40, 40, 20, 0])] * 3 if p.get("monochrome") else [p[k] for k in SORTIES]
     out = np.stack([f @ (np.array(l[:3], np.float32) / 100) + l[3] * 2.55 for l in lignes], axis=-1)
-    return np.clip(np.round(out), 0, 255).astype(np.uint8)
+    return _sortie(out, seize)
 
 
 def _noir_blanc(rgb: np.ndarray, p: dict) -> np.ndarray:
     """Gris = min + (moyen − min) × part de la couleur secondaire + (max − moyen) × part de la primaire
     (comme le réglage Noir et blanc de Photoshop)."""
-    f = rgb.astype(np.float32)
+    f, seize = _entree(rgb)
     ordre = np.argsort(f, axis=-1)
     bas = np.take_along_axis(f, ordre[..., :1], -1)[..., 0]
     mil = np.take_along_axis(f, ordre[..., 1:2], -1)[..., 0]
@@ -243,13 +300,13 @@ def _noir_blanc(rgb: np.ndarray, p: dict) -> np.ndarray:
         g = gris / 255
         force = p.get("force", 50) / 100 * 4 * g * (1 - g)       # rien dans le noir pur et le blanc pur
         out = gris[..., None] + decal * force[..., None]
-        return np.clip(np.round(out), 0, 255).astype(np.uint8)
-    g = np.round(gris).astype(np.uint8)
+        return _sortie(out, seize)
+    g = _sortie(gris, seize)
     return np.stack([g, g, g], axis=-1)
 
 
 def _vibrance(rgb: np.ndarray, p: dict) -> np.ndarray:
-    f = rgb.astype(np.float32)
+    f, seize = _entree(rgb)
     y = (f @ LUM)[..., None]
     mx, mn = f.max(axis=-1, keepdims=True), f.min(axis=-1, keepdims=True)
     sat = (mx - mn) / np.maximum(mx, 1)
@@ -259,17 +316,17 @@ def _vibrance(rgb: np.ndarray, p: dict) -> np.ndarray:
     s = 1 + p.get("saturation", 0) / 100
     y = (f @ LUM)[..., None]
     f = y + (f - y) * s
-    return np.clip(np.round(f), 0, 255).astype(np.uint8)
+    return _sortie(f, seize)
 
 
 def appliquer_rgba(t: np.ndarray, type_: str, p: dict, poids: np.ndarray | None = None) -> np.ndarray:
-    """Tableau RGBA (h, w, 4) uint8 (couleurs non prémultipliées) -> nouveau tableau ; poids (h, w) 0..1 :
-    mélange avec l'original (sélection, masque, opacité)."""
+    """Tableau RGBA (h, w, 4) uint8 ou uint16 (couleurs non prémultipliées) -> nouveau tableau (même type) ;
+    poids (h, w) 0..1 : mélange avec l'original (sélection, masque, opacité)."""
     out = t.copy()
-    res = appliquer(np.ascontiguousarray(t[..., :3]), type_, p)
+    res = (appliquer_16 if t.dtype == np.uint16 else appliquer)(np.ascontiguousarray(t[..., :3]), type_, p)
     if poids is None:
         out[..., :3] = res
     else:
         w = poids.astype(np.float32)[..., None]
-        out[..., :3] = np.round(t[..., :3] + (res.astype(np.float32) - t[..., :3]) * w).astype(np.uint8)
+        out[..., :3] = np.round(t[..., :3] + (res.astype(np.float32) - t[..., :3]) * w).astype(t.dtype)
     return out

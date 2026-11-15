@@ -9,6 +9,16 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.23.0 (non publ
 
 ## Nouveautés
 
+- **16 bits par couche** (Image > Mode, comme Photoshop) : 65 536 nuances par couleur au lieu de 256, pour des
+  dégradés et des réglages forts sans cassures. Ouverture automatique en 16 bits des PNG, TIFF et PSD 16 bits et des
+  photos RAW ; enregistrement en 16 bits en .pixane, PSD, TIFF et PNG. Calculés en 16 bits : fusion des calques
+  (modes, calques de réglage, masques), tous les réglages, les filtres, le Dégradé et les calques de remplissage,
+  taille, rotation, miroir, redresser, transformer, recadrer, Agrandir. Les autres outils et l'IA ne touchent que la
+  zone qu'ils changent : le reste garde ses 16 bits. Indiqué dans le titre ; Ctrl+Z annule le changement.
+- **Tramage vers 8 bits** (Image > Mode, coché par défaut, demandé par Christophe) : une image 16 bits montrée à
+  l'écran, exportée en JPEG / WebP ou repassée en 8 bits reçoit un grain invisible qui évite les marches dans les
+  dégradés.
+
 ## Corrections
 
 - **Édition > Remplir avec un motif…** affichait une erreur au lieu d'ouvrir sa fenêtre (signalé par Christophe le

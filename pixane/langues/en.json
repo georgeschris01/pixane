@@ -1761,5 +1761,12 @@
  "{n} minutes": "{n} minutes",
  "{n} secondes": "{n} seconds",
  "Licence Pixane : gratuit, non commercial, modifiable": "Pixane licence: free, non-commercial, modifiable",
- "Fait partie de la Suite Pixane.": "Part of the Pixane Suite."
+ "Fait partie de la Suite Pixane.": "Part of the Pixane Suite.",
+ "16 bits par couche": "16 bits per channel",
+ "Tramage vers 8 bits": "Dither to 8 bits",
+ "Image 16 bits montrée, exportée ou passée en 8 bits : un très léger grain invisible évite les marches dans les dégradés (comme Photoshop).": "16-bit image shown, exported or converted to 8 bits: a very light invisible grain avoids steps in gradients (like Photoshop).",
+ "Mode {n} bits": "{n}-bit mode",
+ " (16 bits)": " (16 bits)",
+ "16 bits par couche : 65 536 nuances par couleur au lieu de 256 (dégradés et réglages sans cassures). Enregistrez en PSD, TIFF, PNG ou .pixane pour les garder.": "16 bits per channel: 65,536 shades per colour instead of 256 (gradients and adjustments without banding). Save as PSD, TIFF, PNG or .pixane to keep them.",
+ "8 bits par couche.": "8 bits per channel."
 }

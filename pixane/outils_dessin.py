@@ -55,7 +55,8 @@ def degrade(base: QImage, a: QPointF, b: QPointF, forme: str, points: dict, pein
     else:
         g = QLinearGradient(a, b)
     remplir_qgradient(g, points, peinture, gris)
-    tmp = QImage(base.size(), QImage.Format_ARGB32_Premultiplied)
+    from .profondeur import FORMAT_16, est_16
+    tmp = QImage(base.size(), FORMAT_16 if est_16(base) else QImage.Format_ARGB32_Premultiplied)
     tmp.fill(Qt.transparent)
     p = QPainter(tmp)
     p.fillRect(tmp.rect(), QBrush(g))

@@ -41,9 +41,10 @@ def neutre(r: dict) -> bool:
     return all(v == 0 for v in r.values())
 
 
-def _courbes(r: dict) -> list[np.ndarray]:
-    """Une table de 256 valeurs par couleur (rouge, vert, bleu) : température, luminosité, contraste."""
-    x = np.arange(256, dtype=np.float64) / 255
+def _courbes(r: dict, seize: bool = False) -> list[np.ndarray]:
+    """Une table de 256 valeurs (65 536 en 16 bits) par couleur (rouge, vert, bleu) : température, luminosité,
+    contraste."""
+    x = np.arange(65536, dtype=np.float64) / 65535 if seize else np.arange(256, dtype=np.float64) / 255
     t = r.get("temperature", 0) / 100                    # + = plus chaud (rouge), - = plus froid (bleu)
     b = r.get("luminosite", 0) / 100
     c = r.get("contraste", 0) / 100
@@ -52,7 +53,8 @@ def _courbes(r: dict) -> list[np.ndarray]:
         v = np.clip(x * mult, 0, 1)
         v = v ** (2 ** (-b))                             # garde le noir et le blanc
         v = (v - 0.5) * 2 ** (1.5 * c) + 0.5
-        tables.append(np.clip(np.round(v * 255), 0, 255).astype(np.uint8))
+        tables.append(np.clip(np.round(v * 65535), 0, 65535).astype(np.uint16) if seize else
+                      np.clip(np.round(v * 255), 0, 255).astype(np.uint8))
     return tables
 
 
@@ -71,13 +73,21 @@ def _matrice(r: dict) -> np.ndarray:
 
 
 def appliquer_rgb(rgb: np.ndarray, r: dict) -> np.ndarray:
-    """Tableau (h, w, 3) uint8 -> nouveau tableau avec les réglages `r`."""
-    tables = _courbes(r)
+    """Tableau (h, w, 3) uint8 (ou uint16 : calcul en 16 bits) -> nouveau tableau avec les réglages `r`."""
+    seize = rgb.dtype == np.uint16
+    maxi = 65535 if seize else 255
+    tables = _courbes(r, seize)
     res = np.stack([tables[k][rgb[..., k]] for k in range(3)], axis=-1)
     if r.get("saturation", 0) or r.get("teinte", 0):
         f = res.reshape(-1, 3).astype(np.float32) @ _matrice(r).T.astype(np.float32)
-        res = np.clip(np.round(f), 0, 255).astype(np.uint8).reshape(res.shape)
-    if r.get("nettete", 0) and res.ndim == 3:
+        res = np.clip(np.round(f), 0, maxi).astype(res.dtype).reshape(res.shape)
+    if r.get("nettete", 0) and res.ndim == 3 and seize:     # masque flou (comme UnsharpMask de Pillow), en 16 bits
+        from .filtres import flou_flottant
+        f = res.astype(np.float32)
+        ecart = f - flou_flottant(f, 2.0)
+        ecart = np.where(np.abs(ecart) >= 2 * 257, ecart, 0)
+        res = np.clip(np.round(f + ecart * r["nettete"] / 100), 0, 65535).astype(np.uint16)
+    elif r.get("nettete", 0) and res.ndim == 3:
         net = Image.fromarray(np.ascontiguousarray(res), "RGB").filter(
             ImageFilter.UnsharpMask(radius=2, percent=int(r["nettete"]), threshold=2))
         res = np.asarray(net)

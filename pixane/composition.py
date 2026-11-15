@@ -102,8 +102,14 @@ def _alpha(m: QImage) -> QImage:
     return QImage(m.constBits(), m.width(), m.height(), m.bytesPerLine(), QImage.Format_Alpha8).copy()
 
 
+def _format_de(img: QImage):
+    """Format de travail : 16 bits prémultiplié pour une image 16 bits, sinon ARGB32 prémultiplié."""
+    from .profondeur import FORMAT_16, est_16
+    return FORMAT_16 if est_16(img) else QImage.Format_ARGB32_Premultiplied
+
+
 def avec_masque(img: QImage, m: QImage) -> QImage:
-    res = img.convertToFormat(QImage.Format_ARGB32_Premultiplied).copy()
+    res = img.convertToFormat(_format_de(img)).copy()
     p = QPainter(res)
     p.setCompositionMode(QPainter.CompositionMode_DestinationIn)
     p.drawImage(0, 0, _alpha(m))
@@ -211,7 +217,7 @@ def fusionner(calques, largeur: int, hauteur: int, seulement_visibles: bool = Tr
 
 def ecreter(img: QImage, base: QImage) -> QImage:
     """Masque d'écrêtage : img gardée seulement là où la base a des pixels (son alpha)."""
-    r = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
+    r = img.convertToFormat(_format_de(img))
     if r is img:
         r = img.copy()
     p = QPainter(r)
@@ -221,8 +227,14 @@ def ecreter(img: QImage, base: QImage) -> QImage:
     return r
 
 
+def _a_16(noeuds) -> bool:
+    from .profondeur import est_16
+    return any(est_16(n.calque.image) or (n.enfants is not None and _a_16(n.enfants)) for n in noeuds)
+
+
 def _composer(noeuds, w: int, h: int, seulement_visibles: bool) -> QImage:
-    res = QImage(w, h, QImage.Format_ARGB32_Premultiplied)
+    from .profondeur import FORMAT_16
+    res = QImage(w, h, FORMAT_16 if _a_16(noeuds) else QImage.Format_ARGB32_Premultiplied)
     res.fill(Qt.transparent)
     # base des masques d'écrêtage : (image, opacité) du dernier calque non écrêté ; False : base cachée (les calques
     # écrêtés le sont aussi) ; None : pas de base (un calque écrêté tout en bas se voit normalement)
@@ -304,22 +316,33 @@ def _set_sat(c, s):
     return np.where(etendue > 1e-6, (c - mn) * s[..., None] / np.maximum(etendue, 1e-6), 0.0)
 
 
+def _vue(img: QImage):
+    """Vue numpy modifiable (h, w, 4) d'une image ARGB32 ou RGBA64 prémultipliée, ordre des couches R, V, B, A
+    (index), valeur maximale."""
+    from .profondeur import FORMAT_16
+    if img.format() == FORMAT_16:
+        h, w, ligne = img.height(), img.width(), img.bytesPerLine()
+        v = np.frombuffer(img.bits(), np.uint16, count=h * ligne // 2).reshape(h, ligne // 2)[:, :w * 4]
+        return v.reshape(h, w, 4), [0, 1, 2], 65535
+    return _tab(img), [2, 1, 0], 255
+
+
 def _poser_numpy(dest: QImage, img: QImage, opacite: float, mode: str) -> None:
     """Modes Teinte, Saturation, Couleur, Luminosité (formules du W3C, comme Photoshop)."""
-    if img.format() != QImage.Format_ARGB32_Premultiplied:
-        img = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
-    s = _tab(img)
+    if img.format() != dest.format():
+        img = img.convertToFormat(dest.format())
+    s, _o, _m = _vue(img)
     a_s = s[..., 3]
     ys, xs = np.nonzero(a_s)
     if not len(ys):
         return
     y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
-    d = _tab(dest)
-    D = d[y0:y1, x0:x1].astype(np.float32) / 255
-    S = s[y0:y1, x0:x1].astype(np.float32) / 255
+    d, ordre, maxi = _vue(dest)
+    D = d[y0:y1, x0:x1].astype(np.float32) / maxi
+    S = s[y0:y1, x0:x1].astype(np.float32) / maxi
     ad, as_ = D[..., 3:4], S[..., 3:4] * opacite
-    cd = np.where(ad > 0, D[..., 2::-1] / np.maximum(ad, 1e-6), 0)        # R, G, B non prémultipliés
-    cs = np.where(S[..., 3:4] > 0, S[..., 2::-1] / np.maximum(S[..., 3:4], 1e-6), 0)
+    cd = np.where(ad > 0, D[..., ordre] / np.maximum(ad, 1e-6), 0)        # R, G, B non prémultipliés
+    cs = np.where(S[..., 3:4] > 0, S[..., ordre] / np.maximum(S[..., 3:4], 1e-6), 0)
     if mode == "teinte":
         b = _set_lum(_set_sat(cs, _sat(cd)), _lum(cd))
     elif mode == "saturation":
@@ -334,9 +357,9 @@ def _poser_numpy(dest: QImage, img: QImage, opacite: float, mode: str) -> None:
     ao = as_ + ad * (1 - as_)
     co = cm * as_ + cd * ad * (1 - as_)                                    # prémultiplié
     out = np.empty_like(D)
-    out[..., 2::-1] = co
+    out[..., ordre] = co
     out[..., 3:4] = ao
-    d[y0:y1, x0:x1] = np.clip(np.round(out * 255), 0, 255).astype(np.uint8)
+    d[y0:y1, x0:x1] = np.clip(np.round(out * maxi), 0, maxi).astype(d.dtype)
 
 
 def appliquer_reglage(res: QImage, c) -> QImage:
@@ -345,6 +368,9 @@ def appliquer_reglage(res: QImage, c) -> QImage:
     r = c.reglage
     if c.opacite <= 0:
         return res
+    from .profondeur import FORMAT_16
+    if res.format() == FORMAT_16:
+        return _reglage16(res, c)
     t = _tab(res)
     a = t[..., 3].astype(np.float32)
     rgb = np.where(a[..., None] > 0, t[..., 2::-1].astype(np.float32) * 255 / np.maximum(a[..., None], 1), 0)
@@ -358,5 +384,25 @@ def appliquer_reglage(res: QImage, c) -> QImage:
     sortie = QImage(res.size(), QImage.Format_ARGB32_Premultiplied)
     o = _tab(sortie)
     o[..., 2::-1] = np.clip(np.round(pre), 0, 255).astype(np.uint8)
+    o[..., 3] = t[..., 3]
+    return sortie
+
+
+def _reglage16(res: QImage, c) -> QImage:
+    """Calque de réglage sur une image 16 bits : calcul en 16 bits (ajustements.appliquer_16)."""
+    from . import ajustements
+    from .profondeur import FORMAT_16
+    t, _o, _m = _vue(res)
+    a = t[..., 3].astype(np.float32)
+    rgb = np.where(a[..., None] > 0, t[..., :3].astype(np.float32) * 65535 / np.maximum(a[..., None], 1), 0)
+    rgb16 = np.clip(np.round(rgb), 0, 65535).astype(np.uint16)
+    nouv = ajustements.appliquer_16(rgb16, c.reglage["type"], c.reglage["params"]).astype(np.float32)
+    poids = np.full(a.shape, float(c.opacite), np.float32)
+    if masque_utile(c):
+        poids *= masque_tableau(c.masque).astype(np.float32) / 255
+    rgb = rgb16 + (nouv - rgb16) * poids[..., None]
+    sortie = QImage(res.size(), FORMAT_16)
+    o, _o, _m = _vue(sortie)
+    o[..., :3] = np.clip(np.round(rgb * a[..., None] / 65535), 0, 65535).astype(np.uint16)
     o[..., 3] = t[..., 3]
     return sortie

@@ -107,7 +107,9 @@ def etat_apres(doc, e: dict):
         if c.special:
             return None
         sel = None if doc.selection_vide() else doc.selection
-        return doc.etat_calque_modifie(doc.actif, image=filtres.appliquer_calque(c.image, calcul, sel), texte=None)
+        seize = "entier" if g == "reglage" else "flottant"
+        return doc.etat_calque_modifie(doc.actif, image=filtres.appliquer_calque(c.image, calcul, sel, seize),
+                                       texte=None)
     if g == "taille":
         w, h = doc.taille()
         return doc.etat_taille(*taille_apres(e, w, h))

@@ -1,7 +1,8 @@
 """Filtres (menu Filtres) : flou gaussien, flou de mouvement, flou radial, flou de l'objectif, flou de surface,
 réduction du bruit, netteté, vignette.
 
-Calcul pur sur des tableaux RGBA uint8 (couleurs non prémultipliées). Les flous travaillent en couleurs
+Calcul pur sur des tableaux RGBA uint8 (couleurs non prémultipliées), ou float32 sur la même échelle 0..255 pour un
+calque 16 bits (le résultat est alors rendu en float, sans arrondi : voir appliquer_calque). Les flous travaillent en couleurs
 prémultipliées : un bord transparent ne fait pas de halo sombre. `appliquer_calque` pose le résultat sur le calque,
 seulement dans la sélection (bords doux) s'il y en a une.
 """
@@ -71,10 +72,19 @@ def _premul(t: np.ndarray) -> np.ndarray:
     return f
 
 
-def _depremul(f: np.ndarray) -> np.ndarray:
+def _fin(v, t: np.ndarray) -> np.ndarray:
+    """Résultat 0..255 : arrondi en uint8 ; gardé en float (16 bits) si l'entrée t était en float."""
+    if t.dtype.kind == "f":
+        return np.clip(np.asarray(v, np.float32), 0, 255)
+    return np.clip(np.round(v), 0, 255).astype(np.uint8)
+
+
+def _depremul(f: np.ndarray, t: np.ndarray | None = None) -> np.ndarray:
     a = f[..., 3:4]
-    rgb = np.where(a > 0.5, f[..., :3] * 255 / np.maximum(a, 1e-3), 0)
-    return np.clip(np.round(np.concatenate([rgb, a], axis=-1)), 0, 255).astype(np.uint8)
+    seuil = 0.5 if t is None or t.dtype.kind != "f" else 0.002
+    rgb = np.where(a > seuil, f[..., :3] * 255 / np.maximum(a, 1e-3), 0)
+    v = np.concatenate([rgb, a], axis=-1)
+    return _fin(v, t) if t is not None else np.clip(np.round(v), 0, 255).astype(np.uint8)
 
 
 def boite(a: np.ndarray, r: int) -> np.ndarray:
@@ -100,9 +110,15 @@ def _flou_pil(f: np.ndarray, rayon: float) -> np.ndarray:
     return res
 
 
+flou_flottant = _flou_pil
+
+
 # ------------------------------------------------------------------ filtres
 def flou_gaussien(t: np.ndarray, p: dict) -> np.ndarray:
-    """Pillow, en couleurs prémultipliées (mode « RGBa ») : rapide, sans halo au bord des zones transparentes."""
+    """Pillow, en couleurs prémultipliées (mode « RGBa ») : rapide, sans halo au bord des zones transparentes.
+    En 16 bits (t en float) : trois flous en boîte, en couleurs prémultipliées."""
+    if t.dtype.kind == "f":
+        return _depremul(_flou_pil(_premul(t), float(p["rayon"])), t)
     im = Image.fromarray(np.ascontiguousarray(t), "RGBA").convert("RGBa")
     return np.asarray(im.filter(ImageFilter.GaussianBlur(float(p["rayon"]))).convert("RGBA")).copy()
 
@@ -129,7 +145,7 @@ def flou_mouvement(t: np.ndarray, p: dict) -> np.ndarray:
     if np.all(t[..., 3] == 255):          # photo opaque : les bords tournés ne doivent pas devenir transparents
         res[..., :3] = res[..., :3] * 255 / np.maximum(res[..., 3:4], 1e-3)
         res[..., 3] = 255
-    return _depremul(res)
+    return _depremul(res, t)
 
 
 def _opaque(t: np.ndarray, res: np.ndarray) -> np.ndarray:
@@ -175,7 +191,7 @@ def flou_radial(t: np.ndarray, p: dict) -> np.ndarray:
     res = np.stack(res, axis=-1)
     if m:
         res = np.ascontiguousarray(res[m:-m, m:-m])
-    return _depremul(_opaque(t, res))
+    return _depremul(_opaque(t, res), t)
 
 
 def _disque(r: int) -> np.ndarray:
@@ -211,7 +227,7 @@ def flou_objectif(t: np.ndarray, p: dict) -> np.ndarray:
     f2 = np.concatenate([rgb * (1 + fort), f[..., 3:4]], axis=-1).astype(np.float32)
     res = _convoluer(f2, _disque(r)) * 255
     res[..., :3] = np.minimum(res[..., :3], res[..., 3:4])
-    return _depremul(_opaque(t, res))
+    return _depremul(_opaque(t, res), t)
 
 
 def flou_surface(t: np.ndarray, p: dict) -> np.ndarray:
@@ -222,7 +238,7 @@ def flou_surface(t: np.ndarray, p: dict) -> np.ndarray:
     eps = (p["seuil"] / 255) ** 2
     out = t.copy()
     res = np.stack([_guide(f[..., k], f[..., k], r, eps) for k in range(3)], axis=-1)
-    out[..., :3] = np.clip(np.round(res * 255), 0, 255).astype(np.uint8)
+    out[..., :3] = _fin(res * 255, t)
     return out
 
 
@@ -254,11 +270,18 @@ def reduire_bruit(t: np.ndarray, p: dict) -> np.ndarray:
     g = (y2 - 0.299 * (cr2 + y2) - 0.114 * (cb2 + y2)) / 0.587
     rgb = np.stack([cr2 + y2, g, cb2 + y2], axis=-1)
     out = t.copy()
-    out[..., :3] = np.clip(np.round(rgb * 255), 0, 255).astype(np.uint8)
+    out[..., :3] = _fin(rgb * 255, t)
     return out
 
 
 def nettete(t: np.ndarray, p: dict) -> np.ndarray:
+    if t.dtype.kind == "f":                 # 16 bits : masque flou (comme UnsharpMask de Pillow), sans arrondi
+        f = t[..., :3].astype(np.float32)
+        ecart = f - _flou_pil(f, float(p["rayon"]))
+        ecart = np.where(np.abs(ecart) >= int(p["seuil"]), ecart, 0)
+        out = t.copy()
+        out[..., :3] = _fin(f + ecart * int(p["quantite"]) / 100, t)
+        return out
     im = Image.fromarray(np.ascontiguousarray(t[..., :3]), "RGB").filter(
         ImageFilter.UnsharpMask(radius=float(p["rayon"]), percent=int(p["quantite"]), threshold=int(p["seuil"])))
     out = t.copy()
@@ -287,7 +310,7 @@ def vignette(t: np.ndarray, p: dict) -> np.ndarray:
     else:
         f = f + (255 - f) * (force * v)[..., None]
     out = t.copy()
-    out[..., :3] = np.clip(np.round(f), 0, 255).astype(np.uint8)
+    out[..., :3] = _fin(f, t)
     return out
 
 
@@ -319,9 +342,22 @@ FONCTIONS = {"flou": flou_gaussien, "mouvement": flou_mouvement, "radial": flou_
              "vignette": vignette}
 
 
-def appliquer_calque(img: QImage, calcul, selection: QImage | None) -> QImage:
-    """calcul : tableau RGBA -> tableau RGBA. Résultat posé dans la sélection (avec ses bords doux) s'il y en a."""
+def appliquer_calque(img: QImage, calcul, selection: QImage | None, seize: str | None = None) -> QImage:
+    """calcul : tableau RGBA -> tableau RGBA. Résultat posé dans la sélection (avec ses bords doux) s'il y en a une.
+    Calque 16 bits : seize = « entier » (calcul reçoit du uint16, ex. les réglages), « flottant » (float32 sur
+    l'échelle 0..255, ex. les filtres) ; None : calcul en 8 bits (pont, voir profondeur.py)."""
     from .document import FORMAT_CALQUE, FORMAT_IMAGE, masque, qimage_rgba, tableau
+    from .profondeur import est_16, qimage16, tab16
+    if seize and est_16(img):
+        t = tab16(img)
+        res = np.asarray(calcul(t if seize == "entier" else t.astype(np.float32) / 257))
+        res = res.astype(np.float32) * (1 if res.dtype == np.uint16 else 257)
+        if selection is not None:
+            m = masque(selection)
+            if m.any():
+                w = m.astype(np.float32)[..., None] / 255
+                res = t + (res - t) * w
+        return qimage16(np.clip(np.round(res), 0, 65535).astype(np.uint16))
     t = tableau(img.convertToFormat(FORMAT_IMAGE))
     res = calcul(t)
     if selection is not None:
