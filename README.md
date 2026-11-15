@@ -1592,3 +1592,5 @@ Pixane Photo est publié sous la **Licence Pixane 1.3**, commune à tous les log
 - **Droits d'autrui** : un élément qui ne respecterait pas une licence ou vos droits ? Écrivez à admin@chrypox.be.
 
 Le moteur IA (ComfyUI) et les modèles d'IA ne sont pas inclus dans Pixane Photo : ils restent sous leur propre licence, et le modèle **Flux.1 Fill [dev]** est sous licence non commerciale. Liste complète : [`docs/LICENCES_TIERS.md`](docs/LICENCES_TIERS.md).
+
+**Règle de conduite** : [CODE_OF_CONDUCT.md](https://github.com/pixane-suite/.github/blob/main/CODE_OF_CONDUCT.md) · **Sécurité** (signaler une faille) : [SECURITY.md](https://github.com/pixane-suite/.github/blob/main/SECURITY.md) — communes à toute la Suite Pixane.

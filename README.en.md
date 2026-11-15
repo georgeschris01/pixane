@@ -1538,3 +1538,5 @@ Pixane Photo is published under the **Pixane Licence 1.3**, shared by all the pr
 - **Rights of others**: an element that does not respect a licence or your rights? Write to admin@chrypox.be.
 
 The AI engine (ComfyUI) and the AI models are not included in Pixane Photo: they remain under their own licence, and the **Flux.1 Fill [dev]** model is under a non-commercial licence. Full list: [`docs/LICENCES_TIERS.md`](docs/LICENCES_TIERS.md).
+
+**Code of conduct**: [CODE_OF_CONDUCT.md](https://github.com/pixane-suite/.github/blob/main/CODE_OF_CONDUCT.md) · **Security** (report a vulnerability): [SECURITY.md](https://github.com/pixane-suite/.github/blob/main/SECURITY.md) — shared by the whole Pixane Suite.
