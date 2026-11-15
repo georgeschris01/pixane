@@ -27,6 +27,7 @@ from .langue import tr
 from .actions_calques import ActionsCalques
 from .contour import ActionContour
 from .onglets import Onglets
+from .ia_photo import ActionsPhotoIA
 from .options_forme import OptionsForme
 from .options_pinceau import OptionsPinceau
 from .calques import PanneauCalques
@@ -215,7 +216,7 @@ class Carte(QPushButton):
         self.image.setPixmap(ic.pixmap(28, 28))
 
 
-class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsForme, QMainWindow):
+class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsForme, ActionsPhotoIA, QMainWindow):
     etat_moteur = Signal(str)
 
     def __init__(self):
@@ -519,6 +520,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self._action(m, tr("Améliorer le contour…"), "Ctrl+Alt+R", self.ameliorer_contour, "a_contour")
         self._action(m, tr("Plage de couleurs…"), None, self.plage_couleurs, "a_plage_couleurs")
         self._action(m, tr("Sélectionner le sujet (IA)"), "Ctrl+Alt+S", self.selectionner_sujet, "a_sujet")
+        self._action(m, tr("Sélectionner le ciel (IA)"), None, self.ia_selection_ciel, "a_sel_ciel")
         self._action(m, tr("Trouver une police semblable…"), None, self.police_semblable, "a_police_semblable")
         m.addSeparator()
         self._action(m, tr("Recadrer à la sélection"), None, self._recadrer_selection, "a_recadrer_selection",
@@ -568,7 +570,10 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
                      "a_fusionner_calques")
         self._action(m, tr("Aplatir l'image"), None, lambda: self.calques.aplatir() if self.doc else None,
                      "a_aplatir")
-        self._menus_calques(self._m_image, m)
+        m_filtres = self._menus_calques(self._m_image, m)
+        m_filtres.addSeparator()
+        self._action(m_filtres, tr("Flou selon la profondeur (IA)…"), None, self.ia_flou_profondeur,
+                     "a_ia_profondeur")
 
         m = self.menuBar().addMenu(tr("&Affichage"))
         self._action(m, tr("Zoom avant"), "Ctrl++", lambda: self.canevas.zoomer(1.25), "a_zoom_plus", "zoom_plus")
@@ -633,6 +638,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self._action(m, tr("Réduire le bruit (IA)"), None, self.ia_debruiter, "a_ia_bruit")
         self._action(m, tr("Netteté (IA)"), None, self.ia_nettete, "a_ia_nettete")
         self._action(m, tr("Restaurer une vieille photo…"), None, self.ia_restaurer, "a_ia_restaurer")
+        self._action(m, tr("Coloriser"), None, self.ia_coloriser, "a_ia_coloriser")
+        self._action(m, tr("Changer la lumière…"), None, self.ia_lumiere, "a_ia_lumiere")
+        self._action(m, tr("Remplacer le ciel…"), None, self.ia_remplacer_ciel, "a_ia_ciel")
         m.addSeparator()
         a = self._action(m, tr("Mettre les résultats dans un nouveau calque"), None, None, "a_ia_nouveau_calque")
         a.setCheckable(True)
@@ -1613,7 +1621,8 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self.a_epreuve.setChecked(a_doc and bool(self.doc.epreuve))
         for a in (self.a_effacer, self.a_remplir, self.a_modifier, self.a_agrandir, self.a_upscale, self.a_arriere_plan,
                   self.a_ia_bruit, self.a_ia_nettete, self.a_ia_restaurer,
-                  self.a_sujet):
+                  self.a_sujet, self.a_sel_ciel, self.a_ia_coloriser, self.a_ia_lumiere, self.a_ia_ciel,
+                  self.a_ia_profondeur):
             a.setEnabled(pret)
         for b in (self.b_effacer, self.b_remplir, self.b_modifier, self.b_agrandir, self.b_upscale, self.b_arriere_plan):
             b.setEnabled(pret)
@@ -1643,12 +1652,13 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
                 return
             dossier = str(racine.parent)        # installé par Pixane : on complète (ex. Flux Schnell)
         schnell = kontext = False
+        profondeur = True                       # petit modèle (137 Mo) : toujours proposé (case cochée)
         if dossier is not None:
             from .installation_moteur import lire_infos
             infos = lire_infos(Path(dossier)) or {}
             schnell = "schnell" in infos.get("elements", []) or "schnell" in (infos.get("versions") or {})
             kontext = "kontext" in infos.get("elements", []) or "kontext" in (infos.get("versions") or {})
-        f = FenetreInstallation(self, dossier=dossier, schnell=schnell, kontext=kontext)
+        f = FenetreInstallation(self, dossier=dossier, schnell=schnell, kontext=kontext, profondeur=profondeur)
         f.commence.connect(self.moteur.arreter)      # ComfyUI ne doit pas tourner pendant qu'on le remplace
         f.installe.connect(lambda _d: self._redemarrer_moteur())
         f.exec()

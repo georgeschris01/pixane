@@ -43,6 +43,36 @@ TEXTE_GARDER_COULEURS = (" Keep exactly the original colors: if the photo is bla
                          "do not colorize it.")
 
 
+# Flou selon la profondeur : Depth Anything 3 Small (Apache-2.0), nœuds intégrés à ComfyUI (LoadDA3Model…)
+PROFONDEUR = "depth_anything_3_small.safetensors"
+_profondeur: dict = {"fichier": None}
+# Coloriser, changer la lumière (Flux Kontext) ; remplacer le ciel (Flux Fill) : consignes en anglais
+TEXTE_COLORISER_SEUL = ("Colorize this black and white photo with natural, realistic colors. Keep exactly the same "
+                        "people, faces, expressions, objects, details, lighting, framing and composition.")
+TEXTE_LUMIERE = ("Relight this photo: {lumiere}. Keep exactly the same people, faces, expressions, objects, details, "
+                 "colors of the objects, framing and composition; only the lighting changes.")
+LUMIERES = {
+    "doree": "warm golden hour sunlight, low sun, soft long shadows",
+    "studio": "soft, even studio lighting with large softboxes, gentle shadows",
+    "gauche": "dramatic light coming from the left side, deep shadows on the right",
+    "droite": "dramatic light coming from the right side, deep shadows on the left",
+    "contre_jour": "strong backlight, rim light around the subject, bright background",
+    "nuit": "night time, lit by warm street lamps, dark blue ambient light",
+    "neon": "colorful neon lights, pink and blue glow",
+    "nuageux": "overcast day, soft diffuse light, no hard shadows",
+}
+TEXTE_CIEL = ("Replace the sky with {ciel}. Keep everything else exactly the same: the ground, the trees, the "
+              "buildings, the people, their shapes and positions.")
+CIELS = {
+    "bleu": "a beautiful clear blue sky with a few white fluffy clouds",
+    "nuages": "a dramatic sky with large white and grey clouds",
+    "coucher": "a colorful sunset sky, orange, pink and purple clouds, warm glow near the horizon",
+    "orage": "a dark stormy sky with heavy grey clouds",
+    "nuit": "a clear night sky full of stars, deep blue",
+    "aube": "a soft pastel dawn sky, light pink and pale blue",
+}
+
+
 class ModeleManquant(Exception):
     pass
 
@@ -79,6 +109,9 @@ def configurer(infos: dict) -> str | None:
     _sam["fichier"] = (SAM if SAM in sams else sorted(sams)[-1] if sams else None) if "SAM3_Detect" in infos \
         else None
     _scunet["ok"] = SCUNET in _options(infos, "UpscaleModelLoader", "model_name")
+    da3 = sorted(f for f in _options(infos, "LoadDA3Model", "model_name") if "depth_anything_3" in f.lower())
+    _profondeur["fichier"] = (PROFONDEUR if PROFONDEUR in da3 else da3[0] if da3 else None) \
+        if "DA3Inference" in infos and "DA3Render" in infos else None
     kontext_gguf = sorted(f for f in _options(infos, "UnetLoaderGGUF", "unet_name") if "kontext" in f.lower())
     if "ReferenceLatent" not in infos:
         _kontext.update(type=None, fichier=None)
@@ -107,6 +140,34 @@ def detourer(image: str):
          "13": _n("MaskToImage", mask=["12", 0]),
          "14": _n("PreviewImage", images=["13", 0])}
     return p, {"14": tr("Sujet")}
+
+
+def profondeur_disponible() -> bool:
+    return _profondeur["fichier"] is not None
+
+
+def profondeur(image: str, cote: int = 1008):
+    """Carte de profondeur (gris, proche = clair) de l'image envoyée, à sa taille."""
+    p = {"10": _n("LoadImage", image=image),
+         "11": _n("LoadDA3Model", model_name=_profondeur["fichier"] or PROFONDEUR, weight_dtype="default"),
+         "12": _n("DA3Inference", da3_model=["11", 0], image=["10", 0], resolution=cote,
+                  resize_method="upper_bound_resize", mode="mono"),
+         "13": _n("DA3Render", da3_geometry=["12", 0], output="depth", **{"output.normalization": "min_max",
+                                                                          "output.apply_sky_clip": False}),
+         "14": _n("PreviewImage", images=["13", 0])}
+    return p, {"14": tr("Profondeur")}
+
+
+def ciel(image: str):
+    """Masque du ciel (blanc = ciel) : SAM 3.1 cherche « sky » dans l'image envoyée."""
+    p = {"10": _n("LoadImage", image=image),
+         "11": _n("CheckpointLoaderSimple", ckpt_name=_sam["fichier"] or SAM),
+         "15": _n("CLIPTextEncode", text="sky", clip=["11", 1]),
+         "12": _n("SAM3_Detect", model=["11", 0], image=["10", 0], conditioning=["15", 0], threshold=0.4,
+                  refine_iterations=2, individual_masks=False),
+         "13": _n("MaskToImage", mask=["12", 0]),
+         "14": _n("PreviewImage", images=["13", 0])}
+    return p, {"14": tr("Ciel")}
 
 
 def sam_disponible() -> bool:

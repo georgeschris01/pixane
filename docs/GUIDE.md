@@ -607,6 +607,30 @@ l'intérieur. Comme les autres actions IA, le résultat va dans le calque choisi
   comparez bien avec l'original (œil du calque). Modèle **Flux Kontext dev** (11,9 Go, licence FLUX.1 [dev], usage
   **non commercial**), facultatif : case *Flux Kontext* dans **IA > Installer le moteur IA…**.
 
+### Ciel, couleurs, lumière, profondeur (IA)
+- **Sélection > Sélectionner le ciel (IA)** : l'IA (SAM 3.1) trouve le ciel et le sélectionne, bord un peu élargi et
+  adouci pour que la ligne d'horizon se raccorde. Ensuite, tous les outils marchent sur cette sélection (réglages,
+  Remplir…). Quelques secondes.
+- **IA > Remplacer le ciel…** : choisissez le nouveau ciel (ciel bleu avec quelques nuages, grands nuages, coucher
+  de soleil, ciel d'orage, nuit étoilée, aube). Pixane sélectionne le ciel (nuages compris), Flux Kontext redessine
+  la photo avec ce ciel, et **seul le ciel** en est gardé : le reste garde ses pixels d'origine. Deux propositions,
+  environ 2 minutes chacune. Au bord d'un toit ou d'un arbre, l'IA peut laisser un petit reste décalé : choisissez la
+  meilleure proposition, ou retouchez (tampon, Effacer). Le ciel reste sélectionné : pour l'harmoniser, un réglage de
+  couleur sur le reste de la photo (Sélection > Inverser) aide souvent.
+- **IA > Coloriser** : met des couleurs naturelles à une photo en noir et blanc (sans la restaurer) ; avec une
+  sélection, seulement dedans. Flux Kontext, deux propositions, environ 2 minutes chacune.
+- **IA > Changer la lumière…** : lumière dorée de fin de journée, lumière douce de studio, lumière dramatique venant
+  de la gauche ou de la droite, contre-jour, nuit éclairée par des lampadaires, néons colorés, temps couvert. Flux
+  Kontext redessine la photo avec cette lumière, en gardant les personnes et les objets. Comparez bien : l'IA peut
+  changer de petits détails.
+- **Filtres > Flou selon la profondeur (IA)…** : comme le flou d'arrière-plan d'un appareil photo. L'IA calcule la
+  distance de chaque point (quelques secondes) ; une fenêtre montre cette carte (clair = proche, foncé = loin) :
+  **cliquez sur ce qui doit rester net** (au départ : ce qui est le plus proche). **Flou** règle la force, **Zone
+  nette** la profondeur gardée nette autour du point ; **Flouter seulement l'arrière-plan** laisse le premier plan
+  net. Aperçu en direct sur la photo ; s'applique au calque choisi (dans la sélection s'il y en a une). Modèle
+  **Depth Anything 3 Small** (137 Mo, Apache-2.0), facultatif : case *Flou selon la profondeur* à l'installation de
+  Pixane, ou dans **IA > Installer le moteur IA…**.
+
 ---
 
 ## 6. Les calques

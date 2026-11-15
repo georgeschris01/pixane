@@ -39,6 +39,7 @@ Pixane itself: Pixane Licence 1.2 (free of charge, source-available, non-commerc
 | SCUNet (réduire le bruit / noise reduction) | Apache-2.0 |
 | BiRefNet (détourage / background removal) | MIT |
 | SAM 3.1 (sélection d'objet / object selection) | SAM License (Meta) — https://huggingface.co/Comfy-Org/sam3.1/blob/main/LICENSE |
+| Depth Anything 3 Small (flou selon la profondeur, facultatif / depth blur, optional) | Apache-2.0 — https://huggingface.co/Comfy-Org/Depth-Anything-3 |
 
 Pixane lance ComfyUI comme un programme séparé (aucun code de ComfyUI n'est inclus dans Pixane).
 Pixane runs ComfyUI as a separate program (no ComfyUI code is included in Pixane).

@@ -64,6 +64,9 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.21.0 (non publ
   après coup, reste nette si on la déplace ou la redimensionne) ; nouvelles formes Étoile et Polygone.
 - **Plume** (A) : tracés en lignes et en courbes, point par point, vers un calque de forme ou une sélection ; les
   points d'une forme se déplacent à la souris.
+- **IA pour la photo** : Sélectionner le ciel, Remplacer le ciel (6 ciels au choix), Coloriser, Changer la lumière
+  (8 lumières au choix), Flou selon la profondeur (clic sur ce qui reste net). Nouveau modèle facultatif Depth Anything
+  3 Small (137 Mo, Apache-2.0) : case dans l'installateur et dans IA > Installer le moteur IA.
 
 ## Corrections
 

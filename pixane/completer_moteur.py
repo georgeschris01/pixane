@@ -31,6 +31,8 @@ def _modele_vu(infos: dict, cle: str) -> bool:
         return any("schnell" in f.lower() for f in o("UNETLoader", "unet_name") + o("UnetLoaderGGUF", "unet_name"))
     if cle == "kontext":
         return any("kontext" in f.lower() for f in o("UNETLoader", "unet_name") + o("UnetLoaderGGUF", "unet_name"))
+    if cle == "profondeur":
+        return any("depth_anything_3" in f.lower() for f in o("LoadDA3Model", "model_name"))
     if cle == "t5":
         return "t5xxl_fp8_e4m3fn_scaled.safetensors" in o("DualCLIPLoader", "clip_name2") + \
             o("DualCLIPLoader", "clip_name1")
@@ -55,11 +57,12 @@ def _modele_vu(infos: dict, cle: str) -> bool:
 NOEUD_EXTENSION = {"inpaint": "INPAINT_InpaintWithModel", "crop": "InpaintCropImproved",
                    "usdu": "UltimateSDUpscale", "usdu_script": "UltimateSDUpscale", "gguf": "UnetLoaderGGUF"}
 # modèle -> nœud de ComfyUI lui-même dont il a besoin (sans lui, ComfyUI est trop ancien : inutile de télécharger)
-NOEUD_COEUR = {"birefnet": "RemoveBackground", "sam": "SAM3_Detect", "kontext": "ReferenceLatent"}
+NOEUD_COEUR = {"birefnet": "RemoveBackground", "sam": "SAM3_Detect", "kontext": "ReferenceLatent",
+               "profondeur": "DA3Inference"}
 
 
 def manquants(infos: dict, dossiers: dict[str, list[str]], dossier_comfyui: Path, schnell: bool = False,
-              kontext: bool = False) -> tuple[list[Element], list[str]]:
+              kontext: bool = False, profondeur: bool = False) -> tuple[list[Element], list[str]]:
     """-> (éléments à télécharger, avec leur chemin complet ; remarques à montrer : ComfyUI trop ancien pour une
     fonction, extension présente mais pas encore chargée).
     infos : /object_info ; dossiers : /experiment/models ({type: [dossiers]}) ; dossier_comfyui : celui de main.py."""
@@ -67,7 +70,7 @@ def manquants(infos: dict, dossiers: dict[str, list[str]], dossier_comfyui: Path
     base_modeles = Path(dossiers["checkpoints"][0]).parent if dossiers.get("checkpoints") else \
         Path(dossier_comfyui) / "models"
     liste, trop_ancien, pas_chargees = [], [], []
-    for e in catalogue(True, schnell, kontext):
+    for e in catalogue(True, schnell, kontext, profondeur):
         if e.genre in ("outil", "7z"):
             continue
         if e.genre == "zip":
@@ -139,18 +142,24 @@ class FenetreCompleter(QDialog):
         self.c_schnell = QCheckBox(tr("Ajouter Flux Schnell pour « Upscale net » (facultatif)"))
         self.c_kontext = QCheckBox(tr("Ajouter Flux Kontext pour « Modifier avec une consigne » et « Restaurer une "
                                       "vieille photo » (facultatif)"))
+        self.c_profondeur = QCheckBox(tr("Ajouter Depth Anything 3 (137 Mo) pour « Flou selon la profondeur » "
+                                         "(facultatif)"))
         self.c_traducteur = QCheckBox(tr("Ajouter le traducteur des consignes, français → anglais ({taille})",
                                          taille=tr("{n} Mo", n=round(traduction.TAILLE / 1024 ** 2))))
         self.c_traducteur.setToolTip(explication())
         # déjà là : case visible, cochée et grisée (rien à télécharger) ; sinon proposée
         self._deja = {self.c_schnell: _modele_vu(moteur_infos, "schnell"),
                       self.c_kontext: _modele_vu(moteur_infos, "kontext"),
+                      self.c_profondeur: _modele_vu(moteur_infos, "profondeur"),
                       self.c_traducteur: traduction.installe()}
+        self.c_profondeur.setChecked(True)               # petit modèle : proposé (coché)
         self.c_traducteur.setChecked(True)               # pas installé : proposé ; installé : coché et grisé
         for c, (texte, deja) in zip(self._deja, [
                 (tr("Flux Schnell (« Upscale net ») : déjà installé"), self._deja[self.c_schnell]),
                 (tr("Flux Kontext (« Modifier avec une consigne », « Restaurer une vieille photo ») : déjà installé"),
                  self._deja[self.c_kontext]),
+                (tr("Depth Anything 3 (« Flou selon la profondeur ») : déjà installé"),
+                 self._deja[self.c_profondeur]),
                 (tr("Traducteur des consignes : déjà installé"), self._deja[self.c_traducteur])]):
             if deja:
                 c.setText(texte)
@@ -208,7 +217,7 @@ class FenetreCompleter(QDialog):
     def _liste(self) -> tuple[list[Element], list[str]]:
         from . import traduction
         elements, notes = manquants(self.infos, self.dossiers, self.install["dir"], self.c_schnell.isChecked(),
-                                    self.c_kontext.isChecked())
+                                    self.c_kontext.isChecked(), self.c_profondeur.isChecked())
         if self.c_traducteur.isChecked() and not traduction.installe():
             elements += traduction.elements()
         return elements, notes
@@ -258,8 +267,8 @@ class FenetreCompleter(QDialog):
                                                                                       fait=go(fait),
                                                                                       total=go(total)))))
         self.travail.fini.connect(self._fini)
-        for w in (self.b_lancer, self.c_schnell, self.c_kontext, self.c_traducteur, self.c_licence,
-                  self.dossier_trad):
+        for w in (self.b_lancer, self.c_schnell, self.c_kontext, self.c_profondeur, self.c_traducteur,
+                  self.c_licence, self.dossier_trad):
             w.setEnabled(False)
         self.b_arreter.setEnabled(True)
         self.statut.setText(tr("Démarrage…"))
@@ -281,7 +290,7 @@ class FenetreCompleter(QDialog):
             self.accept()
         else:
             self.statut.setText(message)
-            for w in (self.c_schnell, self.c_kontext, self.c_traducteur, self.c_licence):
+            for w in (self.c_schnell, self.c_kontext, self.c_profondeur, self.c_traducteur, self.c_licence):
                 w.setEnabled(not self._deja.get(w, False))
             self.dossier_trad.setEnabled(self.c_traducteur.isChecked())
             self.b_lancer.setText(tr("Reprendre"))
