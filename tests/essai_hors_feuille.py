@@ -1,5 +1,5 @@
 """Vrais calques : les pixels qui dépassent de la feuille sont gardés (coller, déplacer, transformer, peindre,
-enregistrer en .pixane / ORA / PSD, zone de travail, Tout faire apparaître, taille, rotation, miroir, recadrer).
+enregistrer en .piximg / ORA / PSD, zone de travail, Tout faire apparaître, taille, rotation, miroir, recadrer).
 Usage : essai_hors_feuille.py dossier_de_sortie"""
 import os
 import sys
@@ -124,8 +124,8 @@ entiere, x, y = image_entiere(doc.calques[1])
 verifier((x, y) == (-10, 0) and couleur(entiere, 5, 15) == ROUGE and couleur(entiere, 15, 15) == VERT,
          "peint en vert dans la feuille : la partie dehors reste rouge")
 
-# 4. enregistrer et rouvrir (.pixane, ORA, PSD)
-for ext in (".pixane", ".ora", ".psd"):
+# 4. enregistrer et rouvrir (.piximg, ORA, PSD)
+for ext in (".piximg", ".ora", ".psd"):
     doc.enregistrer(sortie / f"hors{ext}")
     d2 = Document.ouvrir(sortie / f"hors{ext}")
     k2 = d2.calques[1]

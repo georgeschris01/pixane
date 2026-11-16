@@ -43,7 +43,7 @@ def main():
     paquets = python / "Lib" / "site-packages"
     print("Bibliothèques : .venv\\Lib\\site-packages")
     shutil.copytree(RACINE / ".venv" / "Lib" / "site-packages", paquets, ignore=ignorer(PAQUETS_EXCLUS))
-    # Pixane est trouvé par Python où qu'on le lance (pour « -m pixane » et l'ouverture des .pixane)
+    # Pixane est trouvé par Python où qu'on le lance (pour « -m pixane » et l'ouverture des .piximg)
     (paquets / "pixane.pth").write_text("../../..\n", encoding="utf-8")
     shutil.copytree(RACINE / "pixane", SORTIE / "pixane", ignore=ignorer({"dictionnaires"}))
     # dictionnaires d'orthographe : à part, l'installateur ne copie que les langues cochées
@@ -70,7 +70,7 @@ def main():
     (RACINE / "publication" / "version.txt").write_text(version, encoding="ascii")
     # vérification : rien de personnel
     suspects = [p for p in SORTIE.rglob("*") if p.suffix.lower() in (".log", ".jpg", ".jpeg", ".safetensors",
-                                                                      ".ckpt", ".pt", ".pth", ".pixane", ".ora")
+                                                                      ".ckpt", ".pt", ".pth", ".piximg", ".ora")
                 and p.name not in ("pixane.pth", "pyside_icon.jpg")]
     taille = sum(p.stat().st_size for p in SORTIE.rglob("*") if p.is_file())
     print(f"Version {version} ; {taille / 1e6:.0f} Mo dans {SORTIE}")

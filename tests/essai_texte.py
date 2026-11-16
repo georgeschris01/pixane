@@ -1,4 +1,4 @@
-"""Texte : création au clic, saisie (un seul Annuler), style, effets, déplacer / tourner à la souris, .pixane / .ora,
+"""Texte : création au clic, saisie (un seul Annuler), style, effets, déplacer / tourner à la souris, .piximg / .ora,
 Agrandir / Upscale, gomme (texte -> image), verrou.
 Usage : essai_texte.py dossier_sortie   (une image d'essai est fabriquée ; le moteur n'est pas démarré)"""
 import os
@@ -122,12 +122,12 @@ t2 = doc.calque_actif.texte
 souris([(t1.x + 100, t1.y)])                   # sur le premier texte (tourné)
 verifier(doc.actif == 1 and len(doc.calques) == 3, "clic sur le 1er texte -> il est choisi")
 
-# 6. .pixane et .ora
-chr_ = sortie / "essai.pixane"
+# 6. .piximg et .ora
+chr_ = sortie / "essai.piximg"
 doc.enregistrer(chr_)
 relu = Document.ouvrir(chr_)
-verifier([x.texte for x in relu.calques] == [x.texte for x in doc.calques], ".pixane : textes gardés (modifiables)")
-verifier(np.abs(rgb(relu.image) - rgb(doc.image)).max() <= 2, ".pixane : même image")
+verifier([x.texte for x in relu.calques] == [x.texte for x in doc.calques], ".piximg : textes gardés (modifiables)")
+verifier(np.abs(rgb(relu.image) - rgb(doc.image)).max() <= 2, ".piximg : même image")
 ora = sortie / "essai.ora"
 doc.enregistrer(ora)
 relu = Document.ouvrir(ora)

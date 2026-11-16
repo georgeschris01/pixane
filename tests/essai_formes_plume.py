@@ -120,7 +120,7 @@ verifier(tuple(px()[85, 100, :3]) == (32, 64, 224), "Annuler : de nouveau bleu, 
 doc.appliquer_etat(doc.etat_taille(800, 600))
 fo = cf.valide(doc.calque_actif)
 verifier(fo is not None and abs(fo.traces[0][1][0][0] - 100) < 0.01, "image agrandie : forme redessinée nette")
-fichier = Path(os.environ.get("TEMP", ".")) / "essai_formes_plume.pixane"
+fichier = Path(os.environ.get("TEMP", ".")) / "essai_formes_plume.piximg"
 doc.enregistrer(fichier)
 d2 = Document.ouvrir(fichier)
 verifier(sum(cf.valide(k) is not None for k in d2.calques) == 1, "rouvert : toujours un calque de forme")

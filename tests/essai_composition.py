@@ -1,4 +1,4 @@
-"""Masques de calque, modes de fusion, calques de réglage, groupes : calcul de l'image, déplacements, fichiers .pixane /
+"""Masques de calque, modes de fusion, calques de réglage, groupes : calcul de l'image, déplacements, fichiers .piximg /
 .ora / .psd. Sans fenêtre (sauf QApplication pour les images).
 Usage : essai_composition.py dossier_sortie"""
 import os
@@ -171,12 +171,12 @@ doc.actif = 2
 doc.appliquer_etat(doc.etat_nouveau_reglage("vibrance", {"vibrance": 40, "saturation": 10}, "Vibrance"))
 doc.appliquer_etat(doc.etat_calque_modifie(2, mode="ecran", opacite=0.8))
 attendu = tableau(doc.image.convertToFormat(FORMAT_IMAGE))
-doc.enregistrer(sortie / "essai.pixane")
-d2 = Document.ouvrir(sortie / "essai.pixane")
+doc.enregistrer(sortie / "essai.piximg")
+d2 = Document.ouvrir(sortie / "essai.piximg")
 verifier([(c.nom, c.groupe, c.reglage is not None, c.masque is not None, c.mode) for c in d2.calques]
          == [(c.nom, c.groupe, c.reglage is not None, c.masque is not None, c.mode) for c in doc.calques],
-         ".pixane : groupes, masques, réglages et modes relus")
-verifier(np.abs(tableau(d2.image.convertToFormat(FORMAT_IMAGE)).astype(int) - attendu).max() <= 1, ".pixane : même image")
+         ".piximg : groupes, masques, réglages et modes relus")
+verifier(np.abs(tableau(d2.image.convertToFormat(FORMAT_IMAGE)).astype(int) - attendu).max() <= 1, ".piximg : même image")
 doc.enregistrer(sortie / "essai.ora")
 d3 = Document.ouvrir(sortie / "essai.ora")
 verifier(any(c.groupe for c in d3.calques) and all(c.masque is None and c.reglage is None for c in d3.calques),

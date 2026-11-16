@@ -14,6 +14,9 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.25.0 (non publ
   Pixane Photo propose aussitôt. Aussi choisie dans l'installateur (normale, compacte, grande, très grande), sans
   remplacer un choix déjà fait.
 - **Affichage > Taille des icônes des outils** : petites, normales, grandes, très grandes, tout de suite.
+- **Les projets Pixane Photo s'appellent maintenant .piximg** (au lieu de .pixane), comme .pixvid pour Pixane
+  Video : chaque logiciel de la Suite a son extension. Le contenu du fichier ne change pas ; l'installateur ouvre les
+  .piximg avec Pixane Photo et retire l'ancienne association .pixane.
 
 ## Corrections
 

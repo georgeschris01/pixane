@@ -1,5 +1,5 @@
 """Outils de texte comme Photoshop : casse, étirement, exposant / indice, ligne de base, crénage (police et à la main),
-OpenType, lissage, justifié, cadre, vertical, déformation, tracé, style par lettre, fichier .pixane, Agrandir.
+OpenType, lissage, justifié, cadre, vertical, déformation, tracé, style par lettre, fichier .piximg, Agrandir.
 Usage : essai_texte_photoshop.py dossier_sortie   (une image d'essai est fabriquée ; le moteur n'est pas démarré)"""
 import os
 import sys
@@ -187,7 +187,7 @@ pt_.distorsion_h.setValue(0)
 t = replace(T(), trace=tuple((float(x), float(40 * np.sin(x / 60))) for x in range(-300, 301, 15)))
 verifier(not forme(t)[0].isEmpty() and forme(t)[0].boundingRect().height() > droit.height() * 1.3, "texte sur un tracé")
 
-# 7. fichier .pixane et Agrandir gardent tout
+# 7. fichier .piximg et Agrandir gardent tout
 t = replace(T(), casse="petites_capitales", echelle_h=120, cadre_l=300.0, trace=((0.0, 0.0), (50.0, 10.0)),
             crenages=((2, 40.0),)).avec_style(1, 3, couleur="#ff00ff00", taille=90.0)
 d = t.vers_dict()
@@ -250,10 +250,10 @@ verifier(np.abs(apres[hors][:, :3].astype(int) - 60).max() <= 1, "hors des lettr
 verifier(np.abs(apres[dans][:, :3].astype(int) - avant[dans][:, :3].astype(int)).max() <= 1, "dans les lettres : la photo")
 verifier(not np.array_equal(apres, avant), "l'image a changé")
 f.calques.rafraichir()
-doc.enregistrer(sortie / "ecretage.pixane")
-d2 = Document.ouvrir(sortie / "ecretage.pixane")
+doc.enregistrer(sortie / "ecretage.piximg")
+d2 = Document.ouvrir(sortie / "ecretage.piximg")
 verifier(d2.calques[texte_index + 1].ecretage and np.abs(tableau(d2.image).astype(int) - apres.astype(int)).max() <= 1,
-         ".pixane : écrêtage gardé, même image")
+         ".piximg : écrêtage gardé, même image")
 doc.enregistrer(sortie / "ecretage.psd")
 d3 = Document.ouvrir(sortie / "ecretage.psd")
 verifier(d3.calques[-1].ecretage and not any("écrêtage" in r for r in d3.remarques), "PSD : écrêtage gardé, sans remarque")

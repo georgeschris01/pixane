@@ -2094,16 +2094,16 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         if self.doc.chemin:
             from .raw import est_raw
             garde = not plusieurs or self.doc.chemin.suffix.lower() in (".psd", ".ora")
-            ext = self.doc.chemin.suffix if garde else ".pixane"
+            ext = self.doc.chemin.suffix if garde else ".piximg"
             if est_raw(self.doc.chemin):
-                ext = ".pixane" if plusieurs else ".jpg"
+                ext = ".piximg" if plusieurs else ".jpg"
             ajout = getattr(self.doc, "suffixe_nom", None) or tr("_retouche")
             propose = str(self.doc.chemin.with_name(self.doc.chemin.stem + ajout + ext))
         else:
             base = self.doc.nom or "image"
-            propose = str(Path(self.reglages.value("dossier", str(Path.home()))) / (base + (".pixane" if plusieurs
+            propose = str(Path(self.reglages.value("dossier", str(Path.home()))) / (base + (".piximg" if plusieurs
                                                                                            else ".jpg")))
-        formats = [tr("Projet Pixane Photo") + " (*.pixane)", tr("Photoshop, avec les calques") + " (*.psd)",
+        formats = [tr("Projet Pixane Photo") + " (*.piximg)", tr("Photoshop, avec les calques") + " (*.psd)",
                    tr("OpenRaster, pour Krita et GIMP") + " (*.ora)",
                    "JPEG (*.jpg)", "PNG (*.png)", "TIFF (*.tif)", "WebP (*.webp)",
                    tr("OpenEXR, 32 bits (HDR)") + " (*.exr)", tr("Radiance, 32 bits (HDR)") + " (*.hdr)"]
@@ -2138,14 +2138,14 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         styles = any(c.style is not None and not c.style.vide() for c in self.doc.calques)
         if len(self.doc.calques) > 1 and ext not in EXTENSIONS_CALQUES:
             self.statusBar().showMessage(tr("Enregistré à plat (sans les calques) : {chemin}  —  pour garder les "
-                                            "calques, enregistre aussi en .pixane", chemin=chemin), 10000)
+                                            "calques, enregistre aussi en .piximg", chemin=chemin), 10000)
         elif ext in (".ora", ".psd") and textes:
             self.statusBar().showMessage(tr("Enregistré : {chemin}  —  dans ce format, les textes sont des images ; "
-                                            "pour les garder modifiables, enregistre aussi en .pixane",
+                                            "pour les garder modifiables, enregistre aussi en .piximg",
                                             chemin=chemin), 10000)
         elif ext in (".ora", ".psd") and styles:
             self.statusBar().showMessage(tr("Enregistré : {chemin}  —  dans ce format, les styles de calque sont mis "
-                                            "dans les pixels ; pour les garder modifiables, enregistre aussi en .pixane",
+                                            "dans les pixels ; pour les garder modifiables, enregistre aussi en .piximg",
                                             chemin=chemin), 10000)
         else:
             self.statusBar().showMessage(tr("Enregistré : {chemin}", chemin=chemin), 5000)
@@ -2567,9 +2567,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
             QApplication.restoreOverrideCursor()
         self.statusBar().showMessage(
             tr("16 bits par couche : 65 536 nuances par couleur au lieu de 256 (dégradés et réglages sans "
-               "cassures). Enregistrez en PSD, TIFF, PNG ou .pixane pour les garder.") if bits == 16
+               "cassures). Enregistrez en PSD, TIFF, PNG ou .piximg pour les garder.") if bits == 16
             else tr("32 bits par couche (HDR) : les couleurs peuvent être plus claires que le blanc. Enregistrez en "
-                    ".pixane, EXR, HDR ou TIFF pour les garder ; Affichage > Exposition 32 bits pour les voir.")
+                    ".piximg, EXR, HDR ou TIFF pour les garder ; Affichage > Exposition 32 bits pour les voir.")
             if bits == 32 else tr("8 bits par couche."), 10000)
         self._actualiser()
 
@@ -3129,7 +3129,7 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
             apres = self.doc.etat_calque_modifie(self.doc.actif, image=img, texte=None)
             self.historique.push(CommandeEtat(self.doc, avant, apres, tr("Supprimer l'arrière-plan")))
             self.statusBar().showMessage(tr("Arrière-plan supprimé sur le calque « {nom} » : enregistrez en PNG, "
-                                            "PSD ou .pixane pour garder la transparence.", nom=c.nom), 10000)
+                                            "PSD ou .piximg pour garder la transparence.", nom=c.nom), 10000)
         self._detourage(tr("Supprimer l'arrière-plan"), suite)
 
     # ================================================================ aide : à propos, mises à jour

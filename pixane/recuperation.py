@@ -1,6 +1,6 @@
 """Enregistrement automatique et récupération après un plantage.
 
-Toutes les quelques minutes, chaque photo modifiée est copiée (format .pixane : calques, textes, styles, masques…)
+Toutes les quelques minutes, chaque photo modifiée est copiée (format .piximg : calques, textes, styles, masques…)
 dans %LOCALAPPDATA%\\Pixane\\recuperation, en arrière-plan. La copie est effacée quand la photo est enregistrée ou
 fermée, et quand Pixane se ferme normalement. Au démarrage, s'il reste des copies d'un Pixane qui ne s'est pas
 fermé (plantage, coupure de courant), Pixane propose de les rouvrir.
@@ -97,7 +97,7 @@ class Recuperation(QObject):
         try:
             self.dossier.mkdir(parents=True, exist_ok=True)
             for ident, calques, fusion, infos in travail:
-                chemin = self.dossier / f"{ident}.pixane"
+                chemin = self.dossier / f"{ident}.piximg"
                 try:
                     ecrire_ora(chemin, calques, fusion, natif=True, reperes=infos.get("reperes"),
                                dpi=infos.get("dpi", 72.0), mode=infos.get("mode", "rvb"))
@@ -122,7 +122,7 @@ class Recuperation(QObject):
             self._vus[id(doc)] = (v[0], doc.calques)
 
     def _effacer(self, ident: str):
-        for ext in (".pixane", ".json", ".pixane.tmp"):
+        for ext in (".piximg", ".json", ".piximg.tmp"):
             try:
                 (self.dossier / f"{ident}{ext}").unlink()
             except OSError:
@@ -146,7 +146,7 @@ class Recuperation(QObject):
                 infos = json.loads(j.read_text(encoding="utf-8"))
             except (OSError, ValueError):
                 continue
-            chr_ = j.with_suffix(".pixane")
+            chr_ = j.with_suffix(".piximg")
             if chr_.is_file() and not processus_vivant(int(infos.get("pid", 0))):
                 res.append((chr_, infos))
         return res

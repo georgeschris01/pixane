@@ -1,7 +1,7 @@
 """Dégradés à plusieurs points (comme l'éditeur de dégradé de Photoshop) : des points de couleur sous la barre, des
 points d'opacité au-dessus, et entre deux points un milieu (losange) qui règle où se trouve la moitié du passage.
 
-Un dégradé est un simple dict (gardé tel quel dans les réglages, les styles et les fichiers .pixane) :
+Un dégradé est un simple dict (gardé tel quel dans les réglages, les styles et les fichiers .piximg) :
     {"couleurs": [{"pos": 0..1, "couleur": "#rrggbb" ou "peinture", "milieu": 0.05..0.95}, ...],
      "opacites": [{"pos": 0..1, "opacite": 0..1, "milieu": 0.05..0.95}, ...]}
 « peinture » : le point prend la couleur de peinture du moment. « milieu » d'un point : milieu du passage entre le

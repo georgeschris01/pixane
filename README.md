@@ -70,7 +70,7 @@ Fait partie de la **[Suite Pixane](https://github.com/pixane-suite)** : des logi
 **Fichiers**
 - **Nouvelle image** avec 34 formats tout prêts (pochettes CD et vinyle, Spotify, livres, Amazon KDP, réseaux sociaux, A4, affiches…), unités (px, cm, mm, pouces, points, picas), résolution, **fond perdu** et **zone de sécurité** pour l'impression
 - **Exporter pour l'impression en CMJN** (TIFF, PDF, JPEG ; profils de Windows comme Coated FOGRA39) et **aperçu à l'écran** des couleurs imprimées
-- JPG, PNG, TIFF, WebP, BMP, **RAW des appareils photo** (Canon, Nikon, Sony, DNG, Fujifilm…, développés en 16 bits) ; PNG, TIFF et PSD en **16 bits** ; images **HDR** **.exr** (OpenEXR), **.hdr** et TIFF en **32 bits** ; **PSD** (Photoshop) avec calques, groupes, masques, modes et styles ; `.pixane` (projet Pixane Photo, tout reste modifiable) et `.ora` (Krita, GIMP)
+- JPG, PNG, TIFF, WebP, BMP, **RAW des appareils photo** (Canon, Nikon, Sony, DNG, Fujifilm…, développés en 16 bits) ; PNG, TIFF et PSD en **16 bits** ; images **HDR** **.exr** (OpenEXR), **.hdr** et TIFF en **32 bits** ; **PSD** (Photoshop) avec calques, groupes, masques, modes et styles ; `.piximg` (projet Pixane Photo, tout reste modifiable) et `.ora` (Krita, GIMP)
 - **Plusieurs photos ouvertes** dans des onglets, chacune avec son Annuler
 - **Enregistrement automatique** et récupération après un plantage
 - **Exporter pour le web** (JPEG, WebP, PNG ; taille, qualité, poids affiché, informations personnelles enlevées)
@@ -81,6 +81,7 @@ Fait partie de la **[Suite Pixane](https://github.com/pixane-suite)** : des logi
 
 **Confort**
 - Interface en **français** et en **anglais** (langue de Windows par défaut)
+- **Taille de l'interface** réglable de 75 % à 200 % (petits écrans, écrans 4K), aussi dans l'installateur ; taille des icônes des outils
 - Thème clair ou sombre, couleur d'accent de Windows ; guide intégré avec recherche (F1)
 - **Recherche des mises à jour** (sur demande ou au démarrage)
 - Installateur qui vérifie le PC et télécharge lui-même le moteur IA (ComfyUI et les modèles), avec reprise après coupure ; avec un ComfyUI déjà installé, seulement ce qui lui manque
@@ -169,6 +170,13 @@ ou *English* ; Pixane Photo propose alors de redémarrer pour appliquer la langu
 environ 20 secondes). Les boutons standard (Oui / Non / Annuler, menu clic droit) suivent la même langue.
 Les noms de calques déjà créés gardent leur langue d'origine. Guide en anglais : `docs\GUIDE_en.md`.
 
+**Taille de l'interface** : menu **Affichage > Taille de l'interface** : de **75 %** (très compacte) à **200 %**.
+Tout change ensemble : textes, icônes, boutons, panneaux. Ce pourcentage s'ajoute à la mise à l'échelle de
+Windows : sur un petit écran de portable, choisissez 85 % ou 75 % pour gagner de la place ; sur un écran 4K,
+125 % à 200 %. Pixane Photo propose de redémarrer pour l'appliquer (l'image ouverte est rouverte).
+**Affichage > Taille des icônes des outils** (*Petites*, *Normales*, *Grandes*, *Très grandes*) change seulement la
+barre des outils à gauche, tout de suite.
+
 **Moteur IA** : au démarrage, Pixane Photo lance l'IA (ComfyUI) en arrière-plan, sans fenêtre. Comptez environ
 20 secondes. Le point en bas à gauche passe au vert quand le moteur est prêt ; les actions IA sont grisées avant.
 
@@ -177,18 +185,18 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 ## 2. Ouvrir et enregistrer
 
 - **Fichier > Ouvrir** (Ctrl+O) : JPG, PNG, TIFF, WebP, BMP, les images **HDR** **.exr** (OpenEXR) et **.hdr**
-  (Radiance), et les fichiers à calques **.pixane**, **.ora** et **.psd** (Photoshop).
+  (Radiance), et les fichiers à calques **.piximg**, **.ora** et **.psd** (Photoshop).
   La photo est redressée selon son orientation d'appareil.
 - **Fichiers RAW** des appareils photo (Canon .CR2 / .CR3, Nikon .NEF, Sony .ARW, .DNG, Fujifilm .RAF, Olympus
   .ORF, Panasonic .RW2, Pentax .PEF…) : ils s'ouvrent comme une photo, développés avec la balance des blancs de
   l'appareil (bibliothèque LibRaw) ; retouchez ensuite avec les réglages (Niveaux, Courbes, Balance…). Le RAW
-  n'est jamais remplacé : **Enregistrer** propose un autre fichier (JPG, ou .pixane s'il y a des calques).
+  n'est jamais remplacé : **Enregistrer** propose un autre fichier (JPG, ou .piximg s'il y a des calques).
 - **Enregistrer** (Ctrl+S), **Enregistrer sous** (Ctrl+Maj+S) :
-  - **.pixane** (projet Pixane Photo) : le format de Pixane Photo. Garde **tout** : calques (noms, ordre, visibilité, opacité,
+  - **.piximg** (projet Pixane Photo) : le format de Pixane Photo. Garde **tout** : calques (noms, ordre, visibilité, opacité,
     verrou), **textes modifiables** et **styles de calque modifiables**. Proposé d'office quand l'image a plusieurs calques ou un texte.
   - **.ora** (OpenRaster) : pour **partager avec Krita ou GIMP** (format ouvert). Garde les calques, mais les
     textes y deviennent des images.
-  - Bon à savoir : un .pixane est construit comme un .ora ; renommé en .ora, il s'ouvre aussi dans Krita ou GIMP.
+  - Bon à savoir : un .piximg est construit comme un .ora ; renommé en .ora, il s'ouvre aussi dans Krita ou GIMP.
   - **.psd** (Photoshop) : pour **travailler avec Photoshop**. Garde les calques (noms, ordre, visibilité,
     opacité, verrou) ; les textes y deviennent des images. Une photo ouverte depuis un PSD est proposée en PSD.
   - **PSD ouverts dans Pixane Photo** : RVB ou niveaux de gris, 8 ou 16 bits, avec les calques, les **groupes**, les
@@ -262,7 +270,7 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
     = 72 points = 6 picas). Changer d'unité ne change pas l'image.
   - **Orientation** : Portrait ou Paysage échange largeur et hauteur.
   - **Résolution** (ppp, points par pouce) : **300** pour l'impression, **72** pour l'écran. Elle est **gardée dans
-    le fichier** (.pixane, PSD, JPEG, PNG, TIFF) : un imprimeur verra la bonne taille.
+    le fichier** (.piximg, PSD, JPEG, PNG, TIFF) : un imprimeur verra la bonne taille.
   - **Mode** : couleurs RVB ou **niveaux de gris** (voir *Image > Mode*). Une image neuve est en **8 bits par
     couche** (16,7 millions de couleurs, comme le JPEG, le PNG et le web) ; pour un travail fin, passez-la ensuite en
     **16 bits** (*Image > Mode > 16 bits par couche*).
@@ -303,7 +311,7 @@ Les noms de calques déjà créés gardent leur langue d'origine. Guide en angla
 - **Repères** : glissez depuis une règle vers la photo pour poser une ligne bleue (horizontale depuis la règle du
   haut, verticale depuis celle de gauche). Avec l'outil **Déplacer** (V), attrapez un repère pour le bouger (le
   curseur devient une double flèche au-dessus) ; tiré hors de la photo, il disparaît. *Nouveau repère…* le pose à une position exacte, *Effacer les repères* les enlève tous,
-  Ctrl+; les cache ou les montre. Ils sont gardés dans le fichier .pixane.
+  Ctrl+; les cache ou les montre. Ils sont gardés dans le fichier .piximg.
 - **Grille** (Ctrl+') : lignes régulières sur la photo ; *Taille de la grille…* règle l'écart (100 px par défaut).
 - **Magnétisme** (Ctrl+Maj+;, coché par défaut) : la sélection rectangle, le dégradé et les formes s'accrochent aux
   repères, aux bords de la photo et à la grille (si elle est affichée), à moins de 8 pixels d'écran.
@@ -465,7 +473,7 @@ sort de la feuille est gardé, on peut le faire revenir ; refusé sur un calque 
   chaque calque garde sa **meilleure version** (par exemple celle d'après un Upscale). Réduire, valider, faire autre
   chose, enregistrer, rouvrir le projet… puis réagrandir : Pixane Photo repart de cette meilleure version, l'image revient
   **telle qu'elle était, pixel pour pixel**, jusqu'à sa taille d'origine. Valable avec Déplacer (poignées), Ctrl+T,
-  *Image > Taille de l'image*, pivoter, retourner, recadrer, aligner. Elle est enregistrée dans le projet **.pixane**
+  *Image > Taille de l'image*, pivoter, retourner, recadrer, aligner. Elle est enregistrée dans le projet **.piximg**
   (qui grossit un peu).
   - Si l'on **modifie les pixels** du calque (pinceau, gomme, IA, filtre…), la version modifiée devient la nouvelle
     référence (l'ancienne effacerait le travail).
@@ -689,7 +697,7 @@ Pour le calque choisi : seul son contenu est envoyé à l'IA, et autour, le calq
 Modèle **BiRefNet** (MIT, 444 Mo, installé avec le moteur IA ; s'il manque, menu **IA > Installer le moteur IA…**
 l'ajoute). Quelques secondes.
 - **Supprimer l'arrière-plan** (Maj+B, panneau IA ou menu IA) : le fond du **calque choisi** devient transparent,
-  le sujet reste. Enregistrez en PNG, PSD ou .pixane pour garder la transparence. Ctrl+Z annule.
+  le sujet reste. Enregistrez en PNG, PSD ou .piximg pour garder la transparence. Ctrl+Z annule.
 - **Sélectionner le sujet** (Ctrl+Alt+S, menu Sélection) : sélectionne le sujet sans rien effacer, par exemple
   pour le régler (Ctrl+U), ou *Inverser* (Ctrl+Maj+I) pour travailler le fond.
 
@@ -795,7 +803,7 @@ coupé** : on peut le ramener, le réduire, le réafficher.
   dehors reste telle quelle.
 - **Image > Tout faire apparaître** : la feuille s'agrandit juste assez pour montrer tout ce qui dépasse
   (Ctrl+Z pour revenir).
-- Enregistré en **.pixane**, **PSD** et **ORA** (Photoshop, Krita et GIMP le relisent). JPEG, PNG… n'enregistrent
+- Enregistré en **.piximg**, **PSD** et **ORA** (Photoshop, Krita et GIMP le relisent). JPEG, PNG… n'enregistrent
   que la feuille. **Recadrer** et **Aplatir** suppriment ce qui dépasse.
 
 ### Le panneau Calques
@@ -806,7 +814,7 @@ coupé** : on peut le ramener, le réduire, le réafficher.
 | **Vignette** | Aperçu du calque, à la forme de l'image ; le damier gris montre les parties transparentes |
 | **Nom** | Double-clic sur le nom pour renommer ; double-clic ailleurs sur la ligne : style du calque |
 | **Opacité** | Transparence du calque choisi, de 0 % (invisible) à 100 % ; affichée sous le nom quand < 100 % |
-| **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. Les actions IA sont refusées avec un message : Effacer et Remplir si le calque choisi est verrouillé, Agrandir et Upscale de toute l'image si un calque quelconque est verrouillé (ils changent la taille de tous les calques), Upscale du calque si ce calque est verrouillé. On peut toujours le masquer, le renommer et le monter / descendre. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .pixane et .ora |
+| **Cadenas** (à droite du nom) | Verrouille le calque pour le protéger : il ne peut plus être gommé, supprimé ni fusionné, et son opacité est bloquée ; Aplatir est désactivé tant qu'un calque est verrouillé. Les actions IA sont refusées avec un message : Effacer et Remplir si le calque choisi est verrouillé, Agrandir et Upscale de toute l'image si un calque quelconque est verrouillé (ils changent la taille de tous les calques), Upscale du calque si ce calque est verrouillé. On peut toujours le masquer, le renommer et le monter / descendre. Le cadenas ouvert est discret, le cadenas fermé bien visible. Le verrou est gardé dans les fichiers .piximg et .ora |
 | **Glisser un calque** | Changer sa place dans la pile à la souris : prenez la ligne (sur le nom) et glissez-la vers le haut ou le bas ; un **trait orange** montre où il ira. Lâché juste sous un calque d'un groupe ouvert, il entre dans le groupe ; un groupe bouge avec ses calques. Une seule étape dans Annuler |
 | **Mode de fusion** (liste en haut du panneau) | Comment le calque se mélange à ce qui est dessous (voir plus bas) |
 | **Vignette du masque** (à droite de la vignette) | Le masque du calque, s'il en a un. Clic : on peint le masque (cadre orange) ; clic sur la vignette du calque : on repeint les pixels. Maj+clic : désactiver / réactiver le masque (barré en rouge) |
@@ -833,7 +841,7 @@ Les mêmes que Photoshop, rangés par familles : **Normal** ; **Obscurcir**, **P
 assombrit) ; **Éclaircir**, **Superposition**, **Densité couleur −**, **Densité linéaire − (Ajout)** (ce qui éclaircit) ;
 **Incrustation**, **Lumière tamisée**, **Lumière crue** (contraste) ; **Différence**, **Exclusion** ; **Teinte**,
 **Saturation**, **Couleur**, **Luminosité**. Exemples : *Produit* pour une ombre ou une texture sombre, *Superposition*
-pour une lueur, *Incrustation* pour une texture de papier, *Couleur* pour teinter. Gardés dans les fichiers .pixane,
+pour une lueur, *Incrustation* pour une texture de papier, *Couleur* pour teinter. Gardés dans les fichiers .piximg,
 .ora et .psd.
 
 ### Masques de calque
@@ -847,7 +855,7 @@ toujours revenir en arrière en repeignant en blanc.
   exemple pour fondre deux photos) ou le pot de peinture. Les réglages et filtres s'appliquent aussi au masque.
 - Exemple : *Supprimer l'arrière-plan* puis un masque plutôt qu'une gomme : un bout de sujet coupé par erreur se
   récupère en peignant en blanc.
-- Les masques suivent le calque (Ctrl+T, recadrer, taille de l'image, Upscale) et sont gardés en .pixane, .ora et .psd.
+- Les masques suivent le calque (Ctrl+T, recadrer, taille de l'image, Upscale) et sont gardés en .piximg, .ora et .psd.
 
 ### Groupes
 Un **groupe** range plusieurs calques dans un dossier : on peut les masquer, les déplacer, les dupliquer ou les
@@ -885,7 +893,7 @@ dessus, ou **Calque > Modifier le réglage…**), le masquer (œil), baisser son
 - **Calque > Nouveau calque de réglage**, ou le bouton **Réglage** du panneau. S'il y a une sélection, elle devient
   le masque du calque de réglage (le réglage ne s'applique que là).
 - Dans un groupe, il ne règle que les calques du groupe placés dessous.
-- Gardé tel quel en .pixane ; en .ora et .psd, il devient un calque d'image (le résultat).
+- Gardé tel quel en .piximg ; en .ora et .psd, il devient un calque d'image (le résultat).
 
 ### Calques de remplissage
 **Calque > Nouveau calque de remplissage** (ou le bouton **Réglage** du panneau Calques, en haut de la liste) : un
@@ -896,7 +904,7 @@ calque qui couvre toute la feuille d'une **couleur unie**, d'un **dégradé** ou
 - **Motif** : un motif de la bibliothèque, à l'échelle voulue.
 - S'il y a une sélection, elle devient le **masque** du calque (le remplissage ne se voit que là).
 - Il est redessiné quand la feuille change de taille (taille de l'image, zone de travail, recadrer…) ; gardé en
-  .pixane ; en .ora et .psd, il devient un calque d'image. *Convertir en image* (clic droit) le fige.
+  .piximg ; en .ora et .psd, il devient un calque d'image. *Convertir en image* (clic droit) le fige.
 
 ### Harmoniser un collage (Calque > Harmoniser avec l'arrière-plan…)
 Un objet collé d'une autre photo jure souvent : lumière plus froide, noirs moins profonds… Choisissez son calque
@@ -940,7 +948,7 @@ calque…**. La photo montre le résultat en direct ; **OK** garde le style (une
   Ils suivent aussi un texte modifié ou un calque déplacé.
 - Menu **Calque** : **Copier le style** / **Coller le style** (sur un autre calque), **Enlever le style**, **Mettre
   le style dans les pixels** (pour gommer ou peindre le calque avec ses effets).
-- Enregistrement : en **.pixane**, les styles restent modifiables. En **.psd** et **.ora**, ils sont mis dans les pixels
+- Enregistrement : en **.piximg**, les styles restent modifiables. En **.psd** et **.ora**, ils sont mis dans les pixels
   (visibles dans Photoshop, Krita, GIMP, mais plus modifiables). Les styles d'un PSD ouvert sont repris et restent modifiables (voir chapitre 2).
 - Fusionner ou aplatir met aussi les effets dans les pixels.
 
@@ -963,7 +971,7 @@ Outil **Texte** (touche **T**, icône « T » dans la barre d'outils). Le pannea
 - **Cliquer sur la photo** : un nouveau texte « Texte » apparaît à cet endroit, sur **son propre calque**.
   Tapez directement : le mot proposé est remplacé. La case du panneau accepte plusieurs lignes (Entrée).
 - **Cliquer sur un texte existant** : il est choisi et ses réglages s'affichent ; on peut le modifier à tout
-  moment, même après avoir enregistré en **.pixane** et rouvert.
+  moment, même après avoir enregistré en **.piximg** et rouvert.
 - Le texte s'applique **au fur et à mesure** : rien à valider.
 - **Glisser le texte** : le déplacer (aussi avec l'outil Déplacer, V). Un cadre en pointillés entoure le texte choisi.
 - **Poignée ronde** au-dessus du cadre : tourner le texte (**Maj** : par pas de 15°), ou case *Rotation*.
@@ -1043,7 +1051,7 @@ Comme dans Photoshop : posez la photo (ou une texture, un dégradé…) **sur un
 **Ctrl+Alt+G** (menu Calque > *Masque d'écrêtage*, ou clic droit sur le calque). La photo ne se voit plus que
 **dans les lettres** ; le texte reste modifiable (texte, police, taille…) et la photo peut être déplacée. Dans le
 panneau Calques, le calque écrêté est décalé avec une flèche ↳. Ctrl+Alt+G encore une fois : retiré. Marche aussi
-avec n'importe quel calque (pas seulement un texte). Gardé en .pixane et .psd ; en .ora, il est mis dans les pixels.
+avec n'importe quel calque (pas seulement un texte). Gardé en .piximg et .psd ; en .ora, il est mis dans les pixels.
 
 ### Bon à savoir
 - Toutes les modifications s'annulent avec Ctrl+Z ; une saisie de plusieurs lettres s'annule d'un seul coup.
@@ -1051,7 +1059,7 @@ avec n'importe quel calque (pas seulement un texte). Gardé en .pixane et .psd ;
 - La **Gomme de calque** sur un texte le transforme en image (un message le signale ; Ctrl+Z pour revenir).
   **Fusionner** ou **Aplatir** aussi.
 - Un texte sur un calque **verrouillé** ne peut être ni déplacé ni modifié.
-- Pour garder les textes modifiables, enregistrez en **.pixane** (dans un .ora, ils deviennent des images).
+- Pour garder les textes modifiables, enregistrez en **.piximg** (dans un .ora, ils deviennent des images).
 
 ---
 
@@ -1102,7 +1110,7 @@ Ce calque garde le **tracé** de chaque coup, pas seulement ses pixels :
   un autre calque (ou la photo) avant de peindre, un nouveau calque de pinceau sera créé ;
 - la **gomme**, un filtre, l'IA, le pot de peinture… en font un calque d'image ordinaire (un message le dit ; Ctrl+Z
   pour revenir). Clic droit sur le calque > **Convertir en image** le fait aussi ;
-- il est gardé dans les fichiers **.pixane** ; dans un PSD, PNG, JPG… il est enregistré comme une image. Dans le
+- il est gardé dans les fichiers **.piximg** ; dans un PSD, PNG, JPG… il est enregistré comme une image. Dans le
   panneau Calques, il est marqué « pinceau modifiable ».
 Case décochée : on peint directement sur le calque choisi, comme avant.
 
@@ -1282,7 +1290,7 @@ couleur pour la changer) et l'**épaisseur** du contour.
 Chaque forme va dans un **calque de forme** (« forme modifiable » dans Calques), comme dans Photoshop : choisissez ce
 calque avec l'outil Formes ou la Plume, et la barre du haut montre ses réglages ; les changer redessine la forme (une
 étape d'Annuler). Déplacée, redimensionnée, tournée (Ctrl+T), ou l'image agrandie : la forme est redessinée nette et
-reste modifiable ; elle est gardée dans le fichier .pixane. La gomme, un filtre ou l'IA en font une image ordinaire
+reste modifiable ; elle est gardée dans le fichier .piximg. La gomme, un filtre ou l'IA en font une image ordinaire
 (un message le dit ; Ctrl+Z pour revenir) ; Calque > clic droit > **Convertir en image** aussi.
 
 ### Plume (A)
@@ -1379,7 +1387,7 @@ Comme dans Photoshop : **enregistrer** une suite d'opérations, puis la **rejoue
   **dégradés** et les ciels : pas de **cassures** (marches visibles) même après plusieurs réglages. Le titre de la
   fenêtre indique **(16 bits)**. Ctrl+Z annule le changement.
   - **Ouvert en 16 bits d'office** : les PNG, TIFF et PSD 16 bits, et les **photos RAW** (développées en 16 bits).
-  - **Enregistré en 16 bits** : .pixane, PSD, TIFF, PNG. Le JPEG, le WebP et le BMP n'ont que 8 bits : l'image y est
+  - **Enregistré en 16 bits** : .piximg, PSD, TIFF, PNG. Le JPEG, le WebP et le BMP n'ont que 8 bits : l'image y est
     enregistrée en 8 bits, avec le **tramage** (voir plus bas).
   - **Calculé en 16 bits** : la fusion des calques (modes de fusion, calques de réglage, masques), tous les
     **réglages** (Réglages de l'image, Niveaux, Courbes, Balance…), les **filtres** (flous, netteté, bruit,
@@ -1396,7 +1404,7 @@ Comme dans Photoshop : **enregistrer** une suite d'opérations, puis la **rejoue
   ciel très lumineux gardent leur détail, et on peut baisser l'exposition après coup sans rien perdre. Le titre de
   la fenêtre indique **(32 bits)**.
   - **Ouvert en 32 bits d'office** : les **.exr** (OpenEXR), **.hdr** (Radiance) et **TIFF 32 bits**.
-  - **Enregistré en 32 bits** : .pixane, EXR, HDR, TIFF. Le PSD et le PNG sont enregistrés en 16 bits, le JPEG en
+  - **Enregistré en 32 bits** : .piximg, EXR, HDR, TIFF. Le PSD et le PNG sont enregistrés en 16 bits, le JPEG en
     8 bits : ce qui est plus clair que le blanc y devient blanc (passez d'abord en 16 ou 8 bits avec le *Virage
     HDR* pour choisir comment le ramener).
   - **Calculé en 32 bits**, sans couper au blanc : la fusion des calques, les calques de réglage, les réglages, les
@@ -1536,7 +1544,8 @@ Tout s'annule par Ctrl+Z.
    `%LOCALAPPDATA%\Pixane\moteur`) ; case facultative **Flux Schnell** pour « Upscale net » (11,8 Go de plus) ;
    case **J'accepte la licence FLUX.1 [dev]** (usage non commercial) obligatoire pour installer le moteur.
    On peut aussi décocher : Pixane Photo s'installe sans moteur.
-6. Options : icône sur le Bureau ; ouvrir les fichiers .pixane avec Pixane Photo.
+6. Options : icône sur le Bureau ; ouvrir les fichiers .piximg avec Pixane Photo ; **taille de l'interface**
+   (normale, compacte 85 %, grande 125 %, très grande 150 % ; ne remplace pas un choix déjà fait dans Pixane Photo).
 7. À la fin, la fenêtre **Installer le moteur IA** télécharge et installe tout (ComfyUI portable, ses extensions,
    les modèles). Elle montre l'avancement, la vitesse et le temps restant. **Arrêter** est possible à tout moment :
    le téléchargement reprendra plus tard là où il s'était arrêté (même après une coupure). Chaque fichier est

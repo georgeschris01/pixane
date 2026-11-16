@@ -1,5 +1,5 @@
 """32 bits par couche (HDR) et outils dans la profondeur de l'image : ouverture / enregistrement EXR, HDR, TIFF 32,
-.pixane ; fusion, calques de réglage, réglages, filtres, taille en 32 bits ; pinceaux, gomme, tampon, retouche en 16
+.piximg ; fusion, calques de réglage, réglages, filtres, taille en 32 bits ; pinceaux, gomme, tampon, retouche en 16
 et 32 bits ; Virage HDR, exposition de l'aperçu ; Image > Mode > 32 bits dans la fenêtre.
 Usage : python tests/essai_32bits.py DOSSIER_SORTIE"""
 import os
@@ -54,10 +54,10 @@ for ext, tol in ((".exr", 2e-3), (".tif", 1e-5), (".hdr", 1e-2)):
     verifier(doc.profondeur == 32 and P.est_32(doc.calques[0].image) and ecart < tol and t[..., 0].max() > 1.5,
              f"{ext} ouvert en 32 bits, au-dessus du blanc gardé (écart {ecart:.1e})")
 doc = Document.ouvrir(sortie / "ciel.exr")
-doc.enregistrer(sortie / "ciel.pixane")
-d2 = Document.ouvrir(sortie / "ciel.pixane")
+doc.enregistrer(sortie / "ciel.piximg")
+d2 = Document.ouvrir(sortie / "ciel.piximg")
 verifier(d2.profondeur == 32 and np.array_equal(P.tab32(d2.calques[0].image), P.tab32(doc.calques[0].image)),
-         ".pixane 32 bits : relu à l'identique")
+         ".piximg 32 bits : relu à l'identique")
 doc.exporter(sortie / "ciel.jpg")
 doc.exporter(sortie / "ciel16.png")
 doc.enregistrer(sortie / "ciel.psd")

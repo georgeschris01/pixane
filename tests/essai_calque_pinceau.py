@@ -146,7 +146,7 @@ p = cp.valide(doc.calque_actif)
 verifier(p is not None and abs(p.taille - 60) < 1, "image agrandie : traits redessinés nets, taille doublée")
 
 # enregistrer / rouvrir
-fichier = Path(os.environ.get("TEMP", ".")) / "essai_calque_pinceau.pixane"
+fichier = Path(os.environ.get("TEMP", ".")) / "essai_calque_pinceau.piximg"
 doc.enregistrer(fichier)
 d2 = Document.ouvrir(fichier)
 q = [cp.valide(k) for k in d2.calques if cp.valide(k) is not None]

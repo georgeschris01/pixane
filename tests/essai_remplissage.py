@@ -1,5 +1,5 @@
 """Calques de remplissage : couleur unie, dégradé, motif ; modifiables (double-clic), suivent la taille de la feuille,
-gardés dans le .pixane ; avec une sélection : masque.
+gardés dans le .piximg ; avec une sélection : masque.
 Usage : essai_remplissage.py dossier_sortie"""
 import os
 import sys
@@ -70,7 +70,7 @@ c = doc.calque_actif
 verifier(cr.valide(c) is not None and c.image.width() == 800 and tuple(px(c)[599, 799]) == (255, 0, 0, 255),
          "image agrandie : le remplissage est redessiné à la nouvelle taille, toujours modifiable")
 doc.appliquer_etat(doc.etat_taille(400, 300))
-fichier = Path(os.environ.get("TEMP", ".")) / "essai_remplissage.pixane"
+fichier = Path(os.environ.get("TEMP", ".")) / "essai_remplissage.piximg"
 doc.enregistrer(fichier)
 d2 = Document.ouvrir(fichier)
 r2 = [cr.valide(k) for k in d2.calques if cr.valide(k) is not None]

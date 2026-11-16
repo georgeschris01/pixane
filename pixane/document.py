@@ -36,8 +36,9 @@ FORMAT_IMAGE = QImage.Format_RGBA8888
 FORMAT_SELECTION = QImage.Format_ARGB32_Premultiplied
 FORMAT_CALQUE = QImage.Format_ARGB32_Premultiplied
 
-EXTENSIONS_LECTURE = "*.pixane *.jpg *.jpeg *.png *.tif *.tiff *.webp *.bmp *.ora *.psd *.exr *.hdr " + filtre_raw()
-EXTENSIONS_CALQUES = (".pixane", ".ora", ".psd")    # formats qui gardent les calques
+EXTENSIONS_LECTURE = "*.piximg *.jpg *.jpeg *.png *.tif *.tiff *.webp *.bmp *.ora *.psd *.exr *.hdr " + filtre_raw()
+EXTENSIONS_NATIVES = (".piximg",)             # projet Pixane Photo
+EXTENSIONS_CALQUES = EXTENSIONS_NATIVES + (".ora", ".psd")    # formats qui gardent les calques
 
 
 # ------------------------------------------------------------------ conversions
@@ -814,7 +815,7 @@ class Document(QObject):
             self.modifie = False
             return
         if ext in EXTENSIONS_CALQUES:
-            natif = ext == ".pixane"            # .pixane : styles modifiables ; .ora (Krita, GIMP) : effets figés
+            natif = ext in EXTENSIONS_NATIVES   # .piximg : styles modifiables ; .ora (Krita, GIMP) : effets figés
             ecrire_ora(chemin, self.calques if natif else calques_figes(self.calques, garder_groupes=True),
                        self.image, natif=natif, reperes=self.reperes, dpi=self.dpi, mode=self.mode,
                        profondeur=self.profondeur)
@@ -1896,8 +1897,8 @@ class Document(QObject):
 # ------------------------------------------------------------------ format OpenRaster (.ora)
 # Format ouvert à calques (lu aussi par Krita, GIMP, MyPaint) : une archive zip avec un PNG par calque,
 # la liste des calques (stack.xml), l'image fusionnée et une vignette.
-# Le format de Pixane (.pixane) est le même, avec en plus les réglages des textes (attribut pixane-texte) :
-# un .pixane renommé en .ora s'ouvre donc aussi dans Krita ou GIMP (les textes y sont des images).
+# Le format de Pixane Photo (.piximg) est le même, avec en plus les réglages des textes (attribut pixane-texte) :
+# un .piximg renommé en .ora s'ouvre donc aussi dans Krita ou GIMP (les textes y sont des images).
 def _lire_16(chemin: Path) -> QImage | None:
     """Image PNG ou TIFF en 16 bits par couche (lue par Qt, orientation EXIF appliquée), sinon None."""
     from PySide6.QtGui import QImageReader
@@ -1964,14 +1965,14 @@ def png16(img: QImage) -> bytes:
 
 
 def _f32(img: QImage) -> bytes:
-    """Calque 32 bits d'un .pixane : tableau float32 (h, w, 4) R, V, B, A non prémultiplié (format .npy, exact)."""
+    """Calque 32 bits d'un .piximg : tableau float32 (h, w, 4) R, V, B, A non prémultiplié (format .npy, exact)."""
     tampon = io.BytesIO()
     np.save(tampon, prof.tab32(img), allow_pickle=False)
     return tampon.getvalue()
 
 
 def _donnees_calque(img: QImage, natif: bool) -> tuple[bytes, str, int]:
-    """(octets, extension, compression zip) d'une image de calque : .npy en 32 bits dans un .pixane, sinon PNG."""
+    """(octets, extension, compression zip) d'une image de calque : .npy en 32 bits dans un .piximg, sinon PNG."""
     if natif and prof.est_32(img):
         return _f32(img), ".npy", zipfile.ZIP_DEFLATED
     return _png(img), ".png", zipfile.ZIP_STORED
@@ -1979,7 +1980,7 @@ def _donnees_calque(img: QImage, natif: bool) -> tuple[bytes, str, int]:
 
 def _lire_png(donnees: bytes, src: str = "") -> QImage:
     """PNG d'un calque -> QImage : 16 bits (FORMAT_16) si le PNG l'est, sinon comme avant (Pillow). Un .npy
-    (calque 32 bits d'un .pixane) -> FORMAT_32."""
+    (calque 32 bits d'un .piximg) -> FORMAT_32."""
     if src.lower().endswith(".npy"):
         t = np.load(io.BytesIO(donnees), allow_pickle=False)
         return prof.qimage32(t)
@@ -1992,7 +1993,7 @@ def _lire_png(donnees: bytes, src: str = "") -> QImage:
 
 def ecrire_ora(chemin: Path, calques, fusion: QImage, natif: bool = False, reperes=None, dpi: float = 72.0,
                mode: str = "rvb", profondeur: int = 8) -> None:
-    """Groupes = piles imbriquées, modes de fusion = composite-op (lus par Krita et GIMP). En .pixane (natif) :
+    """Groupes = piles imbriquées, modes de fusion = composite-op (lus par Krita et GIMP). En .piximg (natif) :
     masques, calques de réglage, styles et textes gardés en attributs « pixane-… »."""
     w, h = calques[0].image.width(), calques[0].image.height()
     pile = ET.Element("image", w=str(w), h=str(h), version="0.0.5", xres=f"{dpi:g}", yres=f"{dpi:g}")
@@ -2162,7 +2163,7 @@ def _attr(e, nom: str):
 
 
 def lire_infos_ora(chemin: Path) -> dict:
-    """Repères, résolution (xres de la norme OpenRaster) et mode (gris / rvb) d'un .pixane ou d'un .ora."""
+    """Repères, résolution (xres de la norme OpenRaster) et mode (gris / rvb) d'un .piximg ou d'un .ora."""
     infos = {"reperes": [], "dpi": 72.0, "mode": "rvb", "profondeur": 8}
     try:
         with zipfile.ZipFile(chemin) as z:

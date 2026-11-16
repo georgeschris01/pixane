@@ -2,7 +2,7 @@
 
 Les règles entourent le canevas ; on tire un repère depuis une règle (bouton gauche, glisser dans la photo).
 Avec l'outil Déplacer, un repère se déplace ; tiré hors de la photo, il disparaît. Les repères sont propres à
-chaque photo (enregistrés dans le .pixane). Avec le magnétisme, les sélections rectangle, les formes, le dégradé et le
+chaque photo (enregistrés dans le .piximg). Avec le magnétisme, les sélections rectangle, les formes, le dégradé et le
 recadrage s'accrochent aux repères (et à la grille si elle est affichée).
 """
 from __future__ import annotations

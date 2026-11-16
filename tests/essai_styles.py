@@ -1,4 +1,4 @@
-"""Styles de calque : rendu des effets, fenêtre Style du calque, enregistrement (.pixane modifiable, .ora / .psd figés),
+"""Styles de calque : rendu des effets, fenêtre Style du calque, enregistrement (.piximg modifiable, .ora / .psd figés),
 mise à l'échelle, lumière commune, ombre au sol (poignée), copier / coller, figer.
 Usage : essai_styles.py dossier_sortie"""
 import os
@@ -94,10 +94,10 @@ doc = Document(calques=[Calque.depuis("fond", pil_vers_qimage(Image.fromarray(fo
                         Calque.depuis("objet", q_obj, style=contour)])
 verifier(rgba(doc.image)[195, 450, 0] > 200, "image affichée : le style est appliqué")
 verifier((rgba(doc.calques[1].image) == rgba(q_obj)).all(), "pixels du calque intacts (non destructif)")
-doc.enregistrer(sortie / "style.pixane")
-d2 = Document.ouvrir(sortie / "style.pixane")
+doc.enregistrer(sortie / "style.piximg")
+d2 = Document.ouvrir(sortie / "style.piximg")
 verifier(d2.calques[1].style is not None and d2.calques[1].style.effets[0].r("taille") == 10,
-         ".pixane : style relu, toujours modifiable")
+         ".piximg : style relu, toujours modifiable")
 doc.enregistrer(sortie / "style.ora")
 d3 = Document.ouvrir(sortie / "style.ora")
 verifier(d3.calques[1].style is None and rgba(d3.calques[1].image)[195, 450, 0] > 200,

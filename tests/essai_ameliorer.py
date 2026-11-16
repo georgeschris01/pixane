@@ -99,7 +99,7 @@ f.doc.suffixe_nom = "_restauree"
 propose = {}
 QFileDialog.getSaveFileName = lambda *a, **k: (propose.update(nom=a[2]) or ("", ""))
 f.enregistrer_sous()
-verifier(propose.get("nom", "").endswith(("_restauree.jpg", "_restauree.pixane")), f"nom proposé : {propose.get('nom')}")
+verifier(propose.get("nom", "").endswith(("_restauree.jpg", "_restauree.piximg")), f"nom proposé : {propose.get('nom')}")
 print("ERREURS :", erreurs if erreurs else "aucune")
 sys.stdout.flush()
 for d in f.documents:          # aucune question à la fermeture

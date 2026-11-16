@@ -70,7 +70,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 **Files**
 - **New image** with 34 ready-made formats (CD and vinyl covers, Spotify, books, Amazon KDP, social media, A4, posters…), units (px, cm, mm, inches, points, picas), resolution, **bleed** and **safe area** for print
 - **Export for print in CMYK** (TIFF, PDF, JPEG; Windows profiles such as Coated FOGRA39) and **on-screen preview** of the printed colours
-- JPG, PNG, TIFF, WebP, BMP, **camera RAW** (Canon, Nikon, Sony, DNG, Fujifilm…, developed in 16 bits); PNG, TIFF and PSD in **16 bits**; **HDR** images **.exr** (OpenEXR), **.hdr** and TIFF in **32 bits**; **PSD** (Photoshop) with layers, groups, masks, modes and styles; `.pixane` (Pixane Photo project, everything stays editable) and `.ora` (Krita, GIMP)
+- JPG, PNG, TIFF, WebP, BMP, **camera RAW** (Canon, Nikon, Sony, DNG, Fujifilm…, developed in 16 bits); PNG, TIFF and PSD in **16 bits**; **HDR** images **.exr** (OpenEXR), **.hdr** and TIFF in **32 bits**; **PSD** (Photoshop) with layers, groups, masks, modes and styles; `.piximg` (Pixane Photo project, everything stays editable) and `.ora` (Krita, GIMP)
 - **Several photos open** in tabs, each with its own Undo
 - **Autosave** and recovery after a crash
 - **Export for web** (JPEG, WebP, PNG; size, quality, file size shown, personal information removed)
@@ -81,6 +81,7 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 
 **Comfort**
 - Interface in **French** and **English** (Windows language by default)
+- **Interface size** from 75 % to 200 % (small screens, 4K screens), also in the installer; tool icon size
 - Light or dark theme, Windows accent colour; built-in guide with search (F1)
 - **Update check** (on request or at startup)
 - Installer that checks the PC and downloads the AI engine itself (ComfyUI and the models), resuming after an interruption; with a ComfyUI already installed, only what it is missing
@@ -169,6 +170,12 @@ or *English*; Pixane Photo then offers to restart to apply the language (the AI 
 20 seconds). Standard buttons (Yes / No / Cancel, right-click menu) follow the same language.
 Layer names that already exist keep their original language.
 
+**Interface size**: **View > Interface size** menu: from **75 %** (very compact) to **200 %**. Everything changes
+together: text, icons, buttons, panels. This percentage comes on top of the Windows scaling: on a small laptop
+screen, choose 85 % or 75 % to save space; on a 4K screen, 125 % to 200 %. Pixane Photo offers to restart to apply
+it (the open image is reopened). **View > Tool icon size** (*Small*, *Normal*, *Large*, *Very large*) changes only
+the tool bar on the left, right away.
+
 **AI engine**: when it starts, Pixane Photo launches the AI (ComfyUI) in the background, without a window. Allow about
 20 seconds. The dot at the bottom left turns green when the engine is ready; AI actions are greyed out before that.
 
@@ -177,18 +184,18 @@ Layer names that already exist keep their original language.
 ## 2. Opening and saving
 
 - **File > Open** (Ctrl+O): JPG, PNG, TIFF, WebP, BMP, **HDR** images **.exr** (OpenEXR) and **.hdr** (Radiance),
-  and the **.pixane**, **.ora** and **.psd** (Photoshop) layered files.
+  and the **.piximg**, **.ora** and **.psd** (Photoshop) layered files.
   The photo is rotated according to the camera orientation.
 - Camera **RAW files** (Canon .CR2 / .CR3, Nikon .NEF, Sony .ARW, .DNG, Fujifilm .RAF, Olympus .ORF, Panasonic
   .RW2, Pentax .PEF…): they open like a photo, developed with the camera's white balance (LibRaw library); then
   retouch with the adjustments (Levels, Curves, Balance…). The RAW file is never replaced: **Save** suggests
-  another file (JPG, or .pixane if there are layers).
+  another file (JPG, or .piximg if there are layers).
 - **Save** (Ctrl+S), **Save as** (Ctrl+Shift+S):
-  - **.pixane** (Pixane Photo project): Pixane Photo's own format. Keeps **everything**: layers (names, order, visibility,
+  - **.piximg** (Pixane Photo project): Pixane Photo's own format. Keeps **everything**: layers (names, order, visibility,
     opacity, lock), **editable texts** and **editable layer styles**. Suggested automatically when the image has several layers or a text.
   - **.ora** (OpenRaster): to **share with Krita or GIMP** (open format). Keeps the layers, but texts become
     images.
-  - Good to know: a .pixane file is built like an .ora file; renamed to .ora, it also opens in Krita or GIMP.
+  - Good to know: a .piximg file is built like an .ora file; renamed to .ora, it also opens in Krita or GIMP.
   - **.psd** (Photoshop): to **work with Photoshop**. Keeps the layers (names, order, visibility, opacity, lock);
     texts become images. A photo opened from a PSD is suggested as PSD.
   - **PSD files opened in Pixane Photo**: RGB or greyscale, 8 or 16-bit, with layers, **groups**, **layer masks**,
@@ -257,7 +264,7 @@ Layer names that already exist keep their original language.
   - **Width, height and unit**: pixels, inches, centimetres, millimetres, points or picas (1 inch = 2.54 cm =
     72 points = 6 picas). Changing the unit does not change the image.
   - **Orientation**: Portrait or Landscape swaps width and height.
-  - **Resolution** (dpi, dots per inch): **300** for print, **72** for screen. It is **kept in the file** (.pixane,
+  - **Resolution** (dpi, dots per inch): **300** for print, **72** for screen. It is **kept in the file** (.piximg,
     PSD, JPEG, PNG, TIFF): a printer will see the right size.
   - **Mode**: RGB colour or **greyscale** (see *Image > Mode*). A new image is in **8 bits per channel** (16.7 million
     colours, like JPEG, PNG and the web); for fine work, switch it to **16 bits** afterwards (*Image > Mode >
@@ -299,7 +306,7 @@ Layer names that already exist keep their original language.
   the left one). With the **Move** tool (V), grab a guide to move it (the cursor becomes a double arrow
   over it); dragged off the photo, it disappears. *New
   guide…* places one at an exact position, *Clear guides* removes them all, Ctrl+; hides or shows them. They are
-  saved in the .pixane file.
+  saved in the .piximg file.
 - **Grid** (Ctrl+'): regular lines over the photo; *Grid size…* sets the spacing (100 px by default).
 - **Snap** (Ctrl+Shift+;, on by default): rectangle selection, gradient and shapes snap to guides, to the photo's
   edges and to the grid (when shown), within 8 screen pixels.
@@ -454,7 +461,7 @@ outside the canvas is kept and can be brought back; refused on a locked layer).
   keeps its **best version** (for example the one after an Upscale). Shrink, validate, do something else, save,
   reopen the project… then enlarge again: Pixane Photo starts again from this best version, and the image comes back
   **exactly as it was, pixel for pixel**, up to its original size. Works with Move (handles), Ctrl+T,
-  *Image > Image size*, rotate, flip, crop, align. It is saved in the **.pixane** project (which gets a little bigger).
+  *Image > Image size*, rotate, flip, crop, align. It is saved in the **.piximg** project (which gets a little bigger).
   - If you **change the pixels** of the layer (brush, eraser, AI, filter…), the changed version becomes the new
     reference (the old one would erase the work).
   - Enlarging **beyond** the best version makes the image softer: those pixels never existed (use the Upscale).
@@ -669,7 +676,7 @@ layer* option, the result arrives in a layer on top and the original stays. A lo
 **BiRefNet** model (MIT, 444 MB, installed with the AI engine; if it is missing, **AI > Install the AI engine…**
 adds it). A few seconds.
 - **Remove background** (Shift+B, AI panel or AI menu): the background of the **chosen layer** becomes
-  transparent, the subject stays. Save as PNG, PSD or .pixane to keep the transparency. Ctrl+Z undoes it.
+  transparent, the subject stays. Save as PNG, PSD or .piximg to keep the transparency. Ctrl+Z undoes it.
 - **Select subject** (Ctrl+Alt+S, Select menu): selects the subject without erasing anything, for example to
   adjust it (Ctrl+U), or *Invert* (Ctrl+Shift+I) to work on the background.
 
@@ -766,7 +773,7 @@ it back, shrink it, show it again.
 - The **brush**, the **eraser**, the **filters** and the AI only change what is inside the canvas; the part
   outside stays as it is.
 - **Image > Reveal all**: the canvas grows just enough to show everything that extends beyond (Ctrl+Z to undo).
-- Saved in **.pixane**, **PSD** and **ORA** (Photoshop, Krita and GIMP read it back). JPEG, PNG… only save the
+- Saved in **.piximg**, **PSD** and **ORA** (Photoshop, Krita and GIMP read it back). JPEG, PNG… only save the
   canvas. **Crop** and **Flatten** delete what extends beyond.
 
 ### The Layers panel
@@ -777,7 +784,7 @@ it back, shrink it, show it again.
 | **Thumbnail** | Preview of the layer, shaped like the image; the grey checkerboard shows transparent parts |
 | **Name** | Double-click the name to rename; double-click elsewhere on the row: layer style |
 | **Opacity** | Transparency of the selected layer, from 0% (invisible) to 100%; shown under the name when < 100% |
-| **Padlock** (right of the name) | Locks the layer to protect it: it can no longer be erased, deleted or merged, and its opacity is fixed; Flatten is disabled while a layer is locked. AI actions are refused with a message: Erase and Fill if the selected layer is locked, Expand and whole-image Upscale if any layer is locked (they change the size of every layer), layer Upscale if that layer is locked. It can still be hidden, renamed and moved up / down. The open padlock is discreet, the closed padlock clearly visible. The lock is kept in .pixane and .ora files |
+| **Padlock** (right of the name) | Locks the layer to protect it: it can no longer be erased, deleted or merged, and its opacity is fixed; Flatten is disabled while a layer is locked. AI actions are refused with a message: Erase and Fill if the selected layer is locked, Expand and whole-image Upscale if any layer is locked (they change the size of every layer), layer Upscale if that layer is locked. It can still be hidden, renamed and moved up / down. The open padlock is discreet, the closed padlock clearly visible. The lock is kept in .piximg and .ora files |
 | **Drag a layer** | Change its place in the stack with the mouse: grab the row (on the name) and drag it up or down; an **orange line** shows where it will go. Dropped just below a layer of an open group, it enters the group; a group moves with its layers. A single Undo step |
 | **Blend mode** (list at the top of the panel) | How the layer mixes with what is below (see below) |
 | **Mask thumbnail** (right of the thumbnail) | The layer's mask, if it has one. Click: you paint the mask (orange frame); click the layer thumbnail: you paint the pixels again. Shift+click: disable / enable the mask (crossed in red) |
@@ -804,7 +811,7 @@ The same as Photoshop, sorted by family: **Normal**; **Darken**, **Multiply**, *
 **Lighten**, **Screen**, **Colour dodge**, **Linear dodge (Add)** (lightening); **Overlay**, **Soft light**, **Hard
 light** (contrast); **Difference**, **Exclusion**; **Hue**, **Saturation**, **Colour**, **Luminosity**. Examples:
 *Multiply* for a shadow or dark texture, *Screen* for a glow, *Overlay* for a paper texture, *Colour* to tint. Kept
-in .pixane, .ora and .psd files.
+in .piximg, .ora and .psd files.
 
 ### Layer masks
 A mask **hides part of a layer without erasing it**: black = hidden, white = visible, grey = half. You can always go
@@ -816,7 +823,7 @@ back by painting white.
   photos) or the paint bucket. Adjustments and filters also work on the mask.
 - Example: *Remove background* then a mask rather than an eraser: a bit of the subject cut by mistake comes back by
   painting white.
-- Masks follow the layer (Ctrl+T, crop, image size, Upscale) and are kept in .pixane, .ora and .psd.
+- Masks follow the layer (Ctrl+T, crop, image size, Upscale) and are kept in .piximg, .ora and .psd.
 
 ### Groups
 A **group** puts several layers in a folder: you can hide, move, duplicate or delete them all at once, and give the
@@ -854,7 +861,7 @@ Image adjustments) to **everything below it**, without touching the pixels: you 
 - **Layer > New adjustment layer**, or the panel's **Adjustment** button. If there is a selection, it becomes the
   adjustment layer's mask (the adjustment only applies there).
 - Inside a group, it only adjusts the group's layers below it.
-- Kept as is in .pixane; in .ora and .psd it becomes an image layer (the result).
+- Kept as is in .piximg; in .ora and .psd it becomes an image layer (the result).
 
 ### Fill layers
 **Layer > New fill layer** (or the Layers panel's **Adjustment** button, at the top of the list): a layer that
@@ -864,7 +871,7 @@ covers the whole sheet with a **solid colour**, a **gradient** or a **pattern**,
   the paint colour to white.
 - **Pattern**: a pattern from the library, at the scale you want.
 - If there is a selection, it becomes the layer's **mask** (the fill only shows there).
-- It is redrawn when the sheet changes size (image size, canvas size, crop…); kept in .pixane; in .ora and .psd it
+- It is redrawn when the sheet changes size (image size, canvas size, crop…); kept in .piximg; in .ora and .psd it
   becomes an image layer. *Convert to image* (right-click) freezes it.
 
 ### Harmonize a composite (Layer > Harmonize with the background…)
@@ -907,7 +914,7 @@ result live; **OK** keeps the style (a single step in Undo), **Cancel** puts eve
   edited text or a moved layer.
 - **Layer** menu: **Copy style** / **Paste style** (onto another layer), **Remove style**, **Merge style into pixels**
   (to erase or paint the layer with its effects).
-- Saving: in **.pixane**, styles stay editable. In **.psd** and **.ora** they are merged into the pixels (visible in
+- Saving: in **.piximg**, styles stay editable. In **.psd** and **.ora** they are merged into the pixels (visible in
   Photoshop, Krita, GIMP, but no longer editable). Styles of an opened PSD are imported and stay editable (see chapter 2).
 - Merge and Flatten also put the effects into the pixels.
 
@@ -930,7 +937,7 @@ All layer actions can be undone with Ctrl+Z (changing the selected layer does no
 - **Click on the photo**: a new text "Text" appears at that spot, on **its own layer**.
   Just type: the suggested word is replaced. The panel's box accepts several lines (Enter).
 - **Click on an existing text**: it is selected and its settings are shown; it can be edited at any time,
-  even after saving as **.pixane** and reopening.
+  even after saving as **.piximg** and reopening.
 - The text is applied **as you go**: nothing to confirm.
 - **Drag the text**: move it (also with the Move tool, V). A dashed frame surrounds the selected text.
 - **Round handle** above the frame: rotate the text (**Shift**: in 15° steps), or the *Rotation* box.
@@ -1008,7 +1015,7 @@ afterwards take the style of the one before them.
 As in Photoshop: put the photo (or a texture, a gradient…) **on a layer just above the text**, then **Ctrl+Alt+G**
 (Layer menu > *Clipping mask*, or right-click on the layer). The photo is now only visible **inside the letters**;
 the text stays editable (text, font, size…) and the photo can be moved. In the Layers panel, the clipped layer is
-indented with an arrow ↳. Ctrl+Alt+G again: removed. Works with any layer (not only a text). Kept in .pixane and
+indented with an arrow ↳. Ctrl+Alt+G again: removed. Works with any layer (not only a text). Kept in .piximg and
 .psd; in .ora it is merged into the pixels.
 
 ### Good to know
@@ -1017,7 +1024,7 @@ indented with an arrow ↳. Ctrl+Alt+G again: removed. Works with any layer (not
 - The **Layer eraser** on a text turns it into an image (a message says so; Ctrl+Z to go back).
   So do **Merge** and **Flatten**.
 - A text on a **locked** layer can be neither moved nor edited.
-- To keep texts editable, save as **.pixane** (in an .ora file, they become images).
+- To keep texts editable, save as **.piximg** (in an .ora file, they become images).
 
 ---
 
@@ -1064,7 +1071,7 @@ keeps the **path** of each stroke, not just its pixels:
   the photo) before painting, and a new brush layer will be created;
 - the **eraser**, a filter, the AI, the paint bucket… turn it into an ordinary image layer (a message says so; Ctrl+Z
   to go back). Right-click on the layer > **Convert to image** does it too;
-- it is kept in **.pixane** files; in a PSD, PNG, JPG… it is saved as an image. In the Layers panel, it is marked
+- it is kept in **.piximg** files; in a PSD, PNG, JPG… it is saved as an image. In the Layers panel, it is marked
   "editable brush".
 Box unchecked: you paint directly on the chosen layer, as before.
 
@@ -1235,7 +1242,7 @@ Drag to draw a **rectangle**, **rounded rectangle**, **ellipse**, **star**, **po
 
 Each shape goes on a **shape layer** ("editable shape" in Layers), as in Photoshop: choose that layer with the Shapes
 tool or the Pen, and the top bar shows its settings; changing them redraws the shape (one Undo step). Moved, resized,
-rotated (Ctrl+T), or the image enlarged: the shape is redrawn sharp and stays editable; it is kept in the .pixane
+rotated (Ctrl+T), or the image enlarged: the shape is redrawn sharp and stays editable; it is kept in the .piximg
 file. The eraser, a filter or the AI turn it into an ordinary image (a message says so; Ctrl+Z to go back); Layer >
 right-click > **Convert to image** too.
 
@@ -1330,7 +1337,7 @@ As in Photoshop: **record** a series of operations, then **replay** it in one cl
   **16 bits**, 65,536; in **32 bits (HDR)**, floating-point numbers (see below). Useful for strong edits (levels, curves, brightening a dark photo), **gradients** and skies: no **banding**
   (visible steps) even after several adjustments. The window title shows **(16 bits)**. Ctrl+Z undoes the change.
   - **Opened in 16 bits automatically**: 16-bit PNG, TIFF and PSD files, and **RAW photos** (developed in 16 bits).
-  - **Saved in 16 bits**: .pixane, PSD, TIFF, PNG. JPEG, WebP and BMP only have 8 bits: the image is saved in 8 bits
+  - **Saved in 16 bits**: .piximg, PSD, TIFF, PNG. JPEG, WebP and BMP only have 8 bits: the image is saved in 8 bits
     there, with **dithering** (see below).
   - **Computed in 16 bits**: layer blending (blend modes, adjustment layers, masks), all **adjustments** (Image
     adjustments, Levels, Curves, Balance…), **filters** (blurs, sharpen, noise, vignette), the **Gradient** tool and
@@ -1345,7 +1352,7 @@ As in Photoshop: **record** a series of operations, then **replay** it in one cl
   3D renders). A colour can be **brighter than white**: the sun, a lamp or a very bright sky keep their detail, and
   the exposure can be lowered afterwards without losing anything. The window title shows **(32 bits)**.
   - **Opened in 32 bits automatically**: **.exr** (OpenEXR), **.hdr** (Radiance) and **32-bit TIFF** files.
-  - **Saved in 32 bits**: .pixane, EXR, HDR, TIFF. PSD and PNG are saved in 16 bits, JPEG in 8 bits: whatever is
+  - **Saved in 32 bits**: .piximg, EXR, HDR, TIFF. PSD and PNG are saved in 16 bits, JPEG in 8 bits: whatever is
     brighter than white becomes white there (first switch to 16 or 8 bits with *HDR toning* to choose how to bring
     it back).
   - **Computed in 32 bits**, without clipping to white: layer blending, adjustment layers, adjustments, filters,
@@ -1479,7 +1486,8 @@ Everything can be undone with Ctrl+Z.
    **Flux Schnell** box for "Sharp upscale" (11.8 GB more); the **I accept the FLUX.1 [dev] licence** box
    (non-commercial use) is required to install the engine. You can also untick it: Pixane Photo installs without the
    engine.
-6. Options: desktop icon; open .pixane files with Pixane Photo.
+6. Options: desktop icon; open .piximg files with Pixane Photo; **interface size** (normal, compact 85 %, large
+   125 %, very large 150 %; does not replace a choice already made in Pixane Photo).
 7. At the end, the **Install the AI engine** window downloads and installs everything (ComfyUI portable, its
    extensions, the models). It shows progress, speed and time left. You can **Stop** at any time: the download
    resumes later where it stopped (even after a connection loss). Each file is checked (SHA-256 checksum).

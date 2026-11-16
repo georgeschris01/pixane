@@ -116,7 +116,7 @@ french.Parcourir=Parcourir…
 french.ChoisirDossier=Choisis le dossier de ComfyUI (celui qui contient main.py, ou le dossier de ComfyUI portable ou de ComfyUI Desktop) :
 french.DossierInvalide=Ce dossier ne contient pas ComfyUI (main.py et son Python sont introuvables).
 french.CreerIcone=Créer une icône sur le Bureau
-french.Associer=Ouvrir les projets Pixane Photo (.pixane) avec Pixane Photo
+french.Associer=Ouvrir les projets Pixane Photo (.piximg) avec Pixane Photo
 french.Fonctions=Fonctions :
 french.TailleInterface=Taille de l'interface (modifiable ensuite dans Affichage > Taille de l'interface ; ce choix ne remplace pas celui déjà fait dans Pixane Photo) :
 french.Taille100=Normale (100 %)
@@ -170,7 +170,7 @@ english.Parcourir=Browse…
 english.ChoisirDossier=Select the ComfyUI folder (the one containing main.py, or the ComfyUI portable or ComfyUI Desktop folder):
 english.DossierInvalide=This folder does not contain ComfyUI (main.py and its Python were not found).
 english.CreerIcone=Create a desktop icon
-english.Associer=Open Pixane Photo projects (.pixane) with Pixane Photo
+english.Associer=Open Pixane Photo projects (.piximg) with Pixane Photo
 english.Fonctions=Features:
 english.TailleInterface=Interface size (can be changed later in View > Interface size; this choice does not replace one already made in Pixane Photo):
 english.Taille100=Normal (100 %)
@@ -238,7 +238,7 @@ Type: files; Name: "{autodesktop}\Chrypix.lnk"
 
 [Files]
 ; Seulement le programme, Python et ses bibliothèques : aucun réglage, photo, modèle ni journal.
-Source: "..\publication\Pixane\*"; DestDir: "{app}"; Excludes: "*.log,*.pixane,*.ora,*.safetensors,*.ckpt"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\publication\Pixane\*"; DestDir: "{app}"; Excludes: "*.log,*.piximg,*.ora,*.safetensors,*.ckpt"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Images de l'accueil en anglais : seulement pour l'installateur, jamais copiées sur le PC.
 Source: "images\accueil-en-*.png"; Flags: dontcopy
 ; Dictionnaires d'orthographe : seulement les langues cochées (option « Orthographe et césure »).
@@ -259,10 +259,12 @@ Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "orthographe
 Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "orthographe_langues"; ValueData: "fr"; Tasks: orthographe\fr and not orthographe\en
 Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "orthographe_langues"; ValueData: "en"; Tasks: orthographe\en and not orthographe\fr
 Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "orthographe_langues"; ValueData: ""; Tasks: not orthographe\fr and not orthographe\en
-; Fichiers .pixane ouverts par Pixane (seulement si la case est cochée ; jamais par un essai : sa désinstallation
+; Fichiers .piximg ouverts par Pixane (seulement si la case est cochée ; jamais par un essai : sa désinstallation
 ; effacerait l'association de la vraie installation, arrivé le 09/11/2026).
 #ifndef Essai
-Root: HKA; Subkey: "Software\Classes\.pixane"; ValueType: string; ValueName: ""; ValueData: "Pixane.Projet"; Flags: uninsdeletevalue; Tasks: associer
+Root: HKA; Subkey: "Software\Classes\.piximg"; ValueType: string; ValueName: ""; ValueData: "Pixane.Projet"; Flags: uninsdeletevalue; Tasks: associer
+; Ancienne extension .pixane (avant la 0.26.0) : association retirée.
+Root: HKA; Subkey: "Software\Classes\.pixane"; Flags: deletekey; Check: PixaneAssocie
 Root: HKA; Subkey: "Software\Classes\Pixane.Projet"; ValueType: string; ValueName: ""; ValueData: "{cm:TypeProjet}"; Flags: uninsdeletekey; Tasks: associer
 Root: HKA; Subkey: "Software\Classes\Pixane.Projet\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\pixane.ico"; Tasks: associer
 ; Ancienne association des .chr à Chrypix : retirée (Pixane n'utilise plus .chr).
@@ -508,6 +510,14 @@ var
   V: String;
 begin
   Result := RegQueryStringValue(HKA, 'Software\Classes\.chr', '', V) and (V = 'Chrypix.Projet');
+end;
+
+{ Ancienne extension des projets (.pixane, avant la 0.26.0) : retirée seulement si elle est à nous. }
+function PixaneAssocie: Boolean;
+var
+  V: String;
+begin
+  Result := RegQueryStringValue(HKA, 'Software\Classes\.pixane', '', V) and (V = 'Pixane.Projet');
 end;
 
 { Épingles de la barre des tâches et raccourcis restés vers l'ancien programme (Ancien = …\python\Pixane.exe de

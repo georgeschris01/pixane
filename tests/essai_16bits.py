@@ -1,5 +1,5 @@
 """16 bits par couche : Image > Mode, réglages et filtres en 16 bits, pont pour les fonctions 8 bits, calques de
-réglage et modes de fusion, enregistrement et relecture (PNG, TIFF, PSD, .pixane), export JPG.
+réglage et modes de fusion, enregistrement et relecture (PNG, TIFF, PSD, .piximg), export JPG.
 Usage : python tests/essai_16bits.py DOSSIER_SORTIE"""
 import os
 import sys
@@ -101,9 +101,9 @@ f16 = P.tab16(doc2.image16())
 verifier(all(P.est_16(c.image) for c in doc2.calques) and len(np.unique(f16[0, :, 0])) > 500,
          "calque de réglage + mode Couleur : fusion en 16 bits, sans cassures")
 
-# ---- enregistrer et relire : PNG, TIFF, PSD, .pixane
+# ---- enregistrer et relire : PNG, TIFF, PSD, .piximg
 ref = P.tab16(doc.image16())
-for ext in ("png", "tif", "psd", "pixane"):
+for ext in ("png", "tif", "psd", "piximg"):
     f = sortie / f"essai16.{ext}"
     doc.enregistrer(f)
     lu = Document.ouvrir(f)

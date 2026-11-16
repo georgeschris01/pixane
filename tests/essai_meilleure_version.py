@@ -117,7 +117,7 @@ pareil(doc.calques[1], "image pivotée et retournée entre-temps : toujours sans
 doc = nouveau()
 transformer(0.2)
 with tempfile.TemporaryDirectory() as d:
-    chemin = Path(d) / "essai.pixane"
+    chemin = Path(d) / "essai.piximg"
     doc.enregistrer(chemin)
     doc2 = Document.ouvrir(chemin)
     doc2.actif = 1
@@ -165,7 +165,7 @@ doc = nouveau()
 doc.appliquer_etat(doc.etat_taille(400, 400))
 verifier(origine_valide(doc.calques[0]) is not None and origine_valide(doc.calques[1]) is not None,
          "Taille de l'image : chaque calque d'image garde sa meilleure version")
-# 10. calque qui dépasse de la feuille (collage) transformé puis enregistré en .pixane (bug : position prise pour
+# 10. calque qui dépasse de la feuille (collage) transformé puis enregistré en .piximg (bug : position prise pour
 #     l'image -> « 'QPoint' object has no attribute 'convertToFormat' »)
 doc = nouveau()
 img = qimage_rgba(photo[200:600, 200:600].copy())
@@ -177,14 +177,14 @@ o = origine_valide(doc.calques[doc.actif])
 verifier(o is not None and isinstance(o.image, QImage), "Transformer : la meilleure version est bien une image")
 import tempfile  # noqa: E402
 with tempfile.TemporaryDirectory() as tmp:
-    chemin = Path(tmp) / "depasse.pixane"
+    chemin = Path(tmp) / "depasse.piximg"
     try:
         doc.enregistrer(chemin)
         ok = chemin.stat().st_size > 1000
     except Exception as e:  # noqa: BLE001
         ok = False
         print("   ", e)
-    verifier(ok, "enregistré en .pixane après Transformer d'un calque qui dépasse")
+    verifier(ok, "enregistré en .piximg après Transformer d'un calque qui dépasse")
     transformer(1.0)
     verifier(isinstance(origine_valide(doc.calques[doc.actif]).image, QImage), "re-transformé : toujours une image")
 

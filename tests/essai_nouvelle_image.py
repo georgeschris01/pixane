@@ -143,9 +143,9 @@ verifier(tuple(tableau(doc.image)[5, 5, :3]) == (200, 30, 30), "retour en RVB : 
 f.changer_mode("gris")
 
 # 4. fichiers : résolution et gris gardés
-doc.enregistrer(sortie / "essai.pixane")
-d3 = Document.ouvrir(sortie / "essai.pixane")
-verifier(d3.dpi == 300 and d3.mode == "gris" and len(d3.reperes) == 8, ".pixane : résolution, gris et repères relus")
+doc.enregistrer(sortie / "essai.piximg")
+d3 = Document.ouvrir(sortie / "essai.piximg")
+verifier(d3.dpi == 300 and d3.mode == "gris" and len(d3.reperes) == 8, ".piximg : résolution, gris et repères relus")
 doc.enregistrer(sortie / "essai.jpg")
 with Image.open(sortie / "essai.jpg") as im:
     verifier(im.mode == "L" and round(im.info.get("dpi", (0,))[0]) == 300, f"JPEG : gris, 300 ppp ({im.mode})")

@@ -93,7 +93,7 @@ class Texte:
     styles: tuple = ()               # ((début, fin, ((champ, valeur), …)), …) : réglages de certaines lettres
     crenages: tuple = ()             # ((index, valeur), …) : espace ajouté avant la lettre index, ‰ de la taille
 
-    # ---------------------------------------------------------- fichiers (.pixane)
+    # ---------------------------------------------------------- fichiers (.piximg)
     def vers_dict(self) -> dict:
         return asdict(self)
 
