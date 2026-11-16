@@ -75,6 +75,12 @@ or *English*; Pixane Photo then offers to restart to apply the language (the AI 
 20 seconds). Standard buttons (Yes / No / Cancel, right-click menu) follow the same language.
 Layer names that already exist keep their original language.
 
+**Interface size**: **View > Interface size** menu: from **75 %** (very compact) to **200 %**. Everything changes
+together: text, icons, buttons, panels. This percentage comes on top of the Windows scaling: on a small laptop
+screen, choose 85 % or 75 % to save space; on a 4K screen, 125 % to 200 %. Pixane Photo offers to restart to apply
+it (the open image is reopened). **View > Tool icon size** (*Small*, *Normal*, *Large*, *Very large*) changes only
+the tool bar on the left, right away.
+
 **AI engine**: when it starts, Pixane Photo launches the AI (ComfyUI) in the background, without a window. Allow about
 20 seconds. The dot at the bottom left turns green when the engine is ready; AI actions are greyed out before that.
 
@@ -1385,7 +1391,8 @@ Everything can be undone with Ctrl+Z.
    **Flux Schnell** box for "Sharp upscale" (11.8 GB more); the **I accept the FLUX.1 [dev] licence** box
    (non-commercial use) is required to install the engine. You can also untick it: Pixane Photo installs without the
    engine.
-6. Options: desktop icon; open .pixane files with Pixane Photo.
+6. Options: desktop icon; open .pixane files with Pixane Photo; **interface size** (normal, compact 85 %, large
+   125 %, very large 150 %; does not replace a choice already made in Pixane Photo).
 7. At the end, the **Install the AI engine** window downloads and installs everything (ComfyUI portable, its
    extensions, the models). It shows progress, speed and time left. You can **Stop** at any time: the download
    resumes later where it stopped (even after a connection loss). Each file is checked (SHA-256 checksum).

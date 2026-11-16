@@ -227,7 +227,10 @@ class Carte(QPushButton):
         super().__init__()
         self.setObjectName("carte")
         self.setCursor(Qt.PointingHandCursor)
-        self.setFixedHeight(64)
+        # place pour le titre et deux lignes d'explication (sinon coupée quand elle passe à la ligne : texte
+        # anglais, Affichage > Taille de l'interface)
+        from PySide6.QtGui import QFontMetrics
+        self.setFixedHeight(max(64, 3 * QFontMetrics(self.font()).lineSpacing() + 20))
         self.image = QLabel()
         self.image.setFixedSize(28, 28)
         t = QLabel(f"<b>{titre}</b>")
@@ -687,6 +690,33 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
             a.triggered.connect(lambda _=False, c=code: self.changer_langue(c))
             groupe.addAction(a)
             sous.addAction(a)
+        # taille de toute l'interface (au prochain démarrage) et des icônes des outils (tout de suite)
+        from .__main__ import ECHELLES
+        sous = m.addMenu(tr("Taille de l'interface"))
+        sous.setToolTipsVisible(True)
+        groupe = QActionGroup(self)
+        actuelle = self._echelle_reglee()
+        for pc in ECHELLES:
+            texte = {75: tr("{n} % (très compacte)", n=pc), 85: tr("{n} % (compacte, petits écrans)", n=pc),
+                     100: tr("{n} % (normale)", n=pc)}.get(pc, f"{pc} %")
+            a = QAction(texte, self, checkable=True)
+            a.setData(pc)
+            a.setChecked(pc == actuelle)
+            a.triggered.connect(lambda _=False, v=pc: self.changer_echelle(v))
+            groupe.addAction(a)
+            sous.addAction(a)
+        self._actions_echelle = groupe
+        sous = m.addMenu(tr("Taille des icônes des outils"))
+        groupe = QActionGroup(self)
+        actuelle = self._taille_icones()
+        for n, texte in ((18, tr("Petites")), (22, tr("Normales")), (28, tr("Grandes")), (36, tr("Très grandes"))):
+            a = QAction(texte, self, checkable=True)
+            a.setData(n)
+            a.setChecked(n == actuelle)
+            a.triggered.connect(lambda _=False, v=n: self.changer_taille_icones(v))
+            groupe.addAction(a)
+            sous.addAction(a)
+        self._actions_icones = groupe
 
         m = self.menuBar().addMenu(tr("&IA"))
         self._action(m, tr("Effacer"), "Shift+E", self.ia_effacer, "a_effacer", "effacer")
@@ -1185,7 +1215,9 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
     def _outils(self):
         barre = QToolBar(tr("Outils"))
         barre.setMovable(False)
-        barre.setIconSize(QSize(22, 22))
+        n = self._taille_icones()
+        barre.setIconSize(QSize(n, n))
+        self._barre_outils = barre
         barre.setToolButtonStyle(Qt.ToolButtonIconOnly)
         self.addToolBar(Qt.LeftToolBarArea, barre)
         groupe = QActionGroup(self)
@@ -1715,11 +1747,49 @@ class Fenetre(ActionsCalques, ActionContour, Onglets, OptionsPinceau, OptionsFor
         self.reglages.setValue("langue", code)
         rep = QMessageBox.question(self, NOM, tr("La nouvelle langue sera utilisée au prochain démarrage de "
                                                  "Pixane Photo.\n\nRedémarrer maintenant ?"))
-        if rep == QMessageBox.Yes and self._peut_fermer_tout():
-            chemin = str(self.doc.chemin) if self.doc and self.doc.chemin else None
-            racine = str(Path(__file__).resolve().parents[1])
-            QProcess.startDetached(sys.executable, ["-m", "pixane"] + ([chemin] if chemin else []), racine)
-            self.close()
+        if rep == QMessageBox.Yes:
+            self._redemarrer()
+
+    def _redemarrer(self):
+        """Ferme Pixane (en demandant pour les images non enregistrées) et le relance, avec l'image ouverte."""
+        if not self._peut_fermer_tout():
+            return
+        chemin = str(self.doc.chemin) if self.doc and self.doc.chemin else None
+        racine = str(Path(__file__).resolve().parents[1])
+        QProcess.startDetached(sys.executable, ["-m", "pixane"] + ([chemin] if chemin else []), racine)
+        self.close()
+
+    def _echelle_reglee(self) -> int:
+        try:
+            return int(self.reglages.value("echelle_interface", 100))
+        except (TypeError, ValueError):
+            return 100
+
+    def changer_echelle(self, pc: int):
+        """Affichage > Taille de l'interface : toute l'interface plus petite ou plus grande (textes, icônes,
+        boutons, panneaux), en plus de la mise à l'échelle de Windows ; au prochain démarrage."""
+        if pc == self._echelle_reglee():
+            return
+        self.reglages.setValue("echelle_interface", int(pc))
+        rep = QMessageBox.question(self, NOM, tr("La nouvelle taille de l'interface ({n} %) sera utilisée au "
+                                                 "prochain démarrage de Pixane Photo.\n\nRedémarrer maintenant ?",
+                                                 n=pc))
+        if rep == QMessageBox.Yes:
+            self._redemarrer()
+
+    def _taille_icones(self) -> int:
+        try:
+            n = int(self.reglages.value("taille_icones", 22))
+        except (TypeError, ValueError):
+            n = 22
+        return n if n in (18, 22, 28, 36) else 22
+
+    def changer_taille_icones(self, n: int):
+        """Affichage > Taille des icônes des outils : la barre des outils, tout de suite."""
+        self.reglages.setValue("taille_icones", int(n))
+        self._barre_outils.setIconSize(QSize(n, n))
+        for b in self._barre_outils.findChildren(QToolButton):
+            b.setIconSize(QSize(n, n))
 
     def _verifier_windows(self):
         signature = theme.signature_windows()

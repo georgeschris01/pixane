@@ -77,6 +77,13 @@ ou *English* ; Pixane Photo propose alors de redémarrer pour appliquer la langu
 environ 20 secondes). Les boutons standard (Oui / Non / Annuler, menu clic droit) suivent la même langue.
 Les noms de calques déjà créés gardent leur langue d'origine. Guide en anglais : `docs\GUIDE_en.md`.
 
+**Taille de l'interface** : menu **Affichage > Taille de l'interface** : de **75 %** (très compacte) à **200 %**.
+Tout change ensemble : textes, icônes, boutons, panneaux. Ce pourcentage s'ajoute à la mise à l'échelle de
+Windows : sur un petit écran de portable, choisissez 85 % ou 75 % pour gagner de la place ; sur un écran 4K,
+125 % à 200 %. Pixane Photo propose de redémarrer pour l'appliquer (l'image ouverte est rouverte).
+**Affichage > Taille des icônes des outils** (*Petites*, *Normales*, *Grandes*, *Très grandes*) change seulement la
+barre des outils à gauche, tout de suite.
+
 **Moteur IA** : au démarrage, Pixane Photo lance l'IA (ComfyUI) en arrière-plan, sans fenêtre. Comptez environ
 20 secondes. Le point en bas à gauche passe au vert quand le moteur est prêt ; les actions IA sont grisées avant.
 
@@ -1444,7 +1451,8 @@ Tout s'annule par Ctrl+Z.
    `%LOCALAPPDATA%\Pixane\moteur`) ; case facultative **Flux Schnell** pour « Upscale net » (11,8 Go de plus) ;
    case **J'accepte la licence FLUX.1 [dev]** (usage non commercial) obligatoire pour installer le moteur.
    On peut aussi décocher : Pixane Photo s'installe sans moteur.
-6. Options : icône sur le Bureau ; ouvrir les fichiers .pixane avec Pixane Photo.
+6. Options : icône sur le Bureau ; ouvrir les fichiers .pixane avec Pixane Photo ; **taille de l'interface**
+   (normale, compacte 85 %, grande 125 %, très grande 150 % ; ne remplace pas un choix déjà fait dans Pixane Photo).
 7. À la fin, la fenêtre **Installer le moteur IA** télécharge et installe tout (ComfyUI portable, ses extensions,
    les modèles). Elle montre l'avancement, la vitesse et le temps restant. **Arrêter** est possible à tout moment :
    le téléchargement reprendra plus tard là où il s'était arrêté (même après une coupure). Chaque fichier est

@@ -9,11 +9,15 @@ Les installateurs fabriqués depuis portent toujours le numéro 0.25.0 (non publ
 
 ## Nouveautés
 
-(rien pour l'instant)
+- **Affichage > Taille de l'interface** (demandé par un utilisateur sur GitHub) : toute l'interface de 75 % à 200 %
+  (textes, icônes, boutons, panneaux), en plus de la mise à l'échelle de Windows ; au prochain démarrage, que
+  Pixane Photo propose aussitôt. Aussi choisie dans l'installateur (normale, compacte, grande, très grande), sans
+  remplacer un choix déjà fait.
+- **Affichage > Taille des icônes des outils** : petites, normales, grandes, très grandes, tout de suite.
 
 ## Corrections
 
-(rien pour l'instant)
+- Cartes du panneau IA (Modifier…) : la deuxième ligne d'explication était coupée quand elle passait à la ligne.
 
 ## À mettre à jour le jour de la publication
 

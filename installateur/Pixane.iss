@@ -118,6 +118,11 @@ french.DossierInvalide=Ce dossier ne contient pas ComfyUI (main.py et son Python
 french.CreerIcone=Créer une icône sur le Bureau
 french.Associer=Ouvrir les projets Pixane Photo (.pixane) avec Pixane Photo
 french.Fonctions=Fonctions :
+french.TailleInterface=Taille de l'interface (modifiable ensuite dans Affichage > Taille de l'interface ; ce choix ne remplace pas celui déjà fait dans Pixane Photo) :
+french.Taille100=Normale (100 %)
+french.Taille85=Compacte (85 %, pour les petits écrans)
+french.Taille125=Grande (125 %)
+french.Taille150=Très grande (150 %, pour les écrans 4K)
 french.Orthographe=Orthographe et césure des textes (mots mal écrits soulignés, suggestions, coupure des mots en fin de ligne), dans les langues cochées ci-dessous :
 french.OrthoFr=Français (dictionnaire Grammalecte, 1,4 Mo)
 french.OrthoEn=Anglais (dictionnaire SCOWL en_US, 0,6 Mo)
@@ -167,6 +172,11 @@ english.DossierInvalide=This folder does not contain ComfyUI (main.py and its Py
 english.CreerIcone=Create a desktop icon
 english.Associer=Open Pixane Photo projects (.pixane) with Pixane Photo
 english.Fonctions=Features:
+english.TailleInterface=Interface size (can be changed later in View > Interface size; this choice does not replace one already made in Pixane Photo):
+english.Taille100=Normal (100 %)
+english.Taille85=Compact (85 %, for small screens)
+english.Taille125=Large (125 %)
+english.Taille150=Very large (150 %, for 4K screens)
 english.Orthographe=Spelling and hyphenation of texts (misspelled words underlined, suggestions, words split at line ends), in the languages ticked below:
 english.OrthoFr=French (Grammalecte dictionary, 1.4 MB)
 english.OrthoEn=English (SCOWL en_US dictionary, 0.6 MB)
@@ -205,6 +215,10 @@ Name: "polices"; Description: "{cm:Polices}"; GroupDescription: "{cm:Fonctions}"
 Name: "orthographe"; Description: "{cm:Orthographe}"; GroupDescription: "{cm:Fonctions}"; Flags: checkablealone
 Name: "orthographe\fr"; Description: "{cm:OrthoFr}"
 Name: "orthographe\en"; Description: "{cm:OrthoEn}"
+Name: "taille100"; Description: "{cm:Taille100}"; GroupDescription: "{cm:TailleInterface}"; Flags: exclusive
+Name: "taille85"; Description: "{cm:Taille85}"; GroupDescription: "{cm:TailleInterface}"; Flags: exclusive unchecked
+Name: "taille125"; Description: "{cm:Taille125}"; GroupDescription: "{cm:TailleInterface}"; Flags: exclusive unchecked
+Name: "taille150"; Description: "{cm:Taille150}"; GroupDescription: "{cm:TailleInterface}"; Flags: exclusive unchecked
 #ifndef Essai
 Name: "associer"; Description: "{cm:Associer}"; GroupDescription: "{cm:AdditionalIcons}"
 #endif
@@ -256,6 +270,12 @@ Root: HKA; Subkey: "Software\Classes\Chrypix.Projet"; Flags: deletekey; Check: C
 Root: HKA; Subkey: "Software\Classes\.chr"; ValueType: none; ValueName: ""; Flags: deletevalue; Check: ChrAssocie
 Root: HKA; Subkey: "Software\Classes\Pixane.Projet\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python\Pixane.exe"" -m pixane ""%1"""; Tasks: associer
 #endif
+
+; Option « Taille de l'interface » : seulement si Pixane Photo n'en a pas déjà une (choisie dans Affichage).
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "echelle_interface"; ValueData: "100"; Flags: createvalueifdoesntexist; Tasks: taille100
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "echelle_interface"; ValueData: "85"; Flags: createvalueifdoesntexist; Tasks: taille85
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "echelle_interface"; ValueData: "125"; Flags: createvalueifdoesntexist; Tasks: taille125
+Root: HKCU; Subkey: "{#CleReglages}"; ValueType: string; ValueName: "echelle_interface"; ValueData: "150"; Flags: createvalueifdoesntexist; Tasks: taille150
 
 [Icons]
 Name: "{autoprograms}\{#NomRaccourci}"; Filename: "{app}\python\Pixane.exe"; Parameters: "-m pixane"; WorkingDir: "{app}"; IconFilename: "{app}\pixane.ico"; AppUserModelID: "{#IdBarre}"

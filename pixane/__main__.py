@@ -1,4 +1,5 @@
 """Lancement : python -m pixane [photo]"""
+import os
 import sys
 from pathlib import Path
 
@@ -52,6 +53,29 @@ def signaler_erreurs() -> None:
     sys.excepthook = crochet
 
 
+ECHELLES = (75, 85, 100, 115, 125, 150, 200)      # Affichage > Taille de l'interface (en %)
+
+
+def echelle_interface() -> None:
+    """Taille de toute l'interface (Affichage > Taille de l'interface) : facteur donné à Qt avant de créer
+    l'application (QT_SCALE_FACTOR), en plus de la mise à l'échelle de Windows. Un QT_SCALE_FACTOR hérité d'un
+    Pixane qui se relance (marqué par PIXANE_ECHELLE) est remplacé par le réglage ; un autre (mis à la main) est
+    respecté."""
+    import os
+    from PySide6.QtCore import QSettings
+    if os.environ.get("QT_SCALE_FACTOR") and os.environ.get("PIXANE_ECHELLE") == os.environ["QT_SCALE_FACTOR"]:
+        del os.environ["QT_SCALE_FACTOR"]
+    os.environ.pop("PIXANE_ECHELLE", None)
+    if os.environ.get("QT_SCALE_FACTOR"):
+        return
+    try:
+        pc = int(QSettings("Pixane", os.environ.get("PIXANE_REGLAGES", "Pixane")).value("echelle_interface", 100))
+    except (TypeError, ValueError):
+        pc = 100
+    if pc != 100 and 50 <= pc <= 300:
+        os.environ["QT_SCALE_FACTOR"] = os.environ["PIXANE_ECHELLE"] = f"{pc / 100:g}"
+
+
 def main():
     from .ancien_nom import migrer
     migrer()                                # ancien nom (Chrypix) : réglages et dossier repris
@@ -60,6 +84,7 @@ def main():
         # pour que la barre des tâches montre l'icône de Pixane et non celle de Python
         import ctypes
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("chrypox.Pixane")
+    echelle_interface()
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon(str(ICONE)))
     # la langue est choisie avant de créer les fenêtres (menu Affichage > Langue ; « auto » = langue de Windows)

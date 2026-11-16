@@ -1786,5 +1786,15 @@
  "Par défaut": "Default",
  "Radiance, 32 bits (HDR)": "Radiance, 32 bits (HDR)",
  "Remettre à 0": "Reset to 0",
- "Virage HDR vers {n} bits": "HDR toning to {n} bits"
+ "Virage HDR vers {n} bits": "HDR toning to {n} bits",
+ "Grandes": "Large",
+ "Normales": "Normal",
+ "Petites": "Small",
+ "Très grandes": "Very large",
+ "La nouvelle taille de l'interface ({n} %) sera utilisée au prochain démarrage de Pixane Photo.\n\nRedémarrer maintenant ?": "The new interface size ({n} %) will be used the next time Pixane Photo starts.\n\nRestart now?",
+ "Taille de l'interface": "Interface size",
+ "Taille des icônes des outils": "Tool icon size",
+ "{n} % (compacte, petits écrans)": "{n} % (compact, small screens)",
+ "{n} % (normale)": "{n} % (normal)",
+ "{n} % (très compacte)": "{n} % (very compact)"
 }
