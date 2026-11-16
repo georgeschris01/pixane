@@ -65,12 +65,12 @@ Free photo editor for Windows, with artificial intelligence retouching **that ru
 - Image size, **canvas size**, rotate, flip, straighten, **content-aware scale** (change the proportions without squashing the subject); transform a layer (size, rotation, **perspective**, **distort**, **warp**), **lossless** when shrinking then enlarging again (like a smart object); **perspective crop**
 - **Actions**: record a series of adjustments and filters, replay it in one click, also on a whole folder
 - **RGB colour** or **greyscale** mode
-- **16 bits per channel** (65,536 shades per colour: gradients and strong adjustments without banding), with **dithering** when going back to 8 bits
+- **16 bits per channel** (65,536 shades per colour: gradients and strong adjustments without banding), with **dithering** when going back to 8 bits; **32 bits per channel (HDR)**: colours brighter than white, preview exposure, **HDR toning**; brushes work in the image's depth
 
 **Files**
 - **New image** with 34 ready-made formats (CD and vinyl covers, Spotify, books, Amazon KDP, social media, A4, posters…), units (px, cm, mm, inches, points, picas), resolution, **bleed** and **safe area** for print
 - **Export for print in CMYK** (TIFF, PDF, JPEG; Windows profiles such as Coated FOGRA39) and **on-screen preview** of the printed colours
-- JPG, PNG, TIFF, WebP, BMP, **camera RAW** (Canon, Nikon, Sony, DNG, Fujifilm…, developed in 16 bits); PNG, TIFF and PSD in **16 bits**; **PSD** (Photoshop) with layers, groups, masks, modes and styles; `.pixane` (Pixane Photo project, everything stays editable) and `.ora` (Krita, GIMP)
+- JPG, PNG, TIFF, WebP, BMP, **camera RAW** (Canon, Nikon, Sony, DNG, Fujifilm…, developed in 16 bits); PNG, TIFF and PSD in **16 bits**; **HDR** images **.exr** (OpenEXR), **.hdr** and TIFF in **32 bits**; **PSD** (Photoshop) with layers, groups, masks, modes and styles; `.pixane` (Pixane Photo project, everything stays editable) and `.ora` (Krita, GIMP)
 - **Several photos open** in tabs, each with its own Undo
 - **Autosave** and recovery after a crash
 - **Export for web** (JPEG, WebP, PNG; size, quality, file size shown, personal information removed)
@@ -176,8 +176,8 @@ Layer names that already exist keep their original language.
 
 ## 2. Opening and saving
 
-- **File > Open** (Ctrl+O): JPG, PNG, TIFF, WebP, BMP, and the **.pixane**, **.ora** and **.psd** (Photoshop)
-  layered files.
+- **File > Open** (Ctrl+O): JPG, PNG, TIFF, WebP, BMP, **HDR** images **.exr** (OpenEXR) and **.hdr** (Radiance),
+  and the **.pixane**, **.ora** and **.psd** (Photoshop) layered files.
   The photo is rotated according to the camera orientation.
 - Camera **RAW files** (Canon .CR2 / .CR3, Nikon .NEF, Sony .ARW, .DNG, Fujifilm .RAF, Olympus .ORF, Panasonic
   .RW2, Pentax .PEF…): they open like a photo, developed with the camera's white balance (LibRaw library); then
@@ -1326,8 +1326,8 @@ As in Photoshop: **record** a series of operations, then **replay** it in one cl
 
 - **Mode**: **RGB colour** or **Greyscale**. In greyscale the image is shown and saved in grey (JPEG, PNG, TIFF in
   true grey); the layers keep their colours, so you can go back to RGB without losing anything.
-- **8 or 16 bits per channel** (*Image > Mode*, like Photoshop): in 8 bits each colour has 256 shades; in **16 bits**,
-  65,536. Useful for strong edits (levels, curves, brightening a dark photo), **gradients** and skies: no **banding**
+- **8, 16 or 32 bits per channel** (*Image > Mode*, like Photoshop): in 8 bits each colour has 256 shades; in
+  **16 bits**, 65,536; in **32 bits (HDR)**, floating-point numbers (see below). Useful for strong edits (levels, curves, brightening a dark photo), **gradients** and skies: no **banding**
   (visible steps) even after several adjustments. The window title shows **(16 bits)**. Ctrl+Z undoes the change.
   - **Opened in 16 bits automatically**: 16-bit PNG, TIFF and PSD files, and **RAW photos** (developed in 16 bits).
   - **Saved in 16 bits**: .pixane, PSD, TIFF, PNG. JPEG, WebP and BMP only have 8 bits: the image is saved in 8 bits
@@ -1335,11 +1335,29 @@ As in Photoshop: **record** a series of operations, then **replay** it in one cl
   - **Computed in 16 bits**: layer blending (blend modes, adjustment layers, masks), all **adjustments** (Image
     adjustments, Levels, Curves, Balance…), **filters** (blurs, sharpen, noise, vignette), the **Gradient** tool and
     fill layers, image size, rotate, flip, straighten, transform, crop, Expand.
-  - The other tools (brushes, eraser, retouching, AI…) work in 8 bits, **only where they change the image**: the
-    rest of the layer keeps its 16 bits. The AI always returns an 8-bit result, placed only in the area it worked
-    on. *Content-aware scale* brings the whole layer back to 8-bit precision.
+  - **Brushes work in the image's depth**: brush, eraser, clone stamp, history brush, Dodge / Burn, Sponge, Blur,
+    Sharpen and Smudge (in 16 bits, without rounding to 256 shades).
+  - The other tools (paint bucket, text, AI…) work in 8 bits, **only where they change the image**: the rest of the
+    layer keeps its 16 bits. The AI always returns an 8-bit result, placed only in the area it worked on.
+    *Content-aware scale* brings the whole layer back to 8-bit precision.
   - A 16-bit image takes **twice as much memory**, and filters are a little slower.
-- **Dither to 8 bits** (*Image > Mode*, checked by default): when a 16-bit image is shown on screen, exported to JPEG /
+- **32 bits per channel (HDR)** (*Image > Mode > 32 bits per channel (HDR)*): for **HDR** photos (merged exposures,
+  3D renders). A colour can be **brighter than white**: the sun, a lamp or a very bright sky keep their detail, and
+  the exposure can be lowered afterwards without losing anything. The window title shows **(32 bits)**.
+  - **Opened in 32 bits automatically**: **.exr** (OpenEXR), **.hdr** (Radiance) and **32-bit TIFF** files.
+  - **Saved in 32 bits**: .pixane, EXR, HDR, TIFF. PSD and PNG are saved in 16 bits, JPEG in 8 bits: whatever is
+    brighter than white becomes white there (first switch to 16 or 8 bits with *HDR toning* to choose how to bring
+    it back).
+  - **Computed in 32 bits**, without clipping to white: layer blending, adjustment layers, adjustments, filters,
+    Gradient, fill layers, size, geometry, and brushes (the **clone stamp** also copies the areas brighter than
+    white). An adjustment treats a too-bright colour while keeping its brightness.
+  - **View > 32-bit exposure…**: makes the on-screen preview brighter or darker (in stops) to look at the areas
+    brighter than white. The image and its exports do not change.
+  - **HDR toning**: when switching a 32-bit image to 16 or 8 bits, a window opens if the image has colours brighter
+    than white: **Exposure** (lower it to recover the sky), **Gamma** (midtones), and **Compress the highlights**
+    (everything is brought smoothly under white, nothing is clipped). A preview shows the result.
+  - A 32-bit image takes **four times as much memory** as in 8 bits.
+- **Dither to 8 bits** (*Image > Mode*, checked by default): when a 16 or 32-bit image is shown on screen, exported to JPEG /
   WebP, or brought back to 8 bits, a very light invisible grain is added so gradients show no steps (like Photoshop's
   "dither"). Uncheck it for a grain-free conversion to 8 bits.
 - **Canvas size…** (Ctrl+Alt+C): enlarges the sheet **without stretching the image** (for example to add a bleed
